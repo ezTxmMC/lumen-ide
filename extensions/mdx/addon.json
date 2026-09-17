@@ -1,0 +1,252 @@
+{
+  "languages": [
+    {
+      "id": "mdx",
+      "name": "MDX",
+      "extensions": [
+        ".mdx"
+      ],
+      "icon": "M+",
+      "color": "#fcb32c",
+      "priority": 10,
+      "comments": {
+        "block": [
+          "{/*",
+          "*/}"
+        ]
+      },
+      "completions": [
+        "import",
+        "export",
+        "export const",
+        "export default",
+        "frontmatter",
+        "components",
+        "MDXProvider",
+        "useMDXComponents"
+      ],
+      "snippets": [
+        {
+          "label": "imp",
+          "detail": "Komponente importieren",
+          "body": "import ${Komponente} from '${./Komponente}'\n\n$0"
+        },
+        {
+          "label": "fm",
+          "detail": "Frontmatter",
+          "body": "---\ntitle: ${Titel}\ndescription: ${Beschreibung}\n---\n\n$0"
+        },
+        {
+          "label": "export",
+          "detail": "Exportierter Wert",
+          "body": "export const ${wert} = ${\"…\"}\n\n$0"
+        },
+        {
+          "label": "comp",
+          "detail": "Komponente einbetten",
+          "body": "<${Komponente} ${prop}={${wert}} />$0"
+        },
+        {
+          "label": "wrap",
+          "detail": "Komponente mit Inhalt",
+          "body": "<${Callout} type=\"${info}\">\n\n$0\n\n</${Callout}>"
+        },
+        {
+          "label": "expr",
+          "detail": "Ausdruck",
+          "body": "{${wert}}$0"
+        },
+        {
+          "label": "cmt",
+          "detail": "Kommentar",
+          "body": "{/* $0 */}"
+        },
+        {
+          "label": "code",
+          "detail": "Codeblock",
+          "body": "```${tsx}\n$0\n```"
+        },
+        {
+          "label": "table",
+          "detail": "Tabelle",
+          "body": "| ${Spalte} | ${Spalte} |\n| --- | --- |\n| $0 | |"
+        }
+      ],
+      "lsp": [
+        {
+          "label": "mdx-language-server",
+          "command": "mdx-language-server",
+          "args": [
+            "--stdio"
+          ],
+          "languageId": "mdx",
+          "rootMarkers": [
+            "package.json",
+            ".git"
+          ],
+          "initializationOptions": {
+            "typescript": {
+              "tsdk": "node_modules/typescript/lib"
+            }
+          },
+          "install": "npm i -g @mdx-js/language-server"
+        },
+        {
+          "label": "marksman",
+          "command": "marksman",
+          "args": [
+            "server"
+          ],
+          "languageId": "markdown",
+          "install": "https://github.com/artempyanykh/marksman"
+        }
+      ],
+      "tokenizer": "mdx"
+    }
+  ],
+  "themes": [],
+  "commands": [],
+  "events": [],
+  "templates": [
+    {
+      "id": "mdx-docs",
+      "name": "templates.web.mdxName",
+      "description": "templates.web.mdxDescription",
+      "languageId": "mdx",
+      "kindId": "npm",
+      "icon": "M↓",
+      "color": "#f9ac00",
+      "fields": [
+        {
+          "id": "version",
+          "label": "templates.fields.version",
+          "default": "0.1.0",
+          "pattern": "\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?",
+          "patternHint": "templates.fields.versionHint",
+          "section": "templates.sections.project",
+          "mono": true
+        },
+        {
+          "id": "description",
+          "label": "templates.fields.description",
+          "placeholder": "templates.fields.descriptionPlaceholder",
+          "required": false,
+          "section": "templates.sections.project"
+        },
+        {
+          "id": "author",
+          "label": "templates.fields.author",
+          "placeholder": "templates.fields.authorPlaceholder",
+          "required": false,
+          "section": "templates.sections.project"
+        },
+        {
+          "id": "license",
+          "label": "templates.fields.license",
+          "type": "select",
+          "choices": [
+            {
+              "value": "MIT",
+              "label": "MIT"
+            },
+            {
+              "value": "Apache-2.0",
+              "label": "Apache 2.0"
+            },
+            {
+              "value": "GPL-3.0-or-later",
+              "label": "GPL 3.0"
+            },
+            {
+              "value": "BSD-3-Clause",
+              "label": "BSD 3-Clause"
+            },
+            {
+              "value": "UNLICENSED",
+              "label": "templates.fields.licenseNone"
+            }
+          ],
+          "section": "templates.sections.project"
+        },
+        {
+          "id": "pm",
+          "label": "templates.fields.packageManager",
+          "type": "select",
+          "choices": [
+            {
+              "value": "npm",
+              "label": "npm"
+            },
+            {
+              "value": "pnpm",
+              "label": "pnpm"
+            },
+            {
+              "value": "yarn",
+              "label": "Yarn"
+            },
+            {
+              "value": "bun",
+              "label": "Bun"
+            }
+          ],
+          "section": "templates.sections.build"
+        }
+      ],
+      "open": "src/docs/einfuehrung.mdx",
+      "setup": [
+        {
+          "label": "templates.tasks.installDeps",
+          "command": "{{pm}}",
+          "args": [
+            "install"
+          ]
+        }
+      ],
+      "files": [
+        {
+          "path": "package.json",
+          "content": "{\n  \"version\": \"{{version}}\",\n  \"description\": \"{{description}}\",\n  \"author\": \"{{author}}\",\n  \"license\": \"{{license}}\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"build\": \"vite build\",\n    \"preview\": \"vite preview\"\n  },\n  \"dependencies\": {\n    \"react\": \"^19.0.0\",\n    \"react-dom\": \"^19.0.0\"\n  },\n  \"devDependencies\": {\n    \"vite\": \"^6.0.7\",\n    \"@vitejs/plugin-react\": \"^4.3.4\",\n    \"@mdx-js/rollup\": \"^3.1.0\",\n    \"typescript\": \"^5.7.3\",\n    \"@types/react\": \"^19.0.2\",\n    \"@types/react-dom\": \"^19.0.2\",\n    \"@types/mdx\": \"^2.0.13\"\n  }\n}\n"
+        },
+        {
+          "path": "vite.config.ts",
+          "content": "import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\nimport mdx from '@mdx-js/rollup'\n\nexport default defineConfig({\n  plugins: [{ enforce: 'pre', ...mdx() }, react({ include: /\\.(jsx|tsx|mdx)$/ })],\n})\n"
+        },
+        {
+          "path": "tsconfig.json",
+          "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES2022\",\n    \"module\": \"ESNext\",\n    \"moduleResolution\": \"bundler\",\n    \"jsx\": \"react-jsx\",\n    \"strict\": true,\n    \"noEmit\": true,\n    \"types\": [\n      \"vite/client\",\n      \"mdx\"\n    ]\n  },\n  \"include\": [\n    \"src\"\n  ]\n}\n"
+        },
+        {
+          "path": "index.html",
+          "content": "<!doctype html>\n<html lang=\"de\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.tsx\"></script>\n  </body>\n</html>\n"
+        },
+        {
+          "path": "src/main.tsx",
+          "content": "import { createRoot } from 'react-dom/client'\nimport Einfuehrung from './docs/einfuehrung.mdx'\nimport './style.css'\n\ncreateRoot(document.getElementById('root')!).render(\n  <article>\n    <Einfuehrung />\n  </article>,\n)\n"
+        },
+        {
+          "path": "src/components/Hinweis.tsx",
+          "content": "import type { ReactNode } from 'react'\n\nexport function Hinweis({ children }: { children: ReactNode }) {\n  return <aside className=\"hinweis\">{children}</aside>\n}\n"
+        },
+        {
+          "path": "src/docs/einfuehrung.mdx",
+          "content": "import { Hinweis } from '../components/Hinweis'\n\n# {{name}}\n\nWillkommen in der Dokumentation.\n\n<Hinweis>\n  MDX erlaubt **Markdown** und React-Komponenten.\n</Hinweis>\n"
+        },
+        {
+          "path": "src/style.css",
+          "content": "article {\n  max-width: 48rem;\n  margin: 2rem auto;\n  font-family: system-ui, sans-serif;\n}\n\n.hinweis {\n  padding: 0.75rem 1rem;\n  border-left: 4px solid #f9ac00;\n}\n"
+        },
+        {
+          "path": ".gitignore",
+          "content": "node_modules/\ndist/\n.env\n*.log\n.astro/\n.angular/\n.lumen/\n"
+        },
+        {
+          "path": "README.md",
+          "content": "# {{name}}\n\n{{description}}\n\n```bash\n{{pm}} install\n{{pm}} run dev\n{{pm}} run build\n```\n"
+        }
+      ]
+    }
+  ],
+  "projectKinds": [],
+  "snippets": []
+}

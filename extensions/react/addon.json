@@ -1,0 +1,2222 @@
+{
+  "languages": [
+    {
+      "id": "react-tsx",
+      "name": "React (TSX)",
+      "extensions": [
+        ".tsx"
+      ],
+      "icon": "⚛",
+      "color": "#61dafb",
+      "priority": 10,
+      "capitalizedAsType": true,
+      "comments": {
+        "line": "//",
+        "block": [
+          "/*",
+          "*/"
+        ]
+      },
+      "controls": [
+        "if",
+        "else",
+        "for",
+        "while",
+        "do",
+        "switch",
+        "case",
+        "default",
+        "break",
+        "continue",
+        "return",
+        "throw",
+        "try",
+        "catch",
+        "finally",
+        "yield",
+        "await"
+      ],
+      "keywords": [
+        "var",
+        "let",
+        "const",
+        "function",
+        "class",
+        "extends",
+        "new",
+        "delete",
+        "typeof",
+        "instanceof",
+        "in",
+        "of",
+        "this",
+        "super",
+        "import",
+        "export",
+        "from",
+        "as",
+        "default",
+        "async",
+        "static",
+        "get",
+        "set",
+        "void",
+        "with",
+        "interface",
+        "type",
+        "enum",
+        "namespace",
+        "declare",
+        "abstract",
+        "implements",
+        "public",
+        "private",
+        "protected",
+        "readonly",
+        "override",
+        "satisfies",
+        "keyof",
+        "infer",
+        "asserts",
+        "is",
+        "module",
+        "accessor",
+        "using"
+      ],
+      "types": [
+        "string",
+        "number",
+        "boolean",
+        "object",
+        "symbol",
+        "bigint",
+        "any",
+        "unknown",
+        "never",
+        "void",
+        "null",
+        "undefined",
+        "Array",
+        "Readonly",
+        "Partial",
+        "Required",
+        "Pick",
+        "Omit",
+        "Record",
+        "Exclude",
+        "Extract",
+        "ReturnType",
+        "Parameters",
+        "Awaited",
+        "NonNullable",
+        "Promise",
+        "Map",
+        "Set",
+        "ReactNode",
+        "ReactElement",
+        "JSX",
+        "FC",
+        "PropsWithChildren",
+        "ComponentProps",
+        "ComponentType",
+        "CSSProperties",
+        "RefObject",
+        "MutableRefObject",
+        "Dispatch",
+        "SetStateAction",
+        "MouseEvent",
+        "ChangeEvent",
+        "FormEvent",
+        "KeyboardEvent",
+        "HTMLAttributes",
+        "ButtonHTMLAttributes",
+        "InputHTMLAttributes"
+      ],
+      "builtins": [
+        "console",
+        "Math",
+        "JSON",
+        "Object",
+        "Array",
+        "String",
+        "Number",
+        "Boolean",
+        "Promise",
+        "Symbol",
+        "Map",
+        "Set",
+        "WeakMap",
+        "WeakSet",
+        "Date",
+        "RegExp",
+        "Error",
+        "TypeError",
+        "Proxy",
+        "Reflect",
+        "BigInt",
+        "fetch",
+        "structuredClone",
+        "setTimeout",
+        "setInterval",
+        "queueMicrotask",
+        "document",
+        "window",
+        "useState",
+        "useEffect",
+        "useLayoutEffect",
+        "useMemo",
+        "useCallback",
+        "useRef",
+        "useContext",
+        "useReducer",
+        "useId",
+        "useTransition",
+        "useDeferredValue",
+        "useSyncExternalStore",
+        "useImperativeHandle",
+        "useInsertionEffect",
+        "useActionState",
+        "useOptimistic",
+        "useFormStatus",
+        "React",
+        "Fragment",
+        "StrictMode",
+        "Suspense",
+        "createContext",
+        "createRef",
+        "forwardRef",
+        "memo",
+        "lazy",
+        "startTransition",
+        "createPortal",
+        "createRoot",
+        "hydrateRoot",
+        "flushSync",
+        "use",
+        "cache",
+        "act"
+      ],
+      "constants": [
+        "true",
+        "false",
+        "null",
+        "undefined",
+        "NaN",
+        "Infinity",
+        "globalThis"
+      ],
+      "strings": [
+        {
+          "start": "\"",
+          "escapes": true
+        },
+        {
+          "start": "'",
+          "escapes": true
+        },
+        {
+          "start": "`",
+          "multiline": true,
+          "escapes": true,
+          "interpolate": "${"
+        }
+      ],
+      "completions": [
+        "addEventListener",
+        "removeEventListener",
+        "querySelector",
+        "querySelectorAll",
+        "createElement",
+        "appendChild",
+        "classList",
+        "dataset",
+        "textContent",
+        "innerHTML",
+        "localStorage",
+        "sessionStorage",
+        "requestAnimationFrame",
+        "IntersectionObserver",
+        "AbortController",
+        "URLSearchParams",
+        "FormData",
+        "Headers",
+        "Response",
+        "Request",
+        "process",
+        "Buffer",
+        "__dirname",
+        "module",
+        "exports",
+        "globalThis",
+        "className",
+        "htmlFor",
+        "onClick",
+        "onChange",
+        "onSubmit",
+        "onInput",
+        "onKeyDown",
+        "onKeyUp",
+        "onFocus",
+        "onBlur",
+        "onMouseEnter",
+        "onMouseLeave",
+        "onPointerDown",
+        "defaultValue",
+        "defaultChecked",
+        "dangerouslySetInnerHTML",
+        "key",
+        "ref",
+        "style",
+        "children",
+        "useState",
+        "useEffect",
+        "useLayoutEffect",
+        "useMemo",
+        "useCallback",
+        "useRef",
+        "useContext",
+        "useReducer",
+        "useId",
+        "useTransition",
+        "useDeferredValue",
+        "useSyncExternalStore",
+        "useImperativeHandle",
+        "useInsertionEffect",
+        "useActionState",
+        "useOptimistic",
+        "useFormStatus",
+        "React",
+        "Fragment",
+        "StrictMode",
+        "Suspense",
+        "createContext",
+        "createRef",
+        "forwardRef",
+        "memo",
+        "lazy",
+        "startTransition",
+        "createPortal",
+        "createRoot",
+        "hydrateRoot",
+        "flushSync",
+        "use",
+        "cache",
+        "act"
+      ],
+      "snippets": [
+        {
+          "label": "log",
+          "detail": "console.log",
+          "body": "console.log($0)"
+        },
+        {
+          "label": "fn",
+          "detail": "Funktion",
+          "body": "function ${name}(${args}) {\n  $0\n}"
+        },
+        {
+          "label": "afn",
+          "detail": "Arrow Function",
+          "body": "const ${name} = (${args}) => {\n  $0\n}"
+        },
+        {
+          "label": "asfn",
+          "detail": "async Arrow Function",
+          "body": "const ${name} = async (${args}) => {\n  $0\n}"
+        },
+        {
+          "label": "try",
+          "detail": "try/catch",
+          "body": "try {\n  $0\n} catch (err) {\n  console.error(err)\n}"
+        },
+        {
+          "label": "cls",
+          "detail": "Klasse",
+          "body": "class ${Name} {\n  constructor(${args}) {\n    $0\n  }\n}"
+        },
+        {
+          "label": "imp",
+          "detail": "Import",
+          "body": "import { ${name} } from '${modul}'"
+        },
+        {
+          "label": "impd",
+          "detail": "Default-Import",
+          "body": "import ${Name} from '${modul}'"
+        },
+        {
+          "label": "exp",
+          "detail": "Export",
+          "body": "export const ${name} = $0"
+        },
+        {
+          "label": "forof",
+          "detail": "for…of",
+          "body": "for (const ${element} of ${liste}) {\n  $0\n}"
+        },
+        {
+          "label": "fore",
+          "detail": "forEach",
+          "body": "${liste}.forEach((${element}) => {\n  $0\n})"
+        },
+        {
+          "label": "map",
+          "detail": "map",
+          "body": "${liste}.map((${element}) => $0)"
+        },
+        {
+          "label": "filter",
+          "detail": "filter",
+          "body": "${liste}.filter((${element}) => $0)"
+        },
+        {
+          "label": "reduce",
+          "detail": "reduce",
+          "body": "${liste}.reduce((${acc}, ${element}) => $0, ${start})"
+        },
+        {
+          "label": "fetch",
+          "detail": "fetch mit await",
+          "body": "const res = await fetch('${url}')\nif (!res.ok) throw new Error(res.statusText)\nconst data = await res.json()$0"
+        },
+        {
+          "label": "prom",
+          "detail": "Promise",
+          "body": "new Promise((resolve, reject) => {\n  $0\n})"
+        },
+        {
+          "label": "timeout",
+          "detail": "setTimeout",
+          "body": "setTimeout(() => {\n  $0\n}, ${200})"
+        },
+        {
+          "label": "switch",
+          "detail": "switch",
+          "body": "switch (${wert}) {\n  case ${1}:\n    $0\n    break\n  default:\n    break\n}"
+        },
+        {
+          "label": "destr",
+          "detail": "Destrukturierung",
+          "body": "const { ${a}, ${b} } = ${objekt}$0"
+        },
+        {
+          "label": "iface",
+          "detail": "Interface",
+          "body": "interface ${Name} {\n  $0\n}"
+        },
+        {
+          "label": "tp",
+          "detail": "Type-Alias",
+          "body": "type ${Name} = $0"
+        },
+        {
+          "label": "enum",
+          "detail": "Enum",
+          "body": "enum ${Name} {\n  ${A} = '${a}',\n  $0\n}"
+        },
+        {
+          "label": "genfn",
+          "detail": "Generische Funktion",
+          "body": "function ${name}<${T}>(${arg}: ${T}): ${T} {\n  $0\n}"
+        },
+        {
+          "label": "guard",
+          "detail": "Type Guard",
+          "body": "function is${Name}(value: unknown): value is ${Name} {\n  return $0\n}"
+        },
+        {
+          "label": "asconst",
+          "detail": "as const",
+          "body": "const ${NAME} = [$0] as const"
+        },
+        {
+          "label": "record",
+          "detail": "Record-Typ",
+          "body": "type ${Name} = Record<${string}, ${unknown}>"
+        },
+        {
+          "label": "partial",
+          "detail": "Optionaler Parameter",
+          "body": "${name}?: ${string}"
+        },
+        {
+          "label": "generic",
+          "detail": "Generisches Interface",
+          "body": "interface ${Name}<${T}> {\n  ${wert}: ${T}\n}"
+        },
+        {
+          "label": "rfc",
+          "detail": "Funktionskomponente",
+          "body": "interface ${Name}Props {\n  ${kind}?: ${React.ReactNode}\n}\n\nexport function ${Name}({ ${kind} }: ${Name}Props) {\n  return (\n    <div>{${kind}}</div>\n  )\n}$0"
+        },
+        {
+          "label": "rfcjs",
+          "detail": "Komponente (JavaScript)",
+          "body": "export function ${Name}({ ${prop} }) {\n  return (\n    <div>$0</div>\n  )\n}"
+        },
+        {
+          "label": "us",
+          "detail": "useState",
+          "body": "const [${wert}, set${Wert}] = useState(${null})$0"
+        },
+        {
+          "label": "ue",
+          "detail": "useEffect",
+          "body": "useEffect(() => {\n  $0\n}, [${abhängigkeit}])"
+        },
+        {
+          "label": "uec",
+          "detail": "useEffect mit Aufräumen",
+          "body": "useEffect(() => {\n  $0\n  return () => {\n    // aufräumen\n  }\n}, [])"
+        },
+        {
+          "label": "um",
+          "detail": "useMemo",
+          "body": "const ${wert} = useMemo(() => $0, [${abhängigkeit}])"
+        },
+        {
+          "label": "uc",
+          "detail": "useCallback",
+          "body": "const ${handler} = useCallback(() => {\n  $0\n}, [])"
+        },
+        {
+          "label": "ur",
+          "detail": "useRef",
+          "body": "const ${ref} = useRef<${HTMLDivElement}>(null)$0"
+        },
+        {
+          "label": "ctx",
+          "detail": "Context mit Hook",
+          "body": "const ${Name}Context = createContext<${Typ} | null>(null)\n\nexport function use${Name}() {\n  const value = useContext(${Name}Context)\n  if (!value) throw new Error('use${Name} außerhalb des Providers')\n  return value\n}$0"
+        },
+        {
+          "label": "hook",
+          "detail": "Eigener Hook",
+          "body": "export function use${Name}(${arg}: ${string}) {\n  const [${wert}, set${Wert}] = useState(${arg})\n  $0\n  return { ${wert} }\n}"
+        },
+        {
+          "label": "map",
+          "detail": "Liste rendern",
+          "body": "{${liste}.map((${element}) => (\n  <${li} key={${element}.id}>$0</${li}>\n))}"
+        },
+        {
+          "label": "frag",
+          "detail": "Fragment",
+          "body": "<>\n  $0\n</>"
+        },
+        {
+          "label": "cond",
+          "detail": "Bedingtes Rendern",
+          "body": "{${bedingung} && (\n  <div>$0</div>\n)}"
+        },
+        {
+          "label": "memo",
+          "detail": "memo",
+          "body": "export const ${Name} = memo(function ${Name}({ ${prop} }: ${Name}Props) {\n  return <div>$0</div>\n})"
+        },
+        {
+          "label": "lazy",
+          "detail": "Lazy Route",
+          "body": "const ${Name} = lazy(() => import('${./Name}'))\n\n<Suspense fallback={<div>Lädt…</div>}>\n  <${Name} />\n</Suspense>$0"
+        },
+        {
+          "label": "form",
+          "detail": "Kontrolliertes Formular",
+          "body": "const [${wert}, set${Wert}] = useState('')\n\n<form onSubmit={(e) => { e.preventDefault(); $0 }}>\n  <input value={${wert}} onChange={(e) => set${Wert}(e.target.value)} />\n</form>"
+        }
+      ],
+      "run": [
+        {
+          "label": "tsx",
+          "command": "npx",
+          "args": [
+            "tsx",
+            "${file}"
+          ]
+        },
+        {
+          "label": "Bun",
+          "command": "bun",
+          "args": [
+            "run",
+            "${file}"
+          ]
+        },
+        {
+          "label": "Deno",
+          "command": "deno",
+          "args": [
+            "run",
+            "-A",
+            "${file}"
+          ]
+        },
+        {
+          "label": "tsc --noEmit",
+          "command": "npx",
+          "args": [
+            "tsc",
+            "--noEmit"
+          ]
+        }
+      ],
+      "lsp": [
+        {
+          "label": "typescript-language-server",
+          "command": "typescript-language-server",
+          "args": [
+            "--stdio"
+          ],
+          "candidates": [
+            "${root}/node_modules/.bin/typescript-language-server",
+            "${workspace}/node_modules/.bin/typescript-language-server",
+            "~/.local/share/nvim/mason/bin/typescript-language-server",
+            "~/.bun/bin/typescript-language-server",
+            "/opt/homebrew/bin/typescript-language-server"
+          ],
+          "languageId": "typescript",
+          "rootMarkers": [
+            "tsconfig.json",
+            "jsconfig.json",
+            "package.json",
+            ".git"
+          ],
+          "initializationOptions": {
+            "hostInfo": "Lumen",
+            "preferences": {
+              "includeInlayParameterNameHints": "all",
+              "includeInlayParameterNameHintsWhenArgumentMatchesName": false,
+              "includeInlayFunctionParameterTypeHints": true,
+              "includeInlayVariableTypeHints": false,
+              "includeInlayPropertyDeclarationTypeHints": true,
+              "includeInlayFunctionLikeReturnTypeHints": true,
+              "includeInlayEnumMemberValueHints": true,
+              "includeCompletionsForModuleExports": true,
+              "includeCompletionsForImportStatements": true,
+              "includePackageJsonAutoImports": "on",
+              "includeCompletionsWithClassMemberSnippets": true,
+              "includeCompletionsWithObjectLiteralMethodSnippets": true,
+              "includeCompletionsWithInsertText": true,
+              "includeCompletionsWithSnippetText": true,
+              "includeAutomaticOptionalChainCompletions": true,
+              "importModuleSpecifierPreference": "shortest",
+              "importModuleSpecifierEnding": "auto",
+              "quotePreference": "auto",
+              "providePrefixAndSuffixTextForRename": true,
+              "allowRenameOfImportPath": true,
+              "jsxAttributeCompletionStyle": "auto"
+            },
+            "tsserver": {
+              "logVerbosity": "off",
+              "useSyntaxServer": "auto"
+            },
+            "completions": {
+              "completeFunctionCalls": true
+            },
+            "plugins": []
+          },
+          "settings": {
+            "typescript": {
+              "inlayHints": {
+                "parameterNames": {
+                  "enabled": "all",
+                  "suppressWhenArgumentMatchesName": true
+                },
+                "parameterTypes": {
+                  "enabled": true
+                },
+                "variableTypes": {
+                  "enabled": false
+                },
+                "propertyDeclarationTypes": {
+                  "enabled": true
+                },
+                "functionLikeReturnTypes": {
+                  "enabled": true
+                },
+                "enumMemberValues": {
+                  "enabled": true
+                }
+              },
+              "suggest": {
+                "completeFunctionCalls": true
+              }
+            },
+            "javascript": {
+              "inlayHints": {
+                "parameterNames": {
+                  "enabled": "all",
+                  "suppressWhenArgumentMatchesName": true
+                },
+                "parameterTypes": {
+                  "enabled": true
+                },
+                "variableTypes": {
+                  "enabled": false
+                },
+                "propertyDeclarationTypes": {
+                  "enabled": true
+                },
+                "functionLikeReturnTypes": {
+                  "enabled": true
+                },
+                "enumMemberValues": {
+                  "enabled": true
+                }
+              },
+              "suggest": {
+                "completeFunctionCalls": true
+              }
+            },
+            "completions": {
+              "completeFunctionCalls": true
+            }
+          },
+          "install": "npm i -g typescript typescript-language-server",
+          "installCommands": {
+            "linux": "npm i -g typescript typescript-language-server",
+            "darwin": "npm i -g typescript typescript-language-server",
+            "win32": "npm i -g typescript typescript-language-server"
+          },
+          "docs": "https://github.com/typescript-language-server/typescript-language-server"
+        },
+        {
+          "label": "vtsls",
+          "command": "vtsls",
+          "args": [
+            "--stdio"
+          ],
+          "candidates": [
+            "${root}/node_modules/.bin/vtsls",
+            "~/.local/share/nvim/mason/bin/vtsls"
+          ],
+          "languageId": "typescript",
+          "rootMarkers": [
+            "tsconfig.json",
+            "jsconfig.json",
+            "package.json",
+            ".git"
+          ],
+          "settings": {
+            "typescript": {
+              "inlayHints": {
+                "parameterNames": {
+                  "enabled": "all",
+                  "suppressWhenArgumentMatchesName": true
+                },
+                "parameterTypes": {
+                  "enabled": true
+                },
+                "variableTypes": {
+                  "enabled": false
+                },
+                "propertyDeclarationTypes": {
+                  "enabled": true
+                },
+                "functionLikeReturnTypes": {
+                  "enabled": true
+                },
+                "enumMemberValues": {
+                  "enabled": true
+                }
+              },
+              "preferences": {
+                "includePackageJsonAutoImports": "on"
+              },
+              "suggest": {
+                "autoImports": true,
+                "includeCompletionsForImportStatements": true,
+                "completeFunctionCalls": true
+              }
+            },
+            "javascript": {
+              "inlayHints": {
+                "parameterNames": {
+                  "enabled": "all",
+                  "suppressWhenArgumentMatchesName": true
+                },
+                "parameterTypes": {
+                  "enabled": true
+                },
+                "variableTypes": {
+                  "enabled": false
+                },
+                "propertyDeclarationTypes": {
+                  "enabled": true
+                },
+                "functionLikeReturnTypes": {
+                  "enabled": true
+                },
+                "enumMemberValues": {
+                  "enabled": true
+                }
+              },
+              "preferences": {
+                "includePackageJsonAutoImports": "on"
+              },
+              "suggest": {
+                "autoImports": true,
+                "includeCompletionsForImportStatements": true,
+                "completeFunctionCalls": true
+              }
+            },
+            "vtsls": {
+              "autoUseWorkspaceTsdk": true
+            }
+          },
+          "install": "npm i -g @vtsls/language-server",
+          "installCommands": {
+            "linux": "npm i -g @vtsls/language-server",
+            "darwin": "npm i -g @vtsls/language-server",
+            "win32": "npm i -g @vtsls/language-server"
+          },
+          "docs": "https://github.com/yioneko/vtsls"
+        },
+        {
+          "label": "deno lsp",
+          "command": "deno",
+          "args": [
+            "lsp"
+          ],
+          "candidates": [
+            "~/.deno/bin/deno"
+          ],
+          "languageId": "typescript",
+          "rootMarkers": [
+            "deno.json",
+            "deno.jsonc"
+          ],
+          "initializationOptions": {
+            "enable": true,
+            "lint": true,
+            "unstable": false,
+            "suggest": {
+              "imports": {
+                "hosts": {
+                  "https://deno.land": true
+                }
+              }
+            }
+          },
+          "settings": {
+            "deno": {
+              "enable": true,
+              "lint": true
+            }
+          },
+          "install": "curl -fsSL https://deno.land/install.sh | sh",
+          "installCommands": {
+            "linux": "sh -c \"curl -fsSL https://deno.land/install.sh | sh\"",
+            "darwin": "brew install deno"
+          },
+          "docs": "https://docs.deno.com/runtime/reference/lsp_integration/"
+        }
+      ],
+      "debug": [
+        "js-debug-typescript"
+      ],
+      "tokenizer": "jsx"
+    },
+    {
+      "id": "react-jsx",
+      "name": "React (JSX)",
+      "extensions": [
+        ".jsx"
+      ],
+      "icon": "⚛",
+      "color": "#61dafb",
+      "priority": 10,
+      "capitalizedAsType": true,
+      "comments": {
+        "line": "//",
+        "block": [
+          "/*",
+          "*/"
+        ]
+      },
+      "controls": [
+        "if",
+        "else",
+        "for",
+        "while",
+        "do",
+        "switch",
+        "case",
+        "default",
+        "break",
+        "continue",
+        "return",
+        "throw",
+        "try",
+        "catch",
+        "finally",
+        "yield",
+        "await"
+      ],
+      "keywords": [
+        "var",
+        "let",
+        "const",
+        "function",
+        "class",
+        "extends",
+        "new",
+        "delete",
+        "typeof",
+        "instanceof",
+        "in",
+        "of",
+        "this",
+        "super",
+        "import",
+        "export",
+        "from",
+        "as",
+        "default",
+        "async",
+        "static",
+        "get",
+        "set",
+        "void",
+        "with",
+        "interface",
+        "type",
+        "enum",
+        "namespace",
+        "declare",
+        "abstract",
+        "implements",
+        "public",
+        "private",
+        "protected",
+        "readonly",
+        "override",
+        "satisfies",
+        "keyof",
+        "infer",
+        "asserts",
+        "is",
+        "module",
+        "accessor",
+        "using"
+      ],
+      "types": [
+        "string",
+        "number",
+        "boolean",
+        "object",
+        "symbol",
+        "bigint",
+        "any",
+        "unknown",
+        "never",
+        "void",
+        "null",
+        "undefined",
+        "Array",
+        "Readonly",
+        "Partial",
+        "Required",
+        "Pick",
+        "Omit",
+        "Record",
+        "Exclude",
+        "Extract",
+        "ReturnType",
+        "Parameters",
+        "Awaited",
+        "NonNullable",
+        "Promise",
+        "Map",
+        "Set",
+        "ReactNode",
+        "ReactElement",
+        "JSX",
+        "FC",
+        "PropsWithChildren",
+        "ComponentProps",
+        "ComponentType",
+        "CSSProperties",
+        "RefObject",
+        "MutableRefObject",
+        "Dispatch",
+        "SetStateAction",
+        "MouseEvent",
+        "ChangeEvent",
+        "FormEvent",
+        "KeyboardEvent",
+        "HTMLAttributes",
+        "ButtonHTMLAttributes",
+        "InputHTMLAttributes"
+      ],
+      "builtins": [
+        "console",
+        "Math",
+        "JSON",
+        "Object",
+        "Array",
+        "String",
+        "Number",
+        "Boolean",
+        "Promise",
+        "Symbol",
+        "Map",
+        "Set",
+        "WeakMap",
+        "WeakSet",
+        "Date",
+        "RegExp",
+        "Error",
+        "TypeError",
+        "Proxy",
+        "Reflect",
+        "BigInt",
+        "fetch",
+        "structuredClone",
+        "setTimeout",
+        "setInterval",
+        "queueMicrotask",
+        "document",
+        "window",
+        "useState",
+        "useEffect",
+        "useLayoutEffect",
+        "useMemo",
+        "useCallback",
+        "useRef",
+        "useContext",
+        "useReducer",
+        "useId",
+        "useTransition",
+        "useDeferredValue",
+        "useSyncExternalStore",
+        "useImperativeHandle",
+        "useInsertionEffect",
+        "useActionState",
+        "useOptimistic",
+        "useFormStatus",
+        "React",
+        "Fragment",
+        "StrictMode",
+        "Suspense",
+        "createContext",
+        "createRef",
+        "forwardRef",
+        "memo",
+        "lazy",
+        "startTransition",
+        "createPortal",
+        "createRoot",
+        "hydrateRoot",
+        "flushSync",
+        "use",
+        "cache",
+        "act"
+      ],
+      "constants": [
+        "true",
+        "false",
+        "null",
+        "undefined",
+        "NaN",
+        "Infinity",
+        "globalThis"
+      ],
+      "strings": [
+        {
+          "start": "\"",
+          "escapes": true
+        },
+        {
+          "start": "'",
+          "escapes": true
+        },
+        {
+          "start": "`",
+          "multiline": true,
+          "escapes": true,
+          "interpolate": "${"
+        }
+      ],
+      "completions": [
+        "addEventListener",
+        "removeEventListener",
+        "querySelector",
+        "querySelectorAll",
+        "createElement",
+        "appendChild",
+        "classList",
+        "dataset",
+        "textContent",
+        "innerHTML",
+        "localStorage",
+        "sessionStorage",
+        "requestAnimationFrame",
+        "IntersectionObserver",
+        "AbortController",
+        "URLSearchParams",
+        "FormData",
+        "Headers",
+        "Response",
+        "Request",
+        "process",
+        "Buffer",
+        "__dirname",
+        "module",
+        "exports",
+        "globalThis",
+        "className",
+        "htmlFor",
+        "onClick",
+        "onChange",
+        "onSubmit",
+        "onInput",
+        "onKeyDown",
+        "onKeyUp",
+        "onFocus",
+        "onBlur",
+        "onMouseEnter",
+        "onMouseLeave",
+        "onPointerDown",
+        "defaultValue",
+        "defaultChecked",
+        "dangerouslySetInnerHTML",
+        "key",
+        "ref",
+        "style",
+        "children",
+        "useState",
+        "useEffect",
+        "useLayoutEffect",
+        "useMemo",
+        "useCallback",
+        "useRef",
+        "useContext",
+        "useReducer",
+        "useId",
+        "useTransition",
+        "useDeferredValue",
+        "useSyncExternalStore",
+        "useImperativeHandle",
+        "useInsertionEffect",
+        "useActionState",
+        "useOptimistic",
+        "useFormStatus",
+        "React",
+        "Fragment",
+        "StrictMode",
+        "Suspense",
+        "createContext",
+        "createRef",
+        "forwardRef",
+        "memo",
+        "lazy",
+        "startTransition",
+        "createPortal",
+        "createRoot",
+        "hydrateRoot",
+        "flushSync",
+        "use",
+        "cache",
+        "act"
+      ],
+      "snippets": [
+        {
+          "label": "log",
+          "detail": "console.log",
+          "body": "console.log($0)"
+        },
+        {
+          "label": "fn",
+          "detail": "Funktion",
+          "body": "function ${name}(${args}) {\n  $0\n}"
+        },
+        {
+          "label": "afn",
+          "detail": "Arrow Function",
+          "body": "const ${name} = (${args}) => {\n  $0\n}"
+        },
+        {
+          "label": "asfn",
+          "detail": "async Arrow Function",
+          "body": "const ${name} = async (${args}) => {\n  $0\n}"
+        },
+        {
+          "label": "try",
+          "detail": "try/catch",
+          "body": "try {\n  $0\n} catch (err) {\n  console.error(err)\n}"
+        },
+        {
+          "label": "cls",
+          "detail": "Klasse",
+          "body": "class ${Name} {\n  constructor(${args}) {\n    $0\n  }\n}"
+        },
+        {
+          "label": "imp",
+          "detail": "Import",
+          "body": "import { ${name} } from '${modul}'"
+        },
+        {
+          "label": "impd",
+          "detail": "Default-Import",
+          "body": "import ${Name} from '${modul}'"
+        },
+        {
+          "label": "exp",
+          "detail": "Export",
+          "body": "export const ${name} = $0"
+        },
+        {
+          "label": "forof",
+          "detail": "for…of",
+          "body": "for (const ${element} of ${liste}) {\n  $0\n}"
+        },
+        {
+          "label": "fore",
+          "detail": "forEach",
+          "body": "${liste}.forEach((${element}) => {\n  $0\n})"
+        },
+        {
+          "label": "map",
+          "detail": "map",
+          "body": "${liste}.map((${element}) => $0)"
+        },
+        {
+          "label": "filter",
+          "detail": "filter",
+          "body": "${liste}.filter((${element}) => $0)"
+        },
+        {
+          "label": "reduce",
+          "detail": "reduce",
+          "body": "${liste}.reduce((${acc}, ${element}) => $0, ${start})"
+        },
+        {
+          "label": "fetch",
+          "detail": "fetch mit await",
+          "body": "const res = await fetch('${url}')\nif (!res.ok) throw new Error(res.statusText)\nconst data = await res.json()$0"
+        },
+        {
+          "label": "prom",
+          "detail": "Promise",
+          "body": "new Promise((resolve, reject) => {\n  $0\n})"
+        },
+        {
+          "label": "timeout",
+          "detail": "setTimeout",
+          "body": "setTimeout(() => {\n  $0\n}, ${200})"
+        },
+        {
+          "label": "switch",
+          "detail": "switch",
+          "body": "switch (${wert}) {\n  case ${1}:\n    $0\n    break\n  default:\n    break\n}"
+        },
+        {
+          "label": "destr",
+          "detail": "Destrukturierung",
+          "body": "const { ${a}, ${b} } = ${objekt}$0"
+        },
+        {
+          "label": "iface",
+          "detail": "Interface",
+          "body": "interface ${Name} {\n  $0\n}"
+        },
+        {
+          "label": "tp",
+          "detail": "Type-Alias",
+          "body": "type ${Name} = $0"
+        },
+        {
+          "label": "enum",
+          "detail": "Enum",
+          "body": "enum ${Name} {\n  ${A} = '${a}',\n  $0\n}"
+        },
+        {
+          "label": "genfn",
+          "detail": "Generische Funktion",
+          "body": "function ${name}<${T}>(${arg}: ${T}): ${T} {\n  $0\n}"
+        },
+        {
+          "label": "guard",
+          "detail": "Type Guard",
+          "body": "function is${Name}(value: unknown): value is ${Name} {\n  return $0\n}"
+        },
+        {
+          "label": "asconst",
+          "detail": "as const",
+          "body": "const ${NAME} = [$0] as const"
+        },
+        {
+          "label": "record",
+          "detail": "Record-Typ",
+          "body": "type ${Name} = Record<${string}, ${unknown}>"
+        },
+        {
+          "label": "partial",
+          "detail": "Optionaler Parameter",
+          "body": "${name}?: ${string}"
+        },
+        {
+          "label": "generic",
+          "detail": "Generisches Interface",
+          "body": "interface ${Name}<${T}> {\n  ${wert}: ${T}\n}"
+        },
+        {
+          "label": "rfc",
+          "detail": "Funktionskomponente",
+          "body": "interface ${Name}Props {\n  ${kind}?: ${React.ReactNode}\n}\n\nexport function ${Name}({ ${kind} }: ${Name}Props) {\n  return (\n    <div>{${kind}}</div>\n  )\n}$0"
+        },
+        {
+          "label": "rfcjs",
+          "detail": "Komponente (JavaScript)",
+          "body": "export function ${Name}({ ${prop} }) {\n  return (\n    <div>$0</div>\n  )\n}"
+        },
+        {
+          "label": "us",
+          "detail": "useState",
+          "body": "const [${wert}, set${Wert}] = useState(${null})$0"
+        },
+        {
+          "label": "ue",
+          "detail": "useEffect",
+          "body": "useEffect(() => {\n  $0\n}, [${abhängigkeit}])"
+        },
+        {
+          "label": "uec",
+          "detail": "useEffect mit Aufräumen",
+          "body": "useEffect(() => {\n  $0\n  return () => {\n    // aufräumen\n  }\n}, [])"
+        },
+        {
+          "label": "um",
+          "detail": "useMemo",
+          "body": "const ${wert} = useMemo(() => $0, [${abhängigkeit}])"
+        },
+        {
+          "label": "uc",
+          "detail": "useCallback",
+          "body": "const ${handler} = useCallback(() => {\n  $0\n}, [])"
+        },
+        {
+          "label": "ur",
+          "detail": "useRef",
+          "body": "const ${ref} = useRef<${HTMLDivElement}>(null)$0"
+        },
+        {
+          "label": "ctx",
+          "detail": "Context mit Hook",
+          "body": "const ${Name}Context = createContext<${Typ} | null>(null)\n\nexport function use${Name}() {\n  const value = useContext(${Name}Context)\n  if (!value) throw new Error('use${Name} außerhalb des Providers')\n  return value\n}$0"
+        },
+        {
+          "label": "hook",
+          "detail": "Eigener Hook",
+          "body": "export function use${Name}(${arg}: ${string}) {\n  const [${wert}, set${Wert}] = useState(${arg})\n  $0\n  return { ${wert} }\n}"
+        },
+        {
+          "label": "map",
+          "detail": "Liste rendern",
+          "body": "{${liste}.map((${element}) => (\n  <${li} key={${element}.id}>$0</${li}>\n))}"
+        },
+        {
+          "label": "frag",
+          "detail": "Fragment",
+          "body": "<>\n  $0\n</>"
+        },
+        {
+          "label": "cond",
+          "detail": "Bedingtes Rendern",
+          "body": "{${bedingung} && (\n  <div>$0</div>\n)}"
+        },
+        {
+          "label": "memo",
+          "detail": "memo",
+          "body": "export const ${Name} = memo(function ${Name}({ ${prop} }: ${Name}Props) {\n  return <div>$0</div>\n})"
+        },
+        {
+          "label": "lazy",
+          "detail": "Lazy Route",
+          "body": "const ${Name} = lazy(() => import('${./Name}'))\n\n<Suspense fallback={<div>Lädt…</div>}>\n  <${Name} />\n</Suspense>$0"
+        },
+        {
+          "label": "form",
+          "detail": "Kontrolliertes Formular",
+          "body": "const [${wert}, set${Wert}] = useState('')\n\n<form onSubmit={(e) => { e.preventDefault(); $0 }}>\n  <input value={${wert}} onChange={(e) => set${Wert}(e.target.value)} />\n</form>"
+        }
+      ],
+      "run": [
+        {
+          "label": "tsx",
+          "command": "npx",
+          "args": [
+            "tsx",
+            "${file}"
+          ]
+        },
+        {
+          "label": "Bun",
+          "command": "bun",
+          "args": [
+            "run",
+            "${file}"
+          ]
+        },
+        {
+          "label": "Deno",
+          "command": "deno",
+          "args": [
+            "run",
+            "-A",
+            "${file}"
+          ]
+        },
+        {
+          "label": "tsc --noEmit",
+          "command": "npx",
+          "args": [
+            "tsc",
+            "--noEmit"
+          ]
+        }
+      ],
+      "lsp": [
+        {
+          "label": "typescript-language-server",
+          "command": "typescript-language-server",
+          "args": [
+            "--stdio"
+          ],
+          "candidates": [
+            "${root}/node_modules/.bin/typescript-language-server",
+            "${workspace}/node_modules/.bin/typescript-language-server",
+            "~/.local/share/nvim/mason/bin/typescript-language-server",
+            "~/.bun/bin/typescript-language-server",
+            "/opt/homebrew/bin/typescript-language-server"
+          ],
+          "languageId": "javascript",
+          "rootMarkers": [
+            "tsconfig.json",
+            "jsconfig.json",
+            "package.json",
+            ".git"
+          ],
+          "initializationOptions": {
+            "hostInfo": "Lumen",
+            "preferences": {
+              "includeInlayParameterNameHints": "all",
+              "includeInlayParameterNameHintsWhenArgumentMatchesName": false,
+              "includeInlayFunctionParameterTypeHints": true,
+              "includeInlayVariableTypeHints": false,
+              "includeInlayPropertyDeclarationTypeHints": true,
+              "includeInlayFunctionLikeReturnTypeHints": true,
+              "includeInlayEnumMemberValueHints": true,
+              "includeCompletionsForModuleExports": true,
+              "includeCompletionsForImportStatements": true,
+              "includePackageJsonAutoImports": "on",
+              "includeCompletionsWithClassMemberSnippets": true,
+              "includeCompletionsWithObjectLiteralMethodSnippets": true,
+              "includeCompletionsWithInsertText": true,
+              "includeCompletionsWithSnippetText": true,
+              "includeAutomaticOptionalChainCompletions": true,
+              "importModuleSpecifierPreference": "shortest",
+              "importModuleSpecifierEnding": "auto",
+              "quotePreference": "auto",
+              "providePrefixAndSuffixTextForRename": true,
+              "allowRenameOfImportPath": true,
+              "jsxAttributeCompletionStyle": "auto"
+            },
+            "tsserver": {
+              "logVerbosity": "off",
+              "useSyntaxServer": "auto"
+            },
+            "completions": {
+              "completeFunctionCalls": true
+            },
+            "plugins": []
+          },
+          "settings": {
+            "typescript": {
+              "inlayHints": {
+                "parameterNames": {
+                  "enabled": "all",
+                  "suppressWhenArgumentMatchesName": true
+                },
+                "parameterTypes": {
+                  "enabled": true
+                },
+                "variableTypes": {
+                  "enabled": false
+                },
+                "propertyDeclarationTypes": {
+                  "enabled": true
+                },
+                "functionLikeReturnTypes": {
+                  "enabled": true
+                },
+                "enumMemberValues": {
+                  "enabled": true
+                }
+              },
+              "suggest": {
+                "completeFunctionCalls": true
+              }
+            },
+            "javascript": {
+              "inlayHints": {
+                "parameterNames": {
+                  "enabled": "all",
+                  "suppressWhenArgumentMatchesName": true
+                },
+                "parameterTypes": {
+                  "enabled": true
+                },
+                "variableTypes": {
+                  "enabled": false
+                },
+                "propertyDeclarationTypes": {
+                  "enabled": true
+                },
+                "functionLikeReturnTypes": {
+                  "enabled": true
+                },
+                "enumMemberValues": {
+                  "enabled": true
+                }
+              },
+              "suggest": {
+                "completeFunctionCalls": true
+              }
+            },
+            "completions": {
+              "completeFunctionCalls": true
+            }
+          },
+          "install": "npm i -g typescript typescript-language-server",
+          "installCommands": {
+            "linux": "npm i -g typescript typescript-language-server",
+            "darwin": "npm i -g typescript typescript-language-server",
+            "win32": "npm i -g typescript typescript-language-server"
+          },
+          "docs": "https://github.com/typescript-language-server/typescript-language-server"
+        },
+        {
+          "label": "vtsls",
+          "command": "vtsls",
+          "args": [
+            "--stdio"
+          ],
+          "candidates": [
+            "${root}/node_modules/.bin/vtsls",
+            "~/.local/share/nvim/mason/bin/vtsls"
+          ],
+          "languageId": "javascript",
+          "rootMarkers": [
+            "tsconfig.json",
+            "jsconfig.json",
+            "package.json",
+            ".git"
+          ],
+          "settings": {
+            "typescript": {
+              "inlayHints": {
+                "parameterNames": {
+                  "enabled": "all",
+                  "suppressWhenArgumentMatchesName": true
+                },
+                "parameterTypes": {
+                  "enabled": true
+                },
+                "variableTypes": {
+                  "enabled": false
+                },
+                "propertyDeclarationTypes": {
+                  "enabled": true
+                },
+                "functionLikeReturnTypes": {
+                  "enabled": true
+                },
+                "enumMemberValues": {
+                  "enabled": true
+                }
+              },
+              "preferences": {
+                "includePackageJsonAutoImports": "on"
+              },
+              "suggest": {
+                "autoImports": true,
+                "includeCompletionsForImportStatements": true,
+                "completeFunctionCalls": true
+              }
+            },
+            "javascript": {
+              "inlayHints": {
+                "parameterNames": {
+                  "enabled": "all",
+                  "suppressWhenArgumentMatchesName": true
+                },
+                "parameterTypes": {
+                  "enabled": true
+                },
+                "variableTypes": {
+                  "enabled": false
+                },
+                "propertyDeclarationTypes": {
+                  "enabled": true
+                },
+                "functionLikeReturnTypes": {
+                  "enabled": true
+                },
+                "enumMemberValues": {
+                  "enabled": true
+                }
+              },
+              "preferences": {
+                "includePackageJsonAutoImports": "on"
+              },
+              "suggest": {
+                "autoImports": true,
+                "includeCompletionsForImportStatements": true,
+                "completeFunctionCalls": true
+              }
+            },
+            "vtsls": {
+              "autoUseWorkspaceTsdk": true
+            }
+          },
+          "install": "npm i -g @vtsls/language-server",
+          "installCommands": {
+            "linux": "npm i -g @vtsls/language-server",
+            "darwin": "npm i -g @vtsls/language-server",
+            "win32": "npm i -g @vtsls/language-server"
+          },
+          "docs": "https://github.com/yioneko/vtsls"
+        },
+        {
+          "label": "deno lsp",
+          "command": "deno",
+          "args": [
+            "lsp"
+          ],
+          "candidates": [
+            "~/.deno/bin/deno"
+          ],
+          "languageId": "javascript",
+          "rootMarkers": [
+            "deno.json",
+            "deno.jsonc"
+          ],
+          "initializationOptions": {
+            "enable": true,
+            "lint": true,
+            "unstable": false,
+            "suggest": {
+              "imports": {
+                "hosts": {
+                  "https://deno.land": true
+                }
+              }
+            }
+          },
+          "settings": {
+            "deno": {
+              "enable": true,
+              "lint": true
+            }
+          },
+          "install": "curl -fsSL https://deno.land/install.sh | sh",
+          "installCommands": {
+            "linux": "sh -c \"curl -fsSL https://deno.land/install.sh | sh\"",
+            "darwin": "brew install deno"
+          },
+          "docs": "https://docs.deno.com/runtime/reference/lsp_integration/"
+        }
+      ],
+      "debug": [
+        "js-debug-typescript"
+      ],
+      "tokenizer": "jsx"
+    }
+  ],
+  "themes": [],
+  "commands": [],
+  "events": [],
+  "templates": [
+    {
+      "id": "react-vite",
+      "name": "React (Vite)",
+      "description": "templates.web.reactDescription",
+      "languageId": "react-tsx",
+      "kindId": "npm",
+      "icon": "⚛",
+      "color": "#61dafb",
+      "fields": [
+        {
+          "id": "version",
+          "label": "templates.fields.version",
+          "default": "0.1.0",
+          "pattern": "\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?",
+          "patternHint": "templates.fields.versionHint",
+          "section": "templates.sections.project",
+          "mono": true
+        },
+        {
+          "id": "description",
+          "label": "templates.fields.description",
+          "placeholder": "templates.fields.descriptionPlaceholder",
+          "required": false,
+          "section": "templates.sections.project"
+        },
+        {
+          "id": "author",
+          "label": "templates.fields.author",
+          "placeholder": "templates.fields.authorPlaceholder",
+          "required": false,
+          "section": "templates.sections.project"
+        },
+        {
+          "id": "license",
+          "label": "templates.fields.license",
+          "type": "select",
+          "choices": [
+            {
+              "value": "MIT",
+              "label": "MIT"
+            },
+            {
+              "value": "Apache-2.0",
+              "label": "Apache 2.0"
+            },
+            {
+              "value": "GPL-3.0-or-later",
+              "label": "GPL 3.0"
+            },
+            {
+              "value": "BSD-3-Clause",
+              "label": "BSD 3-Clause"
+            },
+            {
+              "value": "UNLICENSED",
+              "label": "templates.fields.licenseNone"
+            }
+          ],
+          "section": "templates.sections.project"
+        },
+        {
+          "id": "pm",
+          "label": "templates.fields.packageManager",
+          "type": "select",
+          "choices": [
+            {
+              "value": "npm",
+              "label": "npm"
+            },
+            {
+              "value": "pnpm",
+              "label": "pnpm"
+            },
+            {
+              "value": "yarn",
+              "label": "Yarn"
+            },
+            {
+              "value": "bun",
+              "label": "Bun"
+            }
+          ],
+          "section": "templates.sections.build"
+        },
+        {
+          "id": "lang",
+          "label": "templates.fields.language",
+          "type": "select",
+          "choices": [
+            {
+              "value": "ts",
+              "label": "TypeScript"
+            },
+            {
+              "value": "js",
+              "label": "JavaScript"
+            }
+          ],
+          "section": "templates.sections.build"
+        },
+        {
+          "id": "tailwind",
+          "label": "Tailwind CSS",
+          "type": "toggle",
+          "default": "false",
+          "section": "templates.sections.options"
+        },
+        {
+          "id": "vitest",
+          "label": "Vitest + Testing Library",
+          "type": "toggle",
+          "default": "true",
+          "section": "templates.sections.options"
+        }
+      ],
+      "next": "templates.node.nextDev",
+      "setup": [
+        {
+          "label": "templates.tasks.installDeps",
+          "command": "{{pm}}",
+          "args": [
+            "install"
+          ]
+        }
+      ],
+      "files": [
+        {
+          "path": "package.json",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "ts"
+            },
+            {
+              "field": "tailwind",
+              "equals": "true"
+            },
+            {
+              "field": "vitest",
+              "equals": "true"
+            }
+          ],
+          "content": "{\n  \"version\": \"{{version}}\",\n  \"description\": \"{{description}}\",\n  \"author\": \"{{author}}\",\n  \"license\": \"{{license}}\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"build\": \"tsc -b && vite build\",\n    \"preview\": \"vite preview\",\n    \"test\": \"vitest\"\n  },\n  \"dependencies\": {\n    \"react\": \"^19.0.0\",\n    \"react-dom\": \"^19.0.0\"\n  },\n  \"devDependencies\": {\n    \"vite\": \"^6.0.7\",\n    \"@vitejs/plugin-react\": \"^4.3.4\",\n    \"typescript\": \"^5.7.3\",\n    \"@types/react\": \"^19.0.2\",\n    \"@types/react-dom\": \"^19.0.2\",\n    \"tailwindcss\": \"^4.0.0\",\n    \"@tailwindcss/vite\": \"^4.0.0\",\n    \"vitest\": \"^2.1.8\",\n    \"jsdom\": \"^25.0.1\",\n    \"@testing-library/react\": \"^16.1.0\",\n    \"@testing-library/dom\": \"^10.4.0\"\n  }\n}\n"
+        },
+        {
+          "path": "package.json",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "ts"
+            },
+            {
+              "field": "tailwind",
+              "equals": "true"
+            },
+            {
+              "field": "vitest",
+              "notEquals": "true"
+            }
+          ],
+          "content": "{\n  \"version\": \"{{version}}\",\n  \"description\": \"{{description}}\",\n  \"author\": \"{{author}}\",\n  \"license\": \"{{license}}\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"build\": \"tsc -b && vite build\",\n    \"preview\": \"vite preview\"\n  },\n  \"dependencies\": {\n    \"react\": \"^19.0.0\",\n    \"react-dom\": \"^19.0.0\"\n  },\n  \"devDependencies\": {\n    \"vite\": \"^6.0.7\",\n    \"@vitejs/plugin-react\": \"^4.3.4\",\n    \"typescript\": \"^5.7.3\",\n    \"@types/react\": \"^19.0.2\",\n    \"@types/react-dom\": \"^19.0.2\",\n    \"tailwindcss\": \"^4.0.0\",\n    \"@tailwindcss/vite\": \"^4.0.0\"\n  }\n}\n"
+        },
+        {
+          "path": "package.json",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "ts"
+            },
+            {
+              "field": "tailwind",
+              "notEquals": "true"
+            },
+            {
+              "field": "vitest",
+              "equals": "true"
+            }
+          ],
+          "content": "{\n  \"version\": \"{{version}}\",\n  \"description\": \"{{description}}\",\n  \"author\": \"{{author}}\",\n  \"license\": \"{{license}}\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"build\": \"tsc -b && vite build\",\n    \"preview\": \"vite preview\",\n    \"test\": \"vitest\"\n  },\n  \"dependencies\": {\n    \"react\": \"^19.0.0\",\n    \"react-dom\": \"^19.0.0\"\n  },\n  \"devDependencies\": {\n    \"vite\": \"^6.0.7\",\n    \"@vitejs/plugin-react\": \"^4.3.4\",\n    \"typescript\": \"^5.7.3\",\n    \"@types/react\": \"^19.0.2\",\n    \"@types/react-dom\": \"^19.0.2\",\n    \"vitest\": \"^2.1.8\",\n    \"jsdom\": \"^25.0.1\",\n    \"@testing-library/react\": \"^16.1.0\",\n    \"@testing-library/dom\": \"^10.4.0\"\n  }\n}\n"
+        },
+        {
+          "path": "package.json",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "ts"
+            },
+            {
+              "field": "tailwind",
+              "notEquals": "true"
+            },
+            {
+              "field": "vitest",
+              "notEquals": "true"
+            }
+          ],
+          "content": "{\n  \"version\": \"{{version}}\",\n  \"description\": \"{{description}}\",\n  \"author\": \"{{author}}\",\n  \"license\": \"{{license}}\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"build\": \"tsc -b && vite build\",\n    \"preview\": \"vite preview\"\n  },\n  \"dependencies\": {\n    \"react\": \"^19.0.0\",\n    \"react-dom\": \"^19.0.0\"\n  },\n  \"devDependencies\": {\n    \"vite\": \"^6.0.7\",\n    \"@vitejs/plugin-react\": \"^4.3.4\",\n    \"typescript\": \"^5.7.3\",\n    \"@types/react\": \"^19.0.2\",\n    \"@types/react-dom\": \"^19.0.2\"\n  }\n}\n"
+        },
+        {
+          "path": "package.json",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "js"
+            },
+            {
+              "field": "tailwind",
+              "equals": "true"
+            },
+            {
+              "field": "vitest",
+              "equals": "true"
+            }
+          ],
+          "content": "{\n  \"version\": \"{{version}}\",\n  \"description\": \"{{description}}\",\n  \"author\": \"{{author}}\",\n  \"license\": \"{{license}}\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"build\": \"vite build\",\n    \"preview\": \"vite preview\",\n    \"test\": \"vitest\"\n  },\n  \"dependencies\": {\n    \"react\": \"^19.0.0\",\n    \"react-dom\": \"^19.0.0\"\n  },\n  \"devDependencies\": {\n    \"vite\": \"^6.0.7\",\n    \"@vitejs/plugin-react\": \"^4.3.4\",\n    \"tailwindcss\": \"^4.0.0\",\n    \"@tailwindcss/vite\": \"^4.0.0\",\n    \"vitest\": \"^2.1.8\",\n    \"jsdom\": \"^25.0.1\",\n    \"@testing-library/react\": \"^16.1.0\",\n    \"@testing-library/dom\": \"^10.4.0\"\n  }\n}\n"
+        },
+        {
+          "path": "package.json",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "js"
+            },
+            {
+              "field": "tailwind",
+              "equals": "true"
+            },
+            {
+              "field": "vitest",
+              "notEquals": "true"
+            }
+          ],
+          "content": "{\n  \"version\": \"{{version}}\",\n  \"description\": \"{{description}}\",\n  \"author\": \"{{author}}\",\n  \"license\": \"{{license}}\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"build\": \"vite build\",\n    \"preview\": \"vite preview\"\n  },\n  \"dependencies\": {\n    \"react\": \"^19.0.0\",\n    \"react-dom\": \"^19.0.0\"\n  },\n  \"devDependencies\": {\n    \"vite\": \"^6.0.7\",\n    \"@vitejs/plugin-react\": \"^4.3.4\",\n    \"tailwindcss\": \"^4.0.0\",\n    \"@tailwindcss/vite\": \"^4.0.0\"\n  }\n}\n"
+        },
+        {
+          "path": "package.json",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "js"
+            },
+            {
+              "field": "tailwind",
+              "notEquals": "true"
+            },
+            {
+              "field": "vitest",
+              "equals": "true"
+            }
+          ],
+          "content": "{\n  \"version\": \"{{version}}\",\n  \"description\": \"{{description}}\",\n  \"author\": \"{{author}}\",\n  \"license\": \"{{license}}\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"build\": \"vite build\",\n    \"preview\": \"vite preview\",\n    \"test\": \"vitest\"\n  },\n  \"dependencies\": {\n    \"react\": \"^19.0.0\",\n    \"react-dom\": \"^19.0.0\"\n  },\n  \"devDependencies\": {\n    \"vite\": \"^6.0.7\",\n    \"@vitejs/plugin-react\": \"^4.3.4\",\n    \"vitest\": \"^2.1.8\",\n    \"jsdom\": \"^25.0.1\",\n    \"@testing-library/react\": \"^16.1.0\",\n    \"@testing-library/dom\": \"^10.4.0\"\n  }\n}\n"
+        },
+        {
+          "path": "package.json",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "js"
+            },
+            {
+              "field": "tailwind",
+              "notEquals": "true"
+            },
+            {
+              "field": "vitest",
+              "notEquals": "true"
+            }
+          ],
+          "content": "{\n  \"version\": \"{{version}}\",\n  \"description\": \"{{description}}\",\n  \"author\": \"{{author}}\",\n  \"license\": \"{{license}}\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"build\": \"vite build\",\n    \"preview\": \"vite preview\"\n  },\n  \"dependencies\": {\n    \"react\": \"^19.0.0\",\n    \"react-dom\": \"^19.0.0\"\n  },\n  \"devDependencies\": {\n    \"vite\": \"^6.0.7\",\n    \"@vitejs/plugin-react\": \"^4.3.4\"\n  }\n}\n"
+        },
+        {
+          "path": "vite.config.ts",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "ts"
+            },
+            {
+              "field": "tailwind",
+              "equals": "true"
+            },
+            {
+              "field": "vitest",
+              "equals": "true"
+            }
+          ],
+          "content": "/// <reference types=\"vitest/config\" />\nimport { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\nimport tailwindcss from '@tailwindcss/vite'\n\nexport default defineConfig({\n  plugins: [react(), tailwindcss()],\n  test: { environment: 'jsdom' },\n})\n"
+        },
+        {
+          "path": "vite.config.ts",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "ts"
+            },
+            {
+              "field": "tailwind",
+              "equals": "true"
+            },
+            {
+              "field": "vitest",
+              "notEquals": "true"
+            }
+          ],
+          "content": "import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\nimport tailwindcss from '@tailwindcss/vite'\n\nexport default defineConfig({\n  plugins: [react(), tailwindcss()],\n})\n"
+        },
+        {
+          "path": "vite.config.ts",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "ts"
+            },
+            {
+              "field": "tailwind",
+              "notEquals": "true"
+            },
+            {
+              "field": "vitest",
+              "equals": "true"
+            }
+          ],
+          "content": "/// <reference types=\"vitest/config\" />\nimport { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\n\nexport default defineConfig({\n  plugins: [react()],\n  test: { environment: 'jsdom' },\n})\n"
+        },
+        {
+          "path": "vite.config.ts",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "ts"
+            },
+            {
+              "field": "tailwind",
+              "notEquals": "true"
+            },
+            {
+              "field": "vitest",
+              "notEquals": "true"
+            }
+          ],
+          "content": "import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\n\nexport default defineConfig({\n  plugins: [react()],\n})\n"
+        },
+        {
+          "path": "index.html",
+          "when": {
+            "field": "lang",
+            "equals": "ts"
+          },
+          "content": "<!doctype html>\n<html lang=\"de\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.tsx\"></script>\n  </body>\n</html>\n"
+        },
+        {
+          "path": "index.html",
+          "when": {
+            "field": "lang",
+            "equals": "js"
+          },
+          "content": "<!doctype html>\n<html lang=\"de\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.jsx\"></script>\n  </body>\n</html>\n"
+        },
+        {
+          "path": "src/main.tsx",
+          "when": {
+            "field": "lang",
+            "equals": "ts"
+          },
+          "content": "import { StrictMode } from 'react'\nimport { createRoot } from 'react-dom/client'\nimport './index.css'\nimport App from './App'\n\ncreateRoot(document.getElementById('root')!).render(\n  <StrictMode>\n    <App />\n  </StrictMode>,\n)\n"
+        },
+        {
+          "path": "src/App.tsx",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "ts"
+            },
+            {
+              "field": "tailwind",
+              "equals": "true"
+            }
+          ],
+          "content": "import { useState } from 'react'\n\nexport default function App() {\n  const [count, setCount] = useState(0)\n  return (\n    <main className=\"grid min-h-screen place-items-center gap-4\">\n      <h1 className=\"text-3xl font-bold\">{{name}}</h1>\n      <button onClick={() => setCount((c) => c + 1)}>Klicks: {count}</button>\n    </main>\n  )\n}\n"
+        },
+        {
+          "path": "src/App.tsx",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "ts"
+            },
+            {
+              "field": "tailwind",
+              "notEquals": "true"
+            }
+          ],
+          "content": "import { useState } from 'react'\n\nexport default function App() {\n  const [count, setCount] = useState(0)\n  return (\n    <main>\n      <h1>{{name}}</h1>\n      <button onClick={() => setCount((c) => c + 1)}>Klicks: {count}</button>\n    </main>\n  )\n}\n"
+        },
+        {
+          "path": "src/index.css",
+          "when": {
+            "field": "tailwind",
+            "equals": "true"
+          },
+          "content": "@import \"tailwindcss\";\n"
+        },
+        {
+          "path": "src/index.css",
+          "when": {
+            "field": "tailwind",
+            "notEquals": "true"
+          },
+          "content": ":root {\n  font-family: system-ui, sans-serif;\n  color-scheme: light dark;\n}\n\nbody {\n  margin: 0;\n  display: grid;\n  place-items: center;\n  min-height: 100vh;\n}\n"
+        },
+        {
+          "path": ".gitignore",
+          "content": "node_modules/\ndist/\n.env\n*.log\n.astro/\n.angular/\n.lumen/\n"
+        },
+        {
+          "path": "README.md",
+          "when": {
+            "field": "vitest",
+            "equals": "true"
+          },
+          "content": "# {{name}}\n\n{{description}}\n\n```bash\n{{pm}} install\n{{pm}} run dev\n{{pm}} run build\n{{pm}} run test\n```\n"
+        },
+        {
+          "path": "README.md",
+          "when": {
+            "field": "vitest",
+            "notEquals": "true"
+          },
+          "content": "# {{name}}\n\n{{description}}\n\n```bash\n{{pm}} install\n{{pm}} run dev\n{{pm}} run build\n```\n"
+        },
+        {
+          "path": "tsconfig.json",
+          "when": {
+            "field": "lang",
+            "equals": "ts"
+          },
+          "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES2022\",\n    \"lib\": [\n      \"ES2023\",\n      \"DOM\",\n      \"DOM.Iterable\"\n    ],\n    \"module\": \"ESNext\",\n    \"moduleResolution\": \"bundler\",\n    \"jsx\": \"react-jsx\",\n    \"strict\": true,\n    \"noEmit\": true,\n    \"skipLibCheck\": true,\n    \"types\": [\n      \"vite/client\"\n    ]\n  },\n  \"include\": [\n    \"src\"\n  ]\n}\n"
+        },
+        {
+          "path": "src/App.test.tsx",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "ts"
+            },
+            {
+              "field": "vitest",
+              "equals": "true"
+            }
+          ],
+          "content": "import { render, screen } from '@testing-library/react'\nimport { expect, test } from 'vitest'\nimport App from './App'\n\ntest('zeigt den Titel', () => {\n  render(<App />)\n  expect(screen.getByText('{{name}}')).toBeDefined()\n})\n"
+        },
+        {
+          "path": "vite.config.js",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "js"
+            },
+            {
+              "field": "tailwind",
+              "equals": "true"
+            },
+            {
+              "field": "vitest",
+              "equals": "true"
+            }
+          ],
+          "content": "/// <reference types=\"vitest/config\" />\nimport { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\nimport tailwindcss from '@tailwindcss/vite'\n\nexport default defineConfig({\n  plugins: [react(), tailwindcss()],\n  test: { environment: 'jsdom' },\n})\n"
+        },
+        {
+          "path": "vite.config.js",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "js"
+            },
+            {
+              "field": "tailwind",
+              "equals": "true"
+            },
+            {
+              "field": "vitest",
+              "notEquals": "true"
+            }
+          ],
+          "content": "import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\nimport tailwindcss from '@tailwindcss/vite'\n\nexport default defineConfig({\n  plugins: [react(), tailwindcss()],\n})\n"
+        },
+        {
+          "path": "vite.config.js",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "js"
+            },
+            {
+              "field": "tailwind",
+              "notEquals": "true"
+            },
+            {
+              "field": "vitest",
+              "equals": "true"
+            }
+          ],
+          "content": "/// <reference types=\"vitest/config\" />\nimport { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\n\nexport default defineConfig({\n  plugins: [react()],\n  test: { environment: 'jsdom' },\n})\n"
+        },
+        {
+          "path": "vite.config.js",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "js"
+            },
+            {
+              "field": "tailwind",
+              "notEquals": "true"
+            },
+            {
+              "field": "vitest",
+              "notEquals": "true"
+            }
+          ],
+          "content": "import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\n\nexport default defineConfig({\n  plugins: [react()],\n})\n"
+        },
+        {
+          "path": "src/main.jsx",
+          "when": {
+            "field": "lang",
+            "equals": "js"
+          },
+          "content": "import { StrictMode } from 'react'\nimport { createRoot } from 'react-dom/client'\nimport './index.css'\nimport App from './App'\n\ncreateRoot(document.getElementById('root')).render(\n  <StrictMode>\n    <App />\n  </StrictMode>,\n)\n"
+        },
+        {
+          "path": "src/App.jsx",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "js"
+            },
+            {
+              "field": "tailwind",
+              "equals": "true"
+            }
+          ],
+          "content": "import { useState } from 'react'\n\nexport default function App() {\n  const [count, setCount] = useState(0)\n  return (\n    <main className=\"grid min-h-screen place-items-center gap-4\">\n      <h1 className=\"text-3xl font-bold\">{{name}}</h1>\n      <button onClick={() => setCount((c) => c + 1)}>Klicks: {count}</button>\n    </main>\n  )\n}\n"
+        },
+        {
+          "path": "src/App.jsx",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "js"
+            },
+            {
+              "field": "tailwind",
+              "notEquals": "true"
+            }
+          ],
+          "content": "import { useState } from 'react'\n\nexport default function App() {\n  const [count, setCount] = useState(0)\n  return (\n    <main>\n      <h1>{{name}}</h1>\n      <button onClick={() => setCount((c) => c + 1)}>Klicks: {count}</button>\n    </main>\n  )\n}\n"
+        },
+        {
+          "path": "src/App.test.jsx",
+          "when": [
+            {
+              "field": "lang",
+              "equals": "js"
+            },
+            {
+              "field": "vitest",
+              "equals": "true"
+            }
+          ],
+          "content": "import { render, screen } from '@testing-library/react'\nimport { expect, test } from 'vitest'\nimport App from './App'\n\ntest('zeigt den Titel', () => {\n  render(<App />)\n  expect(screen.getByText('{{name}}')).toBeDefined()\n})\n"
+        }
+      ],
+      "open": "{{#if lang=js}}src/App.jsx{{/if}}{{#unless lang=js}}src/App.tsx{{/unless}}"
+    }
+  ],
+  "projectKinds": [],
+  "snippets": []
+}

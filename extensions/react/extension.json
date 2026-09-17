@@ -1,0 +1,17 @@
+{
+  "id": "ext.react",
+  "name": "React",
+  "version": "1.0.1",
+  "description": "JSX- und TSX-Hervorhebung mit Komponenten- statt Element-Farbe, alle Hooks als Vervollständigung und 16 Snippets von useState bis Context.",
+  "author": "Lumen",
+  "icon": "⚛",
+  "color": "#61dafb",
+  "category": "language",
+  "license": "MIT",
+  "keywords": [
+    "react",
+    "react-tsx",
+    "react-jsx"
+  ],
+  "minAppVersion": "0.3.0"
+}

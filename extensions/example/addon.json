@@ -1,0 +1,27 @@
+{
+  "languages": [
+    {
+      "id": "lumenlog",
+      "name": "Lumen-Log",
+      "extensions": [".lumenlog"],
+      "icon": "Lg",
+      "color": "#4f5bd5",
+      "comments": { "line": "#" },
+      "keywords": ["trace", "debug", "info", "warn", "error", "fatal"],
+      "constants": ["true", "false", "null"],
+      "strings": [{ "start": "\"", "escapes": true }],
+      "numbers": "^\\d+(?:\\.\\d+)?",
+      "operators": "^(?:=>|[=<>:+-])",
+      "snippets": [
+        { "label": "info", "detail": "Info-Zeile", "body": "info $0" },
+        { "label": "error", "detail": "Fehlerzeile", "body": "error $0" }
+      ]
+    }
+  ],
+  "snippets": [],
+  "themes": [],
+  "commands": [],
+  "events": [],
+  "templates": [],
+  "projectKinds": []
+}

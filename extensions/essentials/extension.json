@@ -1,0 +1,21 @@
+{
+  "id": "ext.essentials",
+  "name": "Essentials",
+  "version": "1.0.1",
+  "description": "JSON, YAML, TOML, Markdown, Shell und SQL — die üblichen Begleitdateien.",
+  "author": "Lumen",
+  "icon": "⌘",
+  "color": "#cbcb41",
+  "category": "language",
+  "license": "MIT",
+  "keywords": [
+    "essentials",
+    "json",
+    "yaml",
+    "toml",
+    "markdown",
+    "shell",
+    "sql"
+  ],
+  "minAppVersion": "0.3.0"
+}

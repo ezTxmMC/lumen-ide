@@ -1,0 +1,464 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------ *
+ * Design-Tokens
+ * Die `--c-*`-Variablen setzt das Theme-System zur Laufzeit (core/theme.ts).
+ * Hier werden sie nur als Tailwind-Utilities verfügbar gemacht.
+ * ------------------------------------------------------------------ */
+
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-bg-elevated);
+  --color-overlay: var(--c-bg-overlay);
+  --color-input: var(--c-bg-input);
+  --color-hover: var(--c-bg-hover);
+  --color-active: var(--c-bg-active);
+  --color-edge: var(--c-border);
+  --color-edge-strong: var(--c-border-strong);
+  --color-fg: var(--c-text);
+  --color-muted: var(--c-text-muted);
+  --color-subtle: var(--c-text-subtle);
+  --color-accent: var(--c-accent);
+  --color-accent-fg: var(--c-accent-text);
+  --color-ok: var(--c-success);
+  --color-warn: var(--c-warning);
+  --color-bad: var(--c-danger);
+
+  --radius-lumen: var(--radius);
+  --radius-lumen-sm: var(--radius-sm);
+  --radius-lumen-lg: var(--radius-lg);
+
+  --font-mono: var(--font-mono);
+}
+
+/* Startwerte, damit vor dem ersten Theme-Apply nichts weiß aufblitzt. */
+:root {
+  --c-bg: #0e1013;
+  --c-bg-elevated: #14171c;
+  --c-bg-overlay: #1a1e25;
+  --c-bg-input: #1b1f26;
+  --c-bg-hover: #1e232b;
+  --c-bg-active: #262c36;
+  --c-border: #232830;
+  --c-border-strong: #333a45;
+  --c-text: #e4e7ec;
+  --c-text-muted: #9aa3b0;
+  --c-text-subtle: #646d7a;
+  --c-accent: #7c8cff;
+  --c-accent-rgb: 124 140 255;
+  --c-accent-text: #0b0d10;
+  --c-success: #4ade80;
+  --c-warning: #fbbf24;
+  --c-danger: #f87171;
+  --c-selection: #2d3550;
+  --c-line-highlight: #16191f;
+  --c-cursor: #7c8cff;
+  --c-gutter: #4a525e;
+  --c-scrollbar: #333a45;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-lg: 14px;
+  /* Bewegung: Dauern setzt applyEffects (skaliert mit der Geschwindigkeit), Kurven stehen hier. */
+  --duration-fast: 0.09s;
+  --duration: 0.16s;
+  --duration-slow: 0.28s;
+  --duration-exit: 0.13s;
+  /* Einblenden und Bewegen: schneller Start, langer weicher Auslauf. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Ausblenden: beschleunigt aus dem Bild. */
+  --ease-in: cubic-bezier(0.5, 0, 0.75, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* Federnd mit leichtem Überschwingen. */
+  --ease-spring: cubic-bezier(0.34, 1.36, 0.64, 1);
+  /* Große Auftritte (Dialoge, Paletten); „Reich“ lässt sie federn. */
+  --ease-emphasized: var(--ease-out);
+  --blur: 14px;
+  --panel-alpha: 1;
+  --row-height: 26px;
+  --pad: 8px;
+  --font-size: 13px;
+  --line-height: 1.6;
+  --ligatures: normal;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+
+  color-scheme: dark;
+}
+
+:root[data-theme-type='light'] { color-scheme: light; }
+:root[data-motion='rich'] { --ease-emphasized: var(--ease-spring); }
+
+/* ------------------------------------------------------------------ *
+ * Basis
+ * ------------------------------------------------------------------ */
+
+@layer base {
+  * { min-width: 0; }
+
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  body {
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Inter', sans-serif;
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: var(--c-selection);
+  }
+
+  button, input, textarea, select {
+    font: inherit;
+    color: inherit;
+  }
+
+  button { cursor: pointer; background: none; border: none; padding: 0; }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--c-scrollbar);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 8px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background-clip: content-box; background-color: var(--c-text-subtle); }
+  ::-webkit-scrollbar-corner { background: transparent; }
+
+  :focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: 1px;
+    border-radius: var(--radius-sm);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Effekte — schaltbar über data-Attribute am <html>
+ * ------------------------------------------------------------------ */
+
+@layer components {
+  .lm-transition {
+    transition-property: background-color, color, border-color, opacity, transform, box-shadow;
+    transition-duration: var(--duration);
+    transition-timing-function: var(--ease-out);
+  }
+
+  .lm-glass {
+    background: color-mix(in srgb, var(--c-bg-overlay) calc(var(--panel-alpha) * 100%), transparent);
+  }
+
+  :root[data-glass='true'] .lm-glass {
+    backdrop-filter: blur(var(--blur)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(140%);
+  }
+
+  :root[data-shadows='true'] .lm-shadow {
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 20%),
+      0 16px 48px -12px rgb(0 0 0 / 45%);
+  }
+
+  :root[data-glow='true'] .lm-glow {
+    box-shadow: 0 0 0 1px rgb(var(--c-accent-rgb) / 35%),
+                0 0 18px -4px rgb(var(--c-accent-rgb) / 45%);
+  }
+
+  :root[data-glow='true'] .lm-glow-text {
+    text-shadow: 0 0 14px rgb(var(--c-accent-rgb) / 55%);
+  }
+
+  /* Animationen global abschaltbar. */
+  :root[data-animations='false'] *,
+  :root[data-animations='false'] *::before,
+  :root[data-animations='false'] *::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0s !important;
+  }
+
+  .lm-row {
+    height: var(--row-height);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-inline: 8px;
+    border-radius: var(--radius-sm);
+    cursor: default;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .lm-scroll-fade {
+    mask-image: linear-gradient(to bottom, transparent 0, #000 8px, #000 calc(100% - 8px), transparent 100%);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Animationen
+ * Einblenden mit `--ease-out`, Ausblenden kürzer mit `--ease-in`.
+ * Nur `opacity` und `transform` — beides läuft auf der GPU.
+ * ------------------------------------------------------------------ */
+
+@keyframes lm-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes lm-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Paletten, Menüs, Popover: fallen leicht von oben herein. */
+@keyframes lm-pop-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.975); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes lm-pop-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(-4px) scale(0.985); }
+}
+
+/* Große Dialoge: steigen aus der Mitte auf. */
+@keyframes lm-dialog-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.965); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes lm-dialog-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(6px) scale(0.98); }
+}
+
+@keyframes lm-slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes lm-slide-right {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes lm-tooltip-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes lm-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes lm-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+.lm-anim-fade { animation: lm-fade-in var(--duration) var(--ease-out) both; }
+.lm-anim-pop { transform-origin: top center; animation: lm-pop-in var(--duration-slow) var(--ease-emphasized) both; }
+.lm-anim-dialog { animation: lm-dialog-in var(--duration-slow) var(--ease-emphasized) both; }
+.lm-anim-up { animation: lm-slide-up var(--duration-slow) var(--ease-out) both; }
+.lm-anim-right { animation: lm-slide-right var(--duration) var(--ease-out) both; }
+.lm-anim-spin { animation: lm-spin 0.9s linear infinite; }
+.lm-anim-pulse { animation: lm-pulse 1.4s var(--ease-in-out) infinite; }
+
+/* ------------------------------------------------------------------ *
+ * CodeMirror-Feinschliff
+ * ------------------------------------------------------------------ */
+
+.cm-editor { height: 100%; background: transparent; }
+.cm-editor.cm-focused { outline: none; }
+.cm-scroller::-webkit-scrollbar-thumb { background-color: var(--c-scrollbar); }
+
+.cm-lineNumbers .cm-gutterElement {
+  transition: color var(--duration) var(--ease-out);
+}
+
+/* ------------------------------------------------------------------ *
+ * Range-Slider
+ * ------------------------------------------------------------------ */
+
+.lm-range {
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--c-bg-active);
+  outline: none;
+}
+
+.lm-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--c-accent);
+  border: 2px solid var(--c-bg-elevated);
+  cursor: grab;
+  transition: transform var(--duration) var(--ease-spring);
+}
+
+.lm-range::-webkit-slider-thumb:hover { transform: scale(1.18); }
+.lm-range::-webkit-slider-thumb:active { cursor: grabbing; transform: scale(1.05); }
+
+/* Einrückungshilfslinien: das Streifenmuster endet an der Einrückungsbreite,
+   die das ViewPlugin als `--indent-w` pro Zeile setzt. */
+:root[data-indent-guides='true'] .cm-line[data-indent] {
+  background-image: repeating-linear-gradient(
+    to right,
+    color-mix(in srgb, var(--c-text-subtle) 32%, transparent) 0 1px,
+    transparent 1px 1ch
+  );
+  background-repeat: no-repeat;
+  background-size: var(--indent-w, 0) 100%;
+}
+
+/* ------------------------------------------------------------------ *
+ * Weitere Animationen
+ * `data-motion` am <html>: none · reduced (nur Überblendungen) · normal · rich
+ * ------------------------------------------------------------------ */
+
+@keyframes lm-panel-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes lm-tab-in {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes lm-indicator-in {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes lm-toast-in {
+  from { opacity: 0; transform: translateX(calc(100% + 16px)); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes lm-toast-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateX(28px) scale(0.96); }
+}
+
+@keyframes lm-expand {
+  from { opacity: 0; transform: translateY(-3px); clip-path: inset(0 0 100% 0); }
+  to { opacity: 1; transform: none; clip-path: inset(0 0 0 0); }
+}
+
+@keyframes lm-shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+
+@keyframes lm-attention {
+  0%, 100% { transform: none; }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+@keyframes lm-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(var(--c-accent-rgb) / 0%); }
+  50% { box-shadow: 0 0 0 4px rgb(var(--c-accent-rgb) / 22%); }
+}
+
+.lm-anim-panel { animation: lm-panel-up var(--duration-slow) var(--ease-out) both; }
+.lm-anim-toast { animation: lm-toast-in var(--duration-slow) var(--ease-spring) both; }
+.lm-anim-expand { animation: lm-expand var(--duration) var(--ease-out) both; }
+.lm-anim-attention { animation: lm-attention 0.3s var(--ease-in-out) 2; }
+.lm-anim-glow { animation: lm-glow-pulse 1.6s var(--ease-in-out) infinite; }
+
+.lm-tab { animation: lm-tab-in var(--duration) var(--ease-out) both; }
+.lm-tab-indicator { transform-origin: center; animation: lm-indicator-in var(--duration-slow) var(--ease-out) both; }
+
+.lm-shimmer {
+  background-image: linear-gradient(90deg, transparent 0%, rgb(var(--c-accent-rgb) / 18%) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: lm-shimmer 1.4s linear infinite;
+}
+
+/* Gleitender Aktiv-Strich der Aktivitätsleiste. */
+.lm-indicator {
+  transition:
+    top var(--duration-slow) var(--ease-spring),
+    height var(--duration-slow) var(--ease-spring),
+    opacity var(--duration) var(--ease-out);
+}
+
+/* Tastendruck-Feedback und kleine Icon-Bewegung. */
+.lm-press { transition: transform var(--duration-fast) var(--ease-out); }
+.lm-press:active { transform: scale(0.94); }
+.lm-press:hover .lm-icon-pop { transform: scale(1.08); }
+.lm-icon-pop { transition: transform var(--duration) var(--ease-spring); }
+
+/* Ausblenden (usePresence): Overlay blendet aus, sein Inhalt nimmt den Rückweg. */
+.lm-closing { pointer-events: none; animation: lm-fade-out var(--duration-exit) var(--ease-in) both; }
+.lm-closing > .lm-anim-pop { animation: lm-pop-out var(--duration-exit) var(--ease-in) both; }
+.lm-closing > .lm-anim-dialog { animation: lm-dialog-out var(--duration-exit) var(--ease-in) both; }
+.lm-anim-toast.lm-closing { animation: lm-toast-out var(--duration-exit) var(--ease-in) both; }
+
+/* Popups des Editors: Vervollständigung, Hover, Diagnosen. */
+.cm-tooltip.cm-tooltip-autocomplete,
+.cm-tooltip.cm-tooltip-hover,
+.cm-tooltip.cm-tooltip-lint {
+  transform-origin: top left;
+  animation: lm-tooltip-in var(--duration-fast) var(--ease-out) both;
+}
+.cm-tooltip-above.cm-tooltip-autocomplete,
+.cm-tooltip-above.cm-tooltip-hover { transform-origin: bottom left; }
+
+/* Reich: gestaffelte Listen, Hover-Anheben, federnde Dialoge. */
+:root[data-motion='rich'] .lm-stagger > * { animation: lm-slide-up var(--duration-slow) var(--ease-spring) both; }
+:root[data-motion='rich'] .lm-stagger > *:nth-child(2) { animation-delay: calc(var(--duration-fast) * 0.4); }
+:root[data-motion='rich'] .lm-stagger > *:nth-child(3) { animation-delay: calc(var(--duration-fast) * 0.8); }
+:root[data-motion='rich'] .lm-stagger > *:nth-child(4) { animation-delay: calc(var(--duration-fast) * 1.2); }
+:root[data-motion='rich'] .lm-stagger > *:nth-child(5) { animation-delay: calc(var(--duration-fast) * 1.6); }
+:root[data-motion='rich'] .lm-stagger > *:nth-child(6) { animation-delay: calc(var(--duration-fast) * 2); }
+:root[data-motion='rich'] .lm-stagger > *:nth-child(n+7) { animation-delay: calc(var(--duration-fast) * 2.4); }
+:root[data-motion='rich'] .lm-lift { transition: transform var(--duration) var(--ease-spring), box-shadow var(--duration) var(--ease-out); }
+:root[data-motion='rich'] .lm-lift:hover { transform: translateY(-2px); box-shadow: 0 8px 22px -10px rgb(0 0 0 / 45%); }
+
+/* Reduziert (auch bei „Bewegung reduzieren“ im System): nur Überblendungen. */
+:root[data-motion='reduced'] :is(.lm-anim-pop, .lm-anim-dialog, .lm-anim-up, .lm-anim-right, .lm-anim-panel, .lm-anim-toast, .lm-anim-expand, .lm-tab, .cm-tooltip) { animation-name: lm-fade-in; }
+:root[data-motion='reduced'] .lm-closing > :is(.lm-anim-pop, .lm-anim-dialog),
+:root[data-motion='reduced'] .lm-anim-toast.lm-closing { animation-name: lm-fade-out; }
+:root[data-motion='reduced'] :is(.lm-press:active, .lm-press:hover .lm-icon-pop) { transform: none; }
+:root[data-motion='reduced'] .lm-anim-attention { animation: none; }
+
+/* Weicher Übergang beim Theme-Wechsel (Klasse wird kurz gesetzt). */
+:root.lm-theme-transition,
+:root.lm-theme-transition *,
+:root.lm-theme-transition *::before,
+:root.lm-theme-transition *::after {
+  transition:
+    background-color var(--duration-slow) var(--ease-in-out),
+    border-color var(--duration-slow) var(--ease-in-out),
+    color var(--duration-slow) var(--ease-in-out),
+    fill var(--duration-slow) var(--ease-in-out) !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * Editorgruppen, Größenänderung, Faltung
+ * ------------------------------------------------------------------ */
+
+body.lm-resizing, body.lm-resizing * { cursor: col-resize !important; user-select: none !important; }
+body.lm-resizing-row, body.lm-resizing-row * { cursor: row-resize !important; user-select: none !important; }
+
+.lm-group-inactive .cm-editor { opacity: 0.86; transition: opacity var(--duration) var(--ease-out); }
+.lm-group-inactive:hover .cm-editor { opacity: 0.95; }
+
+.lm-fold-placeholder { cursor: pointer; transition: background-color var(--duration) var(--ease-out), color var(--duration) var(--ease-out); }
+.lm-fold-placeholder:hover { background-color: var(--c-accent) !important; color: var(--c-accent-text) !important; }
+
+/* Faltmarken nur beim Überfahren (geschlossene bleiben sichtbar). */
+.lm-fold-hover .cm-foldGutter .lm-fold-open { opacity: 0; }
+.lm-fold-hover .cm-gutters:hover .cm-foldGutter .lm-fold-open { opacity: 0.55; }

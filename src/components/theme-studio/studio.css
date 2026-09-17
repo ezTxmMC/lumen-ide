@@ -1,0 +1,107 @@
+/* Theme-Studio und Themes-Dialog: Stile, die sich nicht gut als Utility schreiben lassen. */
+
+/* Vorschau: anklickbare Elemente und Hervorhebung der gerade überfahrenen Farbe. */
+.lm-ts-stage [data-c] { cursor: pointer; }
+
+@keyframes lm-ts-flash {
+  0%, 100% { outline-color: #ff3ea5; box-shadow: 0 0 0 3px rgb(255 62 165 / 25%); }
+  50% { outline-color: #ffe14d; box-shadow: 0 0 0 5px rgb(255 225 77 / 30%); }
+}
+
+.lm-ts-hit {
+  outline: 2px solid #ff3ea5 !important;
+  outline-offset: 1px;
+  border-radius: 3px;
+  animation: lm-ts-flash 1.1s ease-in-out infinite !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* Karo-Hintergrund für Alpha und den Kontext „transparent“. */
+.lm-ts-checker {
+  background-color: #fff;
+  background-image: conic-gradient(#0000001a 0 25%, transparent 0 50%, #0000001a 0 75%, transparent 0);
+  background-size: 14px 14px;
+}
+
+.lm-ts-checker-sm {
+  background-image: conic-gradient(#8884 0 25%, transparent 0 50%, #8884 0 75%, transparent 0);
+  background-size: 8px 8px;
+}
+
+/* CodeMirror-Vorschau: Cursor auch ohne Fokus zeigen, keine riesige Leerfläche unten. */
+.lm-ts-code .cm-cursorLayer .cm-cursor { display: block; }
+.lm-ts-code .cm-content { padding-bottom: 12px !important; }
+
+/* Farbfeld kurz aufleuchten lassen, wenn es aus der Vorschau gewählt wurde. */
+@keyframes lm-ts-picked {
+  0% { background-color: rgb(var(--c-accent-rgb) / 35%); }
+  100% { background-color: transparent; }
+}
+.lm-ts-picked { animation: lm-ts-picked 1.2s ease-out both; }
+
+/* Vergleich per Schieberegler. */
+.lm-ts-compare-range {
+  appearance: none;
+  background: transparent;
+  cursor: ew-resize;
+}
+.lm-ts-compare-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 22px;
+  height: 100vh;
+  background: transparent;
+}
+
+/* Sanfte Überblendung beim Theme-Wechsel (View Transitions). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: calc(var(--duration-slow) * 1.4);
+  animation-timing-function: ease;
+}
+
+/* Theme-Karten: Anheben beim Überfahren, Aktionen einblenden. */
+.lm-ts-card:hover { transform: translateY(-2px); }
+:root[data-motion='reduced'] .lm-ts-card:hover,
+:root[data-motion='none'] .lm-ts-card:hover { transform: none; }
+
+/* ------------------------------------------------------------------ *
+ * Animations-Demo: zeigt die gewählte Stufe unabhängig von der globalen.
+ * ------------------------------------------------------------------ */
+
+@keyframes lm-ts-spring {
+  0% { opacity: 0; transform: translateY(14px) scale(0.94); }
+  60% { opacity: 1; transform: translateY(-3px) scale(1.02); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes lm-ts-bar {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+.lm-ts-demo[data-level='reduced'] .lm-ts-demo-item {
+  animation: lm-fade-in var(--duration) ease both;
+}
+
+.lm-ts-demo[data-level='normal'] .lm-ts-demo-item {
+  animation: lm-slide-up var(--duration-slow) cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.lm-ts-demo[data-level='rich'] .lm-ts-demo-item {
+  animation: lm-ts-spring calc(var(--duration-slow) * 1.5) cubic-bezier(0.3, 1.4, 0.5, 1) both;
+  animation-delay: calc(var(--duration) * var(--i, 0) * 0.5);
+}
+
+.lm-ts-demo[data-level='rich'] .lm-ts-demo-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px -8px rgb(0 0 0 / 45%);
+}
+
+.lm-ts-demo .lm-ts-demo-bar { transform-origin: left; }
+.lm-ts-demo[data-level='normal'] .lm-ts-demo-bar,
+.lm-ts-demo[data-level='rich'] .lm-ts-demo-bar {
+  animation: lm-ts-bar calc(var(--duration-slow) * 2) cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.lm-ts-demo[data-level='off'] * { animation: none !important; transition: none !important; }

@@ -1,0 +1,403 @@
+{
+  "languages": [
+    {
+      "id": "cpp",
+      "name": "C++",
+      "extensions": [
+        ".cpp",
+        ".cc",
+        ".cxx",
+        ".hpp",
+        ".hh",
+        ".hxx",
+        ".ipp",
+        ".c++"
+      ],
+      "icon": "++",
+      "color": "#00599c",
+      "capitalizedAsType": true,
+      "comments": {
+        "line": "//",
+        "block": [
+          "/*",
+          "*/"
+        ]
+      },
+      "controls": [
+        "if",
+        "else",
+        "for",
+        "while",
+        "do",
+        "switch",
+        "case",
+        "default",
+        "break",
+        "continue",
+        "return",
+        "goto",
+        "try",
+        "catch",
+        "throw",
+        "co_await",
+        "co_return",
+        "co_yield"
+      ],
+      "keywords": [
+        "struct",
+        "union",
+        "enum",
+        "typedef",
+        "sizeof",
+        "static",
+        "extern",
+        "const",
+        "volatile",
+        "register",
+        "inline",
+        "restrict",
+        "_Atomic",
+        "_Static_assert",
+        "alignof",
+        "alignas",
+        "typeof",
+        "class",
+        "namespace",
+        "template",
+        "typename",
+        "using",
+        "public",
+        "private",
+        "protected",
+        "virtual",
+        "override",
+        "final",
+        "explicit",
+        "friend",
+        "mutable",
+        "operator",
+        "new",
+        "delete",
+        "this",
+        "constexpr",
+        "consteval",
+        "constinit",
+        "noexcept",
+        "decltype",
+        "concept",
+        "requires",
+        "export",
+        "module",
+        "import",
+        "static_cast",
+        "dynamic_cast",
+        "const_cast",
+        "reinterpret_cast",
+        "thread_local"
+      ],
+      "types": [
+        "void",
+        "char",
+        "short",
+        "int",
+        "long",
+        "float",
+        "double",
+        "signed",
+        "unsigned",
+        "size_t",
+        "ssize_t",
+        "ptrdiff_t",
+        "bool",
+        "_Bool",
+        "FILE",
+        "int8_t",
+        "int16_t",
+        "int32_t",
+        "int64_t",
+        "uint8_t",
+        "uint16_t",
+        "uint32_t",
+        "uint64_t",
+        "intptr_t",
+        "uintptr_t",
+        "wchar_t",
+        "time_t",
+        "clock_t",
+        "off_t",
+        "pid_t",
+        "va_list",
+        "errno_t",
+        "pthread_t",
+        "pthread_mutex_t",
+        "atomic_int",
+        "jmp_buf",
+        "auto",
+        "string",
+        "wstring",
+        "vector",
+        "map",
+        "unordered_map",
+        "set",
+        "unordered_set",
+        "array",
+        "pair",
+        "tuple",
+        "optional",
+        "variant",
+        "span",
+        "unique_ptr",
+        "shared_ptr",
+        "weak_ptr",
+        "function",
+        "string_view",
+        "byte",
+        "deque",
+        "list",
+        "queue",
+        "stack",
+        "priority_queue",
+        "multimap",
+        "multiset",
+        "expected",
+        "any",
+        "bitset",
+        "atomic",
+        "mutex",
+        "thread",
+        "jthread",
+        "future",
+        "promise",
+        "chrono",
+        "ostream",
+        "istream",
+        "stringstream",
+        "ifstream",
+        "ofstream",
+        "size_t",
+        "ranges",
+        "views",
+        "initializer_list",
+        "exception",
+        "runtime_error"
+      ],
+      "builtins": [
+        "std",
+        "cout",
+        "cin",
+        "cerr",
+        "endl",
+        "printf",
+        "make_unique",
+        "make_shared",
+        "move",
+        "forward",
+        "swap",
+        "sort",
+        "find",
+        "begin",
+        "end",
+        "size",
+        "format"
+      ],
+      "constants": [
+        "nullptr",
+        "true",
+        "false",
+        "NULL"
+      ],
+      "strings": [
+        {
+          "start": "\"",
+          "escapes": true
+        },
+        {
+          "start": "'",
+          "escapes": true
+        }
+      ],
+      "meta": "^#\\s*[a-z]+",
+      "snippets": [
+        {
+          "label": "main",
+          "detail": "main-Funktion",
+          "body": "#include <iostream>\n\nint main() {\n  std::cout << \"$0\" << std::endl;\n  return 0;\n}"
+        },
+        {
+          "label": "class",
+          "detail": "Klasse",
+          "body": "class ${Name} {\npublic:\n  ${Name}();\n\nprivate:\n  $0\n};"
+        },
+        {
+          "label": "ns",
+          "detail": "Namespace",
+          "body": "namespace ${name} {\n$0\n}  // namespace ${name}"
+        },
+        {
+          "label": "struct",
+          "detail": "Struct",
+          "body": "struct ${Name} {\n  ${int} ${feld}{};\n};$0"
+        },
+        {
+          "label": "enum",
+          "detail": "enum class",
+          "body": "enum class ${Name} {\n  ${Eins},\n  ${Zwei},\n};$0"
+        },
+        {
+          "label": "tmpl",
+          "detail": "Template-Funktion",
+          "body": "template <typename ${T}>\n${T} ${name}(${T} ${wert}) {\n  $0\n}"
+        },
+        {
+          "label": "concept",
+          "detail": "Concept",
+          "body": "template <typename ${T}>\nconcept ${Name} = requires(${T} ${t}) {\n  $0\n};"
+        },
+        {
+          "label": "uptr",
+          "detail": "unique_ptr",
+          "body": "auto ${name} = std::make_unique<${Typ}>($0);"
+        },
+        {
+          "label": "vec",
+          "detail": "vector",
+          "body": "std::vector<${int}> ${name}{$0};"
+        },
+        {
+          "label": "forr",
+          "detail": "Range-based for",
+          "body": "for (const auto& ${element} : ${liste}) {\n  $0\n}"
+        },
+        {
+          "label": "lambda",
+          "detail": "Lambda",
+          "body": "auto ${name} = [${&}](${auto x}) {\n  $0\n};"
+        },
+        {
+          "label": "try",
+          "detail": "try/catch",
+          "body": "try {\n  $0\n} catch (const std::exception& e) {\n  std::cerr << e.what() << '\\n';\n}"
+        },
+        {
+          "label": "guard",
+          "detail": "Header-Guard",
+          "body": "#pragma once\n\n$0"
+        }
+      ],
+      "run": [
+        {
+          "label": "g++ (C++20)",
+          "command": "g++",
+          "args": [
+            "-std=c++20",
+            "-Wall",
+            "${file}",
+            "-o",
+            "${fileStem}"
+          ],
+          "then": {
+            "command": "./${fileStem}",
+            "args": []
+          }
+        },
+        {
+          "label": "clang++ (C++20)",
+          "command": "clang++",
+          "args": [
+            "-std=c++20",
+            "-Wall",
+            "${file}",
+            "-o",
+            "${fileStem}"
+          ],
+          "then": {
+            "command": "./${fileStem}",
+            "args": []
+          }
+        },
+        {
+          "label": "cmake --build",
+          "command": "cmake",
+          "args": [
+            "--build",
+            "build"
+          ]
+        }
+      ],
+      "lsp": [
+        {
+          "label": "clangd",
+          "command": "clangd",
+          "args": [
+            "--background-index",
+            "--limit-results=0",
+            "--clang-tidy",
+            "--header-insertion=iwyu",
+            "--completion-style=detailed",
+            "--function-arg-placeholders=1",
+            "--all-scopes-completion",
+            "--pch-storage=memory",
+            "--log=error"
+          ],
+          "initializationOptions": {
+            "fallbackFlags": [
+              "-Wall",
+              "-Wextra"
+            ]
+          },
+          "candidates": [
+            "~/.local/share/nvim/mason/bin/clangd",
+            "/usr/lib/llvm-19/bin/clangd",
+            "/usr/lib/llvm-18/bin/clangd",
+            "/usr/lib/llvm-17/bin/clangd",
+            "/opt/homebrew/opt/llvm/bin/clangd",
+            "/usr/local/opt/llvm/bin/clangd",
+            "/Library/Developer/CommandLineTools/usr/bin/clangd",
+            "C:/Program Files/LLVM/bin/clangd.exe"
+          ],
+          "languageId": "cpp",
+          "rootMarkers": [
+            "compile_commands.json",
+            "compile_flags.txt",
+            ".clangd",
+            "CMakeLists.txt",
+            "Makefile",
+            "meson.build",
+            ".git"
+          ],
+          "install": "Arch: pacman -S clang · Debian/Ubuntu: apt install clangd · macOS: brew install llvm (oder Xcode CLT)",
+          "docs": "https://clangd.llvm.org"
+        },
+        {
+          "label": "ccls",
+          "command": "ccls",
+          "args": [],
+          "languageId": "cpp",
+          "rootMarkers": [
+            "compile_commands.json",
+            ".ccls",
+            ".git"
+          ],
+          "initializationOptions": {
+            "cache": {
+              "directory": "${dataDir}"
+            }
+          },
+          "install": "https://github.com/MaskRay/ccls",
+          "docs": "https://github.com/MaskRay/ccls"
+        }
+      ],
+      "debug": [
+        "lldb-dap",
+        "gdb-dap",
+        "codelldb"
+      ]
+    }
+  ],
+  "themes": [],
+  "commands": [],
+  "events": [],
+  "templates": [],
+  "projectKinds": [],
+  "snippets": []
+}

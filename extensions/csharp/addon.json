@@ -1,0 +1,300 @@
+{
+  "languages": [
+    {
+      "id": "csharp",
+      "name": "C#",
+      "extensions": [
+        ".cs",
+        ".csx"
+      ],
+      "icon": "C#",
+      "color": "#68217a",
+      "capitalizedAsType": true,
+      "comments": {
+        "line": "//",
+        "block": [
+          "/*",
+          "*/"
+        ]
+      },
+      "controls": [
+        "if",
+        "else",
+        "for",
+        "foreach",
+        "while",
+        "do",
+        "switch",
+        "case",
+        "default",
+        "break",
+        "continue",
+        "return",
+        "throw",
+        "try",
+        "catch",
+        "finally",
+        "yield",
+        "goto",
+        "await",
+        "when"
+      ],
+      "keywords": [
+        "class",
+        "struct",
+        "interface",
+        "enum",
+        "record",
+        "namespace",
+        "using",
+        "public",
+        "private",
+        "protected",
+        "internal",
+        "static",
+        "readonly",
+        "const",
+        "abstract",
+        "sealed",
+        "virtual",
+        "override",
+        "partial",
+        "async",
+        "new",
+        "this",
+        "base",
+        "is",
+        "as",
+        "in",
+        "out",
+        "ref",
+        "params",
+        "operator",
+        "implicit",
+        "explicit",
+        "get",
+        "set",
+        "init",
+        "where",
+        "lock",
+        "unsafe",
+        "fixed",
+        "checked",
+        "unchecked",
+        "stackalloc",
+        "nameof",
+        "typeof",
+        "sizeof",
+        "global",
+        "file",
+        "required",
+        "scoped",
+        "with"
+      ],
+      "types": [
+        "void",
+        "bool",
+        "byte",
+        "sbyte",
+        "char",
+        "decimal",
+        "double",
+        "float",
+        "int",
+        "uint",
+        "long",
+        "ulong",
+        "short",
+        "ushort",
+        "object",
+        "string",
+        "dynamic",
+        "var",
+        "nint",
+        "nuint",
+        "List",
+        "Dictionary",
+        "IEnumerable",
+        "Task",
+        "Span",
+        "ReadOnlySpan",
+        "Nullable",
+        "Action",
+        "Func",
+        "Exception"
+      ],
+      "builtins": [
+        "Console",
+        "Math",
+        "String",
+        "Convert",
+        "Enumerable",
+        "LINQ",
+        "File",
+        "Path"
+      ],
+      "constants": [
+        "true",
+        "false",
+        "null",
+        "value"
+      ],
+      "strings": [
+        {
+          "start": "@\"",
+          "end": "\"",
+          "multiline": true,
+          "escapes": false
+        },
+        {
+          "start": "$\"",
+          "end": "\"",
+          "escapes": true
+        },
+        {
+          "start": "\"",
+          "escapes": true
+        },
+        {
+          "start": "'",
+          "escapes": true
+        }
+      ],
+      "meta": "^(?:#\\s*(?:if|else|elif|endif|region|endregion|define|undef|pragma|nullable|warning|error)\\b|\\[[A-Z]\\w*)",
+      "indentUnit": 4,
+      "snippets": [
+        {
+          "label": "cw",
+          "detail": "Console.WriteLine",
+          "body": "Console.WriteLine($0);"
+        },
+        {
+          "label": "class",
+          "detail": "Klasse",
+          "body": "public class ${Name}\n{\n    $0\n}"
+        },
+        {
+          "label": "prop",
+          "detail": "Auto-Property",
+          "body": "public ${string} ${Name} { get; set; }"
+        },
+        {
+          "label": "record",
+          "detail": "Record",
+          "body": "public record ${Name}(${string} ${Feld});"
+        },
+        {
+          "label": "iface",
+          "detail": "Interface",
+          "body": "public interface I${Name}\n{\n    $0\n}"
+        },
+        {
+          "label": "enum",
+          "detail": "Enum",
+          "body": "public enum ${Name}\n{\n    ${Eins},\n    ${Zwei},\n}$0"
+        },
+        {
+          "label": "ctor",
+          "detail": "Konstruktor",
+          "body": "public ${Name}(${string} ${feld})\n{\n    this.${feld} = ${feld};\n}$0"
+        },
+        {
+          "label": "foreach",
+          "detail": "foreach",
+          "body": "foreach (var ${element} in ${liste})\n{\n    $0\n}"
+        },
+        {
+          "label": "try",
+          "detail": "try/catch",
+          "body": "try\n{\n    $0\n}\ncatch (Exception ex)\n{\n    Console.Error.WriteLine(ex);\n}"
+        },
+        {
+          "label": "async",
+          "detail": "async-Methode",
+          "body": "public async Task<${string}> ${NameAsync}()\n{\n    $0\n}"
+        },
+        {
+          "label": "linq",
+          "detail": "LINQ-Abfrage",
+          "body": "var ${ergebnis} = ${liste}\n    .Where(${x} => $0)\n    .Select(${x} => ${x})\n    .ToList();"
+        },
+        {
+          "label": "switch",
+          "detail": "switch-Ausdruck",
+          "body": "var ${ergebnis} = ${wert} switch\n{\n    ${1} => $0,\n    _ => throw new ArgumentOutOfRangeException(),\n};"
+        },
+        {
+          "label": "using",
+          "detail": "using-Deklaration",
+          "body": "using var ${res} = ${quelle};$0"
+        },
+        {
+          "label": "test",
+          "detail": "xUnit-Test",
+          "body": "[Fact]\npublic void ${SollteEtwasTun}()\n{\n    $0\n}"
+        }
+      ],
+      "run": [
+        {
+          "label": "dotnet run",
+          "command": "dotnet",
+          "args": [
+            "run"
+          ]
+        },
+        {
+          "label": "dotnet test",
+          "command": "dotnet",
+          "args": [
+            "test"
+          ]
+        },
+        {
+          "label": "dotnet script",
+          "command": "dotnet",
+          "args": [
+            "script",
+            "${file}"
+          ]
+        }
+      ],
+      "lsp": [
+        {
+          "label": "csharp-ls",
+          "command": "csharp-ls",
+          "args": [],
+          "languageId": "csharp",
+          "rootMarkers": [
+            "*.sln",
+            "*.csproj",
+            ".git"
+          ],
+          "install": "dotnet tool install --global csharp-ls"
+        },
+        {
+          "label": "OmniSharp",
+          "command": "omnisharp",
+          "args": [
+            "-lsp"
+          ],
+          "languageId": "csharp",
+          "rootMarkers": [
+            "*.sln",
+            "*.csproj",
+            ".git"
+          ],
+          "install": "https://github.com/OmniSharp/omnisharp-roslyn"
+        }
+      ],
+      "debug": [
+        "netcoredbg"
+      ]
+    }
+  ],
+  "themes": [],
+  "commands": [],
+  "events": [],
+  "templates": [],
+  "projectKinds": [],
+  "snippets": []
+}

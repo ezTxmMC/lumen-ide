@@ -1,0 +1,15 @@
+{
+  "id": "ext.astro",
+  "name": "Astro",
+  "version": "1.0.1",
+  "description": "Astro-Komponenten: TypeScript-Frontmatter zwischen ---, Markup mit { … }-Ausdrücken, Client-Direktiven und Content-Collections.",
+  "author": "Lumen",
+  "icon": "As",
+  "color": "#ff5d01",
+  "category": "language",
+  "license": "MIT",
+  "keywords": [
+    "astro"
+  ],
+  "minAppVersion": "0.3.0"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "ext.vue",
+  "name": "Vue",
+  "version": "1.0.1",
+  "description": "Vue-SFCs: Template, <script setup> und <style scoped> in einer Datei, {{ … }}-Interpolation eingefärbt, Composition-API und Direktiven als Vorschläge.",
+  "author": "Lumen",
+  "icon": "V",
+  "color": "#42b883",
+  "category": "language",
+  "license": "MIT",
+  "keywords": [
+    "vue"
+  ],
+  "minAppVersion": "0.3.0"
+}

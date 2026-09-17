@@ -1,0 +1,662 @@
+{
+  "languages": [
+    {
+      "id": "php",
+      "name": "PHP",
+      "extensions": [
+        ".php",
+        ".phtml",
+        ".php8"
+      ],
+      "icon": "Ph",
+      "color": "#777bb4",
+      "capitalizedAsType": true,
+      "comments": {
+        "line": "//",
+        "block": [
+          "/*",
+          "*/"
+        ]
+      },
+      "controls": [
+        "if",
+        "else",
+        "elseif",
+        "for",
+        "foreach",
+        "while",
+        "do",
+        "switch",
+        "case",
+        "default",
+        "break",
+        "continue",
+        "return",
+        "throw",
+        "try",
+        "catch",
+        "finally",
+        "yield",
+        "goto",
+        "match",
+        "endif",
+        "endforeach",
+        "endwhile",
+        "endswitch"
+      ],
+      "keywords": [
+        "function",
+        "fn",
+        "class",
+        "interface",
+        "trait",
+        "enum",
+        "extends",
+        "implements",
+        "namespace",
+        "use",
+        "new",
+        "clone",
+        "public",
+        "private",
+        "protected",
+        "static",
+        "final",
+        "abstract",
+        "const",
+        "var",
+        "global",
+        "readonly",
+        "instanceof",
+        "insteadof",
+        "as",
+        "echo",
+        "print",
+        "require",
+        "require_once",
+        "include",
+        "include_once",
+        "declare",
+        "list",
+        "unset",
+        "isset",
+        "empty",
+        "exit",
+        "die",
+        "and",
+        "or",
+        "xor",
+        "callable"
+      ],
+      "types": [
+        "int",
+        "float",
+        "string",
+        "bool",
+        "array",
+        "object",
+        "mixed",
+        "void",
+        "never",
+        "iterable",
+        "self",
+        "parent",
+        "static",
+        "null",
+        "false",
+        "true",
+        "ArrayObject",
+        "Closure",
+        "Generator",
+        "Throwable",
+        "Exception",
+        "stdClass"
+      ],
+      "builtins": [
+        "array_map",
+        "array_filter",
+        "array_merge",
+        "array_keys",
+        "array_values",
+        "count",
+        "in_array",
+        "implode",
+        "explode",
+        "str_replace",
+        "substr",
+        "strlen",
+        "strpos",
+        "sprintf",
+        "printf",
+        "json_encode",
+        "json_decode",
+        "var_dump",
+        "preg_match",
+        "preg_replace",
+        "file_get_contents",
+        "trim"
+      ],
+      "constants": [
+        "true",
+        "false",
+        "null",
+        "TRUE",
+        "FALSE",
+        "NULL",
+        "__DIR__",
+        "__FILE__",
+        "__CLASS__",
+        "__FUNCTION__",
+        "__LINE__"
+      ],
+      "strings": [
+        {
+          "start": "<<<",
+          "end": "\n",
+          "escapes": false,
+          "kind": "meta"
+        },
+        {
+          "start": "\"",
+          "escapes": true
+        },
+        {
+          "start": "'",
+          "escapes": true
+        },
+        {
+          "start": "`",
+          "escapes": true
+        }
+      ],
+      "identifier": "^[$A-Za-z_\\\\][\\w\\\\]*",
+      "operators": "^(?:->|=>|\\?\\?=?|<=>|::|\\.=|[+\\-*/%.=<>!&|^~?:@])",
+      "meta": "^(?:<\\?php|<\\?=|\\?>|#\\[[^\\]]*\\]|#.*)",
+      "indentUnit": 4,
+      "snippets": [
+        {
+          "label": "php",
+          "detail": "PHP-Block",
+          "body": "<?php\n\n$0"
+        },
+        {
+          "label": "class",
+          "detail": "Klasse",
+          "body": "class ${Name}\n{\n    public function __construct()\n    {\n        $0\n    }\n}"
+        },
+        {
+          "label": "foreach",
+          "detail": "foreach",
+          "body": "foreach ($${items} as $${item}) {\n    $0\n}"
+        },
+        {
+          "label": "iface",
+          "detail": "Interface",
+          "body": "interface ${Name}\n{\n    public function ${methode}(): ${void};$0\n}"
+        },
+        {
+          "label": "enum",
+          "detail": "Enum",
+          "body": "enum ${Name}: string\n{\n    case ${Eins} = '${eins}';$0\n}"
+        },
+        {
+          "label": "trait",
+          "detail": "Trait",
+          "body": "trait ${Name}\n{\n    $0\n}"
+        },
+        {
+          "label": "ctor",
+          "detail": "Konstruktor-Promotion",
+          "body": "public function __construct(\n    private readonly ${string} $${feld},\n) {}$0"
+        },
+        {
+          "label": "fn",
+          "detail": "Methode",
+          "body": "public function ${name}(${string} $${arg}): ${string}\n{\n    $0\n}"
+        },
+        {
+          "label": "try",
+          "detail": "try/catch",
+          "body": "try {\n    $0\n} catch (\\Throwable $e) {\n    throw new \\RuntimeException($e->getMessage(), 0, $e);\n}"
+        },
+        {
+          "label": "match",
+          "detail": "match",
+          "body": "$${ergebnis} = match ($${wert}) {\n    ${1} => $0,\n    default => throw new \\ValueError(),\n};"
+        },
+        {
+          "label": "arrow",
+          "detail": "Arrow Function",
+          "body": "fn($${x}) => $0"
+        },
+        {
+          "label": "test",
+          "detail": "PHPUnit-Test",
+          "body": "public function test${Verhalten}(): void\n{\n    $this->assertSame($0, ${1});\n}"
+        },
+        {
+          "label": "strict",
+          "detail": "Strict Types",
+          "body": "<?php\n\ndeclare(strict_types=1);\n\nnamespace ${App};\n\n$0"
+        }
+      ],
+      "run": [
+        {
+          "label": "php",
+          "command": "php",
+          "args": [
+            "${file}"
+          ]
+        },
+        {
+          "label": "Dev-Server",
+          "command": "php",
+          "args": [
+            "-S",
+            "localhost:8000",
+            "-t",
+            "${workspace}"
+          ]
+        },
+        {
+          "label": "PHPUnit",
+          "command": "vendor/bin/phpunit",
+          "args": []
+        }
+      ],
+      "lsp": [
+        {
+          "label": "intelephense",
+          "command": "intelephense",
+          "args": [
+            "--stdio"
+          ],
+          "languageId": "php",
+          "rootMarkers": [
+            "composer.json",
+            ".git"
+          ],
+          "settings": {
+            "intelephense": {
+              "completion": {
+                "maxItems": 10000,
+                "insertUseDeclaration": true,
+                "fullyQualifyGlobalConstantsAndFunctions": false
+              },
+              "files": {
+                "maxSize": 10000000
+              }
+            }
+          },
+          "install": "npm i -g intelephense"
+        },
+        {
+          "label": "phpactor",
+          "command": "phpactor",
+          "args": [
+            "language-server"
+          ],
+          "languageId": "php",
+          "rootMarkers": [
+            "composer.json",
+            ".git"
+          ],
+          "install": "https://phpactor.readthedocs.io"
+        }
+      ],
+      "debug": [
+        "php-debug"
+      ]
+    }
+  ],
+  "themes": [],
+  "commands": [],
+  "events": [],
+  "templates": [
+    {
+      "id": "php-composer",
+      "name": "templates.lang.phpName",
+      "description": "templates.lang.phpDescription",
+      "languageId": "php",
+      "kindId": "composer",
+      "icon": "php",
+      "color": "#777bb4",
+      "fields": [
+        {
+          "id": "vendor",
+          "label": "Vendor",
+          "default": "beispiel",
+          "pattern": "[a-z0-9][a-z0-9_.-]*",
+          "section": "templates.sections.project",
+          "mono": true
+        },
+        {
+          "id": "namespace",
+          "label": "Namespace",
+          "default": "Beispiel\\{{slug|pascal}}",
+          "pattern": "[A-Z][A-Za-z0-9]*(\\\\[A-Z][A-Za-z0-9]*)*",
+          "patternHint": "templates.lang.namespaceHint",
+          "section": "templates.sections.project",
+          "mono": true
+        },
+        {
+          "id": "description",
+          "label": "templates.fields.description",
+          "placeholder": "templates.fields.descriptionPlaceholder",
+          "required": false,
+          "section": "templates.sections.project"
+        },
+        {
+          "id": "author",
+          "label": "templates.fields.author",
+          "placeholder": "templates.fields.authorPlaceholder",
+          "required": false,
+          "section": "templates.sections.project"
+        },
+        {
+          "id": "license",
+          "label": "templates.fields.license",
+          "type": "select",
+          "choices": [
+            {
+              "value": "MIT",
+              "label": "MIT"
+            },
+            {
+              "value": "Apache-2.0",
+              "label": "Apache 2.0"
+            },
+            {
+              "value": "GPL-3.0-or-later",
+              "label": "GPL 3.0"
+            },
+            {
+              "value": "BSD-3-Clause",
+              "label": "BSD 3-Clause"
+            },
+            {
+              "value": "UNLICENSED",
+              "label": "templates.fields.licenseNone"
+            }
+          ],
+          "section": "templates.sections.project"
+        },
+        {
+          "id": "php",
+          "label": "PHP ≥",
+          "type": "select",
+          "choices": [
+            {
+              "value": "8.3",
+              "label": "8.3"
+            },
+            {
+              "value": "8.4",
+              "label": "8.4"
+            },
+            {
+              "value": "8.2",
+              "label": "8.2"
+            }
+          ],
+          "section": "templates.sections.build"
+        }
+      ],
+      "open": "src/Greeter.php",
+      "setup": [
+        {
+          "label": "composer install",
+          "command": "composer",
+          "args": [
+            "install"
+          ]
+        }
+      ],
+      "files": [
+        {
+          "path": "composer.json",
+          "when": {
+            "field": "license",
+            "equals": "MIT"
+          },
+          "content": "{\n  \"name\": \"{{vendor}}/{{slug}}\",\n  \"description\": \"{{description}}\",\n  \"type\": \"project\",\n  \"license\": \"MIT\",\n  \"authors\": [\n    {\n      \"name\": \"{{author}}\"\n    }\n  ],\n  \"require\": {\n    \"php\": \">={{php}}\"\n  },\n  \"require-dev\": {\n    \"phpunit/phpunit\": \"^11.5\"\n  },\n  \"autoload\": {\n    \"psr-4\": {\n      \"{{namespace|json}}\\\\\": \"src/\"\n    }\n  },\n  \"autoload-dev\": {\n    \"psr-4\": {\n      \"{{namespace|json}}\\\\Tests\\\\\": \"tests/\"\n    }\n  },\n  \"scripts\": {\n    \"test\": \"phpunit\",\n    \"serve\": \"php -S localhost:8000 -t public\"\n  }\n}\n"
+        },
+        {
+          "path": "composer.json",
+          "when": {
+            "field": "license",
+            "equals": "Apache-2.0"
+          },
+          "content": "{\n  \"name\": \"{{vendor}}/{{slug}}\",\n  \"description\": \"{{description}}\",\n  \"type\": \"project\",\n  \"license\": \"Apache-2.0\",\n  \"authors\": [\n    {\n      \"name\": \"{{author}}\"\n    }\n  ],\n  \"require\": {\n    \"php\": \">={{php}}\"\n  },\n  \"require-dev\": {\n    \"phpunit/phpunit\": \"^11.5\"\n  },\n  \"autoload\": {\n    \"psr-4\": {\n      \"{{namespace|json}}\\\\\": \"src/\"\n    }\n  },\n  \"autoload-dev\": {\n    \"psr-4\": {\n      \"{{namespace|json}}\\\\Tests\\\\\": \"tests/\"\n    }\n  },\n  \"scripts\": {\n    \"test\": \"phpunit\",\n    \"serve\": \"php -S localhost:8000 -t public\"\n  }\n}\n"
+        },
+        {
+          "path": "composer.json",
+          "when": {
+            "field": "license",
+            "equals": "GPL-3.0-or-later"
+          },
+          "content": "{\n  \"name\": \"{{vendor}}/{{slug}}\",\n  \"description\": \"{{description}}\",\n  \"type\": \"project\",\n  \"license\": \"GPL-3.0-or-later\",\n  \"authors\": [\n    {\n      \"name\": \"{{author}}\"\n    }\n  ],\n  \"require\": {\n    \"php\": \">={{php}}\"\n  },\n  \"require-dev\": {\n    \"phpunit/phpunit\": \"^11.5\"\n  },\n  \"autoload\": {\n    \"psr-4\": {\n      \"{{namespace|json}}\\\\\": \"src/\"\n    }\n  },\n  \"autoload-dev\": {\n    \"psr-4\": {\n      \"{{namespace|json}}\\\\Tests\\\\\": \"tests/\"\n    }\n  },\n  \"scripts\": {\n    \"test\": \"phpunit\",\n    \"serve\": \"php -S localhost:8000 -t public\"\n  }\n}\n"
+        },
+        {
+          "path": "composer.json",
+          "when": {
+            "field": "license",
+            "equals": "BSD-3-Clause"
+          },
+          "content": "{\n  \"name\": \"{{vendor}}/{{slug}}\",\n  \"description\": \"{{description}}\",\n  \"type\": \"project\",\n  \"license\": \"BSD-3-Clause\",\n  \"authors\": [\n    {\n      \"name\": \"{{author}}\"\n    }\n  ],\n  \"require\": {\n    \"php\": \">={{php}}\"\n  },\n  \"require-dev\": {\n    \"phpunit/phpunit\": \"^11.5\"\n  },\n  \"autoload\": {\n    \"psr-4\": {\n      \"{{namespace|json}}\\\\\": \"src/\"\n    }\n  },\n  \"autoload-dev\": {\n    \"psr-4\": {\n      \"{{namespace|json}}\\\\Tests\\\\\": \"tests/\"\n    }\n  },\n  \"scripts\": {\n    \"test\": \"phpunit\",\n    \"serve\": \"php -S localhost:8000 -t public\"\n  }\n}\n"
+        },
+        {
+          "path": "composer.json",
+          "when": {
+            "field": "license",
+            "equals": "UNLICENSED"
+          },
+          "content": "{\n  \"name\": \"{{vendor}}/{{slug}}\",\n  \"description\": \"{{description}}\",\n  \"type\": \"project\",\n  \"license\": \"proprietary\",\n  \"authors\": [\n    {\n      \"name\": \"{{author}}\"\n    }\n  ],\n  \"require\": {\n    \"php\": \">={{php}}\"\n  },\n  \"require-dev\": {\n    \"phpunit/phpunit\": \"^11.5\"\n  },\n  \"autoload\": {\n    \"psr-4\": {\n      \"{{namespace|json}}\\\\\": \"src/\"\n    }\n  },\n  \"autoload-dev\": {\n    \"psr-4\": {\n      \"{{namespace|json}}\\\\Tests\\\\\": \"tests/\"\n    }\n  },\n  \"scripts\": {\n    \"test\": \"phpunit\",\n    \"serve\": \"php -S localhost:8000 -t public\"\n  }\n}\n"
+        },
+        {
+          "path": "src/Greeter.php",
+          "content": "<?php\n\ndeclare(strict_types=1);\n\nnamespace {{namespace}};\n\nfinal class Greeter\n{\n    public function greet(string $name): string\n    {\n        return \"Hallo, {$name}!\";\n    }\n}\n"
+        },
+        {
+          "path": "public/index.php",
+          "content": "<?php\n\ndeclare(strict_types=1);\n\nrequire __DIR__ . '/../vendor/autoload.php';\n\nuse {{namespace}}\\Greeter;\n\necho (new Greeter())->greet('{{name}}');\n"
+        },
+        {
+          "path": "tests/GreeterTest.php",
+          "content": "<?php\n\ndeclare(strict_types=1);\n\nnamespace {{namespace}}\\Tests;\n\nuse {{namespace}}\\Greeter;\nuse PHPUnit\\Framework\\TestCase;\n\nfinal class GreeterTest extends TestCase\n{\n    public function testGreet(): void\n    {\n        self::assertSame('Hallo, Welt!', (new Greeter())->greet('Welt'));\n    }\n}\n"
+        },
+        {
+          "path": "phpunit.xml",
+          "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<phpunit bootstrap=\"vendor/autoload.php\" colors=\"true\">\n  <testsuites>\n    <testsuite name=\"default\">\n      <directory>tests</directory>\n    </testsuite>\n  </testsuites>\n</phpunit>\n"
+        },
+        {
+          "path": ".gitignore",
+          "content": "vendor/\n.phpunit.cache/\n.lumen/\n"
+        },
+        {
+          "path": "README.md",
+          "content": "# {{name}}\n\n```bash\ncomposer install\ncomposer serve\ncomposer test\n```\n"
+        }
+      ]
+    }
+  ],
+  "projectKinds": [
+    {
+      "id": "composer",
+      "name": "Composer",
+      "icon": "Co",
+      "color": "#885630",
+      "markers": [
+        "composer.json"
+      ],
+      "priority": 10,
+      "languageIds": [
+        "php"
+      ],
+      "buildFile": "composer.json",
+      "sourceRoots": [
+        "src",
+        "tests"
+      ],
+      "dependencies": {
+        "manager": "Composer",
+        "placeholder": "guzzlehttp/guzzle",
+        "hint": "templates.lang.composerHint",
+        "id": "composer:require",
+        "command": "composer",
+        "args": [
+          "require",
+          "{scopeArgs}",
+          "{spec}"
+        ],
+        "label": "composer require {name}",
+        "specSeparator": ":",
+        "scopeArgs": {
+          "require-dev": [
+            "--dev"
+          ]
+        },
+        "scopes": [
+          {
+            "value": "require",
+            "label": "require"
+          },
+          {
+            "value": "require-dev",
+            "label": "require-dev"
+          }
+        ]
+      },
+      "tasks": [
+        {
+          "id": "install",
+          "label": "templates.tasks.installDeps",
+          "command": "composer",
+          "args": [
+            "install"
+          ],
+          "group": "build"
+        },
+        {
+          "id": "script",
+          "label": "composer",
+          "command": "composer",
+          "args": [],
+          "group": "other",
+          "forEachMatch": {
+            "file": "composer.json",
+            "json": "scripts",
+            "label": "{match}",
+            "args": [
+              "run-script",
+              "{match}"
+            ],
+            "skipPattern": "^(pre|post)-",
+            "omitWhenEmpty": true,
+            "limit": 50,
+            "groups": [
+              {
+                "pattern": "test",
+                "group": "test"
+              },
+              {
+                "pattern": "serve|start",
+                "group": "run"
+              },
+              {
+                "pattern": ".",
+                "group": "other"
+              }
+            ]
+          }
+        },
+        {
+          "id": "serve",
+          "label": "templates.lang.phpServer",
+          "command": "php",
+          "args": [
+            "-S",
+            "localhost:8000",
+            "-t",
+            "public"
+          ],
+          "group": "run"
+        },
+        {
+          "id": "phpunit",
+          "label": "PHPUnit",
+          "command": "vendor/bin/phpunit",
+          "args": [],
+          "group": "test"
+        },
+        {
+          "id": "update",
+          "label": "templates.tasks.updateDeps",
+          "command": "composer",
+          "args": [
+            "update"
+          ],
+          "group": "other"
+        },
+        {
+          "id": "dump",
+          "label": "templates.lang.dumpAutoload",
+          "command": "composer",
+          "args": [
+            "dump-autoload"
+          ],
+          "group": "other"
+        },
+        {
+          "id": "outdated",
+          "label": "templates.tasks.outdated",
+          "command": "composer",
+          "args": [
+            "outdated",
+            "--direct"
+          ],
+          "group": "other"
+        }
+      ],
+      "facts": [
+        {
+          "label": "Name",
+          "file": "composer.json",
+          "json": "name",
+          "role": "name"
+        },
+        {
+          "label": "Version",
+          "file": "composer.json",
+          "json": "version",
+          "role": "version"
+        },
+        {
+          "label": "Beschreibung",
+          "file": "composer.json",
+          "json": "description",
+          "role": "description"
+        },
+        {
+          "label": "PHP",
+          "file": "composer.json",
+          "json": "require.php"
+        }
+      ],
+      "dependencyScan": [
+        {
+          "file": "composer.json",
+          "json": "require",
+          "scope": "require",
+          "skipPattern": "^(php$|ext-)"
+        },
+        {
+          "file": "composer.json",
+          "json": "require-dev",
+          "scope": "require-dev"
+        }
+      ]
+    }
+  ],
+  "snippets": []
+}

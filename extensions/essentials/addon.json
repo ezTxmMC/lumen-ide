@@ -1,0 +1,819 @@
+{
+  "languages": [
+    {
+      "id": "json",
+      "name": "JSON",
+      "extensions": [
+        ".json",
+        ".jsonc",
+        ".json5",
+        ".webmanifest"
+      ],
+      "filenames": [
+        ".babelrc",
+        ".prettierrc"
+      ],
+      "icon": "{}",
+      "color": "#cbcb41",
+      "comments": {
+        "line": "//",
+        "block": [
+          "/*",
+          "*/"
+        ]
+      },
+      "constants": [
+        "true",
+        "false",
+        "null"
+      ],
+      "strings": [
+        {
+          "start": "\"",
+          "escapes": true
+        }
+      ],
+      "snippets": [
+        {
+          "label": "pkg",
+          "detail": "package.json-Grundgerüst",
+          "body": "{\n  \"name\": \"${name}\",\n  \"version\": \"0.1.0\",\n  \"type\": \"module\",\n  \"scripts\": {\n    \"dev\": \"$0\"\n  }\n}"
+        },
+        {
+          "label": "tsconfig",
+          "detail": "tsconfig.json",
+          "body": "{\n  \"compilerOptions\": {\n    \"target\": \"ES2022\",\n    \"module\": \"ESNext\",\n    \"moduleResolution\": \"bundler\",\n    \"strict\": true,\n    \"jsx\": \"react-jsx\",\n    \"skipLibCheck\": true\n  },\n  \"include\": [\"src\"]$0\n}"
+        },
+        {
+          "label": "obj",
+          "detail": "Objekt",
+          "body": "\"${schlüssel}\": {\n  $0\n}"
+        },
+        {
+          "label": "arr",
+          "detail": "Array",
+          "body": "\"${schlüssel}\": [\n  $0\n]"
+        }
+      ],
+      "lsp": [
+        {
+          "label": "vscode-json-language-server",
+          "command": "vscode-json-language-server",
+          "args": [
+            "--stdio"
+          ],
+          "languageId": "json",
+          "settings": {
+            "json": {
+              "validate": {
+                "enable": true
+              },
+              "schemas": []
+            }
+          },
+          "install": "npm i -g vscode-langservers-extracted"
+        }
+      ]
+    },
+    {
+      "id": "yaml",
+      "name": "YAML",
+      "extensions": [
+        ".yaml",
+        ".yml"
+      ],
+      "filenames": [
+        "docker-compose.yml"
+      ],
+      "icon": "Y",
+      "color": "#cb171e",
+      "comments": {
+        "line": "#"
+      },
+      "constants": [
+        "true",
+        "false",
+        "null",
+        "yes",
+        "no",
+        "on",
+        "off",
+        "~"
+      ],
+      "identifier": "^[A-Za-z_][\\w.-]*",
+      "meta": "^\\s*-{3}|^\\s*\\.{3}",
+      "indentOpen": ":\\s*$|^\\s*-\\s*$",
+      "indentUnit": 2,
+      "snippets": [
+        {
+          "label": "gha",
+          "detail": "GitHub-Actions-Workflow",
+          "body": "name: ${CI}\n\non:\n  push:\n    branches: [${main}]\n\njobs:\n  ${build}:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: $0"
+        },
+        {
+          "label": "compose",
+          "detail": "Docker Compose",
+          "body": "services:\n  ${app}:\n    image: ${node:22-alpine}\n    ports:\n      - \"${3000}:${3000}\"\n    environment:\n      - ${NODE_ENV}=${production}$0"
+        },
+        {
+          "label": "list",
+          "detail": "Liste",
+          "body": "${schlüssel}:\n  - ${eins}\n  - ${zwei}$0"
+        },
+        {
+          "label": "anchor",
+          "detail": "Anker und Referenz",
+          "body": "${basis}: &${anker}\n  ${feld}: ${wert}\n\n${abgeleitet}:\n  <<: *${anker}$0"
+        }
+      ],
+      "lsp": [
+        {
+          "label": "yaml-language-server",
+          "command": "yaml-language-server",
+          "args": [
+            "--stdio"
+          ],
+          "languageId": "yaml",
+          "settings": {
+            "yaml": {
+              "validate": true,
+              "completion": true,
+              "hover": true,
+              "schemas": {
+                "https://json.schemastore.org/github-workflow.json": ".github/workflows/*",
+                "https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json": "docker-compose*.y*ml"
+              }
+            }
+          },
+          "install": "npm i -g yaml-language-server"
+        }
+      ]
+    },
+    {
+      "id": "toml",
+      "name": "TOML",
+      "extensions": [
+        ".toml"
+      ],
+      "filenames": [
+        "Cargo.toml",
+        "pyproject.toml"
+      ],
+      "icon": "T",
+      "color": "#9c4221",
+      "comments": {
+        "line": "#"
+      },
+      "constants": [
+        "true",
+        "false"
+      ],
+      "strings": [
+        {
+          "start": "\"\"\"",
+          "end": "\"\"\"",
+          "multiline": true
+        },
+        {
+          "start": "\"",
+          "escapes": true
+        },
+        {
+          "start": "'",
+          "escapes": false
+        }
+      ],
+      "meta": "^\\s*\\[{1,2}[^\\]]*\\]{1,2}",
+      "snippets": [
+        {
+          "label": "cargo",
+          "detail": "Cargo.toml",
+          "body": "[package]\nname = \"${name}\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n[dependencies]\n$0"
+        },
+        {
+          "label": "pyproject",
+          "detail": "pyproject.toml",
+          "body": "[project]\nname = \"${name}\"\nversion = \"0.1.0\"\nrequires-python = \">=3.12\"\ndependencies = [$0]"
+        },
+        {
+          "label": "table",
+          "detail": "Tabelle",
+          "body": "[${abschnitt}]\n${schlüssel} = ${\"wert\"}$0"
+        }
+      ],
+      "lsp": [
+        {
+          "label": "taplo",
+          "command": "taplo",
+          "args": [
+            "lsp",
+            "stdio"
+          ],
+          "languageId": "toml",
+          "install": "cargo install taplo-cli --locked --features lsp"
+        }
+      ]
+    },
+    {
+      "id": "markdown",
+      "name": "Markdown",
+      "extensions": [
+        ".md",
+        ".markdown",
+        ".mdx"
+      ],
+      "filenames": [
+        "README",
+        "LICENSE"
+      ],
+      "icon": "M",
+      "color": "#519aba",
+      "snippets": [
+        {
+          "label": "link",
+          "detail": "Link",
+          "body": "[${Text}](${url})$0"
+        },
+        {
+          "label": "img",
+          "detail": "Bild",
+          "body": "![${alt}](${bild.png})$0"
+        },
+        {
+          "label": "code",
+          "detail": "Codeblock",
+          "body": "```${ts}\n$0\n```"
+        },
+        {
+          "label": "table",
+          "detail": "Tabelle",
+          "body": "| ${Spalte} | ${Spalte} |\n| --- | --- |\n| $0 | |"
+        },
+        {
+          "label": "details",
+          "detail": "Aufklappbar",
+          "body": "<details>\n<summary>${Titel}</summary>\n\n$0\n\n</details>"
+        },
+        {
+          "label": "todo",
+          "detail": "Aufgabenliste",
+          "body": "- [ ] $0\n- [ ] "
+        },
+        {
+          "label": "fm",
+          "detail": "Frontmatter",
+          "body": "---\ntitle: ${Titel}\ndate: ${2026-01-01}\n---\n\n$0"
+        }
+      ],
+      "lsp": [
+        {
+          "label": "marksman",
+          "command": "marksman",
+          "args": [
+            "server"
+          ],
+          "languageId": "markdown",
+          "rootMarkers": [
+            ".marksman.toml",
+            ".git"
+          ],
+          "install": "https://github.com/artempyanykh/marksman"
+        },
+        {
+          "label": "vscode-markdown-language-server",
+          "command": "vscode-markdown-language-server",
+          "args": [
+            "--stdio"
+          ],
+          "languageId": "markdown",
+          "install": "npm i -g vscode-langservers-extracted"
+        }
+      ],
+      "tokenizer": "markdown"
+    },
+    {
+      "id": "shell",
+      "name": "Shell",
+      "extensions": [
+        ".sh",
+        ".bash",
+        ".zsh",
+        ".fish",
+        ".ksh"
+      ],
+      "filenames": [
+        "Makefile",
+        ".bashrc",
+        ".zshrc",
+        ".profile",
+        "Dockerfile"
+      ],
+      "icon": "$",
+      "color": "#89e051",
+      "comments": {
+        "line": "#"
+      },
+      "controls": [
+        "if",
+        "then",
+        "elif",
+        "else",
+        "fi",
+        "for",
+        "while",
+        "until",
+        "do",
+        "done",
+        "case",
+        "esac",
+        "return",
+        "break",
+        "continue"
+      ],
+      "keywords": [
+        "function",
+        "local",
+        "export",
+        "readonly",
+        "declare",
+        "source",
+        "alias",
+        "unset",
+        "trap",
+        "shift",
+        "eval",
+        "exec",
+        "set"
+      ],
+      "builtins": [
+        "echo",
+        "printf",
+        "read",
+        "cd",
+        "pwd",
+        "ls",
+        "cat",
+        "grep",
+        "sed",
+        "awk",
+        "find",
+        "test",
+        "mkdir",
+        "rm",
+        "cp",
+        "mv",
+        "curl",
+        "git"
+      ],
+      "strings": [
+        {
+          "start": "\"",
+          "multiline": true,
+          "escapes": true
+        },
+        {
+          "start": "'",
+          "multiline": true,
+          "escapes": false
+        }
+      ],
+      "identifier": "^\\$?[A-Za-z_][\\w]*|^\\$[{(][^})]*[})]",
+      "indentOpen": "(?:\\b(?:then|do|in)\\b|\\{|\\()\\s*$",
+      "indentClose": "^\\s*(?:fi|done|esac|else|elif|\\}|\\))",
+      "snippets": [
+        {
+          "label": "sh",
+          "detail": "Strenger Skriptkopf",
+          "body": "#!/usr/bin/env bash\nset -euo pipefail\n\n$0"
+        },
+        {
+          "label": "fn",
+          "detail": "Funktion",
+          "body": "${name}() {\n  local ${arg}=\"${1:-}\"\n  $0\n}"
+        },
+        {
+          "label": "forr",
+          "detail": "for-Schleife",
+          "body": "for ${datei} in ${*.txt}; do\n  $0\ndone"
+        },
+        {
+          "label": "ifd",
+          "detail": "Datei prüfen",
+          "body": "if [[ -f \"${datei}\" ]]; then\n  $0\nfi"
+        },
+        {
+          "label": "case",
+          "detail": "case",
+          "body": "case \"${1}\" in\n  ${start}) $0 ;;\n  *) echo \"unbekannt\" >&2; exit 1 ;;\nesac"
+        },
+        {
+          "label": "while",
+          "detail": "Zeilenweise lesen",
+          "body": "while IFS= read -r ${zeile}; do\n  $0\ndone < \"${datei}\""
+        },
+        {
+          "label": "trap",
+          "detail": "Aufräumen bei Abbruch",
+          "body": "cleanup() {\n  $0\n}\ntrap cleanup EXIT INT TERM"
+        }
+      ],
+      "run": [
+        {
+          "label": "bash",
+          "command": "bash",
+          "args": [
+            "${file}"
+          ]
+        },
+        {
+          "label": "shellcheck",
+          "command": "shellcheck",
+          "args": [
+            "${file}"
+          ]
+        }
+      ],
+      "lsp": [
+        {
+          "label": "bash-language-server",
+          "command": "bash-language-server",
+          "args": [
+            "start"
+          ],
+          "languageId": "shellscript",
+          "install": "npm i -g bash-language-server"
+        }
+      ]
+    },
+    {
+      "id": "sql",
+      "name": "SQL",
+      "extensions": [
+        ".sql"
+      ],
+      "icon": "DB",
+      "color": "#e38c00",
+      "caseInsensitive": true,
+      "comments": {
+        "line": "--",
+        "block": [
+          "/*",
+          "*/"
+        ]
+      },
+      "controls": [
+        "select",
+        "from",
+        "where",
+        "join",
+        "inner",
+        "left",
+        "right",
+        "full",
+        "outer",
+        "on",
+        "group",
+        "order",
+        "by",
+        "having",
+        "limit",
+        "offset",
+        "union",
+        "case",
+        "when",
+        "then",
+        "else",
+        "end"
+      ],
+      "keywords": [
+        "insert",
+        "into",
+        "values",
+        "update",
+        "set",
+        "delete",
+        "create",
+        "alter",
+        "drop",
+        "table",
+        "view",
+        "index",
+        "primary",
+        "foreign",
+        "key",
+        "references",
+        "constraint",
+        "default",
+        "as",
+        "distinct",
+        "with",
+        "returning",
+        "and",
+        "or",
+        "not",
+        "in",
+        "like",
+        "between",
+        "exists"
+      ],
+      "types": [
+        "int",
+        "integer",
+        "bigint",
+        "smallint",
+        "serial",
+        "text",
+        "varchar",
+        "char",
+        "boolean",
+        "date",
+        "timestamp",
+        "timestamptz",
+        "numeric",
+        "decimal",
+        "real",
+        "json",
+        "jsonb",
+        "uuid"
+      ],
+      "builtins": [
+        "count",
+        "sum",
+        "avg",
+        "min",
+        "max",
+        "coalesce",
+        "now",
+        "cast",
+        "lower",
+        "upper",
+        "length"
+      ],
+      "constants": [
+        "null",
+        "true",
+        "false"
+      ],
+      "strings": [
+        {
+          "start": "'",
+          "escapes": true
+        },
+        {
+          "start": "\"",
+          "escapes": true
+        }
+      ],
+      "snippets": [
+        {
+          "label": "sel",
+          "detail": "SELECT",
+          "body": "select ${spalten}\nfrom ${tabelle}\nwhere ${bedingung}$0;"
+        },
+        {
+          "label": "join",
+          "detail": "JOIN",
+          "body": "select ${a}.*, ${b}.${spalte}\nfrom ${tabelle_a} ${a}\njoin ${tabelle_b} ${b} on ${b}.${a_id} = ${a}.id$0;"
+        },
+        {
+          "label": "ins",
+          "detail": "INSERT",
+          "body": "insert into ${tabelle} (${spalte})\nvalues (${wert})\nreturning id;$0"
+        },
+        {
+          "label": "upd",
+          "detail": "UPDATE",
+          "body": "update ${tabelle}\nset ${spalte} = ${wert}\nwhere ${bedingung};$0"
+        },
+        {
+          "label": "create",
+          "detail": "CREATE TABLE",
+          "body": "create table ${tabelle} (\n  id ${bigserial} primary key,\n  ${spalte} ${text} not null,\n  created_at ${timestamptz} not null default now()\n);$0"
+        },
+        {
+          "label": "cte",
+          "detail": "Common Table Expression",
+          "body": "with ${name} as (\n  select $0\n)\nselect * from ${name};"
+        },
+        {
+          "label": "idx",
+          "detail": "Index",
+          "body": "create index ${idx_name} on ${tabelle} (${spalte});$0"
+        }
+      ],
+      "lsp": [
+        {
+          "label": "sqls",
+          "command": "sqls",
+          "args": [],
+          "languageId": "sql",
+          "rootMarkers": [
+            ".sqls.yml",
+            ".git"
+          ],
+          "install": "go install github.com/sqls-server/sqls@latest"
+        }
+      ]
+    }
+  ],
+  "themes": [],
+  "commands": [],
+  "events": [],
+  "templates": [
+    {
+      "id": "markdown-docs",
+      "name": "templates.lang.docsName",
+      "description": "templates.lang.docsDescription",
+      "languageId": "markdown",
+      "icon": "M↓",
+      "color": "#519aba",
+      "fields": [
+        {
+          "id": "description",
+          "label": "templates.fields.description",
+          "placeholder": "templates.fields.descriptionPlaceholder",
+          "required": false,
+          "section": "templates.sections.project"
+        },
+        {
+          "id": "author",
+          "label": "templates.fields.author",
+          "placeholder": "templates.fields.authorPlaceholder",
+          "required": false,
+          "section": "templates.sections.project"
+        },
+        {
+          "id": "mkdocs",
+          "label": "templates.lang.mkdocs",
+          "type": "toggle",
+          "default": "false",
+          "section": "templates.sections.options"
+        }
+      ],
+      "open": "docs/index.md",
+      "files": [
+        {
+          "path": "docs/index.md",
+          "content": "# {{name}}\n\n{{description}}\n\n## Inhalt\n\n- [Erste Schritte](erste-schritte.md)\n- [Referenz](referenz.md)\n"
+        },
+        {
+          "path": "docs/erste-schritte.md",
+          "content": "# Erste Schritte\n\n1. Installieren\n2. Konfigurieren\n3. Loslegen\n"
+        },
+        {
+          "path": "docs/referenz.md",
+          "content": "# Referenz\n\n| Option | Bedeutung |\n| --- | --- |\n| `--hilfe` | zeigt die Hilfe |\n"
+        },
+        {
+          "path": "README.md",
+          "content": "# {{name}}\n\nSiehe [docs/index.md](docs/index.md).\n"
+        },
+        {
+          "path": ".gitignore",
+          "content": "site/\n.lumen/\n"
+        },
+        {
+          "path": "mkdocs.yml",
+          "when": {
+            "field": "mkdocs",
+            "equals": "true"
+          },
+          "content": "site_name: {{name}}\nsite_author: {{author}}\nnav:\n  - Start: index.md\n  - Erste Schritte: erste-schritte.md\n  - Referenz: referenz.md\n"
+        },
+        {
+          "path": "requirements.txt",
+          "when": {
+            "field": "mkdocs",
+            "equals": "true"
+          },
+          "content": "mkdocs>=1.6\n"
+        }
+      ],
+      "kindId": "python",
+      "kindWhen": {
+        "field": "mkdocs",
+        "equals": "true"
+      }
+    },
+    {
+      "id": "shell-scripts",
+      "name": "templates.lang.shellName",
+      "description": "templates.lang.shellDescription",
+      "languageId": "shell",
+      "kindId": "make",
+      "icon": "$",
+      "color": "#89e051",
+      "fields": [
+        {
+          "id": "description",
+          "label": "templates.fields.description",
+          "placeholder": "templates.fields.descriptionPlaceholder",
+          "required": false,
+          "section": "templates.sections.project"
+        }
+      ],
+      "open": "bin/main.sh",
+      "files": [
+        {
+          "path": "bin/main.sh",
+          "content": "#!/usr/bin/env bash\n# {{name}} — {{description}}\nset -euo pipefail\n\nSCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"\n# shellcheck source=../lib/common.sh\nsource \"$SCRIPT_DIR/../lib/common.sh\"\n\nmain() {\n  info \"Hallo aus {{name}}!\"\n}\n\nmain \"$@\"\n"
+        },
+        {
+          "path": "lib/common.sh",
+          "content": "#!/usr/bin/env bash\n\ninfo() { printf '\\033[1;34m→\\033[0m %s\\n' \"$*\"; }\nfail() { printf '\\033[1;31m✗\\033[0m %s\\n' \"$*\" >&2; exit 1; }\n"
+        },
+        {
+          "path": "Makefile",
+          "content": "SCRIPTS := $(wildcard bin/*.sh lib/*.sh)\n\nrun:\n\tbash bin/main.sh\n\ncheck:\n\tshellcheck $(SCRIPTS)\n\n.PHONY: run check\n"
+        },
+        {
+          "path": ".editorconfig",
+          "content": "root = true\n\n[*.sh]\nindent_style = space\nindent_size = 2\n\n[Makefile]\nindent_style = tab\n"
+        },
+        {
+          "path": ".gitignore",
+          "content": ".lumen/\n"
+        }
+      ]
+    }
+  ],
+  "projectKinds": [
+    {
+      "id": "make",
+      "name": "Make",
+      "icon": "Mk",
+      "color": "#6d8764",
+      "markers": [
+        "Makefile",
+        "makefile",
+        "GNUmakefile"
+      ],
+      "priority": 5,
+      "languageIds": [
+        "c",
+        "cpp"
+      ],
+      "buildFile": "Makefile",
+      "sourceRoots": [
+        "src",
+        "include"
+      ],
+      "tasks": [
+        {
+          "id": "default",
+          "label": "make",
+          "command": "make",
+          "args": [],
+          "group": "build",
+          "forEachMatch": {
+            "file": [
+              "Makefile",
+              "makefile",
+              "GNUmakefile"
+            ],
+            "pattern": "^([A-Za-z0-9_][A-Za-z0-9_.-]*)\\s*:(?!=)",
+            "label": "make {match}",
+            "args": [
+              "{match}"
+            ],
+            "limit": 20,
+            "groups": [
+              {
+                "pattern": "^(run|start)$",
+                "group": "run"
+              },
+              {
+                "pattern": "^(test|check)$",
+                "group": "test"
+              },
+              {
+                "pattern": "^(clean|distclean|mrproper)$",
+                "group": "clean"
+              },
+              {
+                "pattern": "^(all|build|install|debug|release)$",
+                "group": "build"
+              },
+              {
+                "pattern": ".",
+                "group": "other"
+              }
+            ]
+          }
+        },
+        {
+          "id": "bear",
+          "label": "compile_commands.json (bear)",
+          "command": "bear",
+          "args": [
+            "--",
+            "make",
+            "-B"
+          ],
+          "group": "other"
+        }
+      ]
+    }
+  ],
+  "snippets": []
+}

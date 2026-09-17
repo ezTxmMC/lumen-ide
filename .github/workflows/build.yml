@@ -1,0 +1,53 @@
+# Baut Lumen für Linux (x64, arm64), Windows 11 (x64, arm64) und macOS (arm64).
+# Läuft bei Tags `v*` und manuell; die Pakete landen als Artefakte am Lauf.
+# Veröffentlichen aufs CDN: Artefakte nach release/ laden, dann `npm run publish:cdn`.
+name: Build
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            name: linux-x64
+            script: dist:linux
+          - os: ubuntu-24.04-arm
+            name: linux-arm64
+            script: dist:linux:arm64
+          - os: windows-latest
+            name: windows
+            script: dist:win
+          - os: macos-14
+            name: macos-arm64
+            script: dist:mac:dmg
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run ${{ matrix.script }} -- --publish never
+        env:
+          # Ohne Zertifikate unsigniert bzw. unter macOS ad-hoc signiert.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lumen-${{ matrix.name }}
+          path: |
+            release/*.AppImage
+            release/*.exe
+            release/*.zip
+            release/*.dmg
+          if-no-files-found: error

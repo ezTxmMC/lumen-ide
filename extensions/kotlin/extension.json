@@ -1,0 +1,15 @@
+{
+  "id": "ext.kotlin",
+  "name": "Kotlin",
+  "version": "1.0.0",
+  "description": "Kotlin mit Coroutinen, Raw-Strings und kotlinc-Runner. Gradle-Projekte mit Aufgaben, Vorlagen, kotlin-language-server oder JetBrains kotlin-lsp.",
+  "author": "Lumen",
+  "icon": "Kt",
+  "color": "#a97bff",
+  "category": "language",
+  "license": "MIT",
+  "keywords": [
+    "kotlin"
+  ],
+  "minAppVersion": "0.3.0"
+}

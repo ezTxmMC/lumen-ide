@@ -1,0 +1,13 @@
+{
+  "id": "ext.go",
+  "name": "Go",
+  "version": "1.0.0",
+  "description": "Go mit Backtick-Strings, Kanal-Operatoren und go-run/test-Runner.",
+  "author": "Lumen",
+  "icon": "Go",
+  "color": "#00add8",
+  "category": "language",
+  "license": "MIT",
+  "keywords": ["go", "golang", "gopls", "delve"],
+  "minAppVersion": "0.3.0"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "ext.python",
+  "name": "Python",
+  "version": "1.0.0",
+  "description": "Python 3 mit Docstrings, Dekoratoren, Match-Statement und python/uv-Runner.",
+  "author": "Lumen",
+  "icon": "Py",
+  "color": "#3572a5",
+  "category": "language",
+  "license": "MIT",
+  "keywords": [
+    "python"
+  ],
+  "minAppVersion": "0.3.0"
+}

@@ -1,0 +1,27 @@
+services:
+  extension-server:
+    build: .
+    image: lumen-extension-server:0.3.0
+    container_name: lumen-extension-server
+    restart: unless-stopped
+    ports:
+      - "${LUMEN_EXT_PORT:-8730}:8730"
+    environment:
+      LUMEN_EXT_DATA: /data
+      LUMEN_EXT_HOST: 0.0.0.0
+      LUMEN_EXT_PORT: 8730
+      LUMEN_EXT_NAME: ${LUMEN_EXT_NAME:-Lumen-Erweiterungen}
+      LUMEN_EXT_URL: ${LUMEN_EXT_URL:-http://localhost:8730}
+      LUMEN_EXT_TOKENS: ${LUMEN_EXT_TOKENS:-}
+      LUMEN_EXT_ALLOW_OVERWRITE: ${LUMEN_EXT_ALLOW_OVERWRITE:-0}
+    volumes:
+      - lumen-ext-data:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8730/api/v1/info').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  lumen-ext-data:

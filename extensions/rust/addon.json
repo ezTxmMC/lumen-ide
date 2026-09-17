@@ -1,0 +1,668 @@
+{
+  "languages": [
+    {
+      "id": "rust",
+      "name": "Rust",
+      "extensions": [
+        ".rs"
+      ],
+      "icon": "Rs",
+      "color": "#dea584",
+      "capitalizedAsType": true,
+      "comments": {
+        "line": "//",
+        "block": [
+          "/*",
+          "*/"
+        ]
+      },
+      "controls": [
+        "if",
+        "else",
+        "match",
+        "loop",
+        "while",
+        "for",
+        "break",
+        "continue",
+        "return"
+      ],
+      "keywords": [
+        "fn",
+        "let",
+        "mut",
+        "const",
+        "static",
+        "struct",
+        "enum",
+        "trait",
+        "impl",
+        "type",
+        "mod",
+        "use",
+        "pub",
+        "crate",
+        "super",
+        "self",
+        "Self",
+        "as",
+        "in",
+        "where",
+        "dyn",
+        "ref",
+        "move",
+        "async",
+        "await",
+        "unsafe",
+        "extern",
+        "box",
+        "union",
+        "macro_rules",
+        "yield"
+      ],
+      "types": [
+        "i8",
+        "i16",
+        "i32",
+        "i64",
+        "i128",
+        "isize",
+        "u8",
+        "u16",
+        "u32",
+        "u64",
+        "u128",
+        "usize",
+        "f32",
+        "f64",
+        "bool",
+        "char",
+        "str",
+        "String",
+        "Vec",
+        "Option",
+        "Result",
+        "Box",
+        "Rc",
+        "Arc",
+        "RefCell",
+        "Cell",
+        "Mutex",
+        "RwLock",
+        "HashMap",
+        "HashSet",
+        "BTreeMap",
+        "Cow",
+        "Pin",
+        "Future"
+      ],
+      "builtins": [
+        "println",
+        "print",
+        "eprintln",
+        "format",
+        "vec",
+        "panic",
+        "assert",
+        "assert_eq",
+        "assert_ne",
+        "todo",
+        "unimplemented",
+        "write",
+        "writeln",
+        "matches",
+        "dbg",
+        "include_str",
+        "env"
+      ],
+      "constants": [
+        "true",
+        "false",
+        "None",
+        "Some",
+        "Ok",
+        "Err"
+      ],
+      "strings": [
+        {
+          "start": "r#\"",
+          "end": "\"#",
+          "multiline": true,
+          "escapes": false
+        },
+        {
+          "start": "\"",
+          "multiline": true,
+          "escapes": true
+        },
+        {
+          "start": "'",
+          "escapes": true
+        }
+      ],
+      "operators": "^(?:->|=>|::|\\.\\.=|\\.\\.|[+\\-*/%=<>!&|^~?@])",
+      "meta": "^#!?\\[[^\\]]*\\]",
+      "indentUnit": 4,
+      "snippets": [
+        {
+          "label": "main",
+          "detail": "main",
+          "body": "fn main() {\n    $0\n}"
+        },
+        {
+          "label": "fn",
+          "detail": "Funktion",
+          "body": "fn ${name}(${arg}: ${T}) -> ${R} {\n    $0\n}"
+        },
+        {
+          "label": "struct",
+          "detail": "Struct",
+          "body": "#[derive(Debug, Clone)]\nstruct ${Name} {\n    ${feld}: ${T},\n}"
+        },
+        {
+          "label": "match",
+          "detail": "match",
+          "body": "match ${wert} {\n    ${Some(x)} => $0,\n    _ => {}\n}"
+        },
+        {
+          "label": "enum",
+          "detail": "Enum",
+          "body": "#[derive(Debug, Clone, PartialEq)]\nenum ${Name} {\n    ${Eins},\n    ${Zwei}(${String}),\n}$0"
+        },
+        {
+          "label": "impl",
+          "detail": "impl-Block",
+          "body": "impl ${Name} {\n    pub fn new(${arg}: ${T}) -> Self {\n        Self { $0 }\n    }\n}"
+        },
+        {
+          "label": "trait",
+          "detail": "Trait",
+          "body": "trait ${Name} {\n    fn ${methode}(&self) -> ${String};$0\n}"
+        },
+        {
+          "label": "implt",
+          "detail": "Trait implementieren",
+          "body": "impl ${Trait} for ${Typ} {\n    fn ${methode}(&self) -> ${String} {\n        $0\n    }\n}"
+        },
+        {
+          "label": "result",
+          "detail": "Funktion mit Result",
+          "body": "fn ${name}() -> Result<${T}, Box<dyn std::error::Error>> {\n    $0\n    Ok(${wert})\n}"
+        },
+        {
+          "label": "iflet",
+          "detail": "if let",
+          "body": "if let Some(${wert}) = ${option} {\n    $0\n}"
+        },
+        {
+          "label": "forr",
+          "detail": "for-Schleife",
+          "body": "for ${element} in ${liste} {\n    $0\n}"
+        },
+        {
+          "label": "iter",
+          "detail": "Iterator-Kette",
+          "body": "${liste}.iter()\n    .filter(|${x}| $0)\n    .map(|${x}| ${x})\n    .collect::<Vec<_>>()"
+        },
+        {
+          "label": "test",
+          "detail": "Testmodul",
+          "body": "#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn ${funktioniert}() {\n        assert_eq!($0, ${1});\n    }\n}"
+        },
+        {
+          "label": "derive",
+          "detail": "derive",
+          "body": "#[derive(Debug, Clone, PartialEq, Eq)]$0"
+        },
+        {
+          "label": "async",
+          "detail": "async fn",
+          "body": "async fn ${name}() -> ${Result}<${T}> {\n    $0\n}"
+        }
+      ],
+      "run": [
+        {
+          "label": "cargo run",
+          "command": "cargo",
+          "args": [
+            "run"
+          ]
+        },
+        {
+          "label": "rustc",
+          "command": "rustc",
+          "args": [
+            "${file}",
+            "-o",
+            "${fileStem}"
+          ],
+          "then": {
+            "command": "./${fileStem}",
+            "args": []
+          }
+        },
+        {
+          "label": "cargo test",
+          "command": "cargo",
+          "args": [
+            "test"
+          ]
+        },
+        {
+          "label": "cargo clippy",
+          "command": "cargo",
+          "args": [
+            "clippy",
+            "--all-targets"
+          ]
+        }
+      ],
+      "lsp": [
+        {
+          "label": "rust-analyzer",
+          "command": "rust-analyzer",
+          "args": [],
+          "languageId": "rust",
+          "rootMarkers": [
+            "Cargo.toml",
+            "rust-project.json",
+            ".git"
+          ],
+          "settings": {
+            "rust-analyzer": {
+              "checkOnSave": {
+                "command": "clippy"
+              },
+              "cargo": {
+                "allFeatures": true,
+                "buildScripts": {
+                  "enable": true
+                }
+              },
+              "procMacro": {
+                "enable": true
+              },
+              "completion": {
+                "autoimport": {
+                  "enable": true
+                },
+                "limit": null,
+                "privateEditable": {
+                  "enable": true
+                }
+              },
+              "workspace": {
+                "symbol": {
+                  "search": {
+                    "scope": "workspace_and_dependencies",
+                    "limit": 10000
+                  }
+                }
+              }
+            }
+          },
+          "install": "rustup component add rust-analyzer"
+        }
+      ],
+      "debug": [
+        "lldb-dap",
+        "gdb-dap",
+        "codelldb"
+      ]
+    }
+  ],
+  "themes": [],
+  "commands": [],
+  "events": [],
+  "templates": [
+    {
+      "id": "rust-cargo",
+      "name": "templates.lang.rustName",
+      "description": "templates.lang.rustDescription",
+      "languageId": "rust",
+      "kindId": "cargo",
+      "icon": "Rs",
+      "color": "#dea584",
+      "fields": [
+        {
+          "id": "version",
+          "label": "templates.fields.version",
+          "default": "0.1.0",
+          "pattern": "\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?",
+          "patternHint": "templates.fields.versionHint",
+          "mono": true,
+          "section": "templates.sections.project"
+        },
+        {
+          "id": "description",
+          "label": "templates.fields.description",
+          "placeholder": "templates.fields.descriptionPlaceholder",
+          "required": false,
+          "section": "templates.sections.project"
+        },
+        {
+          "id": "author",
+          "label": "templates.fields.author",
+          "placeholder": "templates.fields.authorPlaceholder",
+          "required": false,
+          "section": "templates.sections.project"
+        },
+        {
+          "id": "license",
+          "label": "templates.fields.license",
+          "type": "select",
+          "section": "templates.sections.project",
+          "choices": [
+            {
+              "value": "MIT",
+              "label": "MIT"
+            },
+            {
+              "value": "Apache-2.0",
+              "label": "Apache 2.0"
+            },
+            {
+              "value": "GPL-3.0-or-later",
+              "label": "GPL 3.0"
+            },
+            {
+              "value": "BSD-3-Clause",
+              "label": "BSD 3-Clause"
+            },
+            {
+              "value": "UNLICENSED",
+              "label": "templates.fields.licenseNone"
+            }
+          ]
+        },
+        {
+          "id": "type",
+          "label": "templates.fields.type",
+          "type": "select",
+          "section": "templates.sections.build",
+          "choices": [
+            {
+              "value": "bin",
+              "label": "templates.lang.binary"
+            },
+            {
+              "value": "lib",
+              "label": "templates.lang.libraryLib"
+            }
+          ]
+        },
+        {
+          "id": "edition",
+          "label": "Edition",
+          "type": "select",
+          "section": "templates.sections.build",
+          "choices": [
+            {
+              "value": "2021",
+              "label": "2021"
+            },
+            {
+              "value": "2024",
+              "label": "2024"
+            }
+          ]
+        },
+        {
+          "id": "clap",
+          "label": "templates.lang.clap",
+          "type": "toggle",
+          "default": "false",
+          "section": "templates.sections.options",
+          "when": {
+            "field": "type",
+            "equals": "bin"
+          }
+        }
+      ],
+      "open": "{{#if type=lib}}src/lib.rs{{/if}}{{#unless type=lib}}src/main.rs{{/unless}}",
+      "setup": [
+        {
+          "label": "cargo build",
+          "command": "cargo",
+          "args": [
+            "build"
+          ]
+        }
+      ],
+      "files": [
+        {
+          "path": "Cargo.toml",
+          "content": "[package]\nname = \"{{slug}}\"\nversion = \"{{version}}\"\nedition = \"{{edition}}\"\n{{#if description}}description = \"{{description}}\"\n{{/if}}{{#unless license=UNLICENSED}}license = \"{{license}}\"\n{{/unless}}{{#if author}}authors = [\"{{author}}\"]\n{{/if}}\n[dependencies]\n{{#unless type=lib}}{{#if clap}}clap = { version = \"4.5\", features = [\"derive\"] }\n{{/if}}{{/unless}}"
+        },
+        {
+          "path": "src/main.rs",
+          "when": {
+            "field": "type",
+            "notEquals": "lib"
+          },
+          "content": "{{#if clap}}use clap::Parser;\n\n/// {{name}}\n#[derive(Parser)]\n#[command(version, about)]\nstruct Args {\n    /// Wen begrüßen?\n    #[arg(short, long, default_value = \"Welt\")]\n    name: String,\n}\n\nfn main() {\n    let args = Args::parse();\n    println!(\"Hallo, {}!\", args.name);\n}\n{{/if}}{{#unless clap}}fn main() {\n    println!(\"Hallo aus {{name}}!\");\n}\n\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn rechnet() {\n        assert_eq!(2 + 2, 4);\n    }\n}\n{{/unless}}"
+        },
+        {
+          "path": "src/lib.rs",
+          "when": {
+            "field": "type",
+            "equals": "lib"
+          },
+          "content": "//! {{name}}\n\n/// Addiert zwei Zahlen.\npub fn add(a: i64, b: i64) -> i64 {\n    a + b\n}\n\n#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n    fn addiert() {\n        assert_eq!(add(2, 3), 5);\n    }\n}\n"
+        },
+        {
+          "path": "tests/integration.rs",
+          "when": {
+            "field": "type",
+            "equals": "lib"
+          },
+          "content": "#[test]\nfn api() {\n    assert_eq!({{slug|snake}}::add(1, 1), 2);\n}\n"
+        },
+        {
+          "path": "rustfmt.toml",
+          "content": "edition = \"{{edition}}\"\n"
+        },
+        {
+          "path": ".gitignore",
+          "content": "target/\n.lumen/\n"
+        },
+        {
+          "path": "README.md",
+          "content": "# {{name}}\n\n```bash\ncargo {{#if type=lib}}build{{/if}}{{#unless type=lib}}run{{/unless}}\ncargo test\n```\n"
+        }
+      ]
+    }
+  ],
+  "projectKinds": [
+    {
+      "id": "cargo",
+      "name": "Cargo",
+      "icon": "Rs",
+      "color": "#dea584",
+      "markers": [
+        "Cargo.toml"
+      ],
+      "priority": 10,
+      "languageIds": [
+        "rust"
+      ],
+      "buildFile": "Cargo.toml",
+      "sourceRoots": [
+        "src",
+        "tests"
+      ],
+      "dependencies": {
+        "manager": "Cargo",
+        "placeholder": "serde",
+        "hint": "templates.lang.cargoHint",
+        "id": "cargo:add",
+        "command": "cargo",
+        "args": [
+          "add",
+          "{scopeArgs}",
+          "{spec}",
+          "{rest}"
+        ],
+        "label": "cargo add {name}",
+        "scopeArgs": {
+          "dev": [
+            "--dev"
+          ],
+          "build": [
+            "--build"
+          ]
+        },
+        "scopes": [
+          {
+            "value": "normal",
+            "label": "[dependencies]"
+          },
+          {
+            "value": "dev",
+            "label": "[dev-dependencies]"
+          },
+          {
+            "value": "build",
+            "label": "[build-dependencies]"
+          }
+        ]
+      },
+      "tasks": [
+        {
+          "id": "build",
+          "label": "templates.tasks.build",
+          "command": "cargo",
+          "args": [
+            "build"
+          ],
+          "group": "build"
+        },
+        {
+          "id": "run",
+          "label": "templates.tasks.run",
+          "command": "cargo",
+          "args": [
+            "run"
+          ],
+          "group": "run"
+        },
+        {
+          "id": "test",
+          "label": "templates.tasks.tests",
+          "command": "cargo",
+          "args": [
+            "test"
+          ],
+          "group": "test"
+        },
+        {
+          "id": "clippy",
+          "label": "Clippy",
+          "command": "cargo",
+          "args": [
+            "clippy",
+            "--all-targets"
+          ],
+          "group": "test"
+        },
+        {
+          "id": "release",
+          "label": "templates.tasks.buildRelease",
+          "command": "cargo",
+          "args": [
+            "build",
+            "--release"
+          ],
+          "group": "build"
+        },
+        {
+          "id": "fmt",
+          "label": "templates.tasks.format",
+          "command": "cargo",
+          "args": [
+            "fmt"
+          ],
+          "group": "other"
+        },
+        {
+          "id": "update",
+          "label": "templates.tasks.updateDeps",
+          "command": "cargo",
+          "args": [
+            "update"
+          ],
+          "group": "other"
+        },
+        {
+          "id": "doc",
+          "label": "templates.lang.documentation",
+          "command": "cargo",
+          "args": [
+            "doc",
+            "--open"
+          ],
+          "group": "other"
+        },
+        {
+          "id": "clean",
+          "label": "templates.tasks.clean",
+          "command": "cargo",
+          "args": [
+            "clean"
+          ],
+          "group": "clean"
+        }
+      ],
+      "facts": [
+        {
+          "label": "Name",
+          "file": "Cargo.toml",
+          "section": "package",
+          "pattern": "^\\s*name\\s*=\\s*\"([^\"]+)\"",
+          "role": "name"
+        },
+        {
+          "label": "Version",
+          "file": "Cargo.toml",
+          "section": "package",
+          "pattern": "^\\s*version\\s*=\\s*\"([^\"]+)\"",
+          "role": "version"
+        },
+        {
+          "label": "Beschreibung",
+          "file": "Cargo.toml",
+          "section": "package",
+          "pattern": "^\\s*description\\s*=\\s*\"([^\"]+)\"",
+          "role": "description"
+        },
+        {
+          "label": "Edition",
+          "file": "Cargo.toml",
+          "section": "package",
+          "pattern": "^\\s*edition\\s*=\\s*\"([^\"]+)\""
+        }
+      ],
+      "dependencyScan": [
+        {
+          "file": "Cargo.toml",
+          "section": "dependencies",
+          "scope": "normal",
+          "pattern": "^\\s*([A-Za-z0-9_-]+)\\s*=\\s*(?:\"([^\"]+)\"|\\{[^}]*version\\s*=\\s*\"([^\"]+)\")"
+        },
+        {
+          "file": "Cargo.toml",
+          "section": "dev-dependencies",
+          "scope": "dev",
+          "pattern": "^\\s*([A-Za-z0-9_-]+)\\s*=\\s*(?:\"([^\"]+)\"|\\{[^}]*version\\s*=\\s*\"([^\"]+)\")"
+        },
+        {
+          "file": "Cargo.toml",
+          "section": "build-dependencies",
+          "scope": "build",
+          "pattern": "^\\s*([A-Za-z0-9_-]+)\\s*=\\s*(?:\"([^\"]+)\"|\\{[^}]*version\\s*=\\s*\"([^\"]+)\")"
+        }
+      ]
+    }
+  ],
+  "snippets": []
+}

@@ -1,0 +1,15 @@
+{
+  "id": "ext.rust",
+  "name": "Rust",
+  "version": "1.0.0",
+  "description": "Rust mit Attributen, Raw-Strings, Lifetimes und cargo-Runner.",
+  "author": "Lumen",
+  "icon": "Rs",
+  "color": "#dea584",
+  "category": "language",
+  "license": "MIT",
+  "keywords": [
+    "rust"
+  ],
+  "minAppVersion": "0.3.0"
+}
