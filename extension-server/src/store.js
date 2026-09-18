@@ -58,6 +58,8 @@ export function provides(manifest) {
     snippets: count(addon.snippets),
     settings: count(manifest.settings),
     pages: count(manifest.pages),
+    agents: count(manifest.agents),
+    code: manifest.code ? 1 : 0,
   }
 }
 

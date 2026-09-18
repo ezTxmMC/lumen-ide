@@ -167,7 +167,7 @@ export function StatusBar() {
       <UpdateBadge />
 
       <button
-        onClick={() => openDialog('addons')}
+        onClick={() => openDialog('extensions', 'installed')}
         className="lm-transition flex items-center gap-1 rounded px-1 hover:bg-hover hover:text-fg"
         title={t('statusbar.manageAddons')}
       >

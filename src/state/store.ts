@@ -90,7 +90,9 @@ export interface Toast {
  * know about them.
  */
 export type ExtensionPageView = `ext:${string}`
-export type SidebarView = 'explorer' | 'search' | 'project' | 'outline' | 'debug' | ExtensionPageView
+/** `agent:<extension id>/<agent id>` — the chat of an agent an extension registers. */
+export type AgentView = `agent:${string}`
+export type SidebarView = 'explorer' | 'search' | 'project' | 'outline' | 'debug' | ExtensionPageView | AgentView
 
 /** Split the identifier of an extension page. */
 export function parseExtensionView(view: string | null): { extensionId: string; pageId: string } | null {
@@ -102,7 +104,7 @@ export function parseExtensionView(view: string | null): { extensionId: string; 
 }
 
 /** Large dialogs that sit above the interface (the lower icons of the activity bar). */
-export type DialogId = 'settings' | 'themes' | 'addons' | 'keybindings' | 'sdks' | 'workspaces' | 'extensions'
+export type DialogId = 'settings' | 'themes' | 'keybindings' | 'sdks' | 'workspaces' | 'extensions'
 
 /** An editor group (split view): its own tab bar, its own active tab. */
 export interface EditorGroup {

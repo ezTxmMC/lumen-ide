@@ -115,5 +115,19 @@ export async function fetchManifest(url: string, id: string, version?: string): 
   if (model.id !== data.id) throw new Error('The add-on id does not match the extension')
   if (model.version !== data.version) throw new Error('The add-on version does not match the extension')
 
+  // Foreign data: what the panel and the loader rely on has to have the right shape.
+  if (data.code !== undefined) {
+    const code = data.code as Record<string, unknown> | null
+    if (!code || typeof code !== 'object' || typeof code.main !== 'string' || !code.main) throw new Error('The manifest\'s code is malformed')
+  }
+  if (data.agents !== undefined) {
+    if (!Array.isArray(data.agents)) throw new Error('The manifest\'s agents are malformed')
+    for (const agent of data.agents as Record<string, unknown>[]) {
+      if (!agent || typeof agent.id !== 'string' || typeof agent.name !== 'string' || !/^[a-z][a-z0-9-]*$/.test(agent.id)) {
+        throw new Error('The manifest\'s agents are malformed')
+      }
+    }
+  }
+
   return data as unknown as ExtensionManifest
 }

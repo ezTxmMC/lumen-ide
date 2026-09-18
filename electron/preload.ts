@@ -5,6 +5,7 @@ import { lspPackagesApi } from './features/lsp-packages-api'
 import { dapApi } from './features/dap-api'
 import { userAddonsApi } from './features/user-addons-api'
 import { updaterApi } from './features/updater-api'
+import { agentApi } from './features/agent-api'
 import { discordApi } from './features/discord-rpc-api'
 
 export interface DirEntry {
@@ -82,6 +83,9 @@ const api = {
     list: (): Promise<{ file: string; data: unknown; error?: string }[]> => invoke('extensions:list'),
     save: (id: string, content: string): Promise<void> => invoke('extensions:save', id, content),
     remove: (id: string): Promise<void> => invoke('extensions:remove', id),
+    /** Saves approved program code and starts it; `hash` is the SHA-256 the user was shown. */
+    installCode: (id: string, code: string, hash: string): Promise<void> => invoke('extensions:code:install', id, code, hash),
+    removeCode: (id: string): Promise<void> => invoke('extensions:code:remove', id),
   },
 
   dialog: {
@@ -194,6 +198,7 @@ const api = {
   dap: dapApi,
   userAddons: userAddonsApi,
   updater: updaterApi,
+  agent: agentApi,
   discord: discordApi,
 }
 

@@ -1,0 +1,56 @@
+{
+  "id": "ext.claude-code",
+  "name": "Claude Code",
+  "version": "1.1.0",
+  "description": "Chat mit Claude Code in der Seitenleiste: Projektpfad, geöffnete Datei und Erlauben/Ablehnen für jede Aktion. Bringt Programmcode mit.",
+  "author": "Lumen",
+  "icon": "Cc",
+  "color": "#d97757",
+  "category": "tool",
+  "license": "MIT",
+  "keywords": [
+    "claude",
+    "claude code",
+    "anthropic",
+    "ai",
+    "agent",
+    "cli"
+  ],
+  "minAppVersion": "0.3.0",
+  "settings": [
+    {
+      "key": "claudePath",
+      "label": "Pfad zu claude",
+      "type": "text",
+      "default": "",
+      "placeholder": "automatisch suchen",
+      "hint": "Leer lassen, um claude im PATH zu finden."
+    }
+  ],
+  "agents": [
+    {
+      "id": "claude",
+      "name": "Claude Code",
+      "description": "Frag Claude nach deinem Projekt: Code erklären, Fehler suchen, Änderungen vornehmen. Jede Aktion fragt vorher nach deiner Erlaubnis.",
+      "icon": "Cc",
+      "placeholder": "Nachricht an Claude …  (Enter senden, Umschalt+Enter Zeilenumbruch)",
+      "modes": [
+        {
+          "id": "default",
+          "label": "Nachfragen",
+          "description": "Fragt vor jeder Änderung und jedem Befehl"
+        },
+        {
+          "id": "acceptEdits",
+          "label": "Edits automatisch",
+          "description": "Dateiänderungen ohne Rückfrage, Befehle weiter mit Rückfrage"
+        },
+        {
+          "id": "plan",
+          "label": "Plan",
+          "description": "Nur planen, nichts ändern"
+        }
+      ]
+    }
+  ]
+}

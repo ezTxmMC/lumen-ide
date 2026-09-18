@@ -1,9 +1,10 @@
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import {
-  Blocks, Bug, Files, FolderKanban, Keyboard, ListTree, Package, Palette, Search, Settings,
+  Blocks, Bug, Files, FolderKanban, Keyboard, ListTree, Package, Palette, Search, Settings, Sparkles,
 } from 'lucide-react'
 import { useStore, type DialogId, type SidebarView } from '@/state/store'
 import { extensions } from '@/core/extensions/manager'
+import { agentChat } from '@/core/agent/chat'
 import { formatBindingsFor, keybindings } from '@/core/keybindings'
 import { useT } from '@/i18n'
 
@@ -17,7 +18,6 @@ const VIEWS: { id: SidebarView; icon: typeof Files; label: string; command: stri
 
 /** The lower icons: these open large dialogs rather than the sidebar. */
 const DIALOGS: { id: DialogId; icon: typeof Files; label: string; command: string }[] = [
-  { id: 'addons', icon: Blocks, label: 'shell.dialog.addons', command: 'view.addons' },
   { id: 'extensions', icon: Package, label: 'extensions.title', command: 'view.extensions' },
   { id: 'settings', icon: Settings, label: 'shell.dialog.settings', command: 'view.settings' },
   { id: 'keybindings', icon: Keyboard, label: 'shell.dialog.keybindings', command: 'view.keybindings' },
@@ -50,6 +50,13 @@ export function ActivityBar() {
       label: page.title,
       hint: extensionName,
     }))
+
+  // Chat agents the extensions register: one icon each, after the pages.
+  const agentViews = agentChat.agents().map(({ key, extensionId, agent }) => ({
+    id: `agent:${key}` as SidebarView,
+    label: agent.name,
+    hint: extensions.get(extensionId)?.manifest.name ?? extensionId,
+  }))
 
   // A sliding active-item bar rather than hard jumps.
   const buttons = useRef(new Map<string, HTMLButtonElement>())
@@ -99,6 +106,10 @@ export function ActivityBar() {
 
       {extensionViews.map(({ id, label, hint }) => button(
         id, Blocks, `${label} — ${hint}`, view === id, () => setView(id),
+      ))}
+
+      {agentViews.map(({ id, label, hint }) => button(
+        id, Sparkles, `${label} — ${hint}`, view === id, () => setView(id),
       ))}
 
       <div className="flex-1" />

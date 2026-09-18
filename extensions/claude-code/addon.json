@@ -1,0 +1,139 @@
+{
+  "languages": [],
+  "themes": [],
+  "commands": [],
+  "events": [],
+  "snippets": [],
+  "projectKinds": [
+    {
+      "id": "claude-code",
+      "name": "Claude Code",
+      "icon": "Cc",
+      "color": "#d97757",
+      "markers": [
+        "CLAUDE.md",
+        ".claude"
+      ],
+      "priority": 1,
+      "buildFile": "CLAUDE.md",
+      "tasks": [
+        {
+          "id": "session",
+          "label": "Claude Code starten",
+          "command": "claude",
+          "args": [],
+          "group": "run",
+          "detail": "Neue Sitzung im Projektordner"
+        },
+        {
+          "id": "continue",
+          "label": "Letzte Sitzung fortsetzen",
+          "command": "claude",
+          "args": [
+            "--continue"
+          ],
+          "group": "run"
+        },
+        {
+          "id": "resume",
+          "label": "Sitzung auswählen",
+          "command": "claude",
+          "args": [
+            "--resume"
+          ],
+          "group": "run"
+        },
+        {
+          "id": "mcp",
+          "label": "MCP-Server anzeigen",
+          "command": "claude",
+          "args": [
+            "mcp",
+            "list"
+          ],
+          "group": "other"
+        },
+        {
+          "id": "doctor",
+          "label": "Installation prüfen",
+          "command": "claude",
+          "args": [
+            "doctor"
+          ],
+          "group": "other"
+        },
+        {
+          "id": "update",
+          "label": "Claude Code aktualisieren",
+          "command": "claude",
+          "args": [
+            "update"
+          ],
+          "group": "other"
+        },
+        {
+          "id": "install",
+          "label": "Claude Code installieren",
+          "command": "npm",
+          "args": [
+            "install",
+            "-g",
+            "@anthropic-ai/claude-code"
+          ],
+          "group": "build",
+          "detail": "Benötigt Node.js"
+        }
+      ],
+      "facts": [
+        {
+          "label": "Anweisungen",
+          "file": "CLAUDE.md",
+          "pattern": "^#\\s+(.+)$"
+        }
+      ]
+    }
+  ],
+  "templates": [
+    {
+      "id": "claude-code-project",
+      "name": "Claude Code Projekt",
+      "description": "CLAUDE.md, Einstellungen und ein Slash-Befehl für Claude Code.",
+      "kindId": "claude-code",
+      "icon": "Cc",
+      "color": "#d97757",
+      "open": "CLAUDE.md",
+      "next": "Starte Claude Code über die Aufgabenliste.",
+      "fields": [
+        {
+          "id": "description",
+          "label": "Beschreibung",
+          "section": "Projekt",
+          "placeholder": "Was macht das Projekt?",
+          "required": false
+        },
+        {
+          "id": "commands",
+          "label": "Bau- und Testbefehle",
+          "section": "Projekt",
+          "placeholder": "npm test",
+          "required": false,
+          "mono": true
+        }
+      ],
+      "files": [
+        {
+          "path": "CLAUDE.md",
+          "content": "# {{name}}\n\n{{description}}\n\n## Befehle\n\n```sh\n{{commands}}\n```\n\n## Konventionen\n\n- Kleine, überprüfbare Änderungen\n- Tests vor dem Abschluss ausführen\n"
+        },
+        {
+          "path": ".claude/settings.json",
+          "content": "{\n  \"permissions\": {\n    \"allow\": [],\n    \"deny\": [\"Read(./.env)\"]\n  }\n}\n"
+        },
+        {
+          "path": ".claude/commands/review.md",
+          "content": "---\ndescription: Änderungen im Arbeitsverzeichnis prüfen\n---\n\nPrüfe die aktuellen Änderungen (`git diff`) auf Fehler, fehlende Tests und unklare Namen. Fasse Ergebnisse nach Schwere zusammen.\n"
+        }
+      ]
+    }
+  ]
+}

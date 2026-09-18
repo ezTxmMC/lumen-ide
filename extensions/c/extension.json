@@ -1,8 +1,8 @@
 {
   "id": "ext.c",
   "name": "C",
-  "version": "1.0.1",
-  "description": "C99 bis C23 mit Präprozessor-Hervorhebung und gcc/clang-Runner. CMake- und Make-Projekte mit Aufgaben, Vorlagen und clangd (geteilt mit C++).",
+  "version": "1.0.2",
+  "description": "C99 bis C23 mit Präprozessor-Hervorhebung, gcc/clang-Runner und clangd. Make-Projekte erkennt die Erweiterung „Essentials“.",
   "author": "Lumen",
   "icon": "C",
   "color": "#5c6bc0",

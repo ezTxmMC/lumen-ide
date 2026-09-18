@@ -7,6 +7,8 @@ import { SearchPanel } from './panels/SearchPanel'
 import { ProjectPanel } from './panels/ProjectPanel'
 import { OutlinePanel } from './panels/OutlinePanel'
 import { DebugSidebar } from './panels/DebugSidebar'
+import { AgentPanel } from './panels/AgentPanel'
+import { agentChat } from '@/core/agent/chat'
 import { ExtensionPageView } from './panels/ExtensionPageView'
 
 const TITLES: Partial<Record<SidebarView, string>> = {
@@ -53,8 +55,9 @@ export function Sidebar() {
   }
 
   const fromExtension = extensionPage(view)
+  const agent = view?.startsWith('agent:') ? agentChat.find(view.slice('agent:'.length)) : undefined
   const builtin = TITLES[view]
-  const title = builtin ? t(builtin) : fromExtension?.page.title ?? ''
+  const title = builtin ? t(builtin) : fromExtension?.page.title ?? agent?.agent.name ?? ''
 
   return (
     <aside
@@ -74,6 +77,7 @@ export function Sidebar() {
           {view === 'project' && <ProjectPanel />}
           {view === 'outline' && <OutlinePanel />}
           {view === 'debug' && <DebugSidebar />}
+          {agent && <AgentPanel agentKey={agent.key} />}
           {fromExtension && <ExtensionPageView page={fromExtension.page} />}
         </div>
       </div>

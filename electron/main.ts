@@ -14,6 +14,7 @@ import { registerDapIpc, stopAllDebugAdapters } from './features/dap'
 import { registerUserAddonIpc } from './features/user-addons'
 import { registerNetIpc } from './features/net'
 import { registerUpdaterIpc } from './features/updater'
+import { registerExtensionHostIpc } from './features/extension-host'
 import { registerDiscordIpc, stopDiscordRpc } from './features/discord-rpc'
 import { applyWindowSystem, currentWindowSystem, isWaylandSession, relaunchApp } from './features/window-system'
 import { folderFromArgv, registerRecentProjectsIpc } from './features/recent-projects'
@@ -133,6 +134,7 @@ app.whenReady().then(() => {
   registerDiscordIpc(() => win)
   registerRecentProjectsIpc(() => win)
   registerLocalRepoIpc()
+  registerExtensionHostIpc(() => win)
   registerExtensionIpc()
   createWindow()
 

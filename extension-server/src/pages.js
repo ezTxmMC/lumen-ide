@@ -85,7 +85,7 @@ function badge(entry) {
 function providesText(provides) {
   const names = {
     languages: 'Sprachen', themes: 'Themes', commands: 'Befehle', templates: 'Vorlagen',
-    projectKinds: 'Projektarten', snippets: 'Snippets', settings: 'Einstellungen', pages: 'Seiten',
+    projectKinds: 'Projektarten', snippets: 'Snippets', settings: 'Einstellungen', pages: 'Seiten', agents: 'Agenten', code: 'Programmcode',
   }
   const parts = Object.entries(provides ?? {})
     .filter(([, count]) => count > 0)

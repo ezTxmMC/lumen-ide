@@ -72,6 +72,19 @@ async function main() {
     assert.equal(checked.settings.length, 1)
   })
 
+  await check('Agent mit Programmcode geht durch und bleibt erhalten', () => {
+    const agent = { id: 'helper', name: 'Helfer', modes: [{ id: 'ask', label: 'Fragen' }] }
+    const checked = checkManifest(sample({ agents: [agent], code: { main: 'export function activate() {}' } }))
+    assert.equal(checked.agents[0].id, 'helper')
+    assert.equal(checked.code.main, 'export function activate() {}')
+  })
+  await check('Agent ohne Programmcode wird abgelehnt', () => rejects(sample({ agents: [{ id: 'helper', name: 'Helfer' }] }), 'code'))
+  await check('Programmcode muss Text sein', () => rejects(sample({ code: { main: 42 } }), 'code.main'))
+  await check('Agent-Kennung mit Großbuchstaben wird abgelehnt', () => rejects(sample({ agents: [{ id: 'Helper', name: 'H' }], code: { main: 'x' } }), 'agents[0].id'))
+  await check('doppelte Modi eines Agenten werden abgelehnt', () => rejects(sample({
+    agents: [{ id: 'a', name: 'A', modes: [{ id: 'm', label: 'M' }, { id: 'm', label: 'N' }] }], code: { main: 'x' },
+  }), 'agents[0].modes.id'))
+
   await check('Kennung ohne ext.-Präfix wird abgelehnt', () => rejects(sample({ id: 'demo' }), 'id'))
   await check('Kennung mit Großbuchstaben wird abgelehnt', () => rejects(sample({ id: 'ext.Demo' }), 'id'))
   await check('Version ohne Semver wird abgelehnt', () => rejects(sample({ version: '1.0' }), 'version'))

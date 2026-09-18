@@ -1,0 +1,48 @@
+/**
+ * Installing with the questions that belong to it.
+ *
+ * An extension that brings program code runs it with the rights of Lumen
+ * itself, so it is never installed silently: the user is told what that means
+ * and sees a fingerprint of the code they approve. The same goes for an
+ * update whose code has changed — only unchanged code carries over.
+ */
+
+import { useStore } from '@/state/store'
+import { t } from '@/i18n'
+import { CodeApprovalRequired, extensions } from './manager'
+import { hostOf } from './trust'
+import type { ExtensionManifest } from './types'
+
+/**
+ * Fetch and install; when the code needs approval, ask, then finish.
+ *
+ * `done` is called with the manifest once it is installed — right away, or
+ * after the user agreed. Errors other than the approval go to the caller.
+ */
+export async function installExtension(
+  server: string,
+  id: string,
+  version: string | undefined,
+  done: (manifest: ExtensionManifest) => void,
+): Promise<void> {
+  try {
+    done(await extensions.installFrom(server, id, version))
+  } catch (err) {
+    if (!(err instanceof CodeApprovalRequired)) throw err
+    const { manifest, hash } = err
+    useStore.getState().openForm({
+      title: t('extensions.codeTitle'),
+      description: t('extensions.codeBody', {
+        name: manifest.name,
+        host: hostOf(server) ?? server,
+        hash: hash.slice(0, 12),
+      }),
+      submitLabel: t('extensions.codeApprove'),
+      fields: [],
+      onSubmit: async () => {
+        await extensions.install(manifest, server, { approveCode: true })
+        done(manifest)
+      },
+    })
+  }
+}

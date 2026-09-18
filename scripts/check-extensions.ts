@@ -55,7 +55,9 @@ function main() {
     const settings = manifest.settings?.length ?? 0
     const pages = manifest.pages?.length ?? 0
     const languages = model.languages.length
-    report(true, `${manifest.id} ${manifest.version} — ${languages} Sprachen, ${settings} Einstellungen, ${pages} Seiten`)
+    const agents = manifest.agents?.length ?? 0
+    const code = manifest.code?.main ? `, Programmcode ${(manifest.code.main.length / 1024).toFixed(0)} kB` : ''
+    report(true, `${manifest.id} ${manifest.version} — ${languages} Sprachen, ${settings} Einstellungen, ${pages} Seiten${agents ? `, ${agents} Agenten` : ''}${code}`)
   }
 
   process.stdout.write(`\n${checked} checked, ${failed} error(s)\n`)

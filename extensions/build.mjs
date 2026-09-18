@@ -12,6 +12,7 @@
  *     addon.json        what the extension brings (languages, templates …)
  *     README.md         becomes the project page on the server
  *     pages/<id>.md     pages that Lumen itself displays
+ *     main.js           program code (optional) — bundled into `code.main`
  *
  * The result lands in `extensions/dist/<id>-<version>.json` and goes to
  * `POST /api/v1/publish` exactly as it is.
@@ -25,6 +26,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { build as bundle } from 'esbuild'
 import { ManifestError, checkManifest } from '../extension-server/src/manifest.js'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
@@ -105,6 +107,32 @@ async function collectPages(dir) {
   return pages
 }
 
+/**
+ * Bundle an extension's program code into one ES module.
+ *
+ * `main.js` may import packages from node_modules; they end up inside the
+ * bundle, so nothing has to be installed next to it on the user's machine.
+ * Node's own modules stay imports — the code runs in Lumen's main process.
+ */
+async function bundleCode(dir) {
+  const entry = path.join(dir, 'main.js')
+  if (!(await readText(entry))) return null
+  const result = await bundle({
+    entryPoints: [entry],
+    bundle: true,
+    write: false,
+    platform: 'node',
+    format: 'esm',
+    target: 'node20',
+    minify: true,
+    legalComments: 'none',
+    logLevel: 'silent',
+    // Bundled CommonJS packages call `require`, which an ES module does not have.
+    banner: { js: "import { createRequire as __lumenRequire } from 'node:module'; const require = __lumenRequire(import.meta.url);" },
+  })
+  return { main: result.outputFiles[0].text }
+}
+
 /** Assemble a source folder into a manifest. */
 async function buildOne(name) {
   const dir = path.join(HERE, name)
@@ -112,6 +140,7 @@ async function buildOne(name) {
   const addon = await readJson(path.join(dir, 'addon.json'), { required: false }) ?? {}
   const readme = await readText(path.join(dir, 'README.md'))
   const pages = await collectPages(path.join(dir, 'pages'))
+  const code = await bundleCode(dir)
 
   // The id and the version live in one place only; the add-on inherits them.
   const manifest = {
@@ -119,6 +148,7 @@ async function buildOne(name) {
     ...meta,
     readme: readme ?? meta.readme ?? '',
     pages: [...(meta.pages ?? []), ...pages],
+    ...(code ? { code } : {}),
     addon: {
       schema: 1,
       languages: [], themes: [], commands: [], events: [], templates: [], projectKinds: [], snippets: [],

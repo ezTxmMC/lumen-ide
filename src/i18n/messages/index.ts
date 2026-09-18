@@ -37,6 +37,7 @@ import updater from './updater'
 import iconPacks from './iconPacks'
 import studioProject from './studioProject'
 import discord from './discord'
+import agent from './agent'
 
 export const MESSAGES: Record<string, NamespaceMessages> = {
   common,
@@ -72,4 +73,5 @@ export const MESSAGES: Record<string, NamespaceMessages> = {
   iconPacks,
   studioProject,
   discord,
+  agent,
 }

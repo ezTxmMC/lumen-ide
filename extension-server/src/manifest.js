@@ -23,12 +23,15 @@ export const ID_PATTERN = /^ext\.[a-z0-9][a-z0-9._-]{0,63}$/
 export const VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/
 
 /** A manifest larger than this the server does not accept. */
-export const MAX_MANIFEST_BYTES = 4 * 1024 * 1024
+export const MAX_MANIFEST_BYTES = 6 * 1024 * 1024
 
 const CATEGORIES = new Set(['language', 'theme', 'tool'])
 const SETTING_TYPES = new Set(['text', 'number', 'toggle', 'select'])
 const PAGE_FORMATS = new Set(['markdown', 'html'])
 const PAGE_LOCATIONS = new Set(['sidebar', 'editor'])
+
+/** The bundled program code of an extension may not be larger than this. */
+export const MAX_CODE_CHARS = 3 * 1024 * 1024
 
 export class ManifestError extends Error {
   constructor(message, field) {
@@ -107,6 +110,34 @@ function checkPage(page, index) {
   return id
 }
 
+function checkAgent(agent, index) {
+  const where = `agents[${index}]`
+  if (!agent || typeof agent !== 'object') fail(`${where} muss ein Objekt sein`, where)
+  const id = text(agent.id, `${where}.id`, { max: 64, required: true })
+  if (!/^[a-z][a-z0-9-]*$/.test(id)) fail(`${where}.id darf nur Kleinbuchstaben, Ziffern und Bindestriche enthalten`, `${where}.id`)
+  text(agent.name, `${where}.name`, { max: 80, required: true })
+  text(agent.description, `${where}.description`, { max: 300 })
+  text(agent.icon, `${where}.icon`, { max: 64 })
+  text(agent.placeholder, `${where}.placeholder`, { max: 200 })
+  const modes = list(agent.modes, `${where}.modes`, { max: 8 })
+  const modeIds = modes.map((mode, i) => {
+    const modeId = text(mode?.id, `${where}.modes[${i}].id`, { max: 64, required: true })
+    text(mode?.label, `${where}.modes[${i}].label`, { max: 60, required: true })
+    text(mode?.description, `${where}.modes[${i}].description`, { max: 200 })
+    return modeId
+  })
+  requireUnique(modeIds, `${where}.modes.id`)
+  return id
+}
+
+/** Program code: one bundled ES module, run in Lumen's main process once the user has approved it. */
+function checkCode(code) {
+  if (code === undefined) return undefined
+  if (!code || typeof code !== 'object' || Array.isArray(code)) fail('code muss ein Objekt sein', 'code')
+  const main = text(code.main, 'code.main', { max: MAX_CODE_CHARS, required: true })
+  return { main }
+}
+
 /** Report duplicate ids in a list. */
 function requireUnique(ids, what) {
   const seen = new Set()
@@ -149,6 +180,11 @@ export function checkManifest(raw) {
   const pages = list(raw.pages, 'pages', { max: 16 })
   requireUnique(pages.map(checkPage), 'pages.id')
 
+  const agents = list(raw.agents, 'agents', { max: 8 })
+  requireUnique(agents.map(checkAgent), 'agents.id')
+  const code = checkCode(raw.code)
+  if (agents.length && !code) fail('agents braucht code — ohne Programmcode gibt es keinen Agenten', 'code')
+
   const keywords = list(raw.keywords, 'keywords', { max: 16 })
   keywords.forEach((word, i) => text(word, `keywords[${i}]`, { max: 40, required: true }))
 
@@ -170,6 +206,8 @@ export function checkManifest(raw) {
     readme: text(raw.readme, 'readme', { max: 512 * 1024 }) ?? '',
     settings,
     pages,
+    agents,
+    ...(code ? { code } : {}),
     addon,
   }
 }

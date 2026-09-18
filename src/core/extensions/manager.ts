@@ -20,7 +20,21 @@ import { normalizeModel } from '@/core/user-addons/schema'
 import { t } from '@/i18n'
 import { fetchManifest } from './client'
 import { normalizeServerUrl } from './trust'
+import { isNewer } from './version'
 import { EXTENSION_ID_PATTERN, type ExtensionManifest, type ExtensionPage, type InstalledExtension } from './types'
+
+/** Thrown when an extension's code has not been approved yet — the caller asks the user and tries again. */
+export class CodeApprovalRequired extends Error {
+  constructor(readonly manifest: ExtensionManifest, readonly hash: string) {
+    super(`${manifest.name} brings program code that has to be approved`)
+    this.name = 'CodeApprovalRequired'
+  }
+}
+
+export async function sha256Hex(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+}
 
 const listeners = new Set<() => void>()
 const installed = new Map<string, InstalledExtension>()
@@ -43,6 +57,7 @@ function toInstalled(raw: unknown): InstalledExtension | null {
     manifest,
     server: typeof entry.server === 'string' ? entry.server : '',
     installedAt: typeof entry.installedAt === 'number' ? entry.installedAt : Date.now(),
+    codeHash: typeof entry.codeHash === 'string' ? entry.codeHash : undefined,
   }
 }
 
@@ -90,16 +105,26 @@ export const extensions = {
    * The add-on goes through the usual validation; when that fails nothing is
    * stored and the first message is passed on.
    */
-  async install(manifest: ExtensionManifest, server: string): Promise<void> {
+  async install(manifest: ExtensionManifest, server: string, options: { approveCode?: boolean } = {}): Promise<void> {
+    const { code, ...stored } = manifest
+    const known = installed.get(manifest.id)?.codeHash
+    const codeHash = code ? await sha256Hex(code.main) : undefined
+    // Code that was approved before and has not changed runs on; anything else asks first.
+    if (code && codeHash !== known && !options.approveCode) throw new CodeApprovalRequired(manifest, codeHash ?? '')
+
     const model = normalizeModel(structuredClone(manifest.addon))
     const issues = await userAddons.save(model, model.id)
     const blocking = blockingIssues(issues)
     if (blocking.length) throw new Error(blocking[0].message)
 
+    if (code && codeHash) await window.lumen.extensions.installCode(manifest.id, code.main, codeHash)
+    if (!code && known) await window.lumen.extensions.removeCode(manifest.id)
+
     const record: InstalledExtension = {
-      manifest,
+      manifest: stored,
       server: normalizeServerUrl(server),
       installedAt: installed.get(manifest.id)?.installedAt ?? Date.now(),
+      codeHash,
     }
     await window.lumen.extensions.save(manifest.id, `${JSON.stringify(record, null, 2)}\n`)
     installed.set(manifest.id, record)
@@ -108,15 +133,16 @@ export const extensions = {
   },
 
   /** Fetch from a server and install. */
-  async installFrom(server: string, id: string, version?: string): Promise<ExtensionManifest> {
+  async installFrom(server: string, id: string, version?: string, options: { approveCode?: boolean } = {}): Promise<ExtensionManifest> {
     const manifest = await fetchManifest(server, id, version)
-    await extensions.install(manifest, server)
+    await extensions.install(manifest, server, options)
     return manifest
   },
 
   async uninstall(id: string) {
     if (!installed.has(id)) return
     await userAddons.remove(id)
+    if (installed.get(id)?.codeHash) await window.lumen.extensions.removeCode(id)
     await window.lumen.extensions.remove(id)
     installed.delete(id)
     useStore.getState().forgetExtensionSettings(id)
@@ -142,7 +168,7 @@ export const extensions = {
       if (!index) return
       for (const entry of entries) {
         const remote = index.extensions.find((candidate) => candidate.id === entry.manifest.id)
-        if (!remote || remote.version === entry.manifest.version) continue
+        if (!remote || !isNewer(remote.version, entry.manifest.version)) continue
         out.push({ id: entry.manifest.id, from: entry.manifest.version, to: remote.version, server })
       }
     }))

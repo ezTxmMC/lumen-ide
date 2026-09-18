@@ -1,0 +1,20 @@
+{
+  "id": "ext.codex",
+  "name": "ChatGPT Codex",
+  "version": "1.0.1",
+  "description": "OpenAI Codex CLI aus der Aufgabenliste starten: Sitzung, Fortsetzen, Anmeldung. Vorlage mit AGENTS.md.",
+  "author": "Lumen",
+  "icon": "Cx",
+  "color": "#10a37f",
+  "category": "tool",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "chatgpt",
+    "openai",
+    "ai",
+    "agent",
+    "cli"
+  ],
+  "minAppVersion": "0.3.0"
+}

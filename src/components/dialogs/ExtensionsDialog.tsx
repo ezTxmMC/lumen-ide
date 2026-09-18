@@ -1,26 +1,31 @@
 /**
- * Extensions from the network: managing servers, searching the catalogue,
- * installing, updating and removing.
+ * Extensions and add-ons in one place.
  *
- * On the left sit the configured servers and the installed extensions, on the
- * right the list for whichever is selected. A server Lumen has not verified
- * raises a prompt before installing — which is also where it can be marked
- * trusted for good.
+ *   Explore    everything all enabled servers offer, in one list
+ *   Installed  every add-on that is present — built in, from a server, by hand
+ *   Updates    installed extensions with a newer version on their server
+ *   Servers    the servers themselves
+ *
+ * A server Lumen has not verified raises a prompt before installing — which
+ * is also where it can be marked trusted for good.
  */
 
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import {
-  Blocks, CheckCircle2, Globe, Plus, RefreshCw, ShieldCheck, ShieldAlert, Trash2,
+  Blocks, CheckCircle2, Compass, Globe, Plus, RefreshCw, ShieldCheck, ShieldAlert, Trash2,
 } from 'lucide-react'
 import { useStore } from '@/state/store'
 import { useT } from '@/i18n'
-import { fetchIndex } from '@/core/extensions/client'
+import { catalog, type AvailableUpdate, type CatalogEntry } from '@/core/extensions/catalog'
+import { isNewer } from '@/core/extensions/version'
 import { extensions as installedExtensions } from '@/core/extensions/manager'
 import { offerServers } from '@/core/extensions/lsp'
+import { installExtension } from '@/core/extensions/flow'
 import { hostOf, isOfficial, isTrusted } from '@/core/extensions/trust'
 import type { ExtensionServer, ExtensionSummary } from '@/core/extensions/types'
 import { Button, Empty } from '../ui'
 import { DialogShell, type DialogSection } from './DialogShell'
+import { InstalledView } from './InstalledView'
 
 /** How a server's standing reads in the list. */
 function trustLabel(official: boolean, trusted: boolean): string {
@@ -28,15 +33,6 @@ function trustLabel(official: boolean, trusted: boolean): string {
   if (trusted) return 'extensions.serverTrusted'
   return 'extensions.serverUnverified'
 }
-
-/** A server's catalogue, for as long as the dialog is open. */
-interface CatalogState {
-  loading: boolean
-  error: string | null
-  entries: ExtensionSummary[]
-}
-
-const EMPTY_CATALOG: CatalogState = { loading: true, error: null, entries: [] }
 
 function Badge({ icon, color, size = 26 }: { icon?: string; color?: string; size?: number }) {
   return (
@@ -62,6 +58,10 @@ function useProvidesText() {
   }, [t])
 }
 
+type Category = 'all' | 'language' | 'theme' | 'tool'
+const CATEGORIES: Category[] = ['all', 'language', 'theme', 'tool']
+const INSTALLED_FILTERS = ['all', 'language', 'theme', 'tool', 'extension', 'user']
+
 export function ExtensionsDialog() {
   const t = useT()
   const open = useStore((s) => s.dialog === 'extensions')
@@ -73,58 +73,55 @@ export function ExtensionsDialog() {
   const removeServer = useStore((s) => s.removeExtensionServer)
   const addServer = useStore((s) => s.addExtensionServer)
 
-  const [section, setSection] = useState('installed')
+  const [section, setSection] = useState('explore')
+  const [installedFilter, setInstalledFilter] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [catalogs, setCatalogs] = useState<Record<string, CatalogState>>({})
+  const [category, setCategory] = useState<Category>('all')
   const [busy, setBusy] = useState<string | null>(null)
 
   useSyncExternalStore(installedExtensions.subscribe, installedExtensions.getVersion)
-  const installed = installedExtensions.list()
+  useSyncExternalStore(catalog.subscribe, catalog.getVersion)
   const providesText = useProvidesText()
 
-  const active = servers.find((server) => server.url === section) ?? null
+  const activeServers = useMemo(() => servers.filter((server) => !server.disabled), [servers])
+  const serverKey = activeServers.map((server) => server.url).join('\n')
+
+  const offered = catalog.explore(activeServers)
+  const updates = catalog.updates(activeServers)
 
   /** `openDialog('extensions', 'servers')` and the like pick the section. */
   useEffect(() => {
     if (!open || !requested) return
+    if (INSTALLED_FILTERS.includes(requested)) {
+      setSection('installed')
+      setInstalledFilter(requested)
+      return
+    }
     setSection(requested)
   }, [open, requested])
 
-  /** Load the selected server's catalogue as soon as it becomes visible. */
+  /** Ask every enabled server whenever the dialog opens or the list changes. */
   useEffect(() => {
-    if (!open || !active || active.disabled) return
-    let cancelled = false
-    setCatalogs((current) => ({ ...current, [active.url]: { ...EMPTY_CATALOG } }))
-    fetchIndex(active.url)
-      .then((index) => {
-        if (cancelled) return
-        setCatalogs((current) => ({ ...current, [active.url]: { loading: false, error: null, entries: index.extensions } }))
-      })
-      .catch((err: Error) => {
-        if (cancelled) return
-        setCatalogs((current) => ({ ...current, [active.url]: { loading: false, error: err.message, entries: [] } }))
-      })
-    return () => { cancelled = true }
-  }, [open, active?.url, active?.disabled])
+    if (!open) return
+    void catalog.refresh(activeServers)
+  }, [open, serverKey])
 
   const sections = useMemo<DialogSection[]>(() => [
-    { id: 'installed', label: t('extensions.installed'), icon: Blocks, badge: installed.length ? String(installed.length) : undefined },
-    { id: 'servers', label: t('extensions.servers'), icon: Globe },
-    ...servers.filter((server) => !server.disabled).map((server) => ({
-      id: server.url,
-      label: server.name ?? hostOf(server.url) ?? server.url,
-      icon: isTrusted(server.url, servers) ? ShieldCheck : ShieldAlert,
-    })),
-  ], [t, servers, installed.length])
+    { id: 'explore', label: t('extensions.explore'), icon: Compass, badge: offered.length ? String(offered.length) : undefined },
+    { id: 'installed', label: t('extensions.installed'), icon: Blocks },
+    { id: 'updates', label: t('extensions.updates'), icon: RefreshCw, badge: updates.length ? String(updates.length) : undefined },
+    { id: 'servers', label: t('extensions.servers'), icon: Globe, badge: String(servers.length) },
+  ], [t, offered.length, updates.length, servers.length])
 
-  /** Install — asking first for unverified servers. */
+  /** Install or update — asking first for unverified servers. */
   const install = useCallback(async (server: ExtensionServer, entry: ExtensionSummary, version?: string) => {
     const run = async () => {
       setBusy(entry.id)
       try {
-        const manifest = await installedExtensions.installFrom(server.url, entry.id, version)
-        notify(t('extensions.installedNotice', { name: entry.name }), 'success')
-        void offerServers(manifest)
+        await installExtension(server.url, entry.id, version, (manifest) => {
+          notify(t('extensions.installedNotice', { name: entry.name }), 'success')
+          void offerServers(manifest)
+        })
       } catch (err) {
         notify(t('extensions.installFailed', { error: (err as Error).message }), 'error')
       } finally {
@@ -149,36 +146,29 @@ export function ExtensionsDialog() {
     })
   }, [servers, notify, openForm, setServer, t])
 
-  const uninstall = useCallback(async (id: string, name: string) => {
-    setBusy(id)
-    try {
-      await installedExtensions.uninstall(id)
-      notify(t('extensions.removedNotice', { name }), 'info')
-    } finally {
-      setBusy(null)
-    }
-  }, [notify, t])
-
   const updateAll = useCallback(async () => {
     setBusy('*')
     try {
       const names = await installedExtensions.updateAll()
       notify(names.length ? t('extensions.updated', { names: names.join(', ') }) : t('extensions.updatesNone'), names.length ? 'success' : 'info')
+      await catalog.refresh(activeServers)
     } finally {
       setBusy(null)
     }
-  }, [notify, t])
+  }, [notify, t, activeServers])
 
-  const catalog = active ? catalogs[active.url] ?? EMPTY_CATALOG : null
-  const filtered = catalog?.entries.filter((entry) => {
-    const needle = search.trim().toLowerCase()
+  const needle = search.trim().toLowerCase()
+  const matches = (entry: ExtensionSummary) => {
     if (!needle) return true
     return [entry.name, entry.id, entry.description, ...(entry.keywords ?? [])].join(' ').toLowerCase().includes(needle)
-  }) ?? []
+  }
+  const explored = offered.filter(({ summary }) => matches(summary) && (category === 'all' || summary.category === category))
+  const shownUpdates = updates.filter((update) => offered.some(({ summary }) => summary.id === update.id && matches(summary)))
 
   return (
     <DialogShell
       id="extensions"
+      wide
       title={t('extensions.title')}
       icon={Blocks}
       sections={sections}
@@ -187,116 +177,198 @@ export function ExtensionsDialog() {
       search={section === 'servers' ? undefined : search}
       onSearch={section === 'servers' ? undefined : setSearch}
       searchPlaceholder={t('extensions.search')}
-      headerExtra={installed.length > 0 && (
-        <Button size="sm" onClick={() => void updateAll()} disabled={busy === '*'}>
-          <RefreshCw size={12} className={busy === '*' ? 'lm-anim-spin' : ''} />
-          {t('extensions.updateAll')}
+      headerExtra={section === 'servers' ? undefined : (
+        <Button size="sm" variant="outline" title={t('extensions.refresh')} onClick={() => void catalog.refresh(activeServers)} disabled={catalog.loading()}>
+          <RefreshCw size={12} className={catalog.loading() ? 'lm-anim-spin' : ''} />
+          {t('extensions.refresh')}
         </Button>
       )}
     >
       {section === 'servers' && (
-        <ServerList
-          servers={servers}
-          onAdd={addServer}
-          onRemove={removeServer}
-          onPatch={setServer}
-        />
+        <div className="p-4">
+          <ServerList servers={servers} onAdd={addServer} onRemove={removeServer} onPatch={setServer} />
+        </div>
       )}
 
-      {section === 'installed' && (
-        installed.length === 0
-          ? <Empty icon={<Blocks size={22} />} title={t('extensions.noServers')} hint={t('extensions.subtitle')} />
-          : (
-            <div className="flex flex-col gap-2">
-              {installed.map(({ manifest, server }) => (
-                <div key={manifest.id} className="flex items-center gap-3 rounded-lumen border border-edge bg-elevated p-3">
-                  <Badge icon={manifest.icon} color={manifest.color} />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[13px] text-fg">{manifest.name}</div>
-                    <div className="truncate text-[11.5px] text-subtle">
-                      {t('extensions.versionLabel', { version: manifest.version })}
-                      {server ? ` · ${t('extensions.fromServer', { server: hostOf(server) ?? server })}` : ''}
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    disabled={busy === manifest.id}
-                    onClick={() => void uninstall(manifest.id, manifest.name)}
-                  >
-                    <Trash2 size={12} />
-                    {t('extensions.uninstall')}
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )
-      )}
+      {section === 'installed' && <InstalledView query={search} initialFilter={installedFilter} updates={updates} />}
 
-      {active && catalog && (
-        <CatalogList
-          catalog={catalog}
-          entries={filtered}
-          server={active}
+      {section === 'explore' && (
+        <ExploreList
+          entries={explored}
+          servers={activeServers}
+          category={category}
+          onCategory={setCategory}
           busy={busy}
           providesText={providesText}
           onInstall={install}
+        />
+      )}
+
+      {section === 'updates' && (
+        <UpdateList
+          updates={shownUpdates}
+          servers={activeServers}
+          busy={busy}
+          onUpdate={(update) => {
+            const entry = offered.find(({ summary }) => summary.id === update.id)
+            if (entry) void install(update.server, entry.summary, update.to)
+          }}
+          onUpdateAll={() => void updateAll()}
         />
       )}
     </DialogShell>
   )
 }
 
-function CatalogList({ catalog, entries, server, busy, providesText, onInstall }: {
-  catalog: CatalogState
-  entries: ExtensionSummary[]
-  server: ExtensionServer
+/** Why a server's catalogue is missing, one line per failing server. */
+function ServerProblems({ servers }: { servers: ExtensionServer[] }) {
+  const t = useT()
+  const failing = servers.filter((server) => catalog.of(server.url)?.error)
+  if (!failing.length) return null
+  return (
+    <div className="mb-3 flex flex-col gap-1">
+      {failing.map((server) => (
+        <div key={server.url} className="flex items-center gap-2 rounded-lumen-sm border border-dashed border-edge px-2.5 py-1.5 text-[11.5px] text-bad">
+          <ShieldAlert size={12} className="shrink-0" />
+          <span className="min-w-0 truncate">{t('extensions.loadFailed', { server: hostOf(server.url) ?? server.url, error: catalog.of(server.url)?.error ?? '' })}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ExploreList({ entries, servers, category, onCategory, busy, providesText, onInstall }: {
+  entries: CatalogEntry[]
+  servers: ExtensionServer[]
+  category: Category
+  onCategory: (category: Category) => void
   busy: string | null
   providesText: (provides: Record<string, number> | undefined) => string
   onInstall: (server: ExtensionServer, entry: ExtensionSummary) => void
 }) {
   const t = useT()
   useSyncExternalStore(installedExtensions.subscribe, installedExtensions.getVersion)
+  const loading = catalog.loading()
 
-  if (catalog.loading) return <Empty icon={<RefreshCw size={22} className="lm-anim-spin" />} title={t('extensions.loading')} />
-  if (catalog.error) {
-    return <Empty icon={<ShieldAlert size={22} />} title={t('extensions.loadFailed', { server: hostOf(server.url) ?? server.url, error: catalog.error })} />
+  const body = () => {
+    if (!servers.length) return <Empty icon={<Globe size={22} />} title={t('extensions.noServers')} hint={t('extensions.subtitle')} />
+    if (loading && !entries.length) return <Empty icon={<RefreshCw size={22} className="lm-anim-spin" />} title={t('extensions.loading')} />
+    if (!entries.length) return <Empty icon={<Blocks size={22} />} title={t('extensions.noResults')} />
+    return (
+      <div className="flex flex-col gap-2">
+        {entries.map(({ summary, server }) => {
+          const current = installedExtensions.get(summary.id)
+          const outdated = Boolean(current) && isNewer(summary.version, current?.manifest.version ?? '')
+          const label = () => {
+            if (outdated) return t('extensions.update')
+            if (current) return t('extensions.installed')
+            return t('extensions.install')
+          }
+          return (
+            <div key={summary.id} className="flex items-start gap-3 rounded-lumen border border-edge bg-elevated p-3">
+              <Badge icon={summary.icon} color={summary.color} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="truncate text-[13px] text-fg">{summary.name}</span>
+                  {current && !outdated && <CheckCircle2 size={12} className="shrink-0 text-good" />}
+                </div>
+                <div className="text-[12px] text-muted">{summary.description}</div>
+                <div className="mt-1 truncate text-[11.5px] text-subtle">
+                  {t('extensions.versionLabel', { version: summary.version })}
+                  {summary.author ? ` · ${t('extensions.byAuthor', { author: summary.author })}` : ''}
+                  {providesText(summary.provides) ? ` · ${providesText(summary.provides)}` : ''}
+                  {` · ${server.name ?? hostOf(server.url) ?? server.url}`}
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant={outdated ? 'solid' : undefined}
+                disabled={busy === summary.id || (Boolean(current) && !outdated)}
+                onClick={() => onInstall(server, summary)}
+              >
+                {busy === summary.id && <RefreshCw size={12} className="lm-anim-spin" />}
+                {label()}
+              </Button>
+            </div>
+          )
+        })}
+      </div>
+    )
   }
-  if (!catalog.entries.length) return <Empty icon={<Blocks size={22} />} title={t('extensions.empty')} />
-  if (!entries.length) return <Empty icon={<Blocks size={22} />} title={t('extensions.noResults')} />
 
   return (
-    <div className="flex flex-col gap-2">
-      {entries.map((entry) => {
-        const current = installedExtensions.get(entry.id)
-        const outdated = current && current.manifest.version !== entry.version
-        return (
-          <div key={entry.id} className="flex items-start gap-3 rounded-lumen border border-edge bg-elevated p-3">
-            <Badge icon={entry.icon} color={entry.color} />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="truncate text-[13px] text-fg">{entry.name}</span>
-                {current && !outdated && <CheckCircle2 size={12} className="shrink-0 text-good" />}
+    <div className="p-4">
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {CATEGORIES.map((id) => (
+          <button
+            key={id}
+            onClick={() => onCategory(id)}
+            className={[
+              'lm-transition rounded-full border px-2.5 py-0.5 text-[11.5px]',
+              id === category ? 'border-accent bg-active text-fg' : 'border-edge text-muted hover:border-edge-strong',
+            ].join(' ')}
+          >
+            {t(`addonStudio.dialog.nav.${id}`)}
+          </button>
+        ))}
+      </div>
+      <ServerProblems servers={servers} />
+      {body()}
+    </div>
+  )
+}
+
+function UpdateList({ updates, servers, busy, onUpdate, onUpdateAll }: {
+  updates: AvailableUpdate[]
+  servers: ExtensionServer[]
+  busy: string | null
+  onUpdate: (update: AvailableUpdate) => void
+  onUpdateAll: () => void
+}) {
+  const t = useT()
+  const loading = catalog.loading()
+
+  const body = () => {
+    if (loading && !updates.length) return <Empty icon={<RefreshCw size={22} className="lm-anim-spin" />} title={t('extensions.loading')} />
+    if (!updates.length) return <Empty icon={<CheckCircle2 size={22} />} title={t('extensions.updatesNone')} />
+    return (
+      <div className="flex flex-col gap-2">
+        {updates.map((update) => {
+          const manifest = installedExtensions.get(update.id)?.manifest
+          return (
+            <div key={update.id} className="flex items-center gap-3 rounded-lumen border border-edge bg-elevated p-3">
+              <Badge icon={manifest?.icon} color={manifest?.color} />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[13px] text-fg">{update.name}</div>
+                <div className="truncate font-mono text-[11.5px] text-subtle">
+                  {update.from} → {update.to} · {update.server.name ?? hostOf(update.server.url) ?? update.server.url}
+                </div>
               </div>
-              <div className="text-[12px] text-muted">{entry.description}</div>
-              <div className="mt-1 truncate text-[11.5px] text-subtle">
-                {t('extensions.versionLabel', { version: entry.version })}
-                {entry.author ? ` · ${t('extensions.byAuthor', { author: entry.author })}` : ''}
-                {providesText(entry.provides) ? ` · ${providesText(entry.provides)}` : ''}
-              </div>
+              <Button size="sm" variant="solid" disabled={busy === update.id || busy === '*'} onClick={() => onUpdate(update)}>
+                {busy === update.id && <RefreshCw size={12} className="lm-anim-spin" />}
+                {t('extensions.update')}
+              </Button>
             </div>
-            <Button
-              size="sm"
-              variant={outdated ? 'solid' : undefined}
-              disabled={busy === entry.id || (Boolean(current) && !outdated)}
-              onClick={() => onInstall(server, entry)}
-            >
-              {busy === entry.id && <RefreshCw size={12} className="lm-anim-spin" />}
-              {outdated ? t('extensions.update') : current ? t('extensions.installed') : t('extensions.install')}
-            </Button>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
+    )
+  }
+
+  return (
+    <div className="p-4">
+      {updates.length > 0 && (
+        <div className="mb-3 flex items-center gap-2">
+          <span className="text-[12px] text-muted">{t('extensions.updatesFound', { count: updates.length })}</span>
+          <span className="flex-1" />
+          <Button size="sm" variant="solid" disabled={busy === '*'} onClick={onUpdateAll}>
+            <RefreshCw size={12} className={busy === '*' ? 'lm-anim-spin' : ''} />
+            {t('extensions.updateAll')}
+          </Button>
+        </div>
+      )}
+      <ServerProblems servers={servers} />
+      {body()}
     </div>
   )
 }

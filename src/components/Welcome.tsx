@@ -24,7 +24,7 @@ export function Welcome() {
     { icon: Sparkles, label: t('welcome.newFile'), keys: formatBindingsFor('file.new'), run: newFile },
     { icon: Command, label: t('welcome.commandPalette'), keys: formatBindingsFor('view.commandPalette'), run: () => setPalette('commands') },
     { icon: Palette, label: t('welcome.themes'), keys: formatBindingsFor('view.themes'), run: () => openDialog('themes') },
-    { icon: Blocks, label: t('welcome.addons'), keys: formatBindingsFor('view.addons'), run: () => openDialog('addons') },
+    { icon: Blocks, label: t('welcome.addons'), keys: formatBindingsFor('view.addons'), run: () => openDialog('extensions', 'installed') },
   ]
 
   return (

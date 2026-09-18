@@ -24,7 +24,6 @@ import { IconStudio } from '@/components/icon-studio/IconStudio'
 import { SettingsDialog } from '@/components/dialogs/SettingsDialog'
 import { KeybindingsDialog } from '@/components/dialogs/KeybindingsDialog'
 import { ThemesDialog } from '@/components/dialogs/ThemesDialog'
-import { AddonsDialog } from '@/components/dialogs/AddonsDialog'
 import { ExtensionsDialog } from '@/components/dialogs/ExtensionsDialog'
 import { SdkDialog } from '@/components/dialogs/SdkDialog'
 import { WorkspacesDialog } from '@/components/dialogs/WorkspacesDialog'
@@ -137,7 +136,6 @@ export default function App() {
       <SettingsDialog />
       <KeybindingsDialog />
       <ThemesDialog />
-      <AddonsDialog />
       <ExtensionsDialog />
       <SdkDialog />
       <WorkspacesDialog />

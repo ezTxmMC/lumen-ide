@@ -51,6 +51,34 @@ export interface ExtensionPage {
   content: string
 }
 
+/** A way of talking to an agent: how the panel offers it and when it asks. */
+export interface ExtensionAgentMode {
+  id: string
+  label: string
+  description?: string
+}
+
+/**
+ * A chat agent the extension's code registers.
+ *
+ * This describes only how the panel looks. What the agent does is in the
+ * extension's code, which Lumen runs once the user has approved it.
+ */
+export interface ExtensionAgent {
+  id: string
+  name: string
+  description?: string
+  icon?: string
+  placeholder?: string
+  /** The first one is the default. */
+  modes?: ExtensionAgentMode[]
+}
+
+/** Program code: one bundled ES module for Lumen's main process. */
+export interface ExtensionCode {
+  main: string
+}
+
 /** The full manifest, as a server delivers it. */
 export interface ExtensionManifest {
   schema: number
@@ -70,6 +98,9 @@ export interface ExtensionManifest {
   readme?: string
   settings?: ExtensionSetting[]
   pages?: ExtensionPage[]
+  agents?: ExtensionAgent[]
+  /** Not kept in the installed record — the code lives in its own file. */
+  code?: ExtensionCode
   addon: UserAddonModel
 }
 
@@ -114,6 +145,8 @@ export interface InstalledExtension {
   /** Server it came from. */
   server: string
   installedAt: number
+  /** SHA-256 of the program code the user approved; without it nothing runs. */
+  codeHash?: string
 }
 
 /** A server's catalogue response. */

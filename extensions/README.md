@@ -101,17 +101,48 @@ Markdown converter.
 Pages run in a walled-off frame: no JavaScript, no access to Lumen, no windows
 of their own. Links pointing outwards Lumen opens in the system's browser.
 
-## What an extension cannot do
+## What an extension can do beyond data
 
-**No program code.** A manifest is data; logic comes about through node graphs,
-which the same interpreter runs as for the user's own add-ons. An extension from
-a foreign server can therefore define a language wrongly or bring an ugly page
-along, but it cannot reach files, the network or the shell without a node
-allowing that anyway.
+Most extensions are data — a language, a template, a page. Logic comes about
+through node graphs, which the same interpreter runs as for the user's own
+add-ons; such an extension cannot reach files, the network or the shell.
 
-The trust boundary is therefore not a sandbox but a statement of origin:
-`lumen-extensions.eztxm.de` counts as vetted, and every other server raises a
-prompt before anything is installed.
+An extension that needs more ships **program code**: `main.js` in its folder.
+The build bundles it (with everything it imports) into one ES module,
+`code.main` in the manifest. Lumen runs it in its main process and calls
+`activate(ctx)`:
+
+```js
+export function activate(ctx) {
+  ctx.agents.register('helper', {
+    async send(request, emit) { /* one turn; report through emit({ kind: … }) */ },
+    answer({ requestId, allow, remember }) { return true },
+    interrupt(chatId) {},
+  })
+  return () => { /* dispose */ }
+}
+```
+
+`agents` in `extension.json` describes how the panel looks (name, modes,
+placeholder); the code does the work. Lumen knows nothing about the product
+behind an agent — a chat panel with messages, tool calls and an allow/deny card
+for every permission the code raises is all it draws. `extensions/claude-code/`
+is a complete example.
+
+The events a provider emits: `session`, `assistant` (text and tool blocks),
+`toolResult`, `permission` / `permissionSettled`, `result`, `error`. Lumen adds
+`done` itself when `send` ends.
+
+**Code runs with Lumen's own rights.** So it is never installed silently:
+
+1. the user is asked, told what that means, and shown the SHA-256 of the code,
+2. the main process hashes the code again and refuses a mismatch,
+3. at startup the file is hashed once more against the approved hash — a file
+   changed on disk afterwards does not run.
+
+An update whose code changed asks again; unchanged code carries over. The
+trust boundary for data extensions stays what it was: `lumen-extensions.eztxm.de`
+counts as vetted, and every other server raises a prompt first.
 
 ## The check before publishing
 
@@ -121,7 +152,7 @@ server accepts and can be installed.
 
 ## What an extension cannot carry
 
-A manifest is data, so two things stay in the program and are named rather than
+Debug adapters and tokenizers stay in the program and are named rather than
 shipped.
 
 **Debug adapters.** An adapter describes not only its command but what a launch
