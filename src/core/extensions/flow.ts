@@ -25,8 +25,14 @@ export async function installExtension(
   version: string | undefined,
   done: (manifest: ExtensionManifest) => void,
 ): Promise<void> {
+  const finished = (manifest: ExtensionManifest) => {
+    done(manifest)
+    // A new agent should not have to be hunted for: show its chat.
+    const agent = manifest.agents?.[0]
+    if (agent) useStore.getState().showSidebar(`agent:${manifest.id}/${agent.id}`)
+  }
   try {
-    done(await extensions.installFrom(server, id, version))
+    finished(await extensions.installFrom(server, id, version))
   } catch (err) {
     if (!(err instanceof CodeApprovalRequired)) throw err
     const { manifest, hash } = err
@@ -41,7 +47,7 @@ export async function installExtension(
       fields: [],
       onSubmit: async () => {
         await extensions.install(manifest, server, { approveCode: true })
-        done(manifest)
+        finished(manifest)
       },
     })
   }

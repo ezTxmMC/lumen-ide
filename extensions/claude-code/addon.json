@@ -4,105 +4,15 @@
   "commands": [],
   "events": [],
   "snippets": [],
-  "projectKinds": [
-    {
-      "id": "claude-code",
-      "name": "Claude Code",
-      "icon": "Cc",
-      "color": "#d97757",
-      "markers": [
-        "CLAUDE.md",
-        ".claude"
-      ],
-      "priority": 1,
-      "buildFile": "CLAUDE.md",
-      "tasks": [
-        {
-          "id": "session",
-          "label": "Claude Code starten",
-          "command": "claude",
-          "args": [],
-          "group": "run",
-          "detail": "Neue Sitzung im Projektordner"
-        },
-        {
-          "id": "continue",
-          "label": "Letzte Sitzung fortsetzen",
-          "command": "claude",
-          "args": [
-            "--continue"
-          ],
-          "group": "run"
-        },
-        {
-          "id": "resume",
-          "label": "Sitzung auswählen",
-          "command": "claude",
-          "args": [
-            "--resume"
-          ],
-          "group": "run"
-        },
-        {
-          "id": "mcp",
-          "label": "MCP-Server anzeigen",
-          "command": "claude",
-          "args": [
-            "mcp",
-            "list"
-          ],
-          "group": "other"
-        },
-        {
-          "id": "doctor",
-          "label": "Installation prüfen",
-          "command": "claude",
-          "args": [
-            "doctor"
-          ],
-          "group": "other"
-        },
-        {
-          "id": "update",
-          "label": "Claude Code aktualisieren",
-          "command": "claude",
-          "args": [
-            "update"
-          ],
-          "group": "other"
-        },
-        {
-          "id": "install",
-          "label": "Claude Code installieren",
-          "command": "npm",
-          "args": [
-            "install",
-            "-g",
-            "@anthropic-ai/claude-code"
-          ],
-          "group": "build",
-          "detail": "Benötigt Node.js"
-        }
-      ],
-      "facts": [
-        {
-          "label": "Anweisungen",
-          "file": "CLAUDE.md",
-          "pattern": "^#\\s+(.+)$"
-        }
-      ]
-    }
-  ],
+  "projectKinds": [],
   "templates": [
     {
       "id": "claude-code-project",
       "name": "Claude Code Projekt",
       "description": "CLAUDE.md, Einstellungen und ein Slash-Befehl für Claude Code.",
-      "kindId": "claude-code",
       "icon": "Cc",
       "color": "#d97757",
       "open": "CLAUDE.md",
-      "next": "Starte Claude Code über die Aufgabenliste.",
       "fields": [
         {
           "id": "description",

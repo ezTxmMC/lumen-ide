@@ -5,14 +5,14 @@ location: sidebar
 
 # Claude Code
 
-Öffne die **Aufgabenliste** des Projekts und wähle *Claude Code starten*.
+Öffne den Chat über das **✨-Symbol** in der Activity-Bar. Jede Aktion von Claude
+fragt vorher nach deiner Erlaubnis.
 
-## Nützliche Befehle in der Sitzung
+## Modi
 
-- `/help` — alle Befehle
-- `/init` — erzeugt eine `CLAUDE.md` für das Projekt
-- `/compact` — Verlauf zusammenfassen
-- `/review` — Vorlage aus diesem Projekt
+- *Nachfragen* — vor jeder Änderung und jedem Befehl
+- *Edits automatisch* — Dateiänderungen ohne Rückfrage
+- *Plan* — nur planen, nichts ändern
 
 ## Dateien
 
