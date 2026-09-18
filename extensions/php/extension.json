@@ -1,7 +1,7 @@
 {
   "id": "ext.php",
   "name": "PHP",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "PHP 8 mit Attributen, Heredoc, Enums und php-CLI/Dev-Server-Runner.",
   "author": "Lumen",
   "icon": "Ph",

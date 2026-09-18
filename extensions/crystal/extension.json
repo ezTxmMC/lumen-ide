@@ -1,7 +1,7 @@
 {
   "id": "ext.crystal",
   "name": "Crystal",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Crystal mit Makros, Annotationen, Ruby-artiger Einrückung und crystal-Runner.",
   "author": "Lumen",
   "icon": "Cr",

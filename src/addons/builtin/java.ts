@@ -2,6 +2,7 @@ import type { Addon, LanguageSpec } from '@/core/types'
 import { gradleKind, javaPlainTemplate, javaProjectTemplate, mavenKind } from '../lib/jvm-project'
 import { bazelKind } from '../lib/native-project'
 import { javaDebug } from '@/core/debug/adapters'
+import { LSP_PACKAGES } from '../lib/lsp-packages'
 
 /** The settings for jdtls — sent at `initialize` and as configuration. */
 const JAVA_SETTINGS = {
@@ -162,7 +163,7 @@ export const javaSpec: LanguageSpec = {
       },
       settings: { java: JAVA_SETTINGS },
       install: 'Arch: pacman -S jdtls · macOS: brew install jdtls · sonst https://github.com/eclipse-jdtls/eclipse.jdt.ls (Skript „jdtls“ in den PATH)',
-      installCommands: { darwin: 'brew install jdtls' },
+      package: LSP_PACKAGES.jdtls,
       docs: 'https://github.com/eclipse-jdtls/eclipse.jdt.ls',
     },
     {

@@ -1,0 +1,190 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------ *
+ * Tokens
+ * The same `--c-*` variables and utility names as the app
+ * (src/styles/index.css). The page wears Lumen Light or Lumen Dark; every
+ * editor shot sets its own `--c-*` on its root, so the utilities inside it
+ * resolve to that shot's theme.
+ * ------------------------------------------------------------------ */
+
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-bg-elevated);
+  --color-overlay: var(--c-bg-overlay);
+  --color-input: var(--c-bg-input);
+  --color-hover: var(--c-bg-hover);
+  --color-active: var(--c-bg-active);
+  --color-edge: var(--c-border);
+  --color-edge-strong: var(--c-border-strong);
+  --color-fg: var(--c-text);
+  --color-muted: var(--c-text-muted);
+  --color-subtle: var(--c-text-subtle);
+  --color-accent: var(--c-accent);
+  --color-accent-fg: var(--c-accent-text);
+  --color-ok: var(--c-success);
+  --color-warn: var(--c-warning);
+  --color-bad: var(--c-danger);
+
+  --radius-lumen: 10px;
+  --radius-lumen-sm: 6px;
+  --radius-lumen-lg: 14px;
+
+  --font-display: 'Archivo', system-ui, sans-serif;
+  --font-body: 'Source Sans 3', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* Lumen Light */
+:root {
+  --c-bg: #fbfcfd;
+  --c-bg-elevated: #f3f5f8;
+  --c-bg-overlay: #ffffff;
+  --c-bg-input: #ffffff;
+  --c-bg-hover: #eceff4;
+  --c-bg-active: #dfe4ec;
+  --c-border: #e2e6ec;
+  --c-border-strong: #cfd5de;
+  --c-text: #1d2128;
+  --c-text-muted: #5c6572;
+  --c-text-subtle: #8b939f;
+  --c-accent: #4f5bd5;
+  --c-accent-rgb: 79 91 213;
+  --c-accent-text: #ffffff;
+  --c-success: #16a34a;
+  --c-warning: #b45309;
+  --c-danger: #dc2626;
+  --c-selection: #d6dcf7;
+  color-scheme: light;
+}
+
+/* Lumen Dark — for the system setting, and for an explicit choice. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --c-bg: #0e1013;
+    --c-bg-elevated: #14171c;
+    --c-bg-overlay: #1a1e25;
+    --c-bg-input: #1b1f26;
+    --c-bg-hover: #1e232b;
+    --c-bg-active: #262c36;
+    --c-border: #232830;
+    --c-border-strong: #333a45;
+    --c-text: #e4e7ec;
+    --c-text-muted: #9aa3b0;
+    --c-text-subtle: #646d7a;
+    --c-accent: #7c8cff;
+    --c-accent-rgb: 124 140 255;
+    --c-accent-text: #0b0d10;
+    --c-success: #4ade80;
+    --c-warning: #fbbf24;
+    --c-danger: #f87171;
+    --c-selection: #2d3550;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --c-bg: #0e1013;
+  --c-bg-elevated: #14171c;
+  --c-bg-overlay: #1a1e25;
+  --c-bg-input: #1b1f26;
+  --c-bg-hover: #1e232b;
+  --c-bg-active: #262c36;
+  --c-border: #232830;
+  --c-border-strong: #333a45;
+  --c-text: #e4e7ec;
+  --c-text-muted: #9aa3b0;
+  --c-text-subtle: #646d7a;
+  --c-accent: #7c8cff;
+  --c-accent-rgb: 124 140 255;
+  --c-accent-text: #0b0d10;
+  --c-success: #4ade80;
+  --c-warning: #fbbf24;
+  --c-danger: #f87171;
+  --c-selection: #2d3550;
+  color-scheme: dark;
+}
+
+@layer base {
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: var(--font-body);
+    font-size: 16.5px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: var(--c-selection); }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+    letter-spacing: -0.03em;
+    line-height: 1.06;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  code { font-family: var(--font-mono); font-size: 0.88em; }
+}
+
+@layer components {
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  /* ---- Pieces of the app, for the shots (src/styles/index.css) ---- */
+
+  .lm-row {
+    height: 26px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-inline: 8px;
+    border-radius: 6px;
+    cursor: default;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .lm-scroll-fade {
+    mask-image: linear-gradient(to bottom, transparent 0, #000 8px, #000 calc(100% - 8px), transparent 100%);
+  }
+
+  /* Indent guides — the rule the app applies under data-indent-guides='true'. */
+  .lm-code-line[data-indent] {
+    background-image: repeating-linear-gradient(
+      to right,
+      color-mix(in srgb, var(--c-text-subtle) 32%, transparent) 0 1px,
+      transparent 1px 1ch
+    );
+    background-repeat: no-repeat;
+    background-size: var(--indent-w, 0) 100%;
+  }
+}
+
+/* The dark band behind the hero and the download call — a fixed field in both themes. */
+.field {
+  background:
+    radial-gradient(120% 90% at 50% -18%, rgb(124 140 255 / 0.34), transparent 62%),
+    radial-gradient(70% 60% at 82% 8%, rgb(110 211 232 / 0.13), transparent 70%),
+    #0a0b10;
+  color: #eef0f6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}

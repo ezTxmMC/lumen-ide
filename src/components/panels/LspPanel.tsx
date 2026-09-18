@@ -118,7 +118,7 @@ export function LspPanel() {
             <div className="mt-2 px-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-subtle">{t('panels.lsp.notInstalled')}</div>
           )}
           {missing.map(({ languageId, config }) => {
-            const command = lsp.installCommand(config)
+            const command = lsp.installHint(config)
             return (
               <div key={languageId} className="mb-1 rounded-lumen-sm border border-dashed border-edge px-2 py-1.5">
                 <div className="flex items-center gap-1.5">

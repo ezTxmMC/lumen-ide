@@ -81,7 +81,7 @@ export interface SdkEnvironment {
   jdkRoot: string
 }
 
-interface Job {
+export interface Job {
   controller: AbortController
   child: ChildProcess | null
   cancelled: boolean
@@ -372,7 +372,7 @@ function runTool(job: Job, command: string, args: string[]): Promise<void> {
   })
 }
 
-async function extract(job: Job, archive: string, target: string) {
+export async function extract(job: Job, archive: string, target: string) {
   await fs.mkdir(target, { recursive: true })
   const kind = archiveKind(archive)
   if (kind === 'tar.gz') {
@@ -413,7 +413,7 @@ async function findExtractedHome(dir: string, depth = 0): Promise<string | null>
   return null
 }
 
-async function download(
+export async function download(
   job: Job, url: string, file: string, hashType: string,
   report: (received: number, total: number, speed: number) => void,
 ): Promise<string> {

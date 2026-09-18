@@ -243,7 +243,11 @@
               "symbolScope": "all"
             }
           },
-          "install": "go install golang.org/x/tools/gopls@latest"
+          "install": "go install golang.org/x/tools/gopls@latest",
+          "package": {
+            "type": "go",
+            "module": "golang.org/x/tools/gopls@latest"
+          }
         }
       ]
     }

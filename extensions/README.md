@@ -63,6 +63,23 @@ The same shape the add-on studio writes — languages with their language server
 and start commands, snippets, templates, project kinds, themes, and commands as
 a node graph. Regular expressions stand as text (`"^\\d+"`), not as `/…/`.
 
+Give every language server a `package`, so Lumen can install it into its
+closed environment (`~/.lumen/lsp`) — right after the extension is installed it
+offers to, one server or all:
+
+```json
+"package": { "type": "npm", "packages": ["typescript-language-server", "typescript@6"] }
+"package": { "type": "pypi", "package": "cmake-language-server", "python": "3.13", "with": ["pygls<2"] }
+"package": { "type": "go", "module": "golang.org/x/tools/gopls@latest" }
+"package": { "type": "github", "repo": "clangd/clangd", "assets": { "linux-x64": "^clangd-linux-[\\d.]+\\.zip$" } }
+```
+
+`github` assets are regular expressions per `<platform>-<arch>` (`linux-x64`,
+`linux-arm64`, `darwin-x64`, `darwin-arm64`, `win32-x64`, `win32-arm64`).
+`bin` names the program when it differs from `command`. `installCommands`
+(per platform: `linux`, `darwin`, `win32`) remain the fallback for servers
+without a package.
+
 ### Pages
 
 Every file under `pages/` becomes a page. A header sets the title and the place:

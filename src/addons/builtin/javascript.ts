@@ -1,6 +1,7 @@
 import type { Addon, LanguageSpec } from '@/core/types'
 import { denoKind, jsBrowserTemplate, jsNodeTemplate, npmKind } from '../lib/node-project'
 import { jsDebugNode } from '@/core/debug/adapters'
+import { LSP_PACKAGES } from '../lib/lsp-packages'
 
 /** Inlay hints and suggestion settings, shared by the tsserver front ends. */
 export const TS_INLAY_HINTS = {
@@ -132,11 +133,7 @@ export const javascriptSpec: LanguageSpec = {
         completions: { completeFunctionCalls: true },
       },
       install: 'npm i -g typescript typescript-language-server',
-      installCommands: {
-        linux: 'npm i -g typescript typescript-language-server',
-        darwin: 'npm i -g typescript typescript-language-server',
-        win32: 'npm i -g typescript typescript-language-server',
-      },
+      package: LSP_PACKAGES.typescriptLanguageServer,
       docs: 'https://github.com/typescript-language-server/typescript-language-server',
     },
     {
@@ -152,11 +149,7 @@ export const javascriptSpec: LanguageSpec = {
         vtsls: { autoUseWorkspaceTsdk: true },
       },
       install: 'npm i -g @vtsls/language-server',
-      installCommands: {
-        linux: 'npm i -g @vtsls/language-server',
-        darwin: 'npm i -g @vtsls/language-server',
-        win32: 'npm i -g @vtsls/language-server',
-      },
+      package: LSP_PACKAGES.vtsls,
       docs: 'https://github.com/yioneko/vtsls',
     },
     {
@@ -169,7 +162,7 @@ export const javascriptSpec: LanguageSpec = {
       initializationOptions: { enable: true, lint: true, unstable: false, suggest: { imports: { hosts: { 'https://deno.land': true } } } },
       settings: { deno: { enable: true, lint: true } },
       install: 'curl -fsSL https://deno.land/install.sh | sh',
-      installCommands: { linux: 'sh -c "curl -fsSL https://deno.land/install.sh | sh"', darwin: 'brew install deno' },
+      package: LSP_PACKAGES.deno,
       docs: 'https://docs.deno.com/runtime/reference/lsp_integration/',
     },
   ],

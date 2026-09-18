@@ -7,7 +7,7 @@
  *
  * The packages are unsigned — Squirrel (electron-updater) refuses ad-hoc signed
  * bundles under macOS. Lumen therefore installs updates itself:
- *   - Linux:   put the new AppImage beside the running one and swap them
+ *   - Linux:   write the new AppImage as `Lumen.AppImage` beside the running one
  *   - Windows: run the NSIS installer quietly (`--updated /S`)
  *   - macOS:   unpack the ZIP, swap Lumen.app once the program has quit
  * Other installations (development, an unpacked ZIP, translocation) get nothing
@@ -22,6 +22,7 @@ import fsSync from 'node:fs'
 import { once } from 'node:events'
 import path from 'node:path'
 import { relaunchApp } from './window-system'
+import { repointDesktopEntries } from './recent-projects'
 
 const FEED = (process.env.LUMEN_UPDATE_URL ?? 'https://cdn.eztxm.de/download/lumen-ide/version/latest').replace(/\/+$/, '')
 const FIRST_CHECK_MS = 20_000
@@ -365,18 +366,30 @@ async function install(relaunch: boolean) {
   }
 }
 
+/**
+ * The AppImage always lands as `Lumen.AppImage` beside the running one.
+ *
+ * A versioned name (`Lumen-0.3.3-linux-x86_64.AppImage`, or AppImageLauncher's
+ * `…_<hash>.AppImage`) would change with every update — and with it the path
+ * that desktop entries, AppImageLauncher's identifier and taskbar or start-menu
+ * pins refer to. One fixed name keeps all of them valid across updates; a
+ * versioned install moves to it once, with its desktop entries repointed.
+ */
+const APPIMAGE_NAME = 'Lumen.AppImage'
+
 async function installAppImage(file: string, relaunch: boolean) {
   const current = process.env.APPIMAGE!
   const dir = path.dirname(current)
-  // `Lumen-0.2.1-linux-x86_64.AppImage` takes the new name; a renamed one stays as it is.
-  const versioned = path.basename(current).includes(app.getVersion())
-  const target = versioned ? path.join(dir, path.basename(file)) : current
-  const staging = path.join(dir, `.${path.basename(file)}.part`)
+  const target = path.join(dir, APPIMAGE_NAME)
+  const staging = path.join(dir, `.${APPIMAGE_NAME}.part`)
   await fs.copyFile(file, staging)
   await fs.chmod(staging, 0o755)
   // The running AppImage stays reachable through its mount even when the file is replaced.
   await fs.rename(staging, target)
-  if (target !== current) await fs.rm(current, { force: true })
+  if (target !== current) {
+    await fs.rm(current, { force: true })
+    repointDesktopEntries(current, target)
+  }
   await fs.rm(file, { force: true })
   if (!relaunch) return true
   beforeQuit()

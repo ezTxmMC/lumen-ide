@@ -1,6 +1,7 @@
 import { contextBridge } from 'electron'
 import { invoke, subscribe } from './features/ipc'
 import { sdkApi } from './features/sdk-api'
+import { lspPackagesApi } from './features/lsp-packages-api'
 import { dapApi } from './features/dap-api'
 import { userAddonsApi } from './features/user-addons-api'
 import { updaterApi } from './features/updater-api'
@@ -189,6 +190,7 @@ const api = {
   },
 
   sdk: sdkApi,
+  lspPackages: lspPackagesApi,
   dap: dapApi,
   userAddons: userAddonsApi,
   updater: updaterApi,

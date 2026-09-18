@@ -297,7 +297,13 @@
               }
             }
           },
-          "install": "npm i -g pyright"
+          "install": "npm i -g pyright",
+          "package": {
+            "type": "npm",
+            "packages": [
+              "pyright"
+            ]
+          }
         },
         {
           "label": "basedpyright",
@@ -328,7 +334,11 @@
               }
             }
           },
-          "install": "pip install basedpyright"
+          "install": "pip install basedpyright",
+          "package": {
+            "type": "pypi",
+            "package": "basedpyright"
+          }
         },
         {
           "label": "ruff server",
@@ -342,14 +352,22 @@
             "ruff.toml",
             ".git"
           ],
-          "install": "pip install ruff"
+          "install": "pip install ruff",
+          "package": {
+            "type": "pypi",
+            "package": "ruff"
+          }
         },
         {
           "label": "python-lsp-server",
           "command": "pylsp",
           "args": [],
           "languageId": "python",
-          "install": "pip install python-lsp-server"
+          "install": "pip install python-lsp-server",
+          "package": {
+            "type": "pypi",
+            "package": "python-lsp-server"
+          }
         }
       ],
       "debug": [

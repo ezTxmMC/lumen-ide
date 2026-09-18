@@ -2,6 +2,7 @@ import type { Addon, LanguageSpec } from '@/core/types'
 import { denoKind, denoTemplate, npmKind, tsLibraryTemplate, tsNodeTemplate, tsViteTemplate } from '../lib/node-project'
 import { javascriptSpec, TS_INLAY_HINTS, TS_PREFERENCES, VTSLS_PREFERENCES, VTSLS_SUGGEST } from './javascript'
 import { jsDebugTypeScript } from '@/core/debug/adapters'
+import { LSP_PACKAGES } from '../lib/lsp-packages'
 
 export const typescriptSpec: LanguageSpec = {
   ...javascriptSpec,
@@ -70,11 +71,7 @@ export const typescriptSpec: LanguageSpec = {
         completions: { completeFunctionCalls: true },
       },
       install: 'npm i -g typescript typescript-language-server',
-      installCommands: {
-        linux: 'npm i -g typescript typescript-language-server',
-        darwin: 'npm i -g typescript typescript-language-server',
-        win32: 'npm i -g typescript typescript-language-server',
-      },
+      package: LSP_PACKAGES.typescriptLanguageServer,
       docs: 'https://github.com/typescript-language-server/typescript-language-server',
     },
     {
@@ -90,11 +87,7 @@ export const typescriptSpec: LanguageSpec = {
         vtsls: { autoUseWorkspaceTsdk: true },
       },
       install: 'npm i -g @vtsls/language-server',
-      installCommands: {
-        linux: 'npm i -g @vtsls/language-server',
-        darwin: 'npm i -g @vtsls/language-server',
-        win32: 'npm i -g @vtsls/language-server',
-      },
+      package: LSP_PACKAGES.vtsls,
       docs: 'https://github.com/yioneko/vtsls',
     },
     {
@@ -107,7 +100,7 @@ export const typescriptSpec: LanguageSpec = {
       initializationOptions: { enable: true, lint: true, unstable: false, suggest: { imports: { hosts: { 'https://deno.land': true } } } },
       settings: { deno: { enable: true, lint: true } },
       install: 'curl -fsSL https://deno.land/install.sh | sh',
-      installCommands: { linux: 'sh -c "curl -fsSL https://deno.land/install.sh | sh"', darwin: 'brew install deno' },
+      package: LSP_PACKAGES.deno,
       docs: 'https://docs.deno.com/runtime/reference/lsp_integration/',
     },
   ],

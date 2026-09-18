@@ -7,15 +7,15 @@
  * feature asks outright instead.
  *
  * It asks sparingly:
- *   • only where an install command exists for this platform, since otherwise
- *     there would be nothing to confirm,
+ *   • only where Lumen can install the server — into its own environment
+ *     (`package`) or by an install command for this platform,
  *   • at most once per language and session,
  *   • never again once someone ticks “stop asking” (`lspInstallDeclined` in
  *     the settings),
  *   • and never while another dialog is open.
  *
- * The command is run by `installServer` in the output panel, so it stays
- * visible and can be cancelled.
+ * The installation runs through `installServer` in the output panel, so it
+ * stays visible and can be cancelled.
  */
 
 import { useStore } from '@/state/store'
@@ -45,7 +45,7 @@ function languageName(languageId: string): string {
   return spec?.name ?? languageId
 }
 
-function ask(languageId: string, config: LspConfig, command: string) {
+function ask(languageId: string, config: LspConfig, command: string | null) {
   prompting = true
   asked.add(languageId)
   const language = languageName(languageId)
@@ -56,10 +56,11 @@ function ask(languageId: string, config: LspConfig, command: string) {
     description: t('lsp.installBody', { language, name: config.label }),
     submitLabel: t('lsp.installSubmit'),
     fields: [
-      // The command is shown and can be edited — some systems need a
-      // different package manager from the one on record.
-      { id: 'command', label: t('lsp.installCommandLabel'), default: command, mono: true },
-      { id: 'never', label: t('lsp.installNeverAsk', { language }), type: 'toggle', default: '' },
+      // A shell command is shown and can be edited — some systems need a
+      // different package manager from the one on record. A package goes into
+      // Lumen's own environment, so there is nothing to adjust.
+      ...(command ? [{ id: 'command', label: t('lsp.installCommandLabel'), default: command, mono: true }] : []),
+      { id: 'never', label: t('lsp.installNeverAsk', { language }), type: 'toggle' as const, default: '' },
     ],
     onSubmit: async (values) => {
       prompting = false
@@ -68,13 +69,17 @@ function ask(languageId: string, config: LspConfig, command: string) {
         return
       }
       const wanted = (values.command ?? '').trim()
-      await installServer(wanted && wanted !== command ? { ...config, installCommands: platformCommand(wanted) } : config)
+      if (!command || !wanted || wanted === command) {
+        await installServer(config)
+        return
+      }
+      await installServer({ ...config, package: undefined, installCommands: platformCommand(wanted) })
     },
   })
 }
 
 /** The first language among the open tabs that lacks a server one could install. */
-function candidate(): { languageId: string; config: LspConfig; command: string } | null {
+function candidate(): { languageId: string; config: LspConfig; command: string | null } | null {
   const state = useStore.getState()
   const open = new Set(
     state.tabs.map((tab) => state.languageFor(tab)?.id).filter((id): id is string => Boolean(id)),
@@ -83,8 +88,8 @@ function candidate(): { languageId: string; config: LspConfig; command: string }
     if (!open.has(languageId)) continue
     if (asked.has(languageId)) continue
     if (state.lspInstallDeclined.includes(languageId)) continue
-    const command = lsp.installCommand(config)
-    if (!command) continue
+    if (!lsp.canInstall(config)) continue
+    const command = lsp.hasPackage(config) ? null : lsp.installCommand(config)
     return { languageId, config, command }
   }
   return null

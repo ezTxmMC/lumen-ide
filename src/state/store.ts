@@ -579,6 +579,7 @@ export const useStore = create<State & Actions>((set, get) => ({
       home: info?.home ?? '',
       userData: info?.userData ?? '',
       platform: info?.platform ?? 'linux',
+      platformKey: await window.lumen.lspPackages.platform().catch(() => undefined),
     })
 
     const stored = (await window.lumen.settings.load().catch(() => ({}))) as

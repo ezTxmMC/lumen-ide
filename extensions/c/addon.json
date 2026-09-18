@@ -255,6 +255,16 @@
             ".git"
           ],
           "install": "Arch: pacman -S clang · Debian/Ubuntu: apt install clangd · macOS: brew install llvm (oder Xcode CLT)",
+          "package": {
+            "type": "github",
+            "repo": "clangd/clangd",
+            "assets": {
+              "linux-x64": "^clangd-linux-[\\d.]+\\.zip$",
+              "darwin-x64": "^clangd-mac-[\\d.]+\\.zip$",
+              "darwin-arm64": "^clangd-mac-[\\d.]+\\.zip$",
+              "win32-x64": "^clangd-windows-[\\d.]+\\.zip$"
+            }
+          },
           "docs": "https://clangd.llvm.org"
         },
         {

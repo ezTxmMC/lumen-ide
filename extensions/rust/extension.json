@@ -1,7 +1,7 @@
 {
   "id": "ext.rust",
   "name": "Rust",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Rust mit Attributen, Raw-Strings, Lifetimes und cargo-Runner.",
   "author": "Lumen",
   "icon": "Rs",

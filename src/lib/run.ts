@@ -94,7 +94,7 @@ export function initRunBridge() {
   })
 }
 
-async function startSteps(steps: Step[], onSuccess?: () => void) {
+async function startSteps(steps: Step[], onSuccess?: () => void, keepOutput = false) {
   const [first, ...rest] = steps
   if (!first) return
   const state = useStore.getState()
@@ -105,7 +105,7 @@ async function startSteps(steps: Step[], onSuccess?: () => void) {
   queue = rest
   afterSuccess = onSuccess ?? null
   state.showPanel('output')
-  state.clearOutput()
+  if (!keepOutput) state.clearOutput()
   state.appendOutput({ stream: 'system', text: `$ ${first.command} ${first.args.join(' ')}` })
   if (first.cwd !== state.workspace) state.appendOutput({ stream: 'system', text: t('run.inDir', { dir: first.cwd }) })
   state.setRunning(RUN_ID, first.label)
@@ -228,22 +228,86 @@ export function runDefault(group: 'build' | 'run' | 'test') {
   state.notify(group === 'build' ? t('run.noBuildTask') : t('run.noTestTask'), 'warning')
 }
 
-/** Run a language server's install command in the output panel. */
+/** Install one language server — into Lumen's own environment where it can, otherwise by command. */
 export async function installServer(config: LspConfig) {
-  const state = useStore.getState()
-  const command = lsp.installCommand(config)
-  if (!command) {
-    state.notify(config.install ?? t('run.noInstallCommand'), 'info')
+  if (lsp.canInstall(config)) {
+    await installServers([config])
     return
   }
-  const [cmd, ...args] = splitShell(command)
-  await startSteps(
-    [{ label: t('run.installLabel', { name: config.label }), command: cmd, args, cwd: state.workspace ?? '.', env: {} }],
-    () => {
-      lsp.rescan()
-      state.notify(t('run.installed', { name: config.label }), 'success')
-    },
-  )
+  useStore.getState().notify(config.install ?? t('run.noInstallCommand'), 'info')
+}
+
+/** The managed installation in progress, so that `stopRun` can cancel it. */
+let managedJob: string | null = null
+let managedCancelled = false
+
+/** Install into `~/.lumen/lsp`; the output goes to the panel. */
+async function installManaged(config: LspConfig): Promise<boolean> {
+  const state = useStore.getState()
+  const spec = lsp.packageFor(config)!
+  const jobId = `lsp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  managedJob = jobId
+  state.setRunning(RUN_ID, t('run.installLabel', { name: config.label }))
+  state.appendOutput({ stream: 'system', text: `→ ${t('run.installLabel', { name: config.label })}` })
+  const off = window.lumen.lspPackages.onLog((entry) => {
+    if (entry.jobId !== jobId) return
+    state.appendOutput({ stream: 'stdout', text: entry.text })
+  })
+  try {
+    await window.lumen.lspPackages.install(jobId, spec, config.command)
+    return true
+  } catch (err) {
+    state.appendOutput({ stream: 'stderr', text: (err as Error).message })
+    return false
+  } finally {
+    off()
+    managedJob = null
+  }
+}
+
+/**
+ * Install several language servers one after another. Servers with a
+ * `package` go into Lumen's closed environment — one failing does not stop
+ * the rest; the others fall back to their install command, run in the panel.
+ */
+export async function installServers(configs: LspConfig[]) {
+  const state = useStore.getState()
+  if (state.runningId) {
+    state.notify(t('run.alreadyRunning'), 'warning')
+    return
+  }
+  const managed = configs.filter((config) => lsp.hasPackage(config))
+  const scripted = configs.filter((config) => !lsp.hasPackage(config) && lsp.installCommand(config))
+
+  if (managed.length) {
+    state.showPanel('output')
+    state.clearOutput()
+    managedCancelled = false
+    const done: string[] = []
+    const failed: string[] = []
+    for (const config of managed) {
+      if (managedCancelled) break
+      const ok = await installManaged(config)
+      if (ok) done.push(config.label)
+      if (!ok) failed.push(config.label)
+    }
+    state.setRunning(null)
+    lsp.rescan()
+    if (done.length) state.notify(t('run.installed', { name: done.join(', ') }), 'success')
+    if (failed.length && !managedCancelled) state.notify(t('run.installFailed', { name: failed.join(', ') }), 'error')
+    if (managedCancelled) return
+  }
+
+  const steps: Step[] = []
+  for (const config of scripted) {
+    const [cmd, ...args] = splitShell(lsp.installCommand(config)!)
+    steps.push({ label: t('run.installLabel', { name: config.label }), command: cmd, args, cwd: state.workspace ?? '.', env: {} })
+  }
+  const names = scripted.map((config) => config.label).join(', ')
+  await startSteps(steps, () => {
+    lsp.rescan()
+    state.notify(t('run.installed', { name: names }), 'success')
+  }, managed.length > 0)
 }
 
 /** A very simple shell split: spaces separate, quotes group. */
@@ -256,6 +320,10 @@ export function splitShell(input: string): string[] {
 
 export function stopRun() {
   const state = useStore.getState()
+  if (managedJob) {
+    managedCancelled = true
+    void window.lumen.lspPackages.cancel(managedJob)
+  }
   queue = []
   afterSuccess = null
   void window.lumen.run.kill(RUN_ID)

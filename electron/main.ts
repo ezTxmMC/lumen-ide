@@ -19,6 +19,7 @@ import { applyWindowSystem, currentWindowSystem, isWaylandSession, relaunchApp }
 import { folderFromArgv, registerRecentProjectsIpc } from './features/recent-projects'
 import { registerLocalRepoIpc } from './features/local-repos'
 import { registerExtensionIpc } from './features/extensions'
+import { managedCommand, registerLspPackageIpc } from './features/lsp-packages'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -125,6 +126,7 @@ app.whenReady().then(() => {
   registerIpc()
   registerNetIpc()
   registerSdkIpc(() => win)
+  registerLspPackageIpc(() => win)
   registerDapIpc(() => win)
   registerUserAddonIpc(() => win)
   registerUpdaterIpc(() => win, () => { forceClose = true })
@@ -450,8 +452,13 @@ function resolveCommand(command: string): Promise<string | null> {
   })
 }
 
-/** The first candidate that exists. */
+/**
+ * The first candidate that exists. A server Lumen installed itself
+ * (`~/.lumen/lsp/bin`) comes before anything on the PATH.
+ */
 async function resolveFirst(candidates: string[]): Promise<string | null> {
+  const managed = candidates[0] ? await managedCommand(candidates[0]) : null
+  if (managed) return managed
   for (const candidate of candidates) {
     const hit = await resolveCommand(candidate)
     if (hit) return hit
@@ -502,7 +509,9 @@ function startLsp(
       try { fsSync.mkdirSync(arg, { recursive: true }) } catch { /* egal */ }
     }
   }
-  const child = spawn(command, args, {
+  // Through the Windows shell a path with spaces (C:\Users\Jane Doe\…) has to be quoted.
+  const quoted = process.platform === 'win32' && command.includes(' ') && !command.startsWith('"')
+  const child = spawn(quoted ? `"${command}"` : command, args, {
     cwd,
     stdio: ['pipe', 'pipe', 'pipe'],
     env: { ...process.env, ...env },

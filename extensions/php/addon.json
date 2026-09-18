@@ -288,7 +288,13 @@
               }
             }
           },
-          "install": "npm i -g intelephense"
+          "install": "npm i -g intelephense",
+          "package": {
+            "type": "npm",
+            "packages": [
+              "intelephense"
+            ]
+          }
         },
         {
           "label": "phpactor",

@@ -1,6 +1,7 @@
 import type { Addon, LanguageSpec } from '@/core/types'
 import { cssLibraryTemplate } from '../lib/web-project'
 import { cssTokenizer } from '../lib/css-tokenizer'
+import { LSP_PACKAGES } from '../lib/lsp-packages'
 
 const PROPERTIES = [
   'display', 'position', 'top', 'right', 'bottom', 'left', 'inset', 'width',
@@ -74,6 +75,7 @@ export const cssSpec: LanguageSpec = {
         less: { validate: true },
       },
       install: 'npm i -g vscode-langservers-extracted',
+      package: LSP_PACKAGES.langserversExtracted,
     },
     {
       label: 'some-sass-language-server',
@@ -81,6 +83,7 @@ export const cssSpec: LanguageSpec = {
       args: ['--stdio'],
       languageId: 'scss',
       install: 'npm i -g some-sass-language-server',
+      package: LSP_PACKAGES.someSass,
     },
   ],
 }

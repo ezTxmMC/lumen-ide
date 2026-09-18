@@ -96,6 +96,32 @@ export interface RunConfig {
  * the server stays off and the status bar shows how to install it. Several
  * entries are tried in order — the first one found wins.
  */
+/**
+ * How Lumen installs a server into its closed environment under
+ * `~/.lumen/lsp` — with its own Node.js, uv/Python and Go, never touching a
+ * global npm, pip or the system. The program ends up as a launcher in
+ * `~/.lumen/lsp/bin`, which is checked before the PATH.
+ *
+ *   npm      packages from the npm registry (`["typescript", "typescript-language-server"]`)
+ *   pypi     a Python tool through uv, with its own Python (`python: "3.13"`)
+ *            and pinned extras (`with: ["pygls<2"]`)
+ *   go       `go install module@version`
+ *   dotnet   a .NET tool — needs the .NET SDK, which is not downloaded
+ *   github   a release asset per `<platform>-<arch>` (a regular expression
+ *            on the asset name); `bin` may be a path inside the archive
+ *   archive  a download address, per platform or for all
+ *
+ * `bin` defaults to `command`. `runtime` starts the program through Lumen's
+ * Node.js or Python — for scripts such as jdtls' launcher.
+ */
+export type LspPackage =
+  | { type: 'npm'; packages: string[]; bin?: string }
+  | { type: 'pypi'; package: string; python?: string; with?: string[]; bin?: string }
+  | { type: 'go'; module: string; bin?: string }
+  | { type: 'dotnet'; package: string; bin?: string }
+  | { type: 'github'; repo: string; assets: Record<string, string>; bin?: string; version?: string; runtime?: 'python' | 'node' }
+  | { type: 'archive'; url: string | Record<string, string>; bin?: string; runtime?: 'python' | 'node' }
+
 export interface LspConfig {
   /** Display name, for instance "typescript-language-server". */
   label: string
@@ -124,9 +150,12 @@ export interface LspConfig {
   install?: string
   /**
    * Install commands per platform. Lumen only runs them when someone clicks
-   * in the language-server panel — never on its own.
+   * in the language-server panel or confirms the install prompt — never on
+   * its own.
    */
   installCommands?: Partial<Record<'linux' | 'darwin' | 'win32', string>>
+  /** Installs the server into Lumen's own environment; preferred over `installCommands`. */
+  package?: LspPackage
   /** Link to the server's documentation. */
   docs?: string
   /**

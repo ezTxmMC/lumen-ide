@@ -4,7 +4,7 @@
  * started when the first matching file is opened.
  */
 
-import type { LanguageSpec, LspConfig } from '@/core/types'
+import type { LanguageSpec, LspConfig, LspPackage } from '@/core/types'
 import { t } from '@/i18n'
 import { LspClient, type ClientStatus, type ContentChange, type LogLine } from './client'
 import {
@@ -47,6 +47,8 @@ export interface Paths {
   home: string
   userData: string
   platform: string
+  /** `linux-x64`, `darwin-arm64` … — which `github` downloads fit. */
+  platformKey?: string
 }
 
 class LspManager {
@@ -499,6 +501,43 @@ class LspManager {
     return [...this.missing.entries()].map(([languageId, config]) => ({ languageId, config }))
   }
 
+  /** Whether the server's program can be found — on the PATH or among its candidates. */
+  async isInstalled(config: LspConfig): Promise<boolean> {
+    const root = this.workspace ?? this.paths.home
+    return Boolean(await this.resolveCommand(config, root))
+  }
+
+  /**
+   * How Lumen installs the server into its own environment: the `package`,
+   * or one read from a plain install command (`npm i -g …`, `pipx install …`)
+   * — so older manifests never run a global install that needs root.
+   */
+  packageFor(config: LspConfig): LspPackage | null {
+    if (config.package) return config.package
+    return packageFromCommand(this.installCommand(config) ?? config.install ?? '')
+  }
+
+  /** Lumen can install the server into its own environment on this platform. */
+  hasPackage(config: LspConfig): boolean {
+    const spec = this.packageFor(config)
+    if (!spec) return false
+    if (spec.type === 'github') return Boolean(spec.assets[this.paths.platformKey ?? ''])
+    if (spec.type === 'archive' && typeof spec.url !== 'string') return Boolean(spec.url[this.paths.platformKey ?? ''])
+    return true
+  }
+
+  /** What an install would do, in one line — for tooltips and prompts. */
+  installHint(config: LspConfig): string | null {
+    const spec = this.packageFor(config)
+    if (spec && this.hasPackage(config)) return `~/.lumen/lsp ← ${packageSource(spec)}`
+    return this.installCommand(config)
+  }
+
+  /** Something — a package or a command — can install the server here. */
+  canInstall(config: LspConfig): boolean {
+    return this.hasPackage(config) || Boolean(this.installCommand(config))
+  }
+
   /** The install command for this platform, where one is on record. */
   installCommand(config: LspConfig): string | null {
     const key = this.paths.platform as 'linux' | 'darwin' | 'win32'
@@ -602,6 +641,50 @@ export function globToRegExp(glob: string): RegExp {
     re += '.+^$()|[]\\'.includes(c) ? `\\${c}` : c
   }
   return new RegExp(`(^|/)${re}$`)
+}
+
+/** TypeScript 7 is the native compiler without tsserver.js — the servers need the JavaScript one. */
+function npmPackage(name: string): string {
+  return name === 'typescript' ? 'typescript@6' : name
+}
+
+/** Servers built on the TypeScript API; npm would otherwise fill their peer dependency with TypeScript 7. */
+const NEEDS_TYPESCRIPT = /^(@vue\/language-server|@astrojs\/language-server|@angular\/language-server|typescript-language-server|@mdx-js\/language-server)$/
+
+function npmPackages(names: string[]): string[] {
+  const packages = names.filter((name) => !name.startsWith('-')).map(npmPackage)
+  if (!packages.some((name) => NEEDS_TYPESCRIPT.test(name))) return packages
+  if (packages.some((name) => name.startsWith('typescript@'))) return packages
+  return [...packages, 'typescript@6']
+}
+
+/**
+ * A package from a plain, global install command — the kinds Lumen can run in
+ * its own environment instead. Anything else (a pipe, several commands,
+ * `sudo`) gives `null` and stays a shell command.
+ */
+export function packageFromCommand(command: string): LspPackage | null {
+  const text = command.trim()
+  if (!text || /[|&;<>`$]/.test(text)) return null
+  const npm = /^npm (?:i|install|add) (?:-g|--global) ([^-].*)$/.exec(text)
+  if (npm) return { type: 'npm', packages: npmPackages(npm[1].split(/\s+/)) }
+  const python = /^(?:pipx install|pip3? install(?: --user)?|uv tool install) ([A-Za-z0-9][\w.[\],-]*)$/.exec(text)
+  if (python) return { type: 'pypi', package: python[1] }
+  const go = /^go install (\S+@\S+)$/.exec(text)
+  if (go) return { type: 'go', module: go[1] }
+  const dotnet = /^dotnet tool install (?:-g|--global) ([\w.-]+)$/.exec(text)
+  if (dotnet) return { type: 'dotnet', package: dotnet[1] }
+  return null
+}
+
+/** Where a package comes from: `npm typescript-language-server`, `GitHub clangd/clangd` … */
+export function packageSource(spec: LspPackage): string {
+  if (spec.type === 'npm') return `npm ${spec.packages.join(' ')}`
+  if (spec.type === 'pypi') return `PyPI ${spec.package}${spec.python ? ` (Python ${spec.python})` : ''}`
+  if (spec.type === 'go') return `go ${spec.module}`
+  if (spec.type === 'dotnet') return `dotnet ${spec.package}`
+  if (spec.type === 'github') return `GitHub ${spec.repo}`
+  return typeof spec.url === 'string' ? spec.url : 'download'
 }
 
 export const lsp = new LspManager()

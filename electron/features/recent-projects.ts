@@ -67,10 +67,39 @@ function belongsToApp(content: string): boolean {
   return /^Name=Lumen\s*$/m.test(content)
 }
 
+function applicationsDir(): string {
+  const dataHome = process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share')
+  return path.join(dataHome, 'applications')
+}
+
+/**
+ * Point every desktop entry that starts `from` at `to` instead — after the
+ * updater moved the AppImage, so menu entries and pins keep working.
+ */
+export function repointDesktopEntries(from: string, to: string) {
+  const dir = applicationsDir()
+  let names: string[] = []
+  try {
+    names = fs.readdirSync(dir)
+  } catch {
+    return
+  }
+  for (const name of names) {
+    if (!name.endsWith('.desktop')) continue
+    const file = path.join(dir, name)
+    try {
+      const content = fs.readFileSync(file, 'utf8')
+      if (!content.includes(from)) continue
+      fs.writeFileSync(file, content.split(from).join(to), 'utf8')
+    } catch {
+      // Read-only entries stay as they are.
+    }
+  }
+}
+
 /** The user's desktop entries that belong to this program. */
 function desktopEntries(): string[] {
-  const dataHome = process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share')
-  const dir = path.join(dataHome, 'applications')
+  const dir = applicationsDir()
   let names: string[] = []
   try {
     names = fs.readdirSync(dir)

@@ -1,7 +1,7 @@
 {
   "id": "ext.python",
   "name": "Python",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Python 3 mit Docstrings, Dekoratoren, Match-Statement und python/uv-Runner.",
   "author": "Lumen",
   "icon": "Py",

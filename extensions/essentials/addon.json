@@ -71,7 +71,13 @@
               "schemas": []
             }
           },
-          "install": "npm i -g vscode-langservers-extracted"
+          "install": "npm i -g vscode-langservers-extracted",
+          "package": {
+            "type": "npm",
+            "packages": [
+              "vscode-langservers-extracted"
+            ]
+          }
         }
       ]
     },
@@ -145,7 +151,13 @@
               }
             }
           },
-          "install": "npm i -g yaml-language-server"
+          "install": "npm i -g yaml-language-server",
+          "package": {
+            "type": "npm",
+            "packages": [
+              "yaml-language-server"
+            ]
+          }
         }
       ]
     },
@@ -210,7 +222,24 @@
             "stdio"
           ],
           "languageId": "toml",
-          "install": "cargo install taplo-cli --locked --features lsp"
+          "install": "cargo install taplo-cli --locked --features lsp",
+          "package": {
+            "type": "github",
+            "repo": "tamasfe/taplo",
+            "assets": {
+              "linux-x64": "^taplo-linux-x86_64\\.gz$",
+              "linux-arm64": "^taplo-linux-aarch64\\.gz$",
+              "darwin-x64": "^taplo-darwin-x86_64\\.gz$",
+              "darwin-arm64": "^taplo-darwin-aarch64\\.gz$",
+              "win32-x64": "^taplo-windows-x86_64\\.zip$",
+              "win32-arm64": "^taplo-windows-aarch64\\.zip$"
+            }
+          },
+          "installCommands": {
+            "linux": "cargo install taplo-cli --locked --features lsp",
+            "darwin": "cargo install taplo-cli --locked --features lsp",
+            "win32": "cargo install taplo-cli --locked --features lsp"
+          }
         }
       ]
     },
@@ -277,7 +306,18 @@
             ".marksman.toml",
             ".git"
           ],
-          "install": "https://github.com/artempyanykh/marksman"
+          "install": "https://github.com/artempyanykh/marksman",
+          "package": {
+            "type": "github",
+            "repo": "artempyanykh/marksman",
+            "assets": {
+              "linux-x64": "^marksman-linux-x64$",
+              "linux-arm64": "^marksman-linux-arm64$",
+              "darwin-x64": "^marksman-macos$",
+              "darwin-arm64": "^marksman-macos$",
+              "win32-x64": "^marksman\\.exe$"
+            }
+          }
         },
         {
           "label": "vscode-markdown-language-server",
@@ -286,7 +326,13 @@
             "--stdio"
           ],
           "languageId": "markdown",
-          "install": "npm i -g vscode-langservers-extracted"
+          "install": "npm i -g vscode-langservers-extracted",
+          "package": {
+            "type": "npm",
+            "packages": [
+              "vscode-langservers-extracted"
+            ]
+          }
         }
       ],
       "tokenizer": "markdown"
@@ -441,7 +487,13 @@
             "start"
           ],
           "languageId": "shellscript",
-          "install": "npm i -g bash-language-server"
+          "install": "npm i -g bash-language-server",
+          "package": {
+            "type": "npm",
+            "packages": [
+              "bash-language-server"
+            ]
+          }
         }
       ]
     },
@@ -611,7 +663,11 @@
             ".sqls.yml",
             ".git"
           ],
-          "install": "go install github.com/sqls-server/sqls@latest"
+          "install": "go install github.com/sqls-server/sqls@latest",
+          "package": {
+            "type": "go",
+            "module": "github.com/sqls-server/sqls@latest"
+          }
         }
       ]
     }

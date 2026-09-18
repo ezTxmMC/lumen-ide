@@ -214,25 +214,6 @@
       ],
       "lsp": [
         {
-          "label": "cmake-language-server",
-          "command": "cmake-language-server",
-          "args": [],
-          "languageId": "cmake",
-          "rootMarkers": [
-            "CMakeLists.txt",
-            ".git"
-          ],
-          "initializationOptions": {
-            "buildDirectory": "build"
-          },
-          "install": "pipx install cmake-language-server",
-          "installCommands": {
-            "linux": "pipx install cmake-language-server",
-            "darwin": "pipx install cmake-language-server"
-          },
-          "docs": "https://github.com/regen100/cmake-language-server"
-        },
-        {
           "label": "neocmakelsp",
           "command": "neocmakelsp",
           "args": [
@@ -244,11 +225,46 @@
             ".git"
           ],
           "install": "cargo install neocmakelsp",
+          "package": {
+            "type": "github",
+            "repo": "neocmakelsp/neocmakelsp",
+            "assets": {
+              "linux-x64": "^neocmakelsp-x86_64-unknown-linux-gnu\\.tar\\.gz$",
+              "linux-arm64": "^neocmakelsp-aarch64-unknown-linux-gnu\\.tar\\.gz$",
+              "darwin-x64": "^neocmakelsp-universal-apple-darwin\\.tar\\.gz$",
+              "darwin-arm64": "^neocmakelsp-universal-apple-darwin\\.tar\\.gz$",
+              "win32-x64": "^neocmakelsp-x86_64-pc-windows-msvc\\.zip$",
+              "win32-arm64": "^neocmakelsp-aarch64-pc-windows-msvc\\.zip$"
+            }
+          },
           "installCommands": {
             "linux": "cargo install neocmakelsp",
             "darwin": "cargo install neocmakelsp"
           },
           "docs": "https://github.com/neocmakelsp/neocmakelsp"
+        },
+        {
+          "label": "cmake-language-server",
+          "command": "cmake-language-server",
+          "args": [],
+          "languageId": "cmake",
+          "rootMarkers": [
+            "CMakeLists.txt",
+            ".git"
+          ],
+          "initializationOptions": {
+            "buildDirectory": "build"
+          },
+          "install": "pipx install --python python3.13 cmake-language-server, dann pipx inject cmake-language-server \"pygls<2\" (läuft nicht mit Python 3.14 und pygls 2)",
+          "package": {
+            "type": "pypi",
+            "package": "cmake-language-server",
+            "python": "3.13",
+            "with": [
+              "pygls<2"
+            ]
+          },
+          "docs": "https://github.com/regen100/cmake-language-server"
         }
       ]
     },
@@ -401,7 +417,8 @@
             "clean"
           ]
         }
-      ]
+      ],
+      "lsp": []
     },
     {
       "id": "xml",
@@ -475,6 +492,17 @@
             ".git"
           ],
           "install": "https://github.com/eclipse/lemminx (Binary „lemminx“ in den PATH)",
+          "package": {
+            "type": "github",
+            "repo": "redhat-developer/vscode-xml",
+            "assets": {
+              "linux-x64": "^lemminx-linux-x86_64\\.zip$",
+              "linux-arm64": "^lemminx-linux-aarch_64\\.zip$",
+              "darwin-x64": "^lemminx-osx-x86_64\\.zip$",
+              "darwin-arm64": "^lemminx-osx-aarch_64\\.zip$",
+              "win32-x64": "^lemminx-win32\\.zip$"
+            }
+          },
           "docs": "https://github.com/eclipse/lemminx"
         }
       ],
@@ -690,7 +718,8 @@
             "${file}"
           ]
         }
-      ]
+      ],
+      "lsp": []
     },
     {
       "id": "properties",
@@ -734,7 +763,8 @@
           "detail": "gradle.properties",
           "body": "org.gradle.jvmargs=-Xmx2g\norg.gradle.parallel=true\norg.gradle.caching=true\nkotlin.code.style=official$0"
         }
-      ]
+      ],
+      "lsp": []
     },
     {
       "id": "dockerfile",
@@ -825,10 +855,11 @@
           ],
           "languageId": "dockerfile",
           "install": "npm i -g dockerfile-language-server-nodejs",
-          "installCommands": {
-            "linux": "npm i -g dockerfile-language-server-nodejs",
-            "darwin": "npm i -g dockerfile-language-server-nodejs",
-            "win32": "npm i -g dockerfile-language-server-nodejs"
+          "package": {
+            "type": "npm",
+            "packages": [
+              "dockerfile-language-server-nodejs"
+            ]
           }
         }
       ]

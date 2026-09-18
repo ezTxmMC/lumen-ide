@@ -564,7 +564,7 @@ function LanguageServers() {
                   </Button>
                 )}
                 {!entry && status.status === 'unavailable' && (
-                  <Button size="sm" title={lsp.installCommand(chosen) ? t('project.installNamed', { command: lsp.installCommand(chosen)! }) : tr(chosen.install)} onClick={() => void installServer(chosen)}>
+                  <Button size="sm" title={lsp.installHint(chosen) ? t('project.installNamed', { command: lsp.installHint(chosen)! }) : tr(chosen.install)} onClick={() => void installServer(chosen)}>
                     <Download size={11} />
                   </Button>
                 )}

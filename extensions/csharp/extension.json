@@ -1,7 +1,7 @@
 {
   "id": "ext.csharp",
   "name": "C#",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "C# 12 mit Records, Attributen, Interpolation und dotnet-Runner.",
   "author": "Lumen",
   "icon": "C#",

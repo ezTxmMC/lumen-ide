@@ -1,7 +1,7 @@
 {
   "id": "ext.astro",
   "name": "Astro",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Astro-Komponenten: TypeScript-Frontmatter zwischen ---, Markup mit { … }-Ausdrücken, Client-Direktiven und Content-Collections.",
   "author": "Lumen",
   "icon": "As",

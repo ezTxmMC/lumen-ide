@@ -1,7 +1,7 @@
 {
   "id": "ext.go",
   "name": "Go",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Go mit Backtick-Strings, Kanal-Operatoren und go-run/test-Runner.",
   "author": "Lumen",
   "icon": "Go",

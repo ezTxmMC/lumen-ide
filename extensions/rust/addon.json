@@ -301,7 +301,24 @@
               }
             }
           },
-          "install": "rustup component add rust-analyzer"
+          "install": "rustup component add rust-analyzer",
+          "package": {
+            "type": "github",
+            "repo": "rust-lang/rust-analyzer",
+            "assets": {
+              "linux-x64": "^rust-analyzer-x86_64-unknown-linux-gnu\\.gz$",
+              "linux-arm64": "^rust-analyzer-aarch64-unknown-linux-gnu\\.gz$",
+              "darwin-x64": "^rust-analyzer-x86_64-apple-darwin\\.gz$",
+              "darwin-arm64": "^rust-analyzer-aarch64-apple-darwin\\.gz$",
+              "win32-x64": "^rust-analyzer-x86_64-pc-windows-msvc\\.zip$",
+              "win32-arm64": "^rust-analyzer-aarch64-pc-windows-msvc\\.zip$"
+            }
+          },
+          "installCommands": {
+            "linux": "rustup component add rust-analyzer",
+            "darwin": "rustup component add rust-analyzer",
+            "win32": "rustup component add rust-analyzer"
+          }
         }
       ],
       "debug": [

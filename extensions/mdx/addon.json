@@ -89,7 +89,14 @@
               "tsdk": "node_modules/typescript/lib"
             }
           },
-          "install": "npm i -g @mdx-js/language-server"
+          "install": "npm i -g @mdx-js/language-server",
+          "package": {
+            "type": "npm",
+            "packages": [
+              "@mdx-js/language-server",
+              "typescript@6"
+            ]
+          }
         },
         {
           "label": "marksman",
@@ -98,7 +105,18 @@
             "server"
           ],
           "languageId": "markdown",
-          "install": "https://github.com/artempyanykh/marksman"
+          "install": "https://github.com/artempyanykh/marksman",
+          "package": {
+            "type": "github",
+            "repo": "artempyanykh/marksman",
+            "assets": {
+              "linux-x64": "^marksman-linux-x64$",
+              "linux-arm64": "^marksman-linux-arm64$",
+              "darwin-x64": "^marksman-macos$",
+              "darwin-arm64": "^marksman-macos$",
+              "win32-x64": "^marksman\\.exe$"
+            }
+          }
         }
       ],
       "tokenizer": "mdx"

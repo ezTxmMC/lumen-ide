@@ -276,7 +276,16 @@
             "shard.yml",
             ".git"
           ],
-          "install": "https://github.com/elbywan/crystalline"
+          "install": "https://github.com/elbywan/crystalline",
+          "package": {
+            "type": "github",
+            "repo": "elbywan/crystalline",
+            "assets": {
+              "linux-x64": "^crystalline_x86_64-unknown-linux-musl\\.gz$",
+              "darwin-x64": "^crystalline_x86_64-apple-darwin\\.gz$",
+              "darwin-arm64": "^crystalline_arm64-apple-darwin\\.gz$"
+            }
+          }
         },
         {
           "label": "scry",

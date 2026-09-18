@@ -16,6 +16,7 @@ import { useStore } from '@/state/store'
 import { useT } from '@/i18n'
 import { fetchIndex } from '@/core/extensions/client'
 import { extensions as installedExtensions } from '@/core/extensions/manager'
+import { offerServers } from '@/core/extensions/lsp'
 import { hostOf, isOfficial, isTrusted } from '@/core/extensions/trust'
 import type { ExtensionServer, ExtensionSummary } from '@/core/extensions/types'
 import { Button, Empty } from '../ui'
@@ -121,8 +122,9 @@ export function ExtensionsDialog() {
     const run = async () => {
       setBusy(entry.id)
       try {
-        await installedExtensions.installFrom(server.url, entry.id, version)
+        const manifest = await installedExtensions.installFrom(server.url, entry.id, version)
         notify(t('extensions.installedNotice', { name: entry.name }), 'success')
+        void offerServers(manifest)
       } catch (err) {
         notify(t('extensions.installFailed', { error: (err as Error).message }), 'error')
       } finally {

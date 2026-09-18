@@ -7447,7 +7447,13 @@
               }
             }
           },
-          "install": "npm i -g @tailwindcss/language-server"
+          "install": "npm i -g @tailwindcss/language-server",
+          "package": {
+            "type": "npm",
+            "packages": [
+              "@tailwindcss/language-server"
+            ]
+          }
         },
         {
           "label": "vscode-css-language-server",
@@ -7463,7 +7469,13 @@
               }
             }
           },
-          "install": "npm i -g vscode-langservers-extracted"
+          "install": "npm i -g vscode-langservers-extracted",
+          "package": {
+            "type": "npm",
+            "packages": [
+              "vscode-langservers-extracted"
+            ]
+          }
         }
       ],
       "tokenizer": "css"

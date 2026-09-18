@@ -328,6 +328,19 @@
             }
           },
           "install": "Arch: yay -S kotlin-language-server · macOS: brew install kotlin-language-server · sonst https://github.com/fwcd/kotlin-language-server",
+          "package": {
+            "type": "github",
+            "repo": "fwcd/kotlin-language-server",
+            "bin": "bin/kotlin-language-server",
+            "assets": {
+              "linux-x64": "^server\\.zip$",
+              "linux-arm64": "^server\\.zip$",
+              "darwin-x64": "^server\\.zip$",
+              "darwin-arm64": "^server\\.zip$",
+              "win32-x64": "^server\\.zip$",
+              "win32-arm64": "^server\\.zip$"
+            }
+          },
           "installCommands": {
             "darwin": "brew install kotlin-language-server"
           },

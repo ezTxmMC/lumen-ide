@@ -269,7 +269,11 @@
             "*.csproj",
             ".git"
           ],
-          "install": "dotnet tool install --global csharp-ls"
+          "install": "dotnet tool install --global csharp-ls",
+          "package": {
+            "type": "dotnet",
+            "package": "csharp-ls"
+          }
         },
         {
           "label": "OmniSharp",
@@ -283,7 +287,20 @@
             "*.csproj",
             ".git"
           ],
-          "install": "https://github.com/OmniSharp/omnisharp-roslyn"
+          "install": "https://github.com/OmniSharp/omnisharp-roslyn",
+          "package": {
+            "type": "github",
+            "repo": "OmniSharp/omnisharp-roslyn",
+            "bin": "OmniSharp",
+            "assets": {
+              "linux-x64": "^omnisharp-linux-x64\\.tar\\.gz$",
+              "linux-arm64": "^omnisharp-linux-arm64\\.tar\\.gz$",
+              "darwin-x64": "^omnisharp-osx-x64\\.tar\\.gz$",
+              "darwin-arm64": "^omnisharp-osx-arm64\\.tar\\.gz$",
+              "win32-x64": "^omnisharp-win-x64\\.zip$",
+              "win32-arm64": "^omnisharp-win-arm64\\.zip$"
+            }
+          }
         }
       ],
       "debug": [

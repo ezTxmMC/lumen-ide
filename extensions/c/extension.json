@@ -1,7 +1,7 @@
 {
   "id": "ext.c",
   "name": "C",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "C99 bis C23 mit Präprozessor-Hervorhebung und gcc/clang-Runner. CMake- und Make-Projekte mit Aufgaben, Vorlagen und clangd (geteilt mit C++).",
   "author": "Lumen",
   "icon": "C",

@@ -70,7 +70,7 @@ Squirrel nor electron-updater, but instead:
 
 | System | How it applies |
 | --- | --- |
-| Linux | put the new AppImage next to the running one and replace it (needs write access to the folder) |
+| Linux | write the new AppImage as `Lumen.AppImage` next to the running one — a fixed path, so desktop entries and taskbar/start-menu pins survive updates (needs write access to the folder) |
 | Windows | run the NSIS installer silently (`--updated /S`) |
 | macOS | unpack the ZIP and swap `Lumen.app` after quitting (not from a DMG or under translocation) |
 
@@ -398,13 +398,32 @@ and JavaScript especially thorough ones. In the editor that gives you:
 - **Java**: jumping into JDK and jar classes opens the decompiled source
   (`jdt://`) as a read-only tab
 
-Lumen installs nothing by itself. Before starting a server it checks whether
-the program is on the PATH — or in one of the places it knows (`candidates`:
-Mason, Homebrew, `node_modules/.bin`, LLVM directories, `~/.lumen/lsp`). When
-it is missing, things quietly fall back to the built-in completion; the
-language server panel explains how to install it and, where a command is on
-record (`npm i -g …`, `brew install …`), offers an **Install** button that runs
-it in the output panel.
+Lumen installs nothing without asking. Before starting a server it looks in
+its own environment (`~/.lumen/lsp/bin`), then on the PATH, then in the places
+it knows (`candidates`: Mason, Homebrew, `node_modules/.bin`, LLVM
+directories). When the server is missing, things quietly fall back to the
+built-in completion, and Lumen offers to install it: when a file of that
+language is opened, from the language server panel, and right after
+installing an extension (**one or all** of its servers).
+
+**Installing happens in a closed environment.** Nothing goes to a global npm,
+pip or the system — every server and every tool needed to install it lives
+under `~/.lumen/lsp`:
+
+| Kind | How | Toolchain (downloaded by Lumen, checksum-verified) |
+|---|---|---|
+| `npm` | `npm install` into `packages/<id>` | Node.js LTS from nodejs.org |
+| `pypi` | `uv tool install`, pinned Python and extras | uv from GitHub; uv fetches its own Python |
+| `go` | `go install module@version` | Go from go.dev |
+| `github` | a release asset per platform, unpacked | — |
+| `archive` | any HTTPS download (jdtls), optionally run through Lumen's Python/Node | — |
+| `dotnet` | `dotnet tool install --tool-path` | the .NET SDK has to be present |
+
+Each server gets a launcher in `~/.lumen/lsp/bin`, which wins over anything on
+the PATH — so a broken system install (a pipx package built against the wrong
+Python, say) no longer matters. Servers without a `package` fall back to their
+`installCommands`, run in the output panel. Deleting `~/.lumen/lsp` removes
+everything.
 
 **One process per program and project root**: clangd serves C and C++ together,
 tsserver JavaScript and TypeScript. Document changes go to the server

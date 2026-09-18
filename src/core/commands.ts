@@ -354,7 +354,7 @@ export function buildCommands(options: { includeHidden?: boolean } = {}): Comman
   }))
 
   const installCommands: Command[] = lsp.missingServers()
-    .filter(({ config }) => lsp.installCommand(config))
+    .filter(({ config }) => lsp.canInstall(config))
     .map(({ config, languageId }) => ({
       id: `lsp.install.${config.command}`,
       title: c('lsp.install', { server: config.label, language: languageId }),

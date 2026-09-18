@@ -179,14 +179,27 @@
               "tsdk": "node_modules/typescript/lib"
             }
           },
-          "install": "npm i -g @vue/language-server"
+          "install": "npm i -g @vue/language-server",
+          "package": {
+            "type": "npm",
+            "packages": [
+              "@vue/language-server",
+              "typescript@6"
+            ]
+          }
         },
         {
           "label": "volar (vls)",
           "command": "vls",
           "args": [],
           "languageId": "vue",
-          "install": "npm i -g vls"
+          "install": "npm i -g vls",
+          "package": {
+            "type": "npm",
+            "packages": [
+              "vls"
+            ]
+          }
         }
       ],
       "tokenizer": "markup-mustache"
