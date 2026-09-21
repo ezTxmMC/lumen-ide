@@ -1,7 +1,7 @@
 {
   "id": "ext.claude-code",
   "name": "Claude Code",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Chat mit Claude Code in der Seitenleiste: Projektpfad, geöffnete Datei und Erlauben/Ablehnen für jede Aktion. Bringt Programmcode mit.",
   "author": "Lumen",
   "icon": "Cc",

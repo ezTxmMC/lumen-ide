@@ -78,6 +78,24 @@ async function publish(server, token, manifest) {
   return { status: response.status, data }
 }
 
+/**
+ * Did the server keep what was sent?
+ *
+ * A server older than the manifest fields (`agents`, `code`) accepts the
+ * manifest and quietly drops them — the extension then installs without its
+ * chat. Reading the stored version back is the only way to notice.
+ */
+async function storedFully(server, manifest) {
+  const wantsCode = Boolean(manifest.code)
+  const wantsAgents = Boolean(manifest.agents?.length)
+  if (!wantsCode && !wantsAgents) return true
+  const response = await fetch(`${server}/api/v1/extensions/${encodeURIComponent(manifest.id)}/${encodeURIComponent(manifest.version)}`)
+  const stored = await response.json().catch(() => ({}))
+  if (wantsCode && !stored.code) return false
+  if (wantsAgents && !stored.agents?.length) return false
+  return true
+}
+
 async function main() {
   const options = parseArgs(process.argv.slice(2))
 
@@ -103,6 +121,11 @@ async function main() {
   for (const manifest of packages) {
     const { status, data } = await publish(options.server, options.token, manifest)
     if (status === 200 || status === 201) {
+      if (!(await storedFully(options.server, manifest))) {
+        failed++
+        process.stdout.write(`✗ ${manifest.id} ${manifest.version}: the server dropped agents/code — it is too old, update the extension server first\n`)
+        continue
+      }
       process.stdout.write(`✓ ${manifest.id} ${manifest.version}${data.replaced ? ' (replaced)' : ''}\n`)
       continue
     }
