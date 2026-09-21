@@ -76,7 +76,7 @@ export function ContextMenu({ x, y, items, onClose }: {
 
   return (
     <>
-      <div className="fixed inset-0 z-[60]" onMouseDown={onClose} onContextMenu={(e) => { e.preventDefault(); onClose() }} />
+      <div className="fixed inset-0 z-[9999]" onMouseDown={onClose} onContextMenu={(e) => { e.preventDefault(); onClose() }} />
       <div
         ref={ref}
         role="menu"
