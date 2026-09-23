@@ -1,6 +1,6 @@
 {
   "name": "lumen-ide",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Lumen — eine moderne, leichtgewichtige IDE mit einfachem Add-on-System",
   "private": true,
   "type": "module",

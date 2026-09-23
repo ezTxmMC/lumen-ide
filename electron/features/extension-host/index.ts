@@ -36,7 +36,7 @@ interface ExtensionModule {
   activate?: (ctx: ExtensionContext) => void | (() => void | Promise<void>) | Promise<void | (() => void | Promise<void>)>
 }
 
-const EXTENSION_ID = /^ext\.[a-z0-9][a-z0-9._-]{0,63}$/
+const EXTENSION_ID = /^(?:ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/
 const HASH = /^[0-9a-f]{64}$/
 const MAX_CODE_BYTES = 8 * 1024 * 1024
 

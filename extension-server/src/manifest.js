@@ -17,7 +17,7 @@
 export const MANIFEST_SCHEMA = 1
 
 /** Ids: `ext.` for server extensions, `user.` for ones built by hand. */
-export const ID_PATTERN = /^ext\.[a-z0-9][a-z0-9._-]{0,63}$/
+export const ID_PATTERN = /^(?:ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/
 
 /** A semantic version, optionally with a prerelease tag (`1.2.0-beta.1`). */
 export const VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/
@@ -280,7 +280,7 @@ export function checkManifest(raw) {
   }
 
   const id = text(raw.id, 'id', { max: 64, required: true })
-  if (!ID_PATTERN.test(id)) fail('id muss mit „ext.“ beginnen und darf nur Kleinbuchstaben, Ziffern, Punkt, Bindestrich und Unterstrich enthalten', 'id')
+  if (!ID_PATTERN.test(id)) fail('id muss mit „ext.“ oder „user.“ beginnen und darf nur Kleinbuchstaben, Ziffern, Punkt, Bindestrich und Unterstrich enthalten', 'id')
 
   const version = text(raw.version, 'version', { max: 64, required: true })
   if (!VERSION_PATTERN.test(version)) fail('version muss der Form 1.2.3 folgen', 'version')

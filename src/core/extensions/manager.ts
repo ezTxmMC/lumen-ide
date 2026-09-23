@@ -119,6 +119,8 @@ export const extensions = {
     if (code && codeHash !== known && !options.approveCode) throw new CodeApprovalRequired(manifest, codeHash ?? '')
 
     const model = normalizeModel(structuredClone(manifest.addon))
+    // A user add-on of the same id from the Studio is the user's own work: never overwrite it.
+    if (!installed.has(model.id) && userAddons.get(model.id)) throw new Error(t('addonStudio.validate.duplicateId', { id: model.id }))
     const issues = await userAddons.save(model, model.id)
     const blocking = blockingIssues(issues)
     if (blocking.length) throw new Error(blocking[0].message)

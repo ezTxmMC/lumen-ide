@@ -18,8 +18,8 @@ import type { AgentModel } from '../../../electron/features/extension-host/contr
 /** Version of the manifest format Lumen understands. */
 export const EXTENSION_SCHEMA = 1
 
-/** Ids of server extensions — kept apart from `user.` out of the Studio. */
-export const EXTENSION_ID_PATTERN = /^ext\.[a-z0-9][a-z0-9._-]{0,63}$/
+/** Ids of server extensions: `ext.` from the official catalogue, `user.` from users who publish their Studio add-ons. */
+export const EXTENSION_ID_PATTERN = /^(?:ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/
 
 /** The one server Lumen installs from without asking. */
 export const OFFICIAL_HOST = 'lumen-extensions.eztxm.de'

@@ -72,6 +72,12 @@ async function main() {
     assert.equal(checked.settings.length, 1)
   })
 
+  await check('user.-Kennung von Nutzern geht durch', () => {
+    const manifest = sample({ id: 'user.demo' })
+    manifest.addon.id = 'user.demo'
+    assert.equal(checkManifest(manifest).id, 'user.demo')
+  })
+
   await check('Agent mit Programmcode geht durch und bleibt erhalten', () => {
     const agent = { id: 'helper', name: 'Helfer', modes: [{ id: 'ask', label: 'Fragen' }] }
     const checked = checkManifest(sample({ agents: [agent], code: { main: 'export function activate() {}' } }))
@@ -85,7 +91,7 @@ async function main() {
     agents: [{ id: 'a', name: 'A', modes: [{ id: 'm', label: 'M' }, { id: 'm', label: 'N' }] }], code: { main: 'x' },
   }), 'agents[0].modes.id'))
 
-  await check('Kennung ohne ext.-Präfix wird abgelehnt', () => rejects(sample({ id: 'demo' }), 'id'))
+  await check('Kennung ohne ext.-/user.-Präfix wird abgelehnt', () => rejects(sample({ id: 'demo' }), 'id'))
   await check('Kennung mit Großbuchstaben wird abgelehnt', () => rejects(sample({ id: 'ext.Demo' }), 'id'))
   await check('Version ohne Semver wird abgelehnt', () => rejects(sample({ version: '1.0' }), 'version'))
   await check('falsches Schema wird abgelehnt', () => rejects(sample({ schema: 2 }), 'schema'))
