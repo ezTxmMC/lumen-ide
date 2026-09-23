@@ -11,13 +11,17 @@ import { terminals } from '@/lib/terminals'
 import { t } from '@/i18n'
 import type { Command, FormField } from '@/core/types'
 import {
-  SDK_PROVIDERS, activeSdk, applyProgress, createJvmServerDecorator, detectInstalled, loadSdkSettings,
+  SDK_PROVIDERS, activeSdk, applyProgress, createGradleImportDecorator, createJavacBackendDecorator, createJvmServerDecorator, createNetBeansDecorator,
+  detectInstalled, loadSdkSettings,
   resolveSdk, sdkEnvironment, sdkLabel, setActiveSdks, setBaseEnvironment, setDefaultSdk, setProjectSdk,
   useSdk, type ActiveSdk,
 } from '@/core/sdk'
 
 let started = false
 let signature: string | null = null
+/** Settles once the SDK settings are loaded and the installed JDKs detected. */
+let markDetected: () => void = () => {}
+const detected = new Promise<void>((resolve) => { markDetected = resolve })
 
 export function init() {
   if (started) return
@@ -25,6 +29,18 @@ export function init() {
   window.lumen.sdk.onProgress(applyProgress)
   terminals.envProvider = sdkEnvironment
   lsp.addConfigDecorator(createJvmServerDecorator(() => useSdk.getState().installed.java ?? []))
+  // The script lives in userData; until the main process has written it, jdtls starts without.
+  let gradleInitScript: string | null = null
+  void window.lumen.lsp.gradleInitScript().then((path) => { gradleInitScript = path }).catch(() => {})
+  lsp.addConfigDecorator(createGradleImportDecorator(() => gradleInitScript))
+  lsp.addConfigDecorator(createJavacBackendDecorator({
+    enabled: () => useStore.getState().effects.javacBackend,
+    ready: detected,
+    installed: () => useSdk.getState().installed.java ?? [],
+    backend: (command) => window.lumen.lsp.jdtlsJavacBackend(command),
+    agent: (command, javaHome) => window.lumen.lsp.jdtlsJavacAgent(command, javaHome),
+  }))
+  lsp.addConfigDecorator(createNetBeansDecorator({ ready: detected, installed: () => useSdk.getState().installed.java ?? [] }))
   registerCommandProvider(sdkCommands)
 
   useSdk.subscribe((state, previous) => {
@@ -34,6 +50,11 @@ export function init() {
   useStore.subscribe((state, previous) => {
     if (state.projectConfig.jdk === previous.projectConfig.jdk && state.workspace === previous.workspace) return
     recompute()
+  })
+  // Switching the compiler jdtls checks with takes a restart.
+  useStore.subscribe((state, previous) => {
+    if (state.effects.javacBackend === previous.effects.javacBackend) return
+    void restartJvmServers(t('lsp.java.compilerRestart'))
   })
   void start()
 }
@@ -46,8 +67,9 @@ async function start() {
   } catch (err) {
     console.error('[lumen] SDK-Einstellungen:', err)
   }
-  await detectInstalled('java')
+  await detectInstalled('java').catch(() => {})
   recompute()
+  markDetected()
 }
 
 /** Work out the active SDKs again; restart running JVM servers when the Java JDK changed. */
@@ -75,14 +97,14 @@ function recompute() {
   signature = nextSignature
   setActiveSdks(next)
   if ((activeSdk('java')?.home ?? null) === javaBefore) return
-  void restartJvmServers()
+  void restartJvmServers(t('sdk.lspRestart'))
 }
 
-async function restartJvmServers() {
+async function restartJvmServers(message: string) {
   const entries = lsp.list().filter((entry) => entry.languages.some((id) => ['java', 'kotlin'].includes(id)))
   if (!entries.length) return
   const state = useStore.getState()
-  state.notify(t('sdk.lspRestart'), 'info')
+  state.notify(message, 'info')
   for (const entry of entries) await lsp.restartClient(entry.id)
 }
 

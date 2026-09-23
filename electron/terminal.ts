@@ -251,7 +251,13 @@ interface Session {
   timer: NodeJS.Timeout | null
 }
 
+/** Keyed by `terminalKey` — each window numbers its terminals from 1, so the ids alone collide. */
 const sessions = new Map<string, Session>()
+
+/** The session key of a window's terminal. */
+export function terminalKey(contents: WebContents, id: string) {
+  return `${contents.id}:${id}`
+}
 
 /** Remove Electron's own variables — otherwise Node programs in the terminal inherit Electron's mode. */
 function cleanEnv(env: NodeJS.ProcessEnv): Record<string, string> {
@@ -265,7 +271,8 @@ function cleanEnv(env: NodeJS.ProcessEnv): Record<string, string> {
 }
 
 export function createTerminal(id: string, options: TerminalOptions, contents: WebContents) {
-  killTerminal(id)
+  const key = terminalKey(contents, id)
+  killTerminal(key)
   const pty = loadPty()
   const shells = detectShells()
   const shell = shells.find((s) => s.path === options.shell || s.id === options.shell)
@@ -291,7 +298,7 @@ export function createTerminal(id: string, options: TerminalOptions, contents: W
     env,
   })
   const session: Session = { pty: instance, buffer: '', timer: null }
-  sessions.set(id, session)
+  sessions.set(key, session)
 
   // Batch the output: many small IPC messages slow things down with `cat` on a large file, say.
   instance.onData((data) => {
@@ -307,19 +314,19 @@ export function createTerminal(id: string, options: TerminalOptions, contents: W
   instance.onExit(({ exitCode, signal }) => {
     if (session.timer) clearTimeout(session.timer)
     if (session.buffer && !contents.isDestroyed()) contents.send('terminal:data', { id, data: session.buffer })
-    sessions.delete(id)
+    if (sessions.get(key) === session) sessions.delete(key)
     if (!contents.isDestroyed()) contents.send('terminal:exit', { id, code: exitCode, signal: signal ?? null })
   })
 
   return { pid: instance.pid, shell: shell?.label ?? path.basename(file), cwd }
 }
 
-export function writeTerminal(id: string, data: string) {
-  sessions.get(id)?.pty.write(data)
+export function writeTerminal(key: string, data: string) {
+  sessions.get(key)?.pty.write(data)
 }
 
-export function resizeTerminal(id: string, cols: number, rows: number) {
-  const session = sessions.get(id)
+export function resizeTerminal(key: string, cols: number, rows: number) {
+  const session = sessions.get(key)
   if (!session) return
   try {
     session.pty.resize(Math.max(2, Math.floor(cols)), Math.max(1, Math.floor(rows)))
@@ -328,10 +335,10 @@ export function resizeTerminal(id: string, cols: number, rows: number) {
   }
 }
 
-export function killTerminal(id: string) {
-  const session = sessions.get(id)
+export function killTerminal(key: string) {
+  const session = sessions.get(key)
   if (!session) return
-  sessions.delete(id)
+  sessions.delete(key)
   if (session.timer) clearTimeout(session.timer)
   try {
     session.pty.kill()
@@ -341,5 +348,13 @@ export function killTerminal(id: string) {
 }
 
 export function killAllTerminals() {
-  for (const id of [...sessions.keys()]) killTerminal(id)
+  for (const key of [...sessions.keys()]) killTerminal(key)
+}
+
+/** The terminals of one window — when it closes or reloads. */
+export function killTerminalsOf(contentsId: number) {
+  const prefix = `${contentsId}:`
+  for (const key of [...sessions.keys()]) {
+    if (key.startsWith(prefix)) killTerminal(key)
+  }
 }

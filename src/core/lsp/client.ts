@@ -109,7 +109,10 @@ export class LspClient {
 
   private nextId = 1
   private pending = new Map<number, Pending>()
-  private openDocs = new Map<string, { version: number; languageId: string }>()
+  /** Open documents with the text the server has — changes are checked against it. */
+  /** jdtls reported `ServiceReady`. */
+  private javaReady = false
+  private openDocs = new Map<string, { version: number; languageId: string; text: string }>()
   private disposers: (() => void)[] = []
   private languageIds = new Set<string>()
 
@@ -120,6 +123,12 @@ export class LspClient {
   onApplyEdit: (label: string | undefined, edit: WorkspaceEdit) => Promise<boolean> = async () => false
   /** The server asks for a recomputation (inlay hints, semantic tokens …). */
   onRefresh: (what: string) => void = () => {}
+  /**
+   * jdtls: the build import finished or the classpath changed (`projects`),
+   * the import had problems (`importProblem`), or Gradle cannot run with the
+   * JDK it was given (`gradleJdk`).
+   */
+  onJavaEvent: (event: { kind: 'projects' | 'importProblem' | 'gradleJdk'; message?: string }) => void = () => {}
 
   constructor(config: LspConfig, command: string, root: string) {
     this.config = config
@@ -311,9 +320,31 @@ export class LspClient {
         const p = params as JavaStatus
         if (p.type === 'Error') this.addLog('log', 1, p.message)
         if (p.type !== 'Error' && p.type !== 'ProjectStatus') this.addLog('log', 3, `${p.type}: ${p.message}`)
-        if (p.type === 'Starting') this.progress.set('java-status', { title: 'Java', message: p.message })
+        // jdtls keeps sending “Starting …” (with runaway percentages) after it is
+        // ready — only the log gets those, not a spinner that never ends.
+        if (p.type === 'Starting' && !this.javaReady) this.progress.set('java-status', { title: 'Java', message: p.message })
+        if (p.type === 'ServiceReady') this.javaReady = true
         if (p.type === 'ServiceReady' || p.type === 'Started') this.progress.delete('java-status')
+        if (p.type === 'ServiceReady') this.onJavaEvent({ kind: 'projects' })
+        // `ProjectStatus: WARNING` — at least one project did not import cleanly.
+        if (p.type === 'ProjectStatus' && p.message !== 'OK') this.onJavaEvent({ kind: 'importProblem', message: p.message })
         this.onStatusChange()
+        return
+      }
+      case 'language/eventNotification': {
+        // jdtls EventType: 100 ClasspathUpdated, 200 ProjectsImported, 300 IncompatibleGradleJDKIssue.
+        const p = params as { eventType?: number; data?: unknown }
+        if (p.eventType === 100 || p.eventType === 200) this.onJavaEvent({ kind: 'projects' })
+        if (p.eventType === 300) this.onJavaEvent({ kind: 'gradleJdk', message: JSON.stringify(p.data ?? '') })
+        return
+      }
+      case 'language/actionableNotification': {
+        // Import failures and the like; `severity` follows MessageType (1 error … 4 log).
+        const p = params as { severity?: MessageType; message?: string }
+        if (!p.message) return
+        const severity = p.severity ?? 3
+        this.addLog('log', severity, p.message)
+        this.onMessage({ type: severity, message: p.message })
         return
       }
       case 'language/progressReport': {
@@ -334,8 +365,6 @@ export class LspClient {
       }
       case 'telemetry/event':
       case '$/logTrace':
-      case 'language/eventNotification':
-      case 'language/actionableNotification':
         return
       default:
         return
@@ -485,7 +514,7 @@ export class LspClient {
 
   openDocument(filePath: string, text: string, languageId: string) {
     if (this.status !== 'ready' || this.openDocs.has(filePath)) return
-    this.openDocs.set(filePath, { version: 1, languageId })
+    this.openDocs.set(filePath, { version: 1, languageId, text })
     this.languageIds.add(languageId)
     this.notify('textDocument/didOpen', {
       textDocument: { uri: pathToUri(filePath), languageId, version: 1, text },
@@ -499,12 +528,19 @@ export class LspClient {
   changeDocument(filePath: string, text: string, changes?: ContentChange[]) {
     const doc = this.openDocs.get(filePath)
     if (doc === undefined) return
+    // The same change reported twice (a reload from disk reaches the server
+    // both as full text and through the editor) — the server already has it.
+    if (doc.text === text) return
+    // Incremental changes only when they turn what the server has into `text`;
+    // otherwise the full text, so the server's copy cannot drift away.
+    const fits = Boolean(changes?.length) && applyContentChanges(doc.text, changes!) === text
+    doc.text = text
     doc.version++
-    const incremental = changes && changes.length > 0 && this.incrementalSync
+    const incremental = fits && this.incrementalSync
     this.notify('textDocument/didChange', {
       textDocument: { uri: pathToUri(filePath), version: doc.version },
       contentChanges: incremental
-        ? changes.map((c) => ({ range: c.range, text: c.text }))
+        ? changes!.map((c) => ({ range: c.range, text: c.text }))
         : [{ text }],
     })
   }
@@ -517,6 +553,29 @@ export class LspClient {
       textDocument: { uri: pathToUri(filePath) },
       ...(includeText ? { text } : {}),
     })
+  }
+
+  /**
+   * Close and open a document again with its current text — the server
+   * compiles it afresh in whatever project it belongs to now (after jdtls
+   * finished importing the build, say).
+   */
+  reopenDocument(filePath: string, text: string) {
+    const doc = this.openDocs.get(filePath)
+    if (!doc) return
+    this.closeDocument(filePath)
+    this.openDocument(filePath, text, doc.languageId)
+  }
+
+  /** The documents open in this server. */
+  openPaths(): string[] {
+    return [...this.openDocs.keys()]
+  }
+
+  /** jdtls: import the given build files afresh, then rebuild the workspace. */
+  async javaReimport(buildFiles: string[]) {
+    for (const file of buildFiles) this.notify('java/projectConfigurationUpdate', { uri: pathToUri(file) })
+    await this.request('java/buildWorkspace', true).catch(() => null)
   }
 
   closeDocument(filePath: string) {
@@ -847,4 +906,26 @@ const CLIENT_CAPABILITIES = {
   },
   // jdtls-specific extensions (opening Java classes out of jars).
   experimental: {},
+}
+
+/** Offset of an LSP position (UTF-16, as CodeMirror and JavaScript count) in a text. */
+function offsetOf(text: string, position: Position): number {
+  let offset = 0
+  for (let line = 0; line < position.line; line++) {
+    const next = text.indexOf('\n', offset)
+    if (next === -1) return text.length
+    offset = next + 1
+  }
+  return Math.min(text.length, offset + position.character)
+}
+
+/** Apply content changes in order, each in the coordinates of the text before it. */
+export function applyContentChanges(text: string, changes: ContentChange[]): string {
+  let out = text
+  for (const change of changes) {
+    const start = offsetOf(out, change.range.start)
+    const end = offsetOf(out, change.range.end)
+    out = out.slice(0, start) + change.text + out.slice(end)
+  }
+  return out
 }

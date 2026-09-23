@@ -6,6 +6,7 @@
 
 import type { FormField, FormValues, ProjectTask, ProjectTemplate, TemplateContext } from '@/core/types'
 import { t, tr } from '@/i18n'
+import { choicesSettled, fieldChoices, isChoiceField, type LoadedChoices } from './choices'
 
 /** `My Project!` → `my-project` */
 export function slugify(name: string): string {
@@ -52,19 +53,19 @@ export function visibleFields(fields: FormField[], values: FormValues): FormFiel
  * Resolve the values: what the user typed wins, otherwise the defaults — and
  * derived defaults are evaluated repeatedly until they settle (artifactId from
  * the name, the package from groupId and artifactId).
+ *
+ * A select or combobox only ever holds one of its choices: when the value —
+ * typed or default — is not on the list (the list was fetched afresh for
+ * another Minecraft version, say), the default takes its place if it is on
+ * the list, else the first choice. A list still loading leaves the value be.
  */
 export function resolveValues(
-  fields: FormField[], base: FormValues, touched: FormValues = {},
+  fields: FormField[], base: FormValues, touched: FormValues = {}, loaded: LoadedChoices = {},
 ): FormValues {
   let values: FormValues = { ...base, ...touched }
-  for (let round = 0; round < 4; round++) {
+  for (let round = 0; round < 6; round++) {
     const next: FormValues = { ...values }
-    for (const field of fields) {
-      if (field.id in touched) continue
-      const fallback = field.type === 'select' ? (field.choices?.[0]?.value ?? '') : ''
-      const raw = typeof field.default === 'function' ? field.default(values) : field.default
-      next[field.id] = raw ?? (field.type === 'toggle' ? 'false' : fallback)
-    }
+    for (const field of fields) next[field.id] = resolveField(field, values, touched, loaded)
     const stable = fields.every((f) => next[f.id] === values[f.id])
     values = next
     if (stable) break
@@ -72,12 +73,52 @@ export function resolveValues(
   return values
 }
 
-/** The error message per field, for visible fields only. */
-export function validateValues(fields: FormField[], values: FormValues): Record<string, string> {
+function defaultOf(field: FormField, values: FormValues): string | undefined {
+  if (typeof field.default !== 'function') return field.default
+  try {
+    return field.default(values)
+  } catch {
+    return undefined
+  }
+}
+
+function resolveField(field: FormField, values: FormValues, touched: FormValues, loaded: LoadedChoices): string {
+  const fallback = defaultOf(field, values)
+  if (!isChoiceField(field)) {
+    if (field.id in touched) return touched[field.id]
+    return fallback ?? (field.type === 'toggle' ? 'false' : '')
+  }
+  const choices = fieldChoices(field, values, loaded)
+  const wanted = field.id in touched ? touched[field.id] : fallback
+  if (!choicesSettled(field, values, loaded) || !choices.length) return wanted ?? choices[0]?.value ?? ''
+  if (wanted !== undefined && choices.some((c) => c.value === wanted)) return wanted
+  if (fallback !== undefined && choices.some((c) => c.value === fallback)) return fallback
+  return choices[0].value
+}
+
+/**
+ * The error message per field, for visible fields only. Given the load
+ * states, a field whose choices are still loading or failed counts as not
+ * ready yet — a form can't be submitted on a list nobody has seen.
+ */
+export function validateValues(fields: FormField[], values: FormValues, loaded?: LoadedChoices): Record<string, string> {
   const errors: Record<string, string> = {}
   for (const field of visibleFields(fields, values)) {
     const value = (values[field.id] ?? '').trim()
     const type = field.type ?? 'text'
+    const state = loaded && field.loadChoices ? loaded[field.id] : undefined
+    if (loaded && field.loadChoices && (!state || state.status === 'loading')) {
+      errors[field.id] = t('forms.choices.loading')
+      continue
+    }
+    if (state?.status === 'error') {
+      errors[field.id] = t('forms.choices.failed')
+      continue
+    }
+    if (type === 'combobox' && !value && field.required !== false) {
+      errors[field.id] = t('forms.required')
+      continue
+    }
     if (type !== 'text') continue
     if (!value && field.required !== false) {
       errors[field.id] = t('forms.required')
@@ -110,12 +151,20 @@ export interface ScaffoldResult {
   next: string | null
 }
 
+/** Where creating a project stands — for a progress display. */
+export type ScaffoldProgress =
+  | { step: 'check' }
+  | { step: 'generate' }
+  | { step: 'write'; done: number; total: number }
+
 export async function scaffoldProject(
   template: ProjectTemplate,
   parentDir: string,
   name: string,
   values: FormValues,
+  onProgress?: (progress: ScaffoldProgress) => void,
 ): Promise<ScaffoldResult> {
+  onProgress?.({ step: 'check' })
   const ctx = templateContext(template, parentDir, name, values)
   const errors = validateValues(template.fields ?? [], ctx.values)
   const firstError = Object.entries(errors)[0]
@@ -129,10 +178,13 @@ export async function scaffoldProject(
     if (entries.length > 0) throw new Error(t('forms.notEmpty', { name: ctx.slug }))
   }
 
-  const files = template.files(ctx)
+  onProgress?.({ step: 'generate' })
+  const files = await template.files(ctx)
   await window.lumen.fs.create(ctx.dir, true)
   const written: string[] = []
-  for (const [relative, content] of Object.entries(files)) {
+  const generated = Object.entries(files)
+  for (const [relative, content] of generated) {
+    onProgress?.({ step: 'write', done: written.length, total: generated.length })
     const target = `${ctx.dir}/${relative.replace(/^[\\/]/, '')}`
     const text = content === '' || content.endsWith('\n') ? content : `${content}\n`
     await window.lumen.fs.writeFile(target, text)
@@ -152,14 +204,14 @@ export async function scaffoldProject(
 
 /** Standard .gitignore building blocks for the templates. */
 export const GITIGNORE = {
-  java: 'target/\nbuild/\n.gradle/\nout/\n*.class\n*.jar\n!gradle/wrapper/*.jar\n.idea/\n*.iml\n.lumen/\n',
-  c: 'build/\nbuilddir/\n*.o\n*.a\n*.so\n*.out\ncompile_commands.json\n.cache/\n.xmake/\nvcpkg_installed/\nCMakeUserPresets.json\n.lumen/\n',
-  node: 'node_modules/\ndist/\n.env\n*.log\n.astro/\n.angular/\n.lumen/\n',
-  python: '__pycache__/\n*.py[cod]\n.venv/\n.pytest_cache/\n.ruff_cache/\ndist/\n*.egg-info/\n.lumen/\n',
-  rust: 'target/\n.lumen/\n',
-  go: 'bin/\n*.test\n.lumen/\n',
-  php: 'vendor/\n.phpunit.cache/\n.lumen/\n',
-  dotnet: 'bin/\nobj/\n*.user\n.vs/\n.lumen/\n',
-  crystal: 'lib/\nbin/\n.shards/\n.lumen/\n',
-  novus: 'build/\n.lumen/\n',
+  java: 'target/\nbuild/\n.gradle/\nout/\n*.class\n*.jar\n!gradle/wrapper/*.jar\n.idea/\n*.iml\n',
+  c: 'build/\nbuilddir/\n*.o\n*.a\n*.so\n*.out\ncompile_commands.json\n.cache/\n.xmake/\nvcpkg_installed/\nCMakeUserPresets.json\n',
+  node: 'node_modules/\ndist/\n.env\n*.log\n.astro/\n.angular/\n',
+  python: '__pycache__/\n*.py[cod]\n.venv/\n.pytest_cache/\n.ruff_cache/\ndist/\n*.egg-info/\n',
+  rust: 'target/\n',
+  go: 'bin/\n*.test\n',
+  php: 'vendor/\n.phpunit.cache/\n',
+  dotnet: 'bin/\nobj/\n*.user\n.vs/\n',
+  crystal: 'lib/\nbin/\n.shards/\n',
+  novus: 'build/\n',
 }

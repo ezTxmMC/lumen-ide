@@ -1,10 +1,12 @@
 /**
- * Project configuration in `.lumen/project.json` inside the workspace folder:
- * custom tasks, default tasks, environment variables and the preferred
- * language server per language.
+ * The project configuration: custom tasks, default tasks, environment
+ * variables, the preferred language server per language and the files that
+ * were open. It lives in Lumen's data folder for the project
+ * (`~/.lumen/projects/<name>-<hash>/project.json`), not in the project.
  */
 
 import type { ProjectTask } from '@/core/types'
+import { isProjectDataPath, projectDataFile } from './data'
 
 export interface ProjectConfig {
   /** Display name, overriding the detected one. */
@@ -34,15 +36,21 @@ export const EMPTY_PROJECT_CONFIG: ProjectConfig = {
   lsp: {},
 }
 
-const FILE = '.lumen/project.json'
+const FILE = 'project.json'
 
-export function configPath(root: string) {
-  return `${root.replace(/[\\/]$/, '')}/${FILE}`
+/** The configuration file of a project root. */
+export function projectConfigFile(root: string): Promise<string> {
+  return projectDataFile(root, FILE)
+}
+
+/** Is this the configuration file of some project — edited in a tab, say? */
+export function isProjectConfigPath(path: string): boolean {
+  return isProjectDataPath(path) && /[\\/]project\.json$/.test(path)
 }
 
 export async function loadProjectConfig(root: string): Promise<ProjectConfig> {
   try {
-    const raw = await window.lumen.fs.readFile(configPath(root))
+    const raw = await window.lumen.fs.readFile(await projectConfigFile(root))
     const parsed = JSON.parse(raw) as Partial<ProjectConfig>
     return {
       name: typeof parsed.name === 'string' ? parsed.name : undefined,
@@ -74,7 +82,7 @@ export async function saveProjectConfig(root: string, config: ProjectConfig): Pr
     ...(config.splitDirection === 'down' ? { splitDirection: 'down' as const } : {}),
     ...(config.jdk ? { jdk: config.jdk } : {}),
   }
-  await window.lumen.fs.writeFile(configPath(root), `${JSON.stringify(clean, null, 2)}\n`)
+  await window.lumen.fs.writeFile(await projectConfigFile(root), `${JSON.stringify(clean, null, 2)}\n`)
 }
 
 function isTask(value: unknown): value is ProjectTask {

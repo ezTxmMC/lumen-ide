@@ -9,7 +9,7 @@
  * that no arbitrary address can be loaded or path written through IPC.
  */
 
-import { app, ipcMain, net, shell, type BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain, net, shell } from 'electron'
 import { spawn, type ChildProcess } from 'node:child_process'
 import { createHash, type Hash } from 'node:crypto'
 import { once } from 'node:events'
@@ -345,7 +345,8 @@ async function resolvePackage(packageId: string, signal: AbortSignal): Promise<P
 }
 
 function archiveKind(filename: string): 'zip' | 'tar.gz' | 'tar' {
-  if (/\.zip$/i.test(filename)) return 'zip'
+  // A VS Code extension (.vsix) is a zip file too.
+  if (/\.(zip|vsix)$/i.test(filename)) return 'zip'
   if (/\.(tar\.gz|tgz)$/i.test(filename)) return 'tar.gz'
   return 'tar'
 }
@@ -545,7 +546,8 @@ export function registerSdkIpc(getWindow: () => BrowserWindow | null) {
     if (kind !== 'java') return []
     return detectJava()
   })
-  ipcMain.handle('sdk:install', (_e, request: InstallRequest) => install(request, getWindow))
+  // Progress goes to the window that asked.
+  ipcMain.handle('sdk:install', (e, request: InstallRequest) => install(request, () => BrowserWindow.fromWebContents(e.sender) ?? getWindow()))
   ipcMain.handle('sdk:cancel', (_e, jobId: string) => cancel(jobId))
   ipcMain.handle('sdk:remove', (_e, home: string) => remove(home))
 

@@ -1,7 +1,7 @@
 {
   "id": "ext.essentials",
   "name": "Essentials",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "JSON, YAML, TOML, Markdown, Shell und SQL — die üblichen Begleitdateien.",
   "author": "Lumen",
   "icon": "⌘",
@@ -17,5 +17,5 @@
     "shell",
     "sql"
   ],
-  "minAppVersion": "0.3.0"
+  "minAppVersion": "0.5.0"
 }

@@ -55,7 +55,25 @@ The id must begin with `ext.` — `user.` stays reserved for the add-on studio.
 Settings appear in Lumen under *Settings → Extensions*, each with the name of
 its extension in front.
 
+`minAppVersion` (in `extension.json`, e.g. `"0.5.0"`) names the oldest Lumen the
+extension needs. Set it whenever the extension uses something the app only has
+from that version on — a setting type, a host API, window code. An older Lumen
+lists the extension as “Needs Lumen 0.5.0”, refuses to install it, skips it in
+updates, and does not start the code of one already installed.
+
 The kinds of setting: `text`, `number`, `toggle`, `select` (with `choices`).
+
+A manifest is written in one language. Settings and commands carry the other
+interface languages in `i18n`, by language code — what a language leaves out
+keeps the manifest's own text:
+
+```json
+{ "key": "idleText", "label": "Leerlauf-Text", "section": "Leerlauf",
+  "i18n": { "en": { "label": "Idle text", "section": "Idle", "hint": "…", "placeholder": "…" } } }
+{ "key": "mode", "type": "select", "label": "Modus", "choices": [{ "value": "a", "label": "Aus" }],
+  "i18n": { "en": { "label": "Mode", "choices": { "a": "Off" } } } }
+{ "id": "discord.reconnect", "title": "Discord: Neu verbinden", "i18n": { "en": { "title": "Discord: Reconnect" } } }
+```
 
 ### `addon.json`
 
@@ -93,9 +111,10 @@ location: sidebar
 # Willkommen
 ```
 
-`location: sidebar` gives the page an icon of its own in the activity bar — like
-the views of Copilot or Dev Containers in VS Code. With nothing given it lands
-in the editor area. `.html` files work just as well but are not sent through the
+`location: left`, `right` or `bottom` puts the page into that dock of the window
+with an icon of its own (`sidebar` is the old name of `left`); the user can drag
+it to any other dock. `icon:` names an icon-pack shape or action icon
+(`book-open`, `rocket` …). With no location the page is not docked. `.html` files work just as well but are not sent through the
 Markdown converter.
 
 Pages run in a walled-off frame: no JavaScript, no access to Lumen, no windows
@@ -109,7 +128,11 @@ add-ons; such an extension cannot reach files, the network or the shell.
 
 An extension that needs more ships **program code**: `main.js` in its folder.
 The build bundles it (with everything it imports) into one ES module,
-`code.main` in the manifest. Lumen runs it in its main process and calls
+`code.main` in the manifest. Packages of its own go into a `package.json` next
+to it (the build installs them into the folder when they are missing);
+`"lumenBuild": { "alias": { "pkg": "./stub.js" } }` there swaps a package for a
+local file — for an optional part a dependency imports but the extension never
+uses (`extensions/database/` does that to stay under the size limit). Lumen runs it in its main process and calls
 `activate(ctx)`:
 
 ```js
@@ -123,15 +146,172 @@ export function activate(ctx) {
 }
 ```
 
-`agents` in `extension.json` describes how the panel looks (name, modes,
-placeholder); the code does the work. Lumen knows nothing about the product
-behind an agent — a chat panel with messages, tool calls and an allow/deny card
-for every permission the code raises is all it draws. `extensions/claude-code/`
-is a complete example.
+`agents` in `extension.json` describes how the panel looks; the code does the
+work. Lumen knows nothing about the product behind an agent — it draws a chat
+with streamed Markdown answers, thinking, tool calls, an allow/deny card for
+every permission the code raises, the agent's plan and the cost of each turn.
+Two complete examples: `extensions/claude-code/` (the Claude Agent SDK) and
+`extensions/codex/` (the Codex CLI in JSON mode).
 
-The events a provider emits: `session`, `assistant` (text and tool blocks),
-`toolResult`, `permission` / `permissionSettled`, `result`, `error`. Lumen adds
-`done` itself when `send` ends.
+| Field | Purpose |
+| --- | --- |
+| `name`, `description`, `icon`, `placeholder` | how the chat presents itself |
+| `modes` | chips in the chat; the chosen id arrives as `mode` (the first is the default) |
+| `models`, `modelSetting` | the model picker; the chosen id arrives as `model`, `""` means the setting named by `modelSetting` applies |
+| `location` | the dock the chat starts in: `left`, `right` (default) or `bottom` |
+| `suggestions` | prompts offered in an empty chat |
+| `images` | `true` lets the user paste or attach images (`attachments` with base64 `data`) |
+
+A provider implements `send(request, emit)`, `answer(reply)`, `interrupt(chatId)`
+and, optionally, `sessions(cwd)` — earlier conversations the chat offers to
+resume (the id comes back as `sessionId`). Every chat of an agent has its own
+`chatId`. The events `send` emits:
+
+| Event | Meaning |
+| --- | --- |
+| `session` | the conversation's id, model, tools and slash commands (offered after `/` in the composer) |
+| `delta` | streamed text of the message being written; `thinking: true` for reasoning |
+| `assistant` | complete blocks: `text`, `thinking`, `tool` (replaces the streamed text) |
+| `toolResult` | a tool's output, `isError` when it failed |
+| `permission` / `permissionSettled` | ask before a tool runs; `reason` explains why |
+| `todos` | the agent's plan, replacing the previous one |
+| `status` | a short line while working (`""` clears it) |
+| `result` | the end of a turn with `usage` (tokens, cache, cost, duration, steps) |
+| `error` | a message shown in the chat |
+
+Lumen adds `done` itself when `send` ends.
+
+### Views, commands, the status bar
+
+Code can do much more than agents. Everything it shows is **data**: Lumen draws
+it with its own components, so a panel looks like the rest of the program and a
+buggy extension cannot break the window. The shapes are in
+`electron/features/extension-host/contract.ts`, `ctx` is built in `context.ts`.
+
+```json
+"views": [
+  { "id": "changes", "title": "Source Control", "icon": "git-branch", "location": "left" }
+],
+"commands": [
+  { "id": "refresh", "title": "Refresh", "category": "Git", "keybinding": "Ctrl+Alt+R" }
+]
+```
+
+```js
+export function activate(ctx) {
+  ctx.views.register('changes', {
+    render: () => ({
+      toolbar: [{ action: 'refresh', title: 'Refresh', icon: 'refresh-cw' }],
+      nodes: [
+        { type: 'input', id: 'message', multiline: true, placeholder: 'Message',
+          submit: { action: 'commit', title: 'Commit' } },
+        { type: 'section', id: 'staged', title: 'Staged', badge: 2, children: [
+          { type: 'item', id: 'a', label: 'main.ts', fileIcon: 'main.ts', tone: 'modified',
+            onClick: { action: 'open', title: 'Open', payload: '/abs/main.ts' },
+            actions: [{ action: 'unstage', title: 'Unstage', icon: 'minus', payload: 'main.ts' }] },
+        ] },
+      ],
+    }),
+    async onAction({ action, payload, inputs }) { /* inputs.message … */ ctx.views.refresh('changes') },
+  })
+  ctx.commands.register('refresh', () => ctx.views.refresh('changes'))
+  ctx.statusBar.set('branch', { text: 'main', icon: 'git-branch', command: 'refresh' })
+}
+```
+
+Node types: `section`, `item` (icon or file icon, description, badge, tone,
+hover actions, context `menu`, children), `input` (single or multi-line,
+`submit` on Enter / Ctrl+Enter), `select`, `toggle`, `buttons`, `text`,
+`markdown`, `keyValue`, `empty` (with an action), `progress`, `divider`, `row`
+(its children side by side), `grid` and `code` (below). An action with
+`confirm` asks first. The view's content is fetched while it is visible and
+again after `ctx.views.refresh`.
+
+#### Grids and code inputs
+
+For views built around data there are two larger nodes; `layout: 'fill'` on the
+content lets one of them (`grow: true`) take the rest of the height instead of
+the view scrolling.
+
+```js
+{ type: 'grid', id: 'rows', grow: true, select: 'multi',
+  columns: [{ id: 'id', title: 'id', detail: 'INTEGER', numeric: true, key: true, sortable: true },
+            { id: 'name', title: 'name', editable: true, nullable: true }],
+  rows: [{ id: 'k1', cells: [1, 'Ada'], tone: 'modified', changed: [1] }],
+  sort: { column: 'id', direction: 'asc' },
+  onSort: { action: 'sort', title: 'Sort' },       // payload { column, direction, data }
+  onEdit: { action: 'edit', title: 'Edit' },       // payload { row, column, value, data }
+  onOpen: { action: 'open', title: 'Open' },       // payload { row, data }; `activate: 'click'` opens on one click
+  menu: [{ action: 'delete', title: 'Delete', danger: true }],
+  paging: { offset: 0, limit: 200, total: 1234, action: { action: 'page', title: 'Page' } } }  // payload { offset, data }
+
+{ type: 'code', id: 'sql', language: 'sql', rows: 10, value: 'SELECT 1',
+  submit: { action: 'run', title: 'Run' } }       // Ctrl+Enter
+```
+
+A grid draws only the rows in sight, so tens of thousands are fine; columns
+can be resized, cells are edited in place (Enter commits, Escape cancels, the
+menu offers *set to NULL* on `nullable` columns), rows copy as tab-separated
+text. Cells are text, numbers, booleans or `null`. `data` in a payload is the
+action's own `payload`. The selected row ids reach every action as a JSON list
+in `inputs[<grid id>]`; a code input's text is `inputs[<id>]`, its selection
+`inputs['<id>.selection']`.
+
+#### Views in the editor area
+
+A view with `"location": "editor"` is not docked. Its code opens it as tabs in
+the editor area, any number of them, each an *instance* the provider tells
+apart:
+
+```js
+ctx.views.register('data', {
+  render: (instance) => ({ title: tables.get(instance).name, layout: 'fill', nodes: [/* … */] }),
+  onAction: ({ action, payload, inputs, instance }) => { /* … */ ctx.views.refresh('data', instance) },
+  onClose: (instance) => tables.delete(instance),
+})
+ctx.views.open('data', 't1', 'customers')   // opens or focuses that tab
+```
+
+The content's `toolbar` shows above the tab's content. What was typed into a
+tab's inputs survives switching tabs. Tabs are not restored after a restart;
+`render` gets an instance it no longer knows then and should say so.
+
+#### Opening files
+
+`openWith` in `extension.json` offers the extension for files of certain names:
+
+```json
+"openWith": [{ "command": "open-file", "title": "Database viewer", "patterns": ["*.db", "*.sqlite"] }]
+```
+
+Opening such a file asks whether it goes to the extension or into the text
+editor, and the explorer's context menu offers it directly. The command gets
+`{ path }`.
+
+What else `ctx` offers:
+
+| | |
+| --- | --- |
+| `ctx.workspace.root()`, `folders()`, `onDidChange` | the open folders |
+| `ctx.events.on('fileSaved' \| 'activeFile' \| 'project' \| 'windowFocus' \| 'windowBlur' \| 'viewVisible' \| 'locale', fn)` | what happens in the interface; `activeFile` carries the tab's `languageId` and `languageName`, `project` its `root` and `name` |
+| `ctx.events.last(kind)` | the latest event of a kind — the active file or project at the moment the code starts |
+| `ctx.ui.notify`, `openFile`, `openDocument(name, text, languageId)`, `showView`, `runInTerminal`, `refreshProject` | acting on the interface |
+| `ctx.ui.confirm`, `input(title, fields)`, `pick(title, items)` | questions, answered in Lumen's dialogs |
+| `ctx.exec(command, args, { cwd, env, timeoutMs, input })` | run a program without a shell, collect its output |
+| `ctx.settings.get / all / onDidChange` | the extension's settings |
+| `ctx.secrets.get / set / delete` | tokens and keys, encrypted with the system's key store |
+| `ctx.storage.get / set` | a small JSON document that survives restarts |
+| `ctx.storage.dir()` | a folder of the extension's own for larger files (downloads, caches); removed with the extension |
+| `ctx.views.open(id, instance, title)`, `ctx.views.refresh(id, instance?)` | tabs of editor views |
+| `ctx.locale()`, `ctx.appVersion`, `ctx.openExternal(url)`, `ctx.log(…)` | the interface language, Lumen's version, links, logging |
+
+Ids of views, commands and status items are lower-case (`open-changes`).
+Settings come in the types `text`, `number` (`min`/`max`/`step`), `toggle`,
+`select`, `textarea` (`rows`), `path` (`pathKind: file|folder`), `color` and
+`secret`; `section` groups them and `when: "key"` / `"key=value"` shows a
+setting only under a condition. `extensions/git/` and `extensions/github/` are
+complete examples; `extensions/discord/` (Discord Rich Presence) is a small one
+that works from events and the status bar alone.
 
 **Code runs with Lumen's own rights.** So it is never installed silently:
 
@@ -143,6 +323,25 @@ The events a provider emits: `session`, `assistant` (text and tool blocks),
 An update whose code changed asks again; unchanged code carries over. The
 trust boundary for data extensions stays what it was: `lumen-extensions.eztxm.de`
 counts as vetted, and every other server raises a prompt first.
+
+### Code for Lumen's window
+
+`renderer.ts` (or `.js`) is code for the window rather than the main process —
+for what only lives there: project templates whose fields load their choices
+over the network and whose files are computed, project kinds with a `detect`,
+snippets and commands with an `activate(ctx)`. The build bundles it into
+`code.renderer`; it exports `addon(lumen)` and returns the parts of an add-on.
+Everything from Lumen comes through `lumen` (`src/core/extensions/renderer-api.ts`):
+translation over the extension's own message tables, `net.fetchJson/fetchText`,
+the project helpers, the editor, dialogs and settings. The source never
+imports the app — only `import type` from `../../src/…`, which vanishes in the
+bundle.
+
+`extensions/minecraft/` is the complete example: every Minecraft version from
+1.7.10 with live version lists per platform (cached in `ctx.storage`, offline
+defaults built in), templates per era and project kinds. Its rules are pure
+modules with tests — `node extensions/minecraft/test.mjs` offline,
+`--network` against the live sources.
 
 ## The check before publishing
 

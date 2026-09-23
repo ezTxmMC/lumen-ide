@@ -1,7 +1,7 @@
 /**
  * State of SDK management: installed SDKs, the catalogue (cached), running
  * installations and the default choice (userData/sdk.json). The per-project
- * choice lives in `.lumen/project.json` as `jdk`.
+ * choice lives in the project configuration (`project.json`) as `jdk`.
  */
 
 import { create } from 'zustand'
@@ -117,7 +117,7 @@ export function setEarlyAccess(earlyAccess: boolean) {
   void loadCatalog('java', true)
 }
 
-/** The project JDK in `.lumen/project.json`; `null` follows the default again. */
+/** The project JDK in the project configuration (`project.json`); `null` follows the default again. */
 export async function setProjectSdk(value: string | null) {
   const store = useStore.getState()
   if (!store.workspace) {

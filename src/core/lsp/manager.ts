@@ -8,6 +8,9 @@ import type { LanguageSpec, LspConfig, LspPackage } from '@/core/types'
 import { t } from '@/i18n'
 import { LspClient, type ClientStatus, type ContentChange, type LogLine } from './client'
 import {
+  installPlans, managedPackage, packageFits, platformCommand, type InstallPlan, type SystemInfo,
+} from './install-plan'
+import {
   pathToUri, uriToPath,
   type Diagnostic, type ShowMessageParams, type WorkspaceEdit, type WorkspaceSymbol,
 } from './protocol'
@@ -51,6 +54,17 @@ export interface Paths {
   platformKey?: string
 }
 
+/**
+ * Extends a server's configuration before it starts. `command` is the
+ * resolved program — the path of the jdtls launcher, say.
+ */
+export type ConfigDecorator = (config: LspConfig, languageId: string, root: string, command: string) => LspConfig | Promise<LspConfig>
+
+/** The files that make a root a Gradle build. */
+const GRADLE_BUILD_FILES = ['settings.gradle', 'settings.gradle.kts', 'build.gradle', 'build.gradle.kts']
+
+const isJdtls = (config: LspConfig) => /jdtls|jdt\.ls/i.test(`${config.command} ${config.label}`)
+
 class LspManager {
   private clients = new Map<string, LspClient>()
   /** file → client key */
@@ -68,18 +82,26 @@ class LspManager {
   private missing = new Map<string, LspConfig>()
   private version = 0
   private logVersion = 0
+  /** Pending re-syncs of open documents, per client — jdtls reports imports in bursts. */
+  private resyncTimers = new Map<LspClient, ReturnType<typeof setTimeout>>()
+  /** Clients whose import problems were already reported — once per server is enough. */
+  private importWarned = new WeakSet<LspClient>()
+  /** jdtls servers whose workspace was imported with an older Gradle init script — re-imported once ready. */
+  private staleImports = new WeakSet<LspClient>()
 
   /** Switchable off globally by the user. */
   enabled = true
   private workspace: string | null = null
   private paths: Paths = { home: '', userData: '', platform: 'linux' }
+  /** Package managers and elevation found on the machine — `null` until known. */
+  private system: SystemInfo | null = null
   /** Preferred server per language (by label), from the project configuration. */
   private preferred: Record<string, string> = {}
   /** Extend the configuration before starting — JAVA_HOME and runtimes for jdtls, say. */
-  private decorators = new Set<(config: LspConfig, languageId: string, root: string) => LspConfig>()
+  private decorators = new Set<ConfigDecorator>()
 
   /** Adjust a server's configuration before it starts; returns a function to undo it. */
-  addConfigDecorator(fn: (config: LspConfig, languageId: string, root: string) => LspConfig) {
+  addConfigDecorator(fn: ConfigDecorator) {
     this.decorators.add(fn)
     return () => { this.decorators.delete(fn) }
   }
@@ -183,7 +205,13 @@ class LspManager {
   private async resolveConfig(
     spec: LanguageSpec, root: string,
   ): Promise<{ config: LspConfig; command: string } | null> {
-    for (const config of this.orderedConfigs(spec)) {
+    // A server chosen for the project is the only candidate: when it is not
+    // installed the language reports it missing (and offers the install)
+    // instead of quietly starting another one — jdtls, say.
+    const wanted = this.preferred[spec.id]
+    const chosen = wanted && (spec.lsp ?? []).some((config) => config.label === wanted)
+    const candidates = chosen ? this.orderedConfigs(spec).slice(0, 1) : this.orderedConfigs(spec)
+    for (const config of candidates) {
       const command = await this.resolveCommand(config, root)
       if (command) {
         this.missing.delete(spec.id)
@@ -205,7 +233,7 @@ class LspManager {
     const fallback = this.workspace ?? filePath.replace(/[^/\\]+$/, '').replace(/[/\\]$/, '')
     if (!config.rootMarkers?.length) return fallback
     const dir = filePath.replace(/[^/\\]+$/, '').replace(/[/\\]$/, '')
-    const found = await window.lumen.fs.findRoot(dir, config.rootMarkers).catch(() => null)
+    const found = await window.lumen.fs.findRoot(dir, config.rootMarkers, config.rootSearch).catch(() => null)
     return found ?? fallback
   }
 
@@ -255,11 +283,12 @@ class LspManager {
         ),
       }
       let decorated = substituted
-      for (const decorate of this.decorators) decorated = decorate(decorated, spec.id, actualRoot)
+      for (const decorate of this.decorators) decorated = await decorate(decorated, spec.id, actualRoot, command)
       const client = new LspClient(decorated, command, actualRoot)
       this.wire(client)
       this.clients.set(key, client)
       this.emit()
+      if (isJdtls(decorated)) await this.prepareJava(client)
 
       const startup = client.start()
       this.startups.set(client, startup)
@@ -289,6 +318,123 @@ class LspManager {
     client.onMessage = (params) => this.showMessage(client.config.label, params)
     client.onApplyEdit = (label, edit) => this.applyEdit(edit, label)
     client.onRefresh = (what) => this.onRefresh(what)
+    client.onJavaEvent = (event) => {
+      if (event.kind === 'projects') {
+        this.scheduleResync(client)
+        if (this.staleImports.has(client)) void this.reimportStale(client)
+        return
+      }
+      if (event.kind === 'gradleJdk') {
+        this.showMessage(client.config.label, { type: 1, message: t('lsp.java.gradleJdk') })
+        return
+      }
+      if (this.importWarned.has(client)) return
+      this.importWarned.add(client)
+      this.showMessage(client.config.label, { type: 2, message: t('lsp.java.importProblems') })
+    }
+  }
+
+  /**
+   * Compile the open documents afresh once the server knows the build. Files
+   * opened while jdtls was still importing were compiled on their own — every
+   * class of a sibling module “cannot be resolved” until they are reopened.
+   */
+  private scheduleResync(client: LspClient) {
+    const pending = this.resyncTimers.get(client)
+    if (pending) clearTimeout(pending)
+    this.resyncTimers.set(client, setTimeout(() => {
+      this.resyncTimers.delete(client)
+      if (client.status !== 'ready') return
+      for (const path of client.openPaths()) {
+        const doc = this.documentFor(path)
+        if (doc) client.reopenDocument(path, doc.text)
+      }
+    }, 1200))
+  }
+
+  /**
+   * Before jdtls starts: take the Eclipse metadata it once generated out of
+   * the project — files on disk win over keeping them in its workspace — and
+   * with them its workspace, which pointed there. Then note whether the
+   * workspace was imported with Lumen's current Gradle init script.
+   */
+  private async prepareJava(client: LspClient) {
+    const dataDir = this.dataDirOf(client)
+    const cleaned = await window.lumen.lsp.javaCleanMetadata(client.root).catch(() => ({ removed: [], kept: [] }))
+    if (cleaned.removed.length) {
+      await window.lumen.lsp.clearData(dataDir).catch(() => {})
+      client.addLog('client', 3, t('lsp.java.metadataRemoved', { count: cleaned.removed.length }))
+      this.showMessage(client.config.label, { type: 3, message: t('lsp.java.metadataRemoved', { count: cleaned.removed.length }) })
+    }
+    if (cleaned.kept.length) client.addLog('client', 2, t('lsp.java.metadataTracked', { files: cleaned.kept.join(', ') }))
+    const state = await window.lumen.lsp.javaImportState(dataDir).catch(() => 'current')
+    if (state === 'stale') this.staleImports.add(client)
+  }
+
+  /** The running jdtls servers. */
+  private javaClients(): LspClient[] {
+    return this.readyClients().filter((client) => isJdtls(client.config))
+  }
+
+  private dataDirOf(client: LspClient): string {
+    return this.substitute('${dataDir}', client.config, client.root)
+  }
+
+  /** The build files of the given names in a client's root. */
+  private async buildFiles(client: LspClient, names: string[]): Promise<string[]> {
+    const found = await Promise.all(names.map(async (name) => {
+      const file = `${client.root}/${name}`
+      return (await window.lumen.fs.exists(file).catch(() => false)) ? file : null
+    }))
+    return found.filter((file): file is string => file !== null)
+  }
+
+  /** Import the build afresh in every jdtls (after changing build files outside Lumen, say). */
+  async reimportJava(): Promise<number> {
+    const clients = this.javaClients()
+    await Promise.all(clients.map(async (client) => {
+      await client.javaReimport(await this.buildFiles(client, [...GRADLE_BUILD_FILES, 'pom.xml']))
+      this.scheduleResync(client)
+    }))
+    return clients.length
+  }
+
+  /**
+   * Re-import a Gradle build whose jdtls workspace predates Lumen's current
+   * init script — jdtls would keep the classpath it imported back then — and
+   * stamp the workspace, so this happens once.
+   */
+  private async reimportStale(client: LspClient) {
+    this.staleImports.delete(client)
+    const files = await this.buildFiles(client, GRADLE_BUILD_FILES)
+    if (files.length) {
+      client.addLog('client', 3, t('lsp.java.refreshingImport'))
+      await client.javaReimport(files).catch(() => {})
+      this.scheduleResync(client)
+    }
+    await window.lumen.lsp.javaImportDone(this.dataDirOf(client)).catch(() => {})
+  }
+
+  /**
+   * Throw away jdtls' workspace (its index and imported projects under
+   * userData/lsp) and start it again — the cure for an import stuck in a bad
+   * state. Open documents are handed to the fresh server.
+   */
+  async cleanJavaWorkspace(): Promise<number> {
+    const clients = [...new Set(this.clients.values())].filter((client) => isJdtls(client.config))
+    for (const client of clients) {
+      const dataDir = this.dataDirOf(client)
+      const affected = [...this.owners.entries()].filter(([, owner]) => owner === client.id).map(([path]) => path)
+      await this.stopClient(client.id)
+      await window.lumen.lsp.clearData(dataDir).catch(() => {})
+      this.resolved.clear()
+      await Promise.all(affected.map((path) => {
+        const doc = this.documentFor(path)
+        if (!doc) return undefined
+        return this.openDocument(doc.spec, path, doc.text)
+      }))
+    }
+    return clients.length
   }
 
   /* ---------------------------------------------------------------- *
@@ -303,6 +449,42 @@ class LspManager {
     const languageId = own?.languageId ?? spec.id
     client.openDocument(filePath, text, languageId)
     this.owners.set(filePath, client.id)
+  }
+
+  /**
+   * Start the language's server for a project root before any file is open —
+   * so indexing (jdtls, rust-analyzer, clangd) is under way by the time the
+   * first file opens. The server's own root markers still decide its root,
+   * searched from the project folder upwards.
+   */
+  async startForProject(spec: LanguageSpec, root: string): Promise<boolean> {
+    if (!this.enabled || !spec.lsp?.length) return false
+    // A file name that does not exist: `ensure` only needs its folder.
+    const client = await this.ensure(spec, `${root.replace(/[\\/]$/, '')}/.lumen-project-start`)
+    return Boolean(client)
+  }
+
+  /**
+   * The preferred server of a language changed: stop whatever serves it now
+   * and start the chosen one straight away — for the open files, and for the
+   * project when `root` is given.
+   */
+  async applyPreference(spec: LanguageSpec, root: string | null) {
+    const commands = new Set((spec.lsp ?? []).map((config) => config.command))
+    const running = [...new Set(this.clients.values())].filter((client) => commands.has(client.config.command))
+    const affected = [...this.owners.entries()]
+      .filter(([, owner]) => running.some((client) => client.id === owner))
+      .map(([path]) => path)
+    for (const client of running) await this.stopClient(client.id)
+    this.resolved.clear()
+    this.missing.delete(spec.id)
+    await Promise.all(affected.map((path) => {
+      const doc = this.documentFor(path)
+      if (!doc) return undefined
+      return this.openDocument(doc.spec ?? spec, path, doc.text)
+    }))
+    if (root) await this.startForProject(spec, root)
+    this.emit()
   }
 
   changeDocument(filePath: string | null, text: string, changes?: ContentChange[]) {
@@ -353,9 +535,18 @@ class LspManager {
     for (const client of this.clients.values()) {
       if (client.status !== 'ready' || !client.watchedPatterns.length) continue
       const matchers = client.watchedPatterns.map(globToRegExp)
+      // A file open in the server belongs to the editor: its changes arrive as
+      // didChange. Reporting the disk change as well makes jdtls reload the
+      // file from disk and then apply the editor's change on top — every line
+      // changed outside Lumen ended up twice in the server's copy. An atomic
+      // write (temp file, then rename over it — how agents and many tools
+      // save) arrives as "created" and is the same case.
+      const open = new Set(client.openPaths())
       const relevant = changes
+        .filter((c) => !(c.type !== 3 && open.has(c.path)))
         .filter((c) => matchers.some((re) => re.test(c.path)))
         .map((c) => ({ uri: pathToUri(c.path), type: c.type }))
+      if (!relevant.length) continue
       client.didChangeWatchedFiles(relevant)
     }
   }
@@ -507,41 +698,50 @@ class LspManager {
     return Boolean(await this.resolveCommand(config, root))
   }
 
+  /** What the main process found about the machine: package managers, sudo. */
+  setSystemInfo(info: SystemInfo | null) {
+    this.system = info
+    this.emit()
+  }
+
+  get systemInfo(): SystemInfo | null {
+    return this.system
+  }
+
+  /** Every way to install the server on this machine, the preferred one first. */
+  installPlans(config: LspConfig): InstallPlan[] {
+    return installPlans(config, { platform: this.paths.platform, platformKey: this.paths.platformKey, system: this.system })
+  }
+
   /**
    * How Lumen installs the server into its own environment: the `package`,
    * or one read from a plain install command (`npm i -g …`, `pipx install …`)
    * — so older manifests never run a global install that needs root.
    */
   packageFor(config: LspConfig): LspPackage | null {
-    if (config.package) return config.package
-    return packageFromCommand(this.installCommand(config) ?? config.install ?? '')
+    return managedPackage(config, this.paths.platform)
   }
 
   /** Lumen can install the server into its own environment on this platform. */
   hasPackage(config: LspConfig): boolean {
     const spec = this.packageFor(config)
     if (!spec) return false
-    if (spec.type === 'github') return Boolean(spec.assets[this.paths.platformKey ?? ''])
-    if (spec.type === 'archive' && typeof spec.url !== 'string') return Boolean(spec.url[this.paths.platformKey ?? ''])
-    return true
+    return packageFits(spec, this.paths.platformKey)
   }
 
   /** What an install would do, in one line — for tooltips and prompts. */
   installHint(config: LspConfig): string | null {
-    const spec = this.packageFor(config)
-    if (spec && this.hasPackage(config)) return `~/.lumen/lsp ← ${packageSource(spec)}`
-    return this.installCommand(config)
+    return this.installPlans(config)[0]?.summary ?? null
   }
 
-  /** Something — a package or a command — can install the server here. */
+  /** Something — a package, the system's package manager or a command — can install the server here. */
   canInstall(config: LspConfig): boolean {
-    return this.hasPackage(config) || Boolean(this.installCommand(config))
+    return this.installPlans(config).length > 0
   }
 
   /** The install command for this platform, where one is on record. */
   installCommand(config: LspConfig): string | null {
-    const key = this.paths.platform as 'linux' | 'darwin' | 'win32'
-    return config.installCommands?.[key] ?? null
+    return platformCommand(config, this.paths.platform)
   }
 
   /* ---------------------------------------------------------------- *

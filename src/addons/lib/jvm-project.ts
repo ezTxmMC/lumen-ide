@@ -18,6 +18,9 @@ import {
   isOn, javaVersionField, jvmCoordinateFields, packagePath, toggle,
 } from './fields'
 import { t } from '@/i18n'
+import {
+  flattenModules, gradleCustomTasks, gradleModuleTree, gradlePluginTasks, mavenCustomTasks, mavenModuleTree,
+} from './jvm-modules'
 
 /* ------------------------------------------------------------------ *
  * Maven
@@ -128,8 +131,8 @@ export const mavenKind: ProjectKind = {
     if (groupId) facts['templates.facts.group'] = groupId
     const packaging = xmlText(root, 'packaging')
     if (packaging) facts.Packaging = packaging
-    const modules = Array.from(xmlChild(root, 'modules')?.children ?? []).map((m) => m.textContent?.trim()).filter(Boolean)
-    if (modules.length) facts['templates.facts.modules'] = modules.join(', ')
+    const moduleNames = Array.from(xmlChild(root, 'modules')?.children ?? []).map((m) => m.textContent?.trim()).filter(Boolean)
+    if (moduleNames.length) facts['templates.facts.modules'] = moduleNames.join(', ')
 
     const dependencies = Array.from(xmlChild(root, 'dependencies')?.children ?? [])
       .filter((d) => d.localName === 'dependency')
@@ -139,7 +142,13 @@ export const mavenKind: ProjectKind = {
         scope: xmlText(d, 'scope') ?? 'compile',
       }))
 
+    const mvn = await wrapperOr(ctx, 'mvnw', 'mvn')
+    const modules = await mavenModuleTree(ctx, mvn)
+    const customTasks = mavenCustomTasks(text ?? '', mvn, 'maven')
+
     const meta: ProjectMeta = {
+      modules,
+      customTasks,
       name: xmlText(root, 'name') ?? xmlText(root, 'artifactId'),
       version: xmlText(root, 'version') ?? xmlText(parent, 'version'),
       description: xmlText(root, 'description'),
@@ -214,6 +223,19 @@ export const gradleKind: ProjectKind = {
     if (gradle === 'gradle') {
       tasks.push({ id: 'gradle:wrapper', label: 'templates.jvm.gradleWrapper', command: 'gradle', args: ['wrapper'], group: 'other', detail: 'templates.jvm.gradleWrapperDetail' })
     }
+    // What the root project's plugins start — runClient/runServer of a mod, bootRun … — right among the run tasks.
+    const script = (await ctx.readFile('build.gradle.kts')) ?? (await ctx.readFile('build.gradle')) ?? ''
+    const known = new Set(tasks.map((task) => task.args[task.args.length - 1]))
+    const own = gradlePluginTasks(script, gradle, '', [], known).filter((task) => task.group === 'run')
+    // A multi-loader build (Architectury: fabric/, neoforge/) runs from its modules — list those runs here too.
+    const fromModules = own.length
+      ? []
+      : flattenModules(await gradleModuleTree(ctx, gradle))
+        .flatMap((module) => module.tasks.filter((task) => task.group === 'run' && task.id.includes(':plugin:'))
+          .map((task) => ({ ...task, label: `${module.name}: ${task.label}` })))
+    const runs = [...own, ...fromModules]
+    const firstRun = tasks.findIndex((task) => task.group === 'run')
+    tasks.splice(firstRun === -1 ? tasks.length : firstRun, 0, ...runs)
     return tasks
   },
   async inspect(ctx) {
@@ -242,7 +264,14 @@ export const gradleKind: ProjectKind = {
       return { name: `${group}:${artifact ?? ''}`, version, scope: m[1] }
     })
 
+    const gradle = await wrapperOr(ctx, 'gradlew', 'gradle')
+    const modules = await gradleModuleTree(ctx, gradle)
+    const pluginExtras = gradlePluginTasks(build, gradle, '', []).filter((task) => task.group !== 'run')
+    const customTasks = [...pluginExtras, ...gradleCustomTasks(build, gradle).filter((task) => !pluginExtras.some((extra) => extra.label === task.label))]
+
     return {
+      modules,
+      customTasks,
       name: grepValue(settings, 'rootProject\\.name'),
       version: grepValue(build, 'version'),
       description: grepValue(build, 'description'),
@@ -525,7 +554,7 @@ export const javaPlainTemplate: ProjectTemplate = {
   files({ name, values }) {
     return {
       [`${values.mainClass}.java`]: `public class ${values.mainClass} {\n    public static void main(String[] args) {\n        System.out.println("Hallo aus ${name}!");\n    }\n}\n`,
-      '.gitignore': '*.class\n.lumen/\n',
+      '.gitignore': '*.class\n',
     }
   },
 }

@@ -1,0 +1,131 @@
+{
+  "id": "ext.github",
+  "name": "GitHub",
+  "version": "1.0.1",
+  "description": "Pull Requests, Issues und GitHub Actions des geöffneten Repositorys: auschecken, reviewen, mergen, erstellen, Workflows neu starten und der CI-Status in der Statusleiste. Bringt Programmcode mit.",
+  "author": "Lumen",
+  "icon": "GH",
+  "color": "#8b949e",
+  "category": "tool",
+  "license": "MIT",
+  "keywords": [
+    "github",
+    "pull request",
+    "issues",
+    "actions",
+    "ci",
+    "gh"
+  ],
+  "minAppVersion": "0.5.0",
+  "settings": [
+    {
+      "key": "token",
+      "label": "Personal Access Token",
+      "type": "secret",
+      "hint": "Wird verschlüsselt im Schlüsselbund des Systems gespeichert. Alternativ: GitHub: Anmelden… in der Befehlspalette.",
+      "section": "Anmeldung"
+    },
+    {
+      "key": "useGhCli",
+      "label": "Anmeldung der GitHub CLI verwenden",
+      "type": "toggle",
+      "default": "true",
+      "hint": "Ohne eigenen Token wird „gh auth token“ gefragt, wenn die GitHub CLI installiert ist.",
+      "section": "Anmeldung"
+    },
+    {
+      "key": "apiUrl",
+      "label": "API-Adresse",
+      "type": "text",
+      "default": "",
+      "placeholder": "https://api.github.com",
+      "hint": "Nur für GitHub Enterprise, z. B. https://github.example.com/api/v3.",
+      "section": "Server"
+    }
+  ],
+  "views": [
+    {
+      "id": "pulls",
+      "title": "Pull Requests",
+      "icon": "git-pull-request",
+      "location": "right",
+      "order": 20
+    },
+    {
+      "id": "issues",
+      "title": "Issues",
+      "icon": "circle-dot",
+      "location": "right",
+      "order": 21
+    },
+    {
+      "id": "actions",
+      "title": "GitHub Actions",
+      "icon": "workflow",
+      "location": "bottom",
+      "order": 71
+    }
+  ],
+  "commands": [
+    {
+      "id": "github.refresh",
+      "title": "GitHub: Aktualisieren",
+      "category": "GitHub",
+      "icon": "refresh-cw"
+    },
+    {
+      "id": "github.open-repo",
+      "title": "GitHub: Repository im Browser öffnen",
+      "category": "GitHub",
+      "icon": "github"
+    },
+    {
+      "id": "github.open-file",
+      "title": "GitHub: Aktive Datei auf GitHub öffnen",
+      "category": "GitHub",
+      "icon": "external-link"
+    },
+    {
+      "id": "github.create-pr",
+      "title": "GitHub: Pull Request erstellen…",
+      "category": "GitHub",
+      "icon": "git-pull-request-arrow"
+    },
+    {
+      "id": "github.create-issue",
+      "title": "GitHub: Issue erstellen…",
+      "category": "GitHub",
+      "icon": "circle-dot"
+    },
+    {
+      "id": "github.sign-in",
+      "title": "GitHub: Anmelden…",
+      "category": "GitHub",
+      "icon": "log-in"
+    },
+    {
+      "id": "github.sign-out",
+      "title": "GitHub: Abmelden",
+      "category": "GitHub",
+      "icon": "log-out"
+    },
+    {
+      "id": "github.open-pulls",
+      "title": "GitHub: Pull Requests anzeigen",
+      "category": "GitHub",
+      "icon": "git-pull-request"
+    },
+    {
+      "id": "github.open-issues",
+      "title": "GitHub: Issues anzeigen",
+      "category": "GitHub",
+      "icon": "circle-dot"
+    },
+    {
+      "id": "github.open-actions",
+      "title": "GitHub: Actions anzeigen",
+      "category": "GitHub",
+      "icon": "workflow"
+    }
+  ]
+}

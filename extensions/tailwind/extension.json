@@ -1,7 +1,7 @@
 {
   "id": "ext.tailwind",
   "name": "Tailwind CSS",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Tailwind-4-Direktiven (@theme, @utility, @variant) und Vervollständigung für 7257+ Utility-Klassen. Hat in .css-Dateien Vorrang vor dem CSS-Add-on.",
   "author": "Lumen",
   "icon": "~",
@@ -11,5 +11,5 @@
   "keywords": [
     "tailwind"
   ],
-  "minAppVersion": "0.3.0"
+  "minAppVersion": "0.5.0"
 }

@@ -581,7 +581,7 @@ async function expandPerMatch(
 async function scanDependencies(
   ctx: ProjectContext, scans: UserKindDependencyScan | UserKindDependencyScan[] | undefined,
 ): Promise<ProjectMeta['dependencies']> {
-  const list = Array.isArray(scans) ? scans : scans ? [scans] : []
+  const list = [scans ?? []].flat()
   if (!list.length) return undefined
   const out: NonNullable<ProjectMeta['dependencies']> = []
   const cache = new Map<string, string | null>()
@@ -756,13 +756,16 @@ export function compileAddon(model: UserAddonModel, deps: CompileDeps = {}): Add
     snippets: (model.snippets ?? [])
       .filter((snippet) => snippet.languageId && snippet.label && snippet.body)
       .map((snippet) => ({ languageId: snippet.languageId, label: snippet.label, detail: snippet.detail || undefined, body: snippet.body })),
+    panels: (model.panels ?? [])
+      .filter((panel) => panel.id && panel.title && panel.content)
+      .map((panel) => ({ ...panel, icon: panel.icon || undefined })),
   }
   const startEvents = deps.startEvents
   if (model.events.length && startEvents) addon.activate = () => startEvents(model)
   // Leave out empty lists so a compiled add-on has the same shape as a
   // hand-written one. `addon.snippets?.length` behaves the same either way,
   // but comparisons and dumps get noisy with empty fields.
-  for (const key of ['languages', 'themes', 'commands', 'projectTemplates', 'projectKinds', 'snippets'] as const) {
+  for (const key of ['languages', 'themes', 'commands', 'projectTemplates', 'projectKinds', 'snippets', 'panels'] as const) {
     if (addon[key]?.length === 0) delete addon[key]
   }
   return addon

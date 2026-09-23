@@ -14,7 +14,7 @@
  * but a download link.
  */
 
-import { app, ipcMain, net, shell, type BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain, net, shell } from 'electron'
 import { spawn } from 'node:child_process'
 import crypto from 'node:crypto'
 import fs from 'node:fs/promises'
@@ -80,7 +80,6 @@ export interface UpdateState {
   checkedAt?: number
 }
 
-let getWindow: () => BrowserWindow | null = () => null
 let beforeQuit: () => void = () => {}
 let state: UpdateState = { status: 'idle', current: app.getVersion(), installable: false }
 let release: PlatformRelease | null = null
@@ -91,9 +90,10 @@ let installing = false
 
 function setState(next: Partial<UpdateState>) {
   state = { ...state, ...next }
-  const win = getWindow()
-  if (!win || win.isDestroyed()) return
-  win.webContents.send('updater:state', state)
+  // Every window shows the update status.
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) win.webContents.send('updater:state', state)
+  }
 }
 
 export function platformKey(): string | null {
@@ -456,8 +456,7 @@ async function tick() {
   await exclusive(download)
 }
 
-export function registerUpdaterIpc(windowGetter: () => BrowserWindow | null, onBeforeQuit: () => void) {
-  getWindow = windowGetter
+export function registerUpdaterIpc(onBeforeQuit: () => void) {
   beforeQuit = onBeforeQuit
 
   ipcMain.handle('updater:state', () => state)

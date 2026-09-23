@@ -10,7 +10,7 @@
  * stderr and stdout), `dap:closed`.
  */
 
-import { ipcMain, type BrowserWindow } from 'electron'
+import { ipcMain, type WebContents } from 'electron'
 import { spawn, type ChildProcess } from 'node:child_process'
 import net from 'node:net'
 import fs from 'node:fs/promises'
@@ -378,24 +378,43 @@ export function stopAdapter(id: string) {
  * IPC
  * ------------------------------------------------------------------ */
 
-export function registerDapIpc(getWindow: () => BrowserWindow | null) {
-  const send = (channel: string, payload: unknown) => {
-    const win = getWindow()
-    if (!win || win.isDestroyed()) return
-    win.webContents.send(channel, payload)
-  }
-  const events: DapEvents = {
-    message: (id, message) => send('dap:message', { id, message }),
-    output: (id, stream, text) => send('dap:output', { id, stream, text }),
-    closed: (id, reason) => send('dap:closed', { id, reason }),
+/** The window each adapter was started from — its events go there and only there. */
+const owners = new Map<string, number>()
+
+export function registerDapIpc() {
+  const eventsFor = (contents: WebContents): DapEvents => {
+    const send = (channel: string, payload: unknown) => {
+      if (contents.isDestroyed()) return
+      contents.send(channel, payload)
+    }
+    return {
+      message: (id, message) => send('dap:message', { id, message }),
+      output: (id, stream, text) => send('dap:output', { id, stream, text }),
+      closed: (id, reason) => {
+        owners.delete(id)
+        send('dap:closed', { id, reason })
+      },
+    }
   }
 
   ipcMain.handle('dap:resolve', (_e, programs: DapProgram[]) => resolveProgram(Array.isArray(programs) ? programs : []))
   ipcMain.handle('dap:glob', (_e, pattern: string) => globPaths(String(pattern)))
   ipcMain.handle('dap:freePort', () => freePort())
-  ipcMain.handle('dap:start', (_e, id: string, options: DapStartOptions) => startAdapter(id, options, events))
+  ipcMain.handle('dap:start', (e, id: string, options: DapStartOptions) => {
+    owners.set(id, e.sender.id)
+    return startAdapter(id, options, eventsFor(e.sender))
+  })
   ipcMain.handle('dap:send', (_e, id: string, message: unknown) => sendAdapter(id, message))
   ipcMain.handle('dap:stop', (_e, id: string) => stopAdapter(id))
+}
+
+/** A window closed: end the adapters it started. */
+export function stopDebugAdaptersOf(contentsId: number) {
+  for (const [id, owner] of [...owners]) {
+    if (owner !== contentsId) continue
+    owners.delete(id)
+    stopAdapter(id)
+  }
 }
 
 export function stopAllDebugAdapters() {

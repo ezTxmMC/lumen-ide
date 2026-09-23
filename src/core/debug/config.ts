@@ -1,6 +1,6 @@
 /**
  * Launch configurations: the languages' adapters, custom entries from
- * `.lumen/debug.json`, placeholders, and the `DebugContext` surroundings.
+ * the project's `debug.json`, placeholders, and the `DebugContext` surroundings.
  */
 
 import { useStore, type FormDialogSpec } from '@/state/store'
@@ -13,7 +13,7 @@ import type {
 import { baseName } from './paths'
 import { launchConfigPath } from './persist'
 
-/** One entry from `.lumen/debug.json`, modelled on VS Code's launch.json. */
+/** One entry from the project's `debug.json`, modelled on VS Code's launch.json. */
 export interface LaunchConfig {
   name: string
   /** DAP type of the adapter, such as `debugpy`, `gdb`, `pwa-node`. */
@@ -55,12 +55,12 @@ export function findAdapter(type: string, label?: string) {
 }
 
 /* ------------------------------------------------------------------ *
- * .lumen/debug.json
+ * debug.json (in Lumen's data folder for the project)
  * ------------------------------------------------------------------ */
 
 export async function loadLaunchConfigs(root: string | null): Promise<LaunchConfig[]> {
   if (!root) return []
-  const raw = await window.lumen.fs.readFile(launchConfigPath(root)).catch(() => null)
+  const raw = await window.lumen.fs.readFile(await launchConfigPath(root)).catch(() => null)
   if (!raw) return []
   const parsed = JSON.parse(stripJsonComments(raw)) as { configurations?: unknown }
   if (!Array.isArray(parsed.configurations)) return []
@@ -93,7 +93,7 @@ const TEMPLATE = {
   ],
 }
 
-/** Opens `.lumen/debug.json`, creating it with examples if it is missing. */
+/** Opens the project's `debug.json`, creating it with examples if it is missing. */
 export async function openLaunchConfigFile() {
   const state = useStore.getState()
   const root = state.workspace
@@ -101,7 +101,7 @@ export async function openLaunchConfigFile() {
     state.notify(t('debug.error.noWorkspace'), 'warning')
     return
   }
-  const file = launchConfigPath(root)
+  const file = await launchConfigPath(root)
   const exists = await window.lumen.fs.exists(file).catch(() => false)
   if (!exists) await window.lumen.fs.writeFile(file, `${JSON.stringify(TEMPLATE, null, 2)}\n`)
   await state.openFile(file)

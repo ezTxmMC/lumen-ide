@@ -1,7 +1,7 @@
 services:
   extension-server:
     build: .
-    image: lumen-extension-server:0.3.0
+    image: lumen-extension-server:0.4.0
     container_name: lumen-extension-server
     restart: unless-stopped
     ports:

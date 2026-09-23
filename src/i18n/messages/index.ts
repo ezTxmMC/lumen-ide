@@ -38,6 +38,12 @@ import iconPacks from './iconPacks'
 import studioProject from './studioProject'
 import discord from './discord'
 import agent from './agent'
+import merge from './merge'
+import media from './media'
+import extensionView from './extensionView'
+import menubar from './menubar'
+import projectSwitcher from './projectSwitcher'
+import popout from './popout'
 
 export const MESSAGES: Record<string, NamespaceMessages> = {
   common,
@@ -74,4 +80,10 @@ export const MESSAGES: Record<string, NamespaceMessages> = {
   studioProject,
   discord,
   agent,
+  merge,
+  media,
+  extensionView,
+  menubar,
+  projectSwitcher,
+  popout,
 }

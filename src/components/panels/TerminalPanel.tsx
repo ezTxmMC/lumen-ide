@@ -6,6 +6,8 @@ import { terminals } from '@/lib/terminals'
 import { useT } from '@/i18n'
 import { formatBindingsFor } from '@/core/keybindings'
 import { Button, Empty } from '../ui'
+import { ContextMenu, menuBelow, type MenuItem } from '../ui/ContextMenu'
+import { windowOf } from '@/hooks/useOwner'
 
 export function useTerminals() {
   useSyncExternalStore(terminals.subscribe.bind(terminals), terminals.getVersion)
@@ -18,10 +20,31 @@ export function TerminalToolbar() {
   const { sessions, activeId, shells, externals } = useTerminals()
   const openTerminal = useStore((s) => s.openTerminal)
   const openExternalTerminal = useStore((s) => s.openExternalTerminal)
-  const [menu, setMenu] = useState<'shells' | 'external' | null>(null)
+  const [menu, setMenu] = useState<{ kind: 'shells' | 'external'; x: number; y: number } | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
 
   useEffect(() => { void terminals.start() }, [])
+
+  const menuItems = (kind: 'shells' | 'external'): MenuItem[] => {
+    if (kind === 'shells') {
+      const header: MenuItem = { header: t('panels.terminal.newWith') }
+      if (!shells.length) return [header, { label: t('panels.terminal.noShell'), disabled: true, run: () => {} }]
+      return [header, ...shells.map<MenuItem>((shell) => ({
+        label: shell.isDefault ? `${shell.label} (${t('common.default')})` : shell.label,
+        icon: SquareTerminal,
+        detail: shell.path,
+        run: () => void openTerminal({ shell: shell.path }),
+      }))]
+    }
+    const header: MenuItem = { header: t('panels.terminal.external') }
+    if (!externals.length) return [header, { label: t('panels.terminal.noExternal'), disabled: true, run: () => {} }]
+    return [header, ...externals.map<MenuItem>((ext) => ({
+      label: ext.label,
+      icon: ExternalLink,
+      detail: ext.command,
+      run: () => void openExternalTerminal(undefined, ext.id),
+    }))]
+  }
 
   return (
     <div className="flex min-w-0 items-center gap-0.5">
@@ -65,55 +88,27 @@ export function TerminalToolbar() {
         ))}
       </div>
 
-      <div className="relative flex shrink-0 items-center">
+      <div className="flex shrink-0 items-center">
         <Button size="sm" title={withKeys(t('panels.terminal.new'), 'terminal.new')} onClick={() => void openTerminal()}>
           <Plus size={12} />
         </Button>
-        <Button size="sm" title={t('panels.terminal.chooseShell')} onClick={() => setMenu(menu === 'shells' ? null : 'shells')}>
-          <ChevronDown size={11} />
-        </Button>
-        <Button size="sm" title={t('explorer.openInExternalTerminal')} onClick={() => setMenu(menu === 'external' ? null : 'external')}>
-          <ExternalLink size={12} />
-        </Button>
+        <span onClick={(e) => setMenu({ kind: 'shells', ...menuBelow(e.currentTarget) })}>
+          <Button size="sm" title={t('panels.terminal.chooseShell')}>
+            <ChevronDown size={11} />
+          </Button>
+        </span>
+        <span onClick={(e) => setMenu({ kind: 'external', ...menuBelow(e.currentTarget) })}>
+          <Button size="sm" title={t('explorer.openInExternalTerminal')}>
+            <ExternalLink size={12} />
+          </Button>
+        </span>
         <Button size="sm" title={t('panels.terminal.clear')} onClick={() => terminals.clear(activeId)} disabled={!activeId}>
           <Eraser size={12} />
         </Button>
         <Button size="sm" title={t('panels.terminal.kill')} onClick={() => activeId && terminals.close(activeId)} disabled={!activeId}>
           <Trash2 size={12} />
         </Button>
-
-        {menu && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={() => setMenu(null)} />
-            <div className="lm-glass lm-shadow lm-anim-pop absolute top-full right-0 z-20 mt-1 min-w-[220px] overflow-hidden rounded-lumen border border-edge p-1">
-              <div className="px-2 pb-1 pt-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-subtle">
-                {menu === 'shells' ? t('panels.terminal.newWith') : t('panels.terminal.external')}
-              </div>
-              {menu === 'shells' && shells.map((shell) => (
-                <button
-                  key={shell.id}
-                  onClick={() => { setMenu(null); void openTerminal({ shell: shell.path }) }}
-                  className="lm-transition flex w-full items-center gap-2 rounded-lumen-sm px-2 py-1 text-left text-[12px] text-muted hover:bg-hover hover:text-fg"
-                >
-                  <span className="flex-1">{shell.label}{shell.isDefault ? ` (${t('common.default')})` : ''}</span>
-                  <span className="font-mono text-[10px] text-subtle">{shell.path}</span>
-                </button>
-              ))}
-              {menu === 'shells' && shells.length === 0 && <div className="px-2 py-1 text-[11.5px] text-subtle">{t('panels.terminal.noShell')}</div>}
-              {menu === 'external' && externals.map((ext) => (
-                <button
-                  key={ext.id}
-                  onClick={() => { setMenu(null); void openExternalTerminal(undefined, ext.id) }}
-                  className="lm-transition flex w-full items-center gap-2 rounded-lumen-sm px-2 py-1 text-left text-[12px] text-muted hover:bg-hover hover:text-fg"
-                >
-                  <span className="flex-1">{ext.label}</span>
-                  <span className="font-mono text-[10px] text-subtle">{ext.command}</span>
-                </button>
-              ))}
-              {menu === 'external' && externals.length === 0 && <div className="px-2 py-1 text-[11.5px] text-subtle">{t('panels.terminal.noExternal')}</div>}
-            </div>
-          </>
-        )}
+        {menu && <ContextMenu x={menu.x} y={menu.y} items={menuItems(menu.kind)} onClose={() => setMenu(null)} />}
       </div>
     </div>
   )
@@ -135,7 +130,6 @@ export function TerminalPanel() {
   const effects = useStore((s) => s.effects)
   const registryVersion = useStore((s) => s.registryVersion)
   const openTerminal = useStore((s) => s.openTerminal)
-  const panelHeight = useStore((s) => s.panelHeight)
 
   const theme = useMemo(
     () => registry.themes().find((entry) => entry.id === themeId) ?? registry.themes()[0],
@@ -162,12 +156,13 @@ export function TerminalPanel() {
 
   useEffect(() => {
     if (!host.current) return
-    const observer = new ResizeObserver(() => terminals.fit(terminals.activeId))
+    // The observer of the window the terminal is in: it may be a pop-out's.
+    const observer = new (windowOf(host.current).ResizeObserver)(() => terminals.fit(terminals.activeId))
     observer.observe(host.current)
     return () => observer.disconnect()
   }, [])
 
-  useEffect(() => { terminals.fit(activeId) }, [panelHeight, activeId])
+  useEffect(() => { terminals.fit(activeId) }, [activeId])
 
   return (
     <div className="relative h-full w-full">

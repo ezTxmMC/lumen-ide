@@ -65,7 +65,7 @@ ${content}
       'css/style.css': `:root {\n  --accent: #7c8cff;\n  font-family: system-ui, sans-serif;\n  color-scheme: light dark;\n}\n\nbody {\n  margin: 0 auto;\n  max-width: 60rem;\n  padding: 1.5rem;\n}\n\nheader {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n}\n\nnav a {\n  margin-left: 1rem;\n  color: var(--accent);\n}\n`,
       'js/main.js': "document.documentElement.classList.add('js')\n",
       'images/.gitkeep': '',
-      '.gitignore': '.lumen/\nnode_modules/\n',
+      '.gitignore': 'node_modules/\n',
     }
     if (values.about === 'true') files['about.html'] = page('Über uns', '      <h1>Über uns</h1>\n      <p>…</p>')
     if (values.server === 'true') {

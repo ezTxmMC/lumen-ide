@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import {
   ChevronRight, FolderOpen, FolderPlus, Hammer, Play, FlaskConical, Eraser, Wrench,
   RefreshCw, Loader2, Star, Plus, Trash2, FileCode2, Square, Zap, ZapOff, Download,
-  ExternalLink, RotateCw, X, Package, SquareTerminal,
+  ExternalLink, RotateCw, X, Package, SquareTerminal, Boxes, ListChecks, Search,
 } from 'lucide-react'
 import { useStore } from '@/state/store'
 import { registry } from '@/core/registry'
@@ -12,7 +12,8 @@ import { statusTone } from '@/lib/status'
 import { tr, useT } from '@/i18n'
 import { formatBindingsFor } from '@/core/keybindings'
 import { Button, Empty } from '../ui'
-import type { ProjectTask, TaskGroup } from '@/core/types'
+import type { ProjectModule, ProjectTask, TaskGroup } from '@/core/types'
+import { loadGradleTasks, rootTasks, tasksOfModule, useGradleTasks } from '@/lib/gradle-tasks'
 
 /** Quote an argument for the shell when it holds spaces or special characters. */
 function shellQuote(arg: string): string {
@@ -77,8 +78,6 @@ export function ProjectPanel() {
   const openFile = useStore((s) => s.openFile)
   const notify = useStore((s) => s.notify)
   const openDependencyDialog = useStore((s) => s.openDependencyDialog)
-  const openTerminal = useStore((s) => s.openTerminal)
-
   const [adding, setAdding] = useState(false)
 
   const allTasks = useMemo(
@@ -261,57 +260,55 @@ export function ProjectPanel() {
                 const custom = config.tasks.some((t) => t.id === task.id)
                 const isDefault = (id === 'build' || id === 'run' || id === 'test') && config.defaults[id] === task.id
                 return (
-                  <div
+                  <TaskRow
                     key={task.id}
-                    className="lm-row lm-transition group text-[12.5px] text-muted hover:bg-hover hover:text-fg"
-                    title={task.detail ? tr(task.detail) : `${task.command} ${task.args.join(' ')}`}
-                  >
-                    <button
-                      onClick={() => void runTask(task)}
-                      disabled={running}
-                      className="flex min-w-0 flex-1 items-center gap-1.5 text-left disabled:opacity-50"
-                    >
-                      <Play size={10} className="shrink-0 opacity-60" />
-                      <span className="truncate">{tr(task.label)}</span>
-                      {custom && <span className="shrink-0 text-[9.5px] text-subtle">{t('project.customBadge')}</span>}
-                    </button>
-                    <span className="hidden shrink-0 items-center gap-0.5 group-hover:flex">
-                      <button
-                        title={t('project.runInTerminal')}
-                        onClick={() => void openTerminal({ cwd: task.cwd ? `${project?.root ?? workspace}/${task.cwd}` : undefined, command: [task.command, ...task.args.map(shellQuote)].join(' '), title: tr(task.label) })}
-                        className="lm-transition rounded p-0.5 text-subtle hover:text-fg"
-                      >
-                        <SquareTerminal size={11} />
-                      </button>
-                      {(id === 'build' || id === 'run' || id === 'test') && (
-                        <button
-                          title={isDefault ? t('project.defaultTask') : t('project.setDefault')}
-                          onClick={() => setDefault(id, task.id)}
-                          className={`lm-transition rounded p-0.5 ${isDefault ? 'text-warn' : 'text-subtle hover:text-fg'}`}
-                        >
-                          <Star size={11} className={isDefault ? 'fill-current' : ''} />
-                        </button>
-                      )}
-                      {custom && (
-                        <button
-                          title={t('common.delete')}
-                          onClick={() => removeCustom(task.id)}
-                          className="lm-transition rounded p-0.5 text-subtle hover:text-bad"
-                        >
-                          <Trash2 size={11} />
-                        </button>
-                      )}
-                    </span>
-                    {isDefault && (
-                      <Star size={10} className="shrink-0 fill-current text-warn group-hover:hidden" />
+                    task={task}
+                    root={project?.root ?? workspace}
+                    badge={custom ? t('project.customBadge') : undefined}
+                    marker={isDefault ? <Star size={10} className="shrink-0 fill-current text-warn group-hover:hidden" /> : undefined}
+                    actions={(
+                      <>
+                        {(id === 'build' || id === 'run' || id === 'test') && (
+                          <button
+                            title={isDefault ? t('project.defaultTask') : t('project.setDefault')}
+                            onClick={() => setDefault(id, task.id)}
+                            className={`lm-transition rounded p-0.5 ${isDefault ? 'text-warn' : 'text-subtle hover:text-fg'}`}
+                          >
+                            <Star size={11} className={isDefault ? 'fill-current' : ''} />
+                          </button>
+                        )}
+                        {custom && (
+                          <button
+                            title={t('common.delete')}
+                            onClick={() => removeCustom(task.id)}
+                            className="lm-transition rounded p-0.5 text-subtle hover:text-bad"
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        )}
+                      </>
                     )}
-                  </div>
+                  />
                 )
               })}
             </div>
           )
         })}
       </Collapsible>
+
+      {/* Modules */}
+      {project && project.modules.length > 0 && (
+        <Collapsible title={t('project.modules.title')} count={countModules(project.modules)}>
+          <div className="space-y-px">
+            {project.modules.map((module) => (
+              <ModuleNode key={module.id} module={module} root={project.root} depth={0} />
+            ))}
+          </div>
+        </Collapsible>
+      )}
+
+      {/* Custom and discovered tasks */}
+      {project && <CustomTasks />}
 
       {/* Language-Server */}
       <LanguageServers />
@@ -394,13 +391,258 @@ export function ProjectPanel() {
 
       <p className="px-3 py-2 text-[11px] leading-relaxed text-subtle">
         {configNote[0]}
-        <button className="text-muted hover:text-fg" onClick={() => void openFile(`${workspace}/.lumen/project.json`)}>
-          .lumen/project.json
+        <button className="text-muted hover:text-fg" onClick={() => void useStore.getState().openProjectConfig()}>
+          project.json
         </button>
         {configNote[1]}
       </p>
     </div>
   )
+}
+
+/** One runnable task: run on click, “run in terminal” and extra actions on hover. */
+function TaskRow({ task, root, badge, marker, actions, hint }: {
+  task: ProjectTask
+  root: string
+  badge?: string
+  marker?: ReactNode
+  actions?: ReactNode
+  /** Shown dimmed after the label (a module path, a group). */
+  hint?: string
+}) {
+  const t = useT()
+  const running = useStore((s) => s.runningId !== null)
+  const openTerminal = useStore((s) => s.openTerminal)
+  const runInTerminal = () => void openTerminal({
+    cwd: task.cwd ? `${root}/${task.cwd}` : undefined,
+    command: [task.command, ...task.args.map(shellQuote)].join(' '),
+    title: tr(task.label),
+  })
+  return (
+    <div
+      className="lm-row lm-transition group text-[12.5px] text-muted hover:bg-hover hover:text-fg"
+      title={task.detail ? tr(task.detail) : `${task.command} ${task.args.join(' ')}`}
+    >
+      <button
+        onClick={() => void runTask(task)}
+        disabled={running}
+        className="flex min-w-0 flex-1 items-center gap-1.5 text-left disabled:opacity-50"
+      >
+        <Play size={10} className="shrink-0 opacity-60" />
+        <span className="truncate">{tr(task.label)}</span>
+        {hint && <span className="min-w-0 shrink truncate font-mono text-[10px] text-subtle">{hint}</span>}
+        {badge && <span className="shrink-0 text-[9.5px] text-subtle">{badge}</span>}
+      </button>
+      <span className="hidden shrink-0 items-center gap-0.5 group-hover:flex">
+        <button
+          title={t('project.runInTerminal')}
+          onClick={runInTerminal}
+          className="lm-transition rounded p-0.5 text-subtle hover:text-fg"
+        >
+          <SquareTerminal size={11} />
+        </button>
+        {actions}
+      </span>
+      {marker}
+    </div>
+  )
+}
+
+function countModules(modules: ProjectModule[]): number {
+  return modules.reduce((sum, module) => sum + 1 + countModules(module.modules ?? []), 0)
+}
+
+/** Module kinds with a translated name; any other kind (`jar`, `war`) shows as written. */
+const MODULE_KINDS = new Set([
+  'pom', 'application', 'library', 'spring-boot', 'quarkus', 'minecraft-mod', 'android-app', 'android-library',
+  'platform', 'jvm', 'container', 'missing',
+])
+
+function moduleKindLabel(kind: string, t: (key: string) => string): string {
+  if (!MODULE_KINDS.has(kind)) return kind
+  return t(`project.modules.kinds.${kind}`)
+}
+
+/** A module and, when expanded, its tasks and its own modules. */
+function ModuleNode({ module, root, depth }: { module: ProjectModule; root: string; depth: number }) {
+  const t = useT()
+  const openFile = useStore((s) => s.openFile)
+  const [open, setOpen] = useState(false)
+  const children = module.modules ?? []
+  // Tasks from `gradle tasks --all` that the build files do not show (plugins, dependencies, convention plugins).
+  const loaded = useGradleTasks(root)
+  const all = useMemo(() => {
+    const known = new Set(module.tasks.map((task) => task.args[task.args.length - 1].split(':').pop()))
+    return [...module.tasks, ...tasksOfModule(loaded, module.id).filter((task) => !known.has(task.label))]
+  }, [module, loaded])
+  const standard = all.filter((task) => !task.category)
+  const custom = all.filter((task) => task.category)
+  return (
+    <div>
+      <div className="lm-row lm-transition group text-[12.5px] text-muted hover:bg-hover hover:text-fg" style={{ paddingLeft: depth * 12 }}>
+        <button onClick={() => setOpen((v) => !v)} className="flex min-w-0 flex-1 items-center gap-1.5 text-left" title={module.path}>
+          <ChevronRight size={11} className="lm-transition shrink-0" style={{ transform: open ? 'rotate(90deg)' : 'none' }} />
+          <Boxes size={11} className="shrink-0 text-accent opacity-80" />
+          <span className="truncate text-fg">{module.name}</span>
+          {module.path !== module.name && <span className="min-w-0 truncate font-mono text-[10px] text-subtle">{module.path}</span>}
+          {module.kind && (
+            <span className={`ml-auto shrink-0 rounded-full border border-edge px-1.5 text-[9.5px] ${module.kind === 'missing' ? 'text-bad' : 'text-subtle'}`}>
+              {moduleKindLabel(module.kind, t)}
+            </span>
+          )}
+        </button>
+        {module.buildFile && (
+          <span className="hidden shrink-0 items-center group-hover:flex">
+            <button
+              title={t('project.openBuildFile')}
+              onClick={() => void openFile(`${root}/${module.buildFile}`)}
+              className="lm-transition rounded p-0.5 text-subtle hover:text-fg"
+            >
+              <FileCode2 size={11} />
+            </button>
+          </span>
+        )}
+      </div>
+      {open && (
+        <div style={{ paddingLeft: depth * 12 + 14 }}>
+          {!all.length && !children.length && (
+            <p className="px-1 py-0.5 text-[11px] text-subtle">{t('project.modules.noTasks')}</p>
+          )}
+          {standard.map((task) => <TaskRow key={task.id} task={task} root={root} />)}
+          {custom.length > 0 && (
+            <div className="px-1 pt-1 pb-0.5 text-[10px] text-subtle">{t('project.custom.title')}</div>
+          )}
+          {custom.map((task) => <TaskRow key={task.id} task={task} root={root} hint={task.category} />)}
+          {children.map((child) => <ModuleNode key={child.id} module={child} root={root} depth={0} />)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** How many tasks may show before the rest waits for a filter. */
+const CUSTOM_TASK_LIMIT = 200
+/** From this many tasks on, a filter box appears. */
+const FILTER_FROM = 8
+
+/**
+ * Tasks found in the build files beyond the standard ones — Gradle tasks
+ * registered in the scripts, Maven plugin goals and profiles — plus, on
+ * request, every task `gradle tasks --all` reports, grouped by task group.
+ */
+function CustomTasks() {
+  const t = useT()
+  const project = useStore((s) => s.project)
+  const env = useStore((s) => s.projectConfig.env)
+  const [filter, setFilter] = useState('')
+  const loaded = useGradleTasks(project?.root)
+  const gradle = project?.kinds.find((k) => k.kind.id === 'gradle' || k.kind.id.endsWith('.gradle'))
+  const gradleCommand = gradle?.tasks[0]?.command ?? 'gradle'
+
+  const tasks = useMemo(() => {
+    const own = project?.customTasks ?? []
+    const known = new Set(own.map((task) => task.args[task.args.length - 1]))
+    // With modules, their tasks sit in the module tree; this list keeps the root project's.
+    const fetched = project?.modules.length ? rootTasks(loaded) : loaded?.tasks ?? []
+    const all = fetched.filter((task) => !known.has(task.label))
+    return [...own, ...all]
+  }, [project?.customTasks, project?.modules.length, loaded])
+
+  const needle = filter.trim().toLowerCase()
+  const matching = useMemo(() => {
+    if (!needle) return tasks
+    return tasks.filter((task) => `${tr(task.label)} ${task.category ?? ''} ${task.detail ?? ''}`.toLowerCase().includes(needle))
+  }, [tasks, needle])
+
+  const groups = useMemo(() => {
+    const byCategory = new Map<string, ProjectTask[]>()
+    for (const task of matching.slice(0, CUSTOM_TASK_LIMIT)) {
+      const key = task.category ?? ''
+      byCategory.set(key, [...(byCategory.get(key) ?? []), task])
+    }
+    return [...byCategory.entries()]
+  }, [matching])
+
+  if (!project) return null
+  if (!gradle && !tasks.length) return null
+
+  const errorText = () => {
+    if (!loaded?.error) return null
+    if (loaded.error === 'timeout') return t('project.custom.timeout')
+    return t('project.custom.failed', { error: loaded.error })
+  }
+
+  return (
+    <Collapsible
+      title={t('project.custom.title')}
+      count={tasks.length || undefined}
+      defaultOpen={tasks.length > 0}
+      action={gradle ? (
+        <Button
+          size="sm"
+          title={t('project.custom.loadGradle')}
+          disabled={loaded?.loading}
+          onClick={() => void loadGradleTasks(project.root, gradleCommand, env)}
+        >
+          {loaded?.loading ? <Loader2 size={12} className="lm-anim-spin" /> : <ListChecks size={12} />}
+        </Button>
+      ) : undefined}
+    >
+      {tasks.length >= FILTER_FROM && (
+        <div className="mb-1.5 flex items-center gap-1 rounded-lumen-sm border border-edge bg-input px-1.5">
+          <Search size={11} className="shrink-0 text-subtle" />
+          <input
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            placeholder={t('project.custom.filter')}
+            className="min-w-0 flex-1 bg-transparent py-0.5 text-[11.5px] outline-none"
+          />
+          {filter && (
+            <button onClick={() => setFilter('')} className="text-subtle hover:text-fg" title={t('project.custom.clearFilter')}>
+              <X size={10} />
+            </button>
+          )}
+        </div>
+      )}
+      {loaded?.loading && (
+        <p className="flex items-center gap-1.5 px-1 py-1 text-[11px] text-subtle">
+          <Loader2 size={10} className="lm-anim-spin" /> {t('project.custom.loading')}
+        </p>
+      )}
+      {errorText() && <p className="px-1 py-1 text-[11px] leading-snug text-bad">{errorText()}</p>}
+      {!tasks.length && !loaded?.loading && (
+        <p className="px-1 py-1 text-[11.5px] leading-relaxed text-subtle">{t('project.custom.none')}</p>
+      )}
+      {needle && !matching.length && (
+        <p className="px-1 py-1 text-[11.5px] text-subtle">{t('project.custom.noMatch')}</p>
+      )}
+      {groups.map(([category, list]) => (
+        <div key={category || '-'} className="mb-1.5">
+          <div className="flex items-center gap-1 px-1 py-0.5 text-[10.5px] text-subtle">
+            <Wrench size={10} /> {categoryLabel(category, t)}
+            <span className="ml-auto text-[9.5px]">{list.length}</span>
+          </div>
+          {list.map((task) => <TaskRow key={task.id} task={task} root={project.root} />)}
+        </div>
+      ))}
+      {matching.length > CUSTOM_TASK_LIMIT && (
+        <p className="px-1 text-[11px] text-subtle">{t('project.custom.more', { count: matching.length - CUSTOM_TASK_LIMIT })}</p>
+      )}
+    </Collapsible>
+  )
+}
+
+/** Categories Lumen names itself; the others are Gradle groups or plugin prefixes as written. */
+const CATEGORY_KEYS: Record<string, string> = {
+  '': 'project.custom.uncategorised',
+  custom: 'project.custom.scripts',
+  profiles: 'project.custom.profiles',
+}
+
+function categoryLabel(category: string, t: (key: string) => string): string {
+  const key = CATEGORY_KEYS[category]
+  if (key) return t(key)
+  return category
 }
 
 function QuickAction({ icon: Icon, label, hint, task, running }: {

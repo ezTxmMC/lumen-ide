@@ -2,7 +2,7 @@ import type { Addon, LanguageSpec } from '@/core/types'
 import { htmlSiteTemplate } from '../lib/web-project'
 import { npmKind } from '../lib/node-project'
 import { htmlTokenizer } from '../lib/html-tokenizer'
-import { LSP_PACKAGES } from '../lib/lsp-packages'
+import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages'
 
 const TAGS = [
   'html', 'head', 'body', 'title', 'meta', 'link', 'script', 'style', 'div',
@@ -70,6 +70,7 @@ export const htmlSpec: LanguageSpec = {
       settings: { html: { format: { wrapLineLength: 100 } } },
       install: 'npm i -g vscode-langservers-extracted',
       package: LSP_PACKAGES.langserversExtracted,
+      systemPackages: SYSTEM_PACKAGES.langserversExtracted,
     },
     {
       label: 'superhtml',

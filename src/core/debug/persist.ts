@@ -1,11 +1,12 @@
 /**
- * Per-project debug state in `.lumen/breakpoints.json`: breakpoints (relative
- * to the workspace folder), watch expressions, exception filters and remembered
- * input such as a program path. Launch configurations live separately in
- * `.lumen/debug.json`.
+ * Per-project debug state in `breakpoints.json`: breakpoints (relative to the
+ * workspace folder), watch expressions, exception filters and remembered input
+ * such as a program path. Launch configurations live separately in
+ * `debug.json`. Both sit in Lumen's data folder for the project
+ * (`~/.lumen/projects/…`), not in the project itself.
  */
 
-import { joinPath } from './paths'
+import { projectDataFile } from '@/core/project/data'
 
 export interface StoredBreakpoint {
   path: string
@@ -35,8 +36,8 @@ export const EMPTY_DEBUG_STATE: DebugState = {
   memory: {},
 }
 
-export const statePath = (root: string) => joinPath(root, '.lumen/breakpoints.json')
-export const launchConfigPath = (root: string) => joinPath(root, '.lumen/debug.json')
+export const statePath = (root: string) => projectDataFile(root, 'breakpoints.json')
+export const launchConfigPath = (root: string) => projectDataFile(root, 'debug.json')
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -56,7 +57,7 @@ function cleanBreakpoint(value: unknown): StoredBreakpoint | null {
 }
 
 export async function loadDebugState(root: string): Promise<DebugState> {
-  const raw = await window.lumen.fs.readFile(statePath(root)).catch(() => null)
+  const raw = await window.lumen.fs.readFile(await statePath(root)).catch(() => null)
   if (!raw) return structuredClone(EMPTY_DEBUG_STATE)
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>
@@ -75,7 +76,7 @@ export async function loadDebugState(root: string): Promise<DebugState> {
 }
 
 export async function saveDebugState(root: string, state: DebugState) {
-  await window.lumen.fs.writeFile(statePath(root), `${JSON.stringify(state, null, 2)}\n`)
+  await window.lumen.fs.writeFile(await statePath(root), `${JSON.stringify(state, null, 2)}\n`)
 }
 
 /** With nothing stored, there is no need for a file. */

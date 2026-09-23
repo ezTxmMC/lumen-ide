@@ -54,6 +54,20 @@ export interface Effects {
   organizeImportsOnSave: boolean
   /** Remember open files per project and restore them. */
   restoreOpenFiles: boolean
+  /** On start, open the last project instead of showing the project screen. */
+  reopenLastProject: boolean
+  /** Where a project chosen from the switcher opens: ask each time, this window, or a new one. */
+  openProjectsIn: 'ask' | 'this' | 'new'
+  /** Start the project's language servers as soon as it opens, before any file is. */
+  lspAutoStart: boolean
+  /** Fetch every Gradle task (`gradle tasks --all`) in the background when a project has none cached. */
+  gradleTasksOnOpen: boolean
+  /**
+   * Let jdtls check Java with javac (its javac backend) instead of the Eclipse
+   * compiler, where it can — the same verdicts as the build. The backend's
+   * class-cache bug is repaired by `electron/features/jdtls-agent.ts`.
+   */
+  javacBackend: boolean
   /** Shell for new terminals (a path, or an id such as `fish`); empty = the default shell. */
   terminalShell: string
   terminalFontSize: number
@@ -110,6 +124,11 @@ export const DEFAULT_EFFECTS: Effects = {
   formatOnSave: false,
   organizeImportsOnSave: false,
   restoreOpenFiles: true,
+  reopenLastProject: false,
+  openProjectsIn: 'ask',
+  lspAutoStart: true,
+  gradleTasksOnOpen: true,
+  javacBackend: true,
   terminalShell: '',
   terminalFontSize: 13,
   terminalCursor: 'bar',

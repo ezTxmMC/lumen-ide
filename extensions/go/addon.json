@@ -247,6 +247,12 @@
           "package": {
             "type": "go",
             "module": "golang.org/x/tools/gopls@latest"
+          },
+          "systemPackages": {
+            "pacman": "gopls",
+            "apt": "gopls",
+            "dnf": "golang-x-tools-gopls",
+            "brew": "gopls"
           }
         }
       ]

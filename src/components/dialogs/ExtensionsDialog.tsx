@@ -10,6 +10,8 @@
  * is also where it can be marked trusted for good.
  */
 
+import { appVersion } from '@/core/extensions/app-version'
+import { fitsApp } from '@/core/extensions/compat'
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import {
   Blocks, CheckCircle2, Compass, Globe, Plus, RefreshCw, ShieldCheck, ShieldAlert, Trash2,
@@ -259,7 +261,9 @@ function ExploreList({ entries, servers, category, onCategory, busy, providesTex
         {entries.map(({ summary, server }) => {
           const current = installedExtensions.get(summary.id)
           const outdated = Boolean(current) && isNewer(summary.version, current?.manifest.version ?? '')
+          const fits = fitsApp(summary.minAppVersion, appVersion())
           const label = () => {
+            if (!fits) return t('extensions.requiresApp', { required: summary.minAppVersion ?? '' })
             if (outdated) return t('extensions.update')
             if (current) return t('extensions.installed')
             return t('extensions.install')
@@ -283,7 +287,7 @@ function ExploreList({ entries, servers, category, onCategory, busy, providesTex
               <Button
                 size="sm"
                 variant={outdated ? 'solid' : undefined}
-                disabled={busy === summary.id || (Boolean(current) && !outdated)}
+                disabled={!fits || busy === summary.id || (Boolean(current) && !outdated)}
                 onClick={() => onInstall(server, summary)}
               >
                 {busy === summary.id && <RefreshCw size={12} className="lm-anim-spin" />}

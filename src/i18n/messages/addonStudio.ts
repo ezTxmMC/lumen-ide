@@ -5,7 +5,7 @@ export default {
   de: {
     nav: {
       general: 'Allgemein', languages: 'Sprachen', commands: 'Befehle', events: 'Ereignisse',
-      templates: 'Vorlagen', kinds: 'Projektarten', snippets: 'Snippets', themes: 'Themes', json: 'JSON',
+      templates: 'Vorlagen', kinds: 'Projektarten', snippets: 'Snippets', panels: 'Panels', themes: 'Themes', json: 'JSON',
     },
     commands: {
       category: 'Add-on-Studio', new: 'Neues Add-on erstellen…', import: 'Add-on importieren…',
@@ -209,7 +209,7 @@ export default {
   en: {
     nav: {
       general: 'General', languages: 'Languages', commands: 'Commands', events: 'Events',
-      templates: 'Templates', kinds: 'Project types', snippets: 'Snippets', themes: 'Themes', json: 'JSON',
+      templates: 'Templates', kinds: 'Project types', snippets: 'Snippets', panels: 'Panels', themes: 'Themes', json: 'JSON',
     },
     commands: {
       category: 'Add-on Studio', new: 'Create New Add-on…', import: 'Import Add-on…',
@@ -413,7 +413,7 @@ export default {
   es: {
     nav: {
       general: 'General', languages: 'Lenguajes', commands: 'Comandos', events: 'Eventos',
-      templates: 'Plantillas', kinds: 'Tipos de proyecto', snippets: 'Fragmentos', themes: 'Temas', json: 'JSON',
+      templates: 'Plantillas', kinds: 'Tipos de proyecto', snippets: 'Fragmentos', panels: 'Paneles', themes: 'Temas', json: 'JSON',
     },
     commands: {
       category: 'Estudio de complementos', new: 'Crear complemento nuevo…', import: 'Importar complemento…',
@@ -617,7 +617,7 @@ export default {
   fr: {
     nav: {
       general: 'Général', languages: 'Langages', commands: 'Commandes', events: 'Événements',
-      templates: 'Modèles', kinds: 'Types de projet', snippets: 'Extraits', themes: 'Thèmes', json: 'JSON',
+      templates: 'Modèles', kinds: 'Types de projet', snippets: 'Extraits', panels: 'Panneaux', themes: 'Thèmes', json: 'JSON',
     },
     commands: {
       category: 'Studio de modules', new: 'Créer un module…', import: 'Importer un module…',
@@ -821,7 +821,7 @@ export default {
   pl: {
     nav: {
       general: 'Ogólne', languages: 'Języki', commands: 'Polecenia', events: 'Zdarzenia',
-      templates: 'Szablony', kinds: 'Typy projektów', snippets: 'Fragmenty', themes: 'Motywy', json: 'JSON',
+      templates: 'Szablony', kinds: 'Typy projektów', snippets: 'Fragmenty', panels: 'Panele', themes: 'Motywy', json: 'JSON',
     },
     commands: {
       category: 'Studio dodatków', new: 'Utwórz nowy dodatek…', import: 'Importuj dodatek…',
@@ -1025,7 +1025,7 @@ export default {
   it: {
     nav: {
       general: 'Generale', languages: 'Linguaggi', commands: 'Comandi', events: 'Eventi',
-      templates: 'Modelli', kinds: 'Tipi di progetto', snippets: 'Snippet', themes: 'Temi', json: 'JSON',
+      templates: 'Modelli', kinds: 'Tipi di progetto', snippets: 'Snippet', panels: 'Pannelli', themes: 'Temi', json: 'JSON',
     },
     commands: {
       category: 'Studio componenti aggiuntivi', new: 'Crea nuovo componente aggiuntivo…', import: 'Importa componente aggiuntivo…',
@@ -1229,7 +1229,7 @@ export default {
   pt: {
     nav: {
       general: 'Geral', languages: 'Linguagens', commands: 'Comandos', events: 'Eventos',
-      templates: 'Modelos', kinds: 'Tipos de projeto', snippets: 'Snippets', themes: 'Temas', json: 'JSON',
+      templates: 'Modelos', kinds: 'Tipos de projeto', snippets: 'Snippets', panels: 'Painéis', themes: 'Temas', json: 'JSON',
     },
     commands: {
       category: 'Estúdio de complementos', new: 'Criar novo complemento…', import: 'Importar complemento…',
@@ -1433,7 +1433,7 @@ export default {
   nl: {
     nav: {
       general: 'Algemeen', languages: 'Talen', commands: 'Opdrachten', events: 'Gebeurtenissen',
-      templates: 'Sjablonen', kinds: 'Projecttypen', snippets: 'Snippets', themes: 'Thema’s', json: 'JSON',
+      templates: 'Sjablonen', kinds: 'Projecttypen', snippets: 'Snippets', panels: 'Panelen', themes: 'Thema’s', json: 'JSON',
     },
     commands: {
       category: 'Add-on-studio', new: 'Nieuwe add-on maken…', import: 'Add-on importeren…',

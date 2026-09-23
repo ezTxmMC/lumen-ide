@@ -35,6 +35,14 @@ const lumen = {
       }
     },
   },
+  // Lumen's own per-project folder — as in the main process, outside the project.
+  projectData: {
+    dir: async (root: string) => {
+      const dir = path.join(os.tmpdir(), 'lumen-check-projects', path.basename(root))
+      await fs.mkdir(dir, { recursive: true })
+      return dir
+    },
+  },
 }
 ;(globalThis as unknown as { window: unknown }).window = { lumen }
 
@@ -86,6 +94,7 @@ if (!extensionsBuilt()) {
 const ADDONS = [...ALL_ADDONS, ...extensionAddons()]
 const { detectProject, projectContext, markerMatches, insertIntoBlock } = await import('@/core/project/detect')
 const { resolveValues, scaffoldProject, validateValues, visibleFields } = await import('@/core/project/scaffold')
+const { fieldChoices } = await import('@/core/project/choices')
 const { loadProjectConfig, saveProjectConfig } = await import('@/core/project/config')
 const { globToRegExp } = await import('@/core/lsp/manager')
 const { applyTextEdits } = await import('@/lib/workspace-edit')
@@ -122,8 +131,9 @@ function variants(template: ProjectTemplate): FormValues[] {
   const defaults = resolveValues(fields, { name: 'Probe', slug: 'probe' })
   const out: FormValues[] = [{}]
   for (const field of fields) {
-    if (field.type === 'select') {
-      for (const choice of field.choices ?? []) {
+    // Fetched choices (loadChoices) stay at their defaults here — no network in the check.
+    if (field.type === 'select' || field.type === 'combobox') {
+      for (const choice of fieldChoices(field, defaults)) {
         if (choice.value === defaults[field.id]) continue
         const touched = { [field.id]: choice.value }
         const values = resolveValues(fields, { name: 'Probe', slug: 'probe' }, touched)
@@ -362,6 +372,165 @@ await group(['deno'], async () => {
 if (skipped.length) console.log(`  ·  not installed, skipped: ${[...new Set(skipped)].sort().join(', ')}`)
 
 /* ------------------------------------------------------------------ *
+ * JVM multi-module builds and custom tasks
+ * ------------------------------------------------------------------ */
+
+console.log('\nJVM modules and custom tasks:')
+{
+  const jvmTasks = await import('@/addons/lib/jvm-tasks')
+  const jvmModules = await import('@/addons/lib/jvm-modules')
+  const pomOf = (inner: string) => `<?xml version="1.0"?>\n<project>\n  <modelVersion>4.0.0</modelVersion>\n${inner}\n</project>\n`
+
+  // Maven: a reactor with a nested aggregator, plugin goals and profiles.
+  const maven = await project({
+    'pom.xml': pomOf(`  <groupId>de.example</groupId>
+  <artifactId>shop</artifactId>
+  <version>1.0.0</version>
+  <packaging>pom</packaging>
+  <modules>
+    <module>core</module>
+    <module>services/pom.xml</module>
+  </modules>
+  <build>
+    <plugins>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId></plugin>
+      <plugin>
+        <groupId>com.google.cloud.tools</groupId><artifactId>jib-maven-plugin</artifactId>
+        <executions><execution><id>docker</id><goals><goal>build</goal></goals></execution></executions>
+      </plugin>
+      <plugin>
+        <groupId>com.acme</groupId><artifactId>acme-tool</artifactId>
+        <executions><execution><goals><goal>generate</goal></goals></execution></executions>
+      </plugin>
+    </plugins>
+  </build>
+  <profiles>
+    <profile><id>native</id></profile>
+    <profile><id>ci</id><activation><activeByDefault>true</activeByDefault></activation></profile>
+  </profiles>`),
+    'core/pom.xml': pomOf('  <artifactId>shop-core</artifactId>\n  <name>Shop Core</name>'),
+    'services/pom.xml': pomOf('  <artifactId>services</artifactId>\n  <packaging>pom</packaging>\n  <modules>\n    <module>api</module>\n    <module>impl</module>\n  </modules>'),
+    'services/api/pom.xml': pomOf('  <artifactId>api</artifactId>\n  <build><plugins><plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId></plugin></plugins></build>'),
+    'services/impl/pom.xml': pomOf('  <artifactId>impl</artifactId>\n  <dependencies><dependency><groupId>de.example</groupId><artifactId>api</artifactId><version>1.0.0</version></dependency></dependencies>'),
+  })
+  const mavenInfo = await detectProject(maven.root, kinds, 'linux')
+  const [core, services] = mavenInfo.modules
+  ok(mavenInfo.modules.length === 2 && core?.name === 'Shop Core' && services?.path === 'services', 'Maven: root modules core and services (…/pom.xml stripped)')
+  ok(services?.modules?.map((m) => m.path).join(',') === 'services/api,services/impl', 'Maven: nested aggregator modules')
+  const api = services?.modules?.[0]
+  ok(api?.tasks.some((t) => t.args.join(' ') === '-pl services/api spring-boot:run' && t.group === 'run') === true, 'Maven: module run task through spring-boot:run')
+  ok(core?.tasks.some((t) => t.args.join(' ') === '-q -pl core -am compile') === true, 'Maven: module compile with -pl -am')
+  ok(!core?.tasks.some((t) => t.group === 'run'), 'Maven: no run task without a runner plugin')
+  ok(services?.modules?.[1]?.dependencies?.some((d) => d.name === 'de.example:api') === true, 'Maven: module dependencies')
+  const goals = mavenInfo.customTasks.map((t) => t.args[t.args.length - 1])
+  ok(goals.includes('jib:build@docker') && goals.includes('jib:dockerBuild'), 'Maven: plugin goals with execution ids and known goals')
+  ok(goals.includes('com.acme:acme-tool:generate'), 'Maven: plugin without a prefix uses groupId:artifactId:goal')
+  ok(!goals.some((g) => g.startsWith('compiler:')), 'Maven: lifecycle plugins left out')
+  ok(mavenInfo.customTasks.some((t) => t.args.join(' ') === '-P native package' && t.category === 'profiles'), 'Maven: profiles become tasks')
+  ok(jvmTasks.mavenPrefix('maven-shade-plugin') === 'shade' && jvmTasks.mavenPrefix('quarkus-maven-plugin') === 'quarkus' && jvmTasks.mavenPrefix('native-maven-plugin') === 'native' && jvmTasks.mavenPrefix('plain') === null, 'Maven: plugin prefixes')
+  ok(jvmTasks.parseMavenProfiles(await maven.readFile('pom.xml') ?? '').find((p) => p.id === 'ci')?.activeByDefault === true, 'Maven: activeByDefault profile')
+
+  // Gradle, Kotlin DSL: nested includes, an implied parent, a projectDir override.
+  const gradleKts = await project({
+    'settings.gradle.kts': `rootProject.name = "demo"\n// include(":commented")\ninclude(":app", "libs:core")\ninclude(\n    "tools",\n)\nproject(":tools").projectDir = file("build-tools")\n`,
+    'build.gradle.kts': 'plugins {\n    base\n}\n\ntasks.register("release") {\n    group = "publishing"\n    description = "Cuts a release"\n}\n',
+    'app/build.gradle.kts': 'plugins {\n    application\n    kotlin("jvm") version "2.1.20"\n}\n\ntasks.register<Copy>("bundle") {\n    group = "distribution"\n}\n',
+    'libs/core/build.gradle.kts': 'plugins {\n    `java-library`\n}\n\ndependencies {\n    implementation(project(":app"))\n    api("com.google.guava:guava:33.0.0-jre")\n}\n',
+    'build-tools/build.gradle': "plugins {\n    id 'java'\n}\n",
+  })
+  const gradleInfo = await detectProject(gradleKts.root, kinds, 'linux')
+  const byId = new Map(jvmModules.flattenModules(gradleInfo.modules).map((m) => [m.id, m]))
+  ok(gradleInfo.modules.map((m) => m.id).join(',') === ':app,:libs,:tools', `Gradle (kts): root modules (${gradleInfo.modules.map((m) => m.id).join(',')})`)
+  ok(byId.get(':libs')?.kind === 'container' && byId.get(':libs')?.modules?.[0]?.id === ':libs:core', 'Gradle (kts): implied parent :libs holds :libs:core')
+  ok(byId.get(':tools')?.path === 'build-tools' && byId.get(':tools')?.kind === 'jvm', 'Gradle (kts): projectDir override')
+  ok(byId.get(':app')?.kind === 'application' && byId.get(':app')?.tasks.some((t) => t.args.includes(':app:run')) === true, 'Gradle (kts): application module gets :app:run')
+  ok(byId.get(':libs:core')?.kind === 'library' && !byId.get(':libs:core')?.tasks.some((t) => t.group === 'run'), 'Gradle (kts): java-library without a run task')
+  ok(byId.get(':app')?.tasks.some((t) => t.args.includes(':app:bundle') && t.category === 'distribution') === true, 'Gradle (kts): module custom task with its group')
+  ok(byId.get(':libs:core')?.dependencies?.some((d) => d.name === ':app') === true, 'Gradle (kts): project dependencies')
+  ok(gradleInfo.customTasks.some((t) => t.label === 'release' && t.category === 'publishing' && t.detail === 'Cuts a release'), 'Gradle (kts): root custom task')
+  ok(!byId.has(':commented'), 'Gradle (kts): commented includes ignored')
+
+  // Gradle, Groovy DSL: an include continued over lines.
+  const groovy = jvmModules.parseGradleSettings("rootProject.name = 'demo'\ninclude 'a', 'b:c',\n        'd'\nincludeBuild('../plugins')\nproject(':d').projectDir = new File(rootDir, 'modules/d')\n")
+  ok(groovy.includes.join(',') === ':a,:b:c,:d' && groovy.rootName === 'demo', 'Gradle (groovy): include over several lines')
+  ok(groovy.dirs[':d'] === 'modules/d' && groovy.includedBuilds[0] === '../plugins', 'Gradle (groovy): new File(rootDir, …) and includeBuild')
+  const groovyTasks = jvmTasks.parseGradleCustomTasks("task hello(type: Copy) {\n    group 'demo'\n    description 'Says hello'\n}\ntask('two')\ntasks.register('three')\ntasks.named('test') {}\n")
+  ok(groovyTasks.map((t) => t.name).join(',') === 'three,hello,two' && groovyTasks.find((t) => t.name === 'hello')?.group === 'demo', 'Gradle (groovy): task declarations with group')
+  ok(jvmTasks.parseGradleCustomTasks('val fatJar by tasks.registering(Jar::class) {\n    description = "Fat jar"\n}\n')[0]?.description === 'Fat jar', 'Gradle (kts): val … by tasks.registering')
+  ok(jvmModules.parseGradlePlugins("plugins {\n    id 'org.springframework.boot' version '3.4.0'\n    alias(libs.plugins.kotlin.jvm)\n}\napply plugin: 'war'\n").join(',') === 'org.springframework.boot,kotlin-jvm,war', 'Gradle: plugin ids, aliases and apply plugin')
+
+  // The report of `gradle tasks --all`.
+  const report = [
+    '', '------------------------------------------------------------', "Tasks runnable from root project 'demo'",
+    '------------------------------------------------------------', '', 'Application tasks', '-----------------',
+    'run - Runs this project as a JVM application', '', 'Build tasks', '-----------', 'assemble - Assembles the outputs of this project.',
+    'app:build - Assembles and tests this project.', '', 'Other tasks', '-----------', 'app:compileJava - Compiles main Java source.', 'prepareKotlinBuildScriptModel',
+    '', 'Rules', '-----', 'Pattern: clean<TaskName>: Cleans the output files of a task.', '',
+    'To see all tasks and more detail, run gradle help --task <task>',
+  ].join('\n')
+  const parsed = jvmTasks.parseGradleTasksOutput(report)
+  ok(parsed.length === 5 && parsed[0].name === 'run' && parsed[0].group === 'Application', `gradle tasks --all: ${parsed.length} tasks with groups`)
+  ok(parsed.find((t) => t.name === 'app:build')?.description === 'Assembles and tests this project.' && parsed.some((t) => t.name === 'prepareKotlinBuildScriptModel' && t.group === 'Other'), 'gradle tasks --all: module tasks and tasks without a description')
+  ok(!parsed.some((t) => t.name.startsWith('Pattern') || t.name === 'To'), 'gradle tasks --all: rules and footer skipped')
+}
+
+console.log('\nGradle plugin tasks (Minecraft mods, Spring Boot …):')
+{
+  const plugins = await import('@/addons/lib/gradle-plugins')
+  const jvmModules = await import('@/addons/lib/jvm-modules')
+  const names = (tasks: { label: string }[]) => tasks.map((task) => task.label)
+
+  // Fabric: Loom creates runClient and runServer without any runs block.
+  const fabric = `plugins {\n  id 'fabric-loom' version '1.10-SNAPSHOT'\n  id 'maven-publish'\n}\ndependencies {\n  minecraft "com.mojang:minecraft:1.21.4"\n  mappings loom.officialMojangMappings()\n}\n`
+  const fabricTasks = plugins.pluginTasks(fabric).map((task) => task.name)
+  ok(fabricTasks.includes('runClient') && fabricTasks.includes('runServer') && fabricTasks.includes('genSources') && fabricTasks.includes('publishToMavenLocal'),
+    'Fabric Loom: runClient, runServer, genSources and publishing')
+
+  // NeoForge ModDevGradle: only the declared runs exist, whatever their shape.
+  const neo = `plugins {\n  id("net.neoforged.moddev") version "2.0.78"\n}\nneoForge {\n  version = "21.4.10"\n  runs {\n    client {\n      client()\n    }\n    server { server() }\n    create("data") { data() }\n    register("gameTestServer") { type = "gameTestServer" }\n  }\n}\n`
+  const neoTasks = plugins.pluginTasks(neo).map((task) => task.name)
+  ok(['runClient', 'runServer', 'runData', 'runGameTestServer'].every((name) => neoTasks.includes(name)) && !neoTasks.includes('runClientClient'),
+    'NeoForge ModDevGradle: a run task per declared run')
+  ok(plugins.parseRuns(neo).join(',') === 'client,server,data,gameTestServer', 'runs block: names only, not what is configured inside')
+
+  // `apply false` is declared, not applied; plugins from subprojects {} are inherited.
+  const root = `plugins {\n  id "architectury-plugin" version "3.4-SNAPSHOT"\n  id "dev.architectury.loom" version "1.9-SNAPSHOT" apply false\n}\nsubprojects {\n  apply plugin: "dev.architectury.loom"\n}\n`
+  ok(!plugins.appliedPlugins(root).includes('dev.architectury.loom'), 'apply false: not applied to the root')
+  ok(plugins.inheritedPlugins(root).includes('dev.architectury.loom'), 'subprojects { apply plugin: … } is inherited')
+  ok(plugins.impliedPlugins('architectury {\n  platformSetupLoomIde()\n  neoForge()\n}\n').includes('dev.architectury.loom'), 'architectury { neoForge() } implies Loom')
+
+  // An Architectury multi-loader build end to end: the modules get their run tasks.
+  const multi = await project({
+    'settings.gradle': `include "common", "fabric", "neoforge"\nrootProject.name = "mymod"\n`,
+    'build.gradle': root,
+    'common/build.gradle': `architectury {\n  common(rootProject.enabled_platforms.split(","))\n}\n`,
+    'fabric/build.gradle': `architectury {\n  platformSetupLoomIde()\n  fabric()\n}\n`,
+    'neoforge/build.gradle': `plugins { id "com.github.johnrengelman.shadow" }\narchitectury {\n  platformSetupLoomIde()\n  neoForge()\n}\n`,
+  })
+  const tree = jvmModules.flattenModules(await jvmModules.gradleModuleTree(multi, './gradlew'))
+  const fabricModule = tree.find((module) => module.id === ':fabric')
+  const neoModule = tree.find((module) => module.id === ':neoforge')
+  ok(Boolean(fabricModule && names(fabricModule.tasks).includes('runClient') && names(fabricModule.tasks).includes('runServer')), 'Architectury: :fabric gets runClient and runServer')
+  ok(Boolean(neoModule && names(neoModule.tasks).includes('runClient') && names(neoModule.tasks).includes('shadowJar')), 'Architectury: :neoforge gets its runs and the Shadow tasks')
+  ok(fabricModule?.kind === 'minecraft-mod', 'Loom modules are recognised as Minecraft mods')
+  const runClient = fabricModule?.tasks.find((task) => task.label === 'runClient')
+  ok(runClient?.args.join(' ') === '--console=plain :fabric:runClient' && runClient.group === 'run' && !runClient.category, 'Module run tasks run the module\'s task and sit with the standard tasks')
+
+  // Spring Boot and the Application plugin do not produce duplicate `run` tasks.
+  const boot = jvmModules.gradleModuleTasks(':api', 'spring-boot', `plugins {\n  id 'org.springframework.boot'\n  id 'application'\n}\n`, 'gradle', [])
+  const bootTargets = boot.map((task) => task.args[task.args.length - 1])
+  ok(bootTargets.filter((target) => target === ':api:bootRun').length === 1 && bootTargets.includes(':api:bootJar') && bootTargets.filter((target) => target === ':api:run').length === 1,
+    'Spring Boot: bootRun once, plus bootJar and run')
+
+  // The fetched task list maps into modules.
+  const { tasksOfModule, rootTasks } = await import('@/lib/gradle-tasks')
+  const list = { loading: false, tasks: ['build', 'fabric:runClient', 'fabric:runDatagen', 'fabric:sub:x'].map((name) => ({ id: name, label: name, command: 'gradle', args: [name] })) }
+  ok(names(tasksOfModule(list, ':fabric')).join(',') === 'runClient,runDatagen', 'Fetched tasks go to their module, without deeper modules')
+  ok(names(rootTasks(list)).join(',') === 'build', 'The root keeps only its own fetched tasks')
+}
+
+
+/* ------------------------------------------------------------------ *
  * Helpers
  * ------------------------------------------------------------------ */
 
@@ -370,6 +539,7 @@ const cfgDir = await fs.mkdtemp(path.join(base, 'cfg-'))
 await saveProjectConfig(cfgDir, { name: 'X', tasks: [{ id: 'custom:a', label: 'A', command: 'echo', args: ['hi'], group: 'build' }], defaults: { build: 'custom:a' }, env: { A: '1' }, lsp: { java: 'jdtls' }, openFiles: ['pom.xml'] })
 const cfg = await loadProjectConfig(cfgDir)
 ok(cfg.tasks.length === 1 && cfg.defaults.build === 'custom:a' && cfg.env.A === '1' && cfg.lsp.java === 'jdtls' && cfg.openFiles?.[0] === 'pom.xml', 'Projektkonfiguration round-trip')
+ok(!(await lumen.fs.exists(path.join(cfgDir, '.lumen'))), 'Project configuration stays out of the project folder')
 
 ok(markerMatches('*.csproj', 'App.csproj') && !markerMatches('*.csproj', 'App.csproj.user') && markerMatches('pom.xml', 'pom.xml'), 'Marker mit *')
 ok(insertIntoBlock('deps {\n    a\n}\n', /^deps\s*\{/m, '}', 'b') === 'deps {\n    a\n    b\n}\n', 'insertIntoBlock: vor schließender Klammer')
@@ -381,6 +551,20 @@ ok(uriToPath(pathToUri('/tmp/ä b/x.java')) === '/tmp/ä b/x.java', 'pathToUri/u
 ok(isVirtualUri('jdt://contents/x.class') && !isVirtualUri('/tmp/x') && !isVirtualUri('file:///tmp/x'), 'isVirtualUri')
 ok(toLocations([{ targetUri: 'file:///a', targetRange: { start: { line: 0, character: 0 }, end: { line: 0, character: 1 } }, targetSelectionRange: { start: { line: 0, character: 2 }, end: { line: 0, character: 3 } } }])[0].range.start.character === 2, 'toLocations LocationLink')
 
+const { checkFormValues } = await import('./lib/check-form-values')
+await checkFormValues(ok, base)
+
 await fs.rm(base, { recursive: true, force: true })
 console.log(`\n${passed} checks passed, ${failures} error(s)`)
 process.exit(failures ? 1 : 0)
+
+{
+  const { fitsApp } = await import('@/core/extensions/compat')
+  console.log('\nExtension compatibility:')
+  const ok2 = (cond: boolean, msg: string) => { console.log(`  ${cond ? '✓' : '✗'}  ${msg}`); if (!cond) process.exitCode = 1 }
+  ok2(fitsApp(undefined, '0.5.0'), 'No requirement always fits')
+  ok2(fitsApp('0.6.0', '0.6.0') && fitsApp('0.6.0', '0.10.1'), 'An equal or newer Lumen fits')
+  ok2(!fitsApp('0.6.0', '0.5.9') && !fitsApp('1.0.0', '0.9.0'), 'An older Lumen does not')
+  ok2(fitsApp("0.5.0", "0.5.0-beta.2"), 'A tagged build of the required number fits')
+  ok2(fitsApp('nonsense', '0.1.0'), 'An unreadable requirement does not block')
+}

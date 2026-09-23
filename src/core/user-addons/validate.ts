@@ -10,8 +10,9 @@ import { NODE_CATALOG } from './catalog'
 import { BUILTIN_DEBUG_ADAPTERS, BUILTIN_DEBUG_ADAPTER_NAMES } from '@/core/debug/builtin-adapters'
 import { isTokenizerName, tokenizerNames } from './tokenizers'
 import { USER_ADDON_PREFIX, type Graph, type UserAddonModel } from './schema'
+import { isPackageManager, isValidPackageName } from '../../../electron/features/package-managers'
 
-export type StudioSection = 'general' | 'languages' | 'commands' | 'events' | 'templates' | 'kinds' | 'snippets' | 'themes' | 'json'
+export type StudioSection = 'general' | 'languages' | 'commands' | 'events' | 'templates' | 'kinds' | 'snippets' | 'panels' | 'themes' | 'json'
 
 export interface ValidationIssue {
   section: StudioSection
@@ -118,6 +119,13 @@ export function validateAddon(model: UserAddonModel): ValidationIssue[] {
     })
     lang.lsp?.forEach((server) => {
       if (!server.label.trim() || !server.command.trim()) at('lsp', v('lspConfig'))
+      // System packages end up in a command that may run as root: only known
+      // managers and plain package names.
+      for (const [manager, names] of Object.entries(server.systemPackages ?? {})) {
+        const valid = isPackageManager(manager) && typeof names === 'string' && names.trim().split(/\s+/).every(isValidPackageName)
+        if (valid) continue
+        at('lsp', t('lsp.systemPackageInvalid', { name: server.label, entry: `${manager}: ${String(names)}` }))
+      }
     })
     // Debug adapters are pulled in by name; a typo would otherwise stay
     // silent, because an unknown name simply falls away.
@@ -253,6 +261,15 @@ export function validateAddon(model: UserAddonModel): ValidationIssue[] {
   ;(model.snippets ?? []).forEach((snippet, index) => {
     if (!snippet.languageId) push({ section: 'snippets', index, field: 'languageId', message: p('snippetLanguage', { label: snippet.label || String(index + 1) }) })
     if (!snippet.label.trim() || !snippet.body) push({ section: 'snippets', index, message: v('snippet') })
+  })
+
+  /* Panels */
+  const panelIds = new Set<string>()
+  ;(model.panels ?? []).forEach((panel, index) => {
+    if (!/^[a-z][a-z0-9-]*$/.test(panel.id)) push({ section: 'panels', index, field: 'id', message: p('panelId', { id: panel.id || String(index + 1) }) })
+    if (panelIds.has(panel.id)) push({ section: 'panels', index, field: 'id', message: p('panelDuplicate', { id: panel.id }) })
+    panelIds.add(panel.id)
+    if (!panel.title.trim() || !panel.content.trim()) push({ section: 'panels', index, message: p('panelEmpty', { id: panel.id || String(index + 1) }) })
   })
 
   /* Themes */

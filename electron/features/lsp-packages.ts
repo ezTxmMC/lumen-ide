@@ -19,7 +19,7 @@
  * reaches a command line. Processes run without a shell.
  */
 
-import { ipcMain, net, type BrowserWindow } from 'electron'
+import { BrowserWindow, ipcMain, net } from 'electron'
 import { spawn } from 'node:child_process'
 import fs from 'node:fs/promises'
 import fsSync from 'node:fs'
@@ -42,7 +42,7 @@ export type LspPackage =
   | { type: 'go'; module: string; bin?: string }
   | { type: 'dotnet'; package: string; bin?: string }
   | { type: 'github'; repo: string; assets: Record<PlatformKey, string>; bin?: string; version?: string; runtime?: 'python' | 'node' }
-  | { type: 'archive'; url: string | Record<PlatformKey, string>; bin?: string; runtime?: 'python' | 'node' }
+  | { type: 'archive'; url: string | Record<PlatformKey, string>; bin?: string; runtime?: 'python' | 'node'; executables?: string[] }
 
 export interface InstalledPackage {
   id: string
@@ -297,7 +297,7 @@ async function fetchFile(job: Job, log: Log, url: string, name: string, sha256 =
 async function unpack(job: Job, file: string, name: string, target: string, bin: string) {
   await fs.rm(target, { recursive: true, force: true })
   await fs.mkdir(target, { recursive: true })
-  if (/\.(zip|tar|tar\.gz|tgz|tar\.xz|txz|tar\.bz2)$/i.test(name)) {
+  if (/\.(zip|vsix|tar|tar\.gz|tgz|tar\.xz|txz|tar\.bz2)$/i.test(name)) {
     await extract(job, file, target)
     return
   }
@@ -572,7 +572,7 @@ interface GithubRelease {
 
 async function installRelease(
   job: Job, log: Log, id: string, url: string, name: string, sha256: string,
-  bin: string, command: string, runtime: 'python' | 'node' | undefined,
+  bin: string, command: string, runtime: 'python' | 'node' | undefined, executables: string[] = [],
 ) {
   const file = await fetchFile(job, log, url, name, sha256)
   const target = path.join(PACKAGES, id)
@@ -580,6 +580,11 @@ async function installRelease(
     await unpack(job, file, name, target, bin)
   } finally {
     await fs.rm(file, { force: true })
+  }
+  // Zip archives lose the execute bits — scripts the program calls need them back.
+  for (const relative of executables) {
+    if (IS_WINDOWS) break
+    await fs.chmod(path.join(target, check(relative, BIN_NAME, 'executable')), 0o755).catch(() => {})
   }
   const extensions = runtime || !IS_WINDOWS ? ['', '.cmd', '.bat', '.exe'] : ['.exe', '.cmd', '.bat', '']
   const program = await findProgram(target, bin, extensions) ?? await onlyFile(target)
@@ -604,7 +609,7 @@ async function installGithub(job: Job, log: Log, id: string, spec: Extract<LspPa
 async function installArchive(job: Job, log: Log, id: string, spec: Extract<LspPackage, { type: 'archive' }>, bin: string, command: string) {
   const url = archiveUrl(spec)
   const name = decodeURIComponent(new URL(url).pathname.split('/').pop() || 'download')
-  await installRelease(job, log, id, url, name, '', bin, command, spec.runtime)
+  await installRelease(job, log, id, url, name, '', bin, command, spec.runtime, spec.executables ?? [])
 }
 
 async function install(
@@ -679,8 +684,9 @@ async function remove(command: string): Promise<boolean> {
  * ------------------------------------------------------------------ */
 
 export function registerLspPackageIpc(getWindow: () => BrowserWindow | null) {
-  ipcMain.handle('lspPackages:install', (_e, jobId: string, spec: LspPackage, command: string) =>
-    install(String(jobId), spec, command, getWindow))
+  // The log goes to the window that asked.
+  ipcMain.handle('lspPackages:install', (e, jobId: string, spec: LspPackage, command: string) =>
+    install(String(jobId), spec, command, () => BrowserWindow.fromWebContents(e.sender) ?? getWindow()))
   ipcMain.handle('lspPackages:cancel', (_e, jobId: string) => cancel(String(jobId)))
   ipcMain.handle('lspPackages:remove', (_e, command: string) => remove(String(command)))
   ipcMain.handle('lspPackages:list', async () => Object.values(await readManifest()))

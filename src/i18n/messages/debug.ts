@@ -100,7 +100,7 @@ export default {
     },
     error: {
       noWorkspace: 'Zuerst einen Ordner öffnen.',
-      configInvalid: '.lumen/debug.json ist ungültig: {message}',
+      configInvalid: 'debug.json ist ungültig: {message}',
       noLsp: 'Der Language-Server der Sprache läuft nicht.',
       noAdapter: 'Für {language} ist kein Debugger bekannt.',
       adapterMissing: 'Debugger nicht gefunden: {names}. Hinweise im Debug-Panel.',
@@ -140,7 +140,7 @@ export default {
     },
     sidebar: {
       start: 'Debuggen',
-      hint: 'Haltepunkte setzt ein Klick links neben die Zeilennummern, Rechtsklick öffnet weitere Optionen. Eigene Konfigurationen stehen in .lumen/debug.json.',
+      hint: 'Haltepunkte setzt ein Klick links neben die Zeilennummern, Rechtsklick öffnet weitere Optionen. Eigene Konfigurationen stehen in debug.json.',
       paused: 'Angehalten',
       running: 'Läuft',
     },
@@ -283,7 +283,7 @@ export default {
     },
     error: {
       noWorkspace: 'Open a folder first.',
-      configInvalid: '.lumen/debug.json is invalid: {message}',
+      configInvalid: 'debug.json is invalid: {message}',
       noLsp: 'The language server for this language is not running.',
       noAdapter: 'No debugger is known for {language}.',
       adapterMissing: 'Debugger not found: {names}. See the Debug panel for hints.',
@@ -323,7 +323,7 @@ export default {
     },
     sidebar: {
       start: 'Debug',
-      hint: 'Click left of the line numbers to set breakpoints; right-click for more options. Custom configurations live in .lumen/debug.json.',
+      hint: 'Click left of the line numbers to set breakpoints; right-click for more options. Custom configurations live in debug.json.',
       paused: 'Paused',
       running: 'Running',
     },
@@ -466,7 +466,7 @@ export default {
     },
     error: {
       noWorkspace: 'Abre primero una carpeta.',
-      configInvalid: '.lumen/debug.json no es válido: {message}',
+      configInvalid: 'debug.json no es válido: {message}',
       noLsp: 'El servidor de lenguaje de este lenguaje no está en ejecución.',
       noAdapter: 'No se conoce ningún depurador para {language}.',
       adapterMissing: 'Depurador no encontrado: {names}. Consulta el panel Depuración.',
@@ -506,7 +506,7 @@ export default {
     },
     sidebar: {
       start: 'Depurar',
-      hint: 'Haz clic a la izquierda de los números de línea para poner puntos de interrupción; clic derecho para más opciones. Las configuraciones propias están en .lumen/debug.json.',
+      hint: 'Haz clic a la izquierda de los números de línea para poner puntos de interrupción; clic derecho para más opciones. Las configuraciones propias están en debug.json.',
       paused: 'En pausa',
       running: 'En ejecución',
     },
@@ -649,7 +649,7 @@ export default {
     },
     error: {
       noWorkspace: 'Ouvrez d’abord un dossier.',
-      configInvalid: '.lumen/debug.json est invalide : {message}',
+      configInvalid: 'debug.json est invalide : {message}',
       noLsp: 'Le serveur de langage de ce langage n’est pas en cours d’exécution.',
       noAdapter: 'Aucun débogueur connu pour {language}.',
       adapterMissing: 'Débogueur introuvable : {names}. Voir le panneau Débogage.',
@@ -689,7 +689,7 @@ export default {
     },
     sidebar: {
       start: 'Déboguer',
-      hint: 'Cliquez à gauche des numéros de ligne pour placer des points d’arrêt ; clic droit pour plus d’options. Les configurations personnalisées sont dans .lumen/debug.json.',
+      hint: 'Cliquez à gauche des numéros de ligne pour placer des points d’arrêt ; clic droit pour plus d’options. Les configurations personnalisées sont dans debug.json.',
       paused: 'En pause',
       running: 'En cours',
     },
@@ -832,7 +832,7 @@ export default {
     },
     error: {
       noWorkspace: 'Najpierw otwórz folder.',
-      configInvalid: 'Plik .lumen/debug.json jest nieprawidłowy: {message}',
+      configInvalid: 'Plik debug.json jest nieprawidłowy: {message}',
       noLsp: 'Serwer językowy tego języka nie działa.',
       noAdapter: 'Brak znanego debugera dla {language}.',
       adapterMissing: 'Nie znaleziono debugera: {names}. Wskazówki w panelu Debugowanie.',
@@ -874,7 +874,7 @@ export default {
     },
     sidebar: {
       start: 'Debuguj',
-      hint: 'Kliknij na lewo od numerów wierszy, aby ustawić punkty przerwania; prawy przycisk otwiera więcej opcji. Własne konfiguracje są w .lumen/debug.json.',
+      hint: 'Kliknij na lewo od numerów wierszy, aby ustawić punkty przerwania; prawy przycisk otwiera więcej opcji. Własne konfiguracje są w debug.json.',
       paused: 'Wstrzymano',
       running: 'Działa',
     },
@@ -1017,7 +1017,7 @@ export default {
     },
     error: {
       noWorkspace: 'Apri prima una cartella.',
-      configInvalid: '.lumen/debug.json non è valido: {message}',
+      configInvalid: 'debug.json non è valido: {message}',
       noLsp: 'Il language server di questo linguaggio non è in esecuzione.',
       noAdapter: 'Nessun debugger noto per {language}.',
       adapterMissing: 'Debugger non trovato: {names}. Vedi il pannello Debug.',
@@ -1057,7 +1057,7 @@ export default {
     },
     sidebar: {
       start: 'Debug',
-      hint: 'Fai clic a sinistra dei numeri di riga per impostare punti di interruzione; clic destro per altre opzioni. Le configurazioni personalizzate sono in .lumen/debug.json.',
+      hint: 'Fai clic a sinistra dei numeri di riga per impostare punti di interruzione; clic destro per altre opzioni. Le configurazioni personalizzate sono in debug.json.',
       paused: 'In pausa',
       running: 'In esecuzione',
     },
@@ -1200,7 +1200,7 @@ export default {
     },
     error: {
       noWorkspace: 'Abra uma pasta primeiro.',
-      configInvalid: '.lumen/debug.json é inválido: {message}',
+      configInvalid: 'debug.json é inválido: {message}',
       noLsp: 'O servidor de linguagem desta linguagem não está em execução.',
       noAdapter: 'Nenhum depurador conhecido para {language}.',
       adapterMissing: 'Depurador não encontrado: {names}. Veja o painel Depuração.',
@@ -1240,7 +1240,7 @@ export default {
     },
     sidebar: {
       start: 'Depurar',
-      hint: 'Clique à esquerda dos números de linha para definir pontos de interrupção; clique direito para mais opções. Configurações próprias ficam em .lumen/debug.json.',
+      hint: 'Clique à esquerda dos números de linha para definir pontos de interrupção; clique direito para mais opções. Configurações próprias ficam em debug.json.',
       paused: 'Pausado',
       running: 'Em execução',
     },
@@ -1383,7 +1383,7 @@ export default {
     },
     error: {
       noWorkspace: 'Open eerst een map.',
-      configInvalid: '.lumen/debug.json is ongeldig: {message}',
+      configInvalid: 'debug.json is ongeldig: {message}',
       noLsp: 'De language server voor deze taal draait niet.',
       noAdapter: 'Geen debugger bekend voor {language}.',
       adapterMissing: 'Debugger niet gevonden: {names}. Zie het Debug-paneel.',
@@ -1423,7 +1423,7 @@ export default {
     },
     sidebar: {
       start: 'Debuggen',
-      hint: 'Klik links van de regelnummers om onderbrekingspunten te zetten; rechtsklik voor meer opties. Eigen configuraties staan in .lumen/debug.json.',
+      hint: 'Klik links van de regelnummers om onderbrekingspunten te zetten; rechtsklik voor meer opties. Eigen configuraties staan in debug.json.',
       paused: 'Gepauzeerd',
       running: 'Actief',
     },

@@ -314,6 +314,13 @@
               "win32-arm64": "^rust-analyzer-aarch64-pc-windows-msvc\\.zip$"
             }
           },
+          "systemPackages": {
+            "pacman": "rust-analyzer",
+            "dnf": "rust-analyzer",
+            "apk": "rust-analyzer",
+            "brew": "rust-analyzer",
+            "scoop": "rust-analyzer"
+          },
           "installCommands": {
             "linux": "rustup component add rust-analyzer",
             "darwin": "rustup component add rust-analyzer",

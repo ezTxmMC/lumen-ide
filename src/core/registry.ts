@@ -6,7 +6,7 @@
  */
 
 import type {
-  Addon, AddonContext, AddonSnippet, Command, IconPack, LanguageSpec, ProjectKind, ProjectTemplate, Theme,
+  Addon, AddonContext, AddonPanel, AddonSnippet, Command, IconPack, LanguageSpec, ProjectKind, ProjectTemplate, Theme,
 } from './types'
 
 type Notifier = (message: string, kind?: 'info' | 'success' | 'warning' | 'error') => void
@@ -233,6 +233,14 @@ class Registry {
   }
 
   /** Icon packs of the active add-ons, then the user's — first one per id wins. */
+  /** The panels of every active add-on, with where they come from. */
+  panels(): { addonId: string; addonName: string; panel: AddonPanel }[] {
+    return [...this.active].flatMap((id) => {
+      const addon = this.addons.get(id)
+      return (addon?.panels ?? []).map((panel) => ({ addonId: id, addonName: addon!.name, panel }))
+    })
+  }
+
   iconPacks(): IconPack[] {
     const seen = new Set<string>()
     const out: IconPack[] = []

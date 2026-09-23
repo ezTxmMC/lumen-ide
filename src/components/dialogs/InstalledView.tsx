@@ -68,7 +68,7 @@ export function InstalledView({ query, initialFilter, updates }: {
     if (initialFilter && initialFilter in matchesFilter) setFilter(initialFilter as Filter)
   }, [initialFilter])
 
-  const addons = useMemo(() => registry.all(), [registryVersion])
+  const addons = useMemo(() => registry.all().filter((addon) => !addon.hidden), [registryVersion])
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase()

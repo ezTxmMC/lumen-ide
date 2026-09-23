@@ -3,6 +3,11 @@ import type { NamespaceMessages } from '@/i18n'
 /** Icon-Pakete: Galerie im Themes-Dialog, Icon-Studio, Hinweise. */
 export default {
   de: {
+    packs: {
+      lumen: 'Formen und Zeichen für über 1.600 Dateien, Endungen und Ordner — Sprachen, Build-Werkzeuge, Konfiguration, Medien — in einer abgestimmten Palette; Ordner mit Rolle tragen ein Emblem.',
+      mono: 'Dieselben Formen und dieselbe Abdeckung wie „Lumen“, in einem ruhigen Farbton, der dem Theme folgt.',
+      classic: 'Nur Kürzel und Farben der Sprach-Add-ons, Ordner als getönte Pfeile.',
+    },
     newName: 'Eigene Icons',
     deleted: 'Icon-Paket gelöscht.',
     invalid: 'Keine gültige Icon-Paket-Datei.',
@@ -27,7 +32,7 @@ export default {
       },
       keyPlaceholder: { fileNames: 'dateiname.ext', extensions: 'endung', languages: 'Sprache wählen…', folderNames: 'ordner' },
       add: 'Hinzufügen', filter: 'Filtern…', empty: 'Noch keine Zuordnungen.', exists: '„{key}“ ist schon zugeordnet.',
-      glyph: 'Kürzel', shape: 'Form', noShape: 'Keine Form', color: 'Farbe', path: 'SVG-Pfad (24×24)', remove: 'Entfernen',
+      glyph: 'Kürzel', shape: 'Form', noShape: 'Keine Form', shapeFilter: 'Formen filtern…', noShapeFound: 'Keine Form gefunden.', color: 'Farbe', path: 'SVG-Pfad (24×24)', remove: 'Entfernen',
       defaultFile: 'Unbekannte Datei', defaultFolder: 'Ordner',
       preview: 'Vorschau', tryName: 'Dateinamen testen…',
       rule: {
@@ -38,6 +43,11 @@ export default {
     },
   },
   en: {
+    packs: {
+      lumen: 'Shapes and marks for more than 1,600 files, extensions and folders — languages, build tools, configuration, media — in one coordinated palette; folders with a role carry an emblem.',
+      mono: 'The same shapes and coverage as “Lumen”, drawn in one calm tone that follows the theme.',
+      classic: 'Only the abbreviations and colours of the language add-ons, folders as tinted arrows.',
+    },
     newName: 'My Icons',
     deleted: 'Icon pack deleted.',
     invalid: 'Not a valid icon pack file.',
@@ -62,7 +72,7 @@ export default {
       },
       keyPlaceholder: { fileNames: 'filename.ext', extensions: 'extension', languages: 'Choose language…', folderNames: 'folder' },
       add: 'Add', filter: 'Filter…', empty: 'No mappings yet.', exists: '“{key}” is already mapped.',
-      glyph: 'Label', shape: 'Shape', noShape: 'No shape', color: 'Color', path: 'SVG path (24×24)', remove: 'Remove',
+      glyph: 'Label', shape: 'Shape', noShape: 'No shape', shapeFilter: 'Filter shapes…', noShapeFound: 'No shape found.', color: 'Color', path: 'SVG path (24×24)', remove: 'Remove',
       defaultFile: 'Unknown file', defaultFolder: 'Folder',
       preview: 'Preview', tryName: 'Test a file name…',
       rule: {
@@ -73,6 +83,11 @@ export default {
     },
   },
   es: {
+    packs: {
+      lumen: 'Formas y marcas para más de 1600 archivos, extensiones y carpetas — lenguajes, herramientas de compilación, configuración, multimedia — en una paleta coordinada; las carpetas con función llevan un emblema.',
+      mono: 'Las mismas formas y la misma cobertura que «Lumen», dibujadas en un único tono sereno que sigue al tema.',
+      classic: 'Solo las abreviaturas y colores de los complementos de lenguaje; carpetas como flechas tintadas.',
+    },
     newName: 'Mis iconos',
     deleted: 'Paquete de iconos eliminado.',
     invalid: 'No es un archivo de paquete de iconos válido.',
@@ -97,7 +112,7 @@ export default {
       },
       keyPlaceholder: { fileNames: 'archivo.ext', extensions: 'extensión', languages: 'Elegir lenguaje…', folderNames: 'carpeta' },
       add: 'Añadir', filter: 'Filtrar…', empty: 'Aún no hay asignaciones.', exists: '«{key}» ya está asignado.',
-      glyph: 'Etiqueta', shape: 'Forma', noShape: 'Sin forma', color: 'Color', path: 'Trazado SVG (24×24)', remove: 'Quitar',
+      glyph: 'Etiqueta', shape: 'Forma', noShape: 'Sin forma', shapeFilter: 'Filtrar formas…', noShapeFound: 'No se encontró ninguna forma.', color: 'Color', path: 'Trazado SVG (24×24)', remove: 'Quitar',
       defaultFile: 'Archivo desconocido', defaultFolder: 'Carpeta',
       preview: 'Vista previa', tryName: 'Probar un nombre de archivo…',
       rule: {
@@ -108,6 +123,11 @@ export default {
     },
   },
   fr: {
+    packs: {
+      lumen: 'Des formes et des marques pour plus de 1 600 fichiers, extensions et dossiers — langages, outils de build, configuration, médias — dans une palette harmonisée ; les dossiers ayant un rôle portent un emblème.',
+      mono: 'Les mêmes formes et la même couverture que « Lumen », dessinées dans une seule teinte calme qui suit le thème.',
+      classic: 'Uniquement les abréviations et couleurs des modules de langage ; dossiers en flèches teintées.',
+    },
     newName: 'Mes icônes',
     deleted: 'Pack d’icônes supprimé.',
     invalid: 'Ce n’est pas un fichier de pack d’icônes valide.',
@@ -132,7 +152,7 @@ export default {
       },
       keyPlaceholder: { fileNames: 'fichier.ext', extensions: 'extension', languages: 'Choisir un langage…', folderNames: 'dossier' },
       add: 'Ajouter', filter: 'Filtrer…', empty: 'Aucune association pour l’instant.', exists: '« {key} » est déjà associé.',
-      glyph: 'Libellé', shape: 'Forme', noShape: 'Aucune forme', color: 'Couleur', path: 'Tracé SVG (24×24)', remove: 'Retirer',
+      glyph: 'Libellé', shape: 'Forme', noShape: 'Aucune forme', shapeFilter: 'Filtrer les formes…', noShapeFound: 'Aucune forme trouvée.', color: 'Couleur', path: 'Tracé SVG (24×24)', remove: 'Retirer',
       defaultFile: 'Fichier inconnu', defaultFolder: 'Dossier',
       preview: 'Aperçu', tryName: 'Tester un nom de fichier…',
       rule: {
@@ -143,6 +163,11 @@ export default {
     },
   },
   pl: {
+    packs: {
+      lumen: 'Kształty i znaki dla ponad 1600 plików, rozszerzeń i folderów — języki, narzędzia budowania, konfiguracja, multimedia — w spójnej palecie; foldery z rolą mają emblemat.',
+      mono: 'Te same kształty i ten sam zakres co „Lumen”, w jednym spokojnym odcieniu, który podąża za motywem.',
+      classic: 'Tylko skróty i kolory dodatków językowych, foldery jako zabarwione strzałki.',
+    },
     newName: 'Moje ikony',
     deleted: 'Usunięto pakiet ikon.',
     invalid: 'To nie jest prawidłowy plik pakietu ikon.',
@@ -167,7 +192,7 @@ export default {
       },
       keyPlaceholder: { fileNames: 'plik.ext', extensions: 'rozszerzenie', languages: 'Wybierz język…', folderNames: 'folder' },
       add: 'Dodaj', filter: 'Filtruj…', empty: 'Brak przypisań.', exists: '„{key}” jest już przypisany.',
-      glyph: 'Skrót', shape: 'Kształt', noShape: 'Bez kształtu', color: 'Kolor', path: 'Ścieżka SVG (24×24)', remove: 'Usuń',
+      glyph: 'Skrót', shape: 'Kształt', noShape: 'Bez kształtu', shapeFilter: 'Filtruj kształty…', noShapeFound: 'Nie znaleziono kształtu.', color: 'Kolor', path: 'Ścieżka SVG (24×24)', remove: 'Usuń',
       defaultFile: 'Nieznany plik', defaultFolder: 'Folder',
       preview: 'Podgląd', tryName: 'Sprawdź nazwę pliku…',
       rule: {
@@ -178,6 +203,11 @@ export default {
     },
   },
   it: {
+    packs: {
+      lumen: 'Forme e simboli per oltre 1.600 file, estensioni e cartelle — linguaggi, strumenti di build, configurazione, media — in una palette coordinata; le cartelle con un ruolo portano un emblema.',
+      mono: 'Le stesse forme e la stessa copertura di «Lumen», disegnate in un unico tono sobrio che segue il tema.',
+      classic: 'Solo le sigle e i colori dei componenti di linguaggio, cartelle come frecce colorate.',
+    },
     newName: 'Le mie icone',
     deleted: 'Pacchetto di icone eliminato.',
     invalid: 'Non è un file di pacchetto di icone valido.',
@@ -202,7 +232,7 @@ export default {
       },
       keyPlaceholder: { fileNames: 'nomefile.ext', extensions: 'estensione', languages: 'Scegli linguaggio…', folderNames: 'cartella' },
       add: 'Aggiungi', filter: 'Filtra…', empty: 'Ancora nessuna associazione.', exists: '“{key}” è già associato.',
-      glyph: 'Sigla', shape: 'Forma', noShape: 'Nessuna forma', color: 'Colore', path: 'Tracciato SVG (24×24)', remove: 'Rimuovi',
+      glyph: 'Sigla', shape: 'Forma', noShape: 'Nessuna forma', shapeFilter: 'Filtra forme…', noShapeFound: 'Nessuna forma trovata.', color: 'Colore', path: 'Tracciato SVG (24×24)', remove: 'Rimuovi',
       defaultFile: 'File sconosciuto', defaultFolder: 'Cartella',
       preview: 'Anteprima', tryName: 'Prova un nome file…',
       rule: {
@@ -213,6 +243,11 @@ export default {
     },
   },
   pt: {
+    packs: {
+      lumen: 'Formas e marcas para mais de 1.600 arquivos, extensões e pastas — linguagens, ferramentas de build, configuração, mídia — em uma paleta coordenada; pastas com função têm um emblema.',
+      mono: 'As mesmas formas e a mesma cobertura do “Lumen”, desenhadas em um único tom sereno que segue o tema.',
+      classic: 'Apenas as siglas e cores dos complementos de linguagem, pastas como setas coloridas.',
+    },
     newName: 'Meus ícones',
     deleted: 'Pacote de ícones excluído.',
     invalid: 'Não é um arquivo de pacote de ícones válido.',
@@ -237,7 +272,7 @@ export default {
       },
       keyPlaceholder: { fileNames: 'arquivo.ext', extensions: 'extensão', languages: 'Escolher linguagem…', folderNames: 'pasta' },
       add: 'Adicionar', filter: 'Filtrar…', empty: 'Ainda não há mapeamentos.', exists: '“{key}” já está mapeado.',
-      glyph: 'Sigla', shape: 'Forma', noShape: 'Sem forma', color: 'Cor', path: 'Caminho SVG (24×24)', remove: 'Remover',
+      glyph: 'Sigla', shape: 'Forma', noShape: 'Sem forma', shapeFilter: 'Filtrar formas…', noShapeFound: 'Nenhuma forma encontrada.', color: 'Cor', path: 'Caminho SVG (24×24)', remove: 'Remover',
       defaultFile: 'Arquivo desconhecido', defaultFolder: 'Pasta',
       preview: 'Pré-visualização', tryName: 'Testar um nome de arquivo…',
       rule: {
@@ -248,6 +283,11 @@ export default {
     },
   },
   nl: {
+    packs: {
+      lumen: 'Vormen en tekens voor meer dan 1.600 bestanden, extensies en mappen — talen, buildtools, configuratie, media — in één afgestemd palet; mappen met een rol dragen een embleem.',
+      mono: 'Dezelfde vormen en dekking als „Lumen”, getekend in één rustige tint die het thema volgt.',
+      classic: 'Alleen de afkortingen en kleuren van de taal-add-ons, mappen als getinte pijlen.',
+    },
     newName: 'Mijn iconen',
     deleted: 'Iconenpakket verwijderd.',
     invalid: 'Geen geldig iconenpakketbestand.',
@@ -272,7 +312,7 @@ export default {
       },
       keyPlaceholder: { fileNames: 'bestand.ext', extensions: 'extensie', languages: 'Taal kiezen…', folderNames: 'map' },
       add: 'Toevoegen', filter: 'Filteren…', empty: 'Nog geen koppelingen.', exists: '“{key}” is al gekoppeld.',
-      glyph: 'Label', shape: 'Vorm', noShape: 'Geen vorm', color: 'Kleur', path: 'SVG-pad (24×24)', remove: 'Verwijderen',
+      glyph: 'Label', shape: 'Vorm', noShape: 'Geen vorm', shapeFilter: 'Vormen filteren…', noShapeFound: 'Geen vorm gevonden.', color: 'Kleur', path: 'SVG-pad (24×24)', remove: 'Verwijderen',
       defaultFile: 'Onbekend bestand', defaultFolder: 'Map',
       preview: 'Voorbeeld', tryName: 'Bestandsnaam testen…',
       rule: {

@@ -1,7 +1,7 @@
 {
   "id": "ext.mdx",
   "name": "MDX",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "Markdown mit JSX: Überschriften, Listen und Tabellen wie in Markdown, dazu import/export-Zeilen, { … }-Ausdrücke und Komponenten-Tags.",
   "author": "Lumen",
   "icon": "M+",
@@ -11,5 +11,5 @@
   "keywords": [
     "mdx"
   ],
-  "minAppVersion": "0.3.0"
+  "minAppVersion": "0.5.0"
 }

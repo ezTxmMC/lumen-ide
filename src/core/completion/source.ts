@@ -32,7 +32,7 @@ import type { LspClient } from '@/core/lsp/client'
 import type { CompletionItem, CompletionList } from '@/core/lsp/protocol'
 import {
   completionClient, lspItemDeprecated, lspItemLabel, lspItemToCompletion, offsetToPos,
-} from '@/components/lsp-extension'
+} from '@/components/editor/lsp-extension'
 import { useStore } from '@/state/store'
 import { t } from '@/i18n'
 import type { LanguageSpec } from '@/core/types'

@@ -376,6 +376,18 @@
               "win32-x64": "^clangd-windows-[\\d.]+\\.zip$"
             }
           },
+          "systemPackages": {
+            "pacman": "clang",
+            "apt": "clangd",
+            "dnf": "clang-tools-extra",
+            "zypper": "clang-tools",
+            "apk": "clang-extra-tools",
+            "xbps": "clang-tools-extra",
+            "brew": "llvm",
+            "winget": "LLVM.LLVM",
+            "scoop": "llvm",
+            "choco": "llvm"
+          },
           "docs": "https://clangd.llvm.org"
         },
         {
@@ -394,7 +406,13 @@
             }
           },
           "install": "https://github.com/MaskRay/ccls",
-          "docs": "https://github.com/MaskRay/ccls"
+          "docs": "https://github.com/MaskRay/ccls",
+          "systemPackages": {
+            "pacman": "ccls",
+            "apt": "ccls",
+            "dnf": "ccls",
+            "brew": "ccls"
+          }
         }
       ],
       "debug": [

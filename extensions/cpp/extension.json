@@ -1,7 +1,7 @@
 {
   "id": "ext.cpp",
   "name": "C++",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Modernes C++ (bis C++23) mit Templates, Concepts und g++/clang++-Runner. CMake- und Make-Projekte mit Aufgaben, Vorlagen und clangd.",
   "author": "Lumen",
   "icon": "++",
@@ -11,5 +11,5 @@
   "keywords": [
     "cpp"
   ],
-  "minAppVersion": "0.3.0"
+  "minAppVersion": "0.5.0"
 }

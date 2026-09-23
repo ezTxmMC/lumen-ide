@@ -1,8 +1,8 @@
 {
   "id": "ext.codex",
   "name": "ChatGPT Codex",
-  "version": "1.0.1",
-  "description": "OpenAI Codex CLI aus der Aufgabenliste starten: Sitzung, Fortsetzen, Anmeldung. Vorlage mit AGENTS.md.",
+  "version": "2.1.1",
+  "description": "OpenAI Codex als Chat-Agent: Modelle aus der Codex-CLI bzw. ihrem Modell-Cache, Denkaufwand je Modell, Sandbox-Modi, Websuche, Sitzungen fortsetzen, Bilder und Plan. Dazu Aufgaben und eine AGENTS.md-Vorlage. Bringt Programmcode mit.",
   "author": "Lumen",
   "icon": "Cx",
   "color": "#10a37f",
@@ -16,5 +16,342 @@
     "agent",
     "cli"
   ],
-  "minAppVersion": "0.3.0"
+  "minAppVersion": "0.5.2",
+  "settings": [
+    {
+      "key": "codexPath",
+      "label": "Pfad zu codex",
+      "type": "path",
+      "pathKind": "file",
+      "section": "Programm",
+      "default": "",
+      "placeholder": "automatisch suchen",
+      "hint": "Leer lassen, um codex im PATH und in den üblichen Ordnern zu finden."
+    },
+    {
+      "key": "profile",
+      "label": "Profil aus config.toml",
+      "type": "text",
+      "section": "Programm",
+      "default": "",
+      "placeholder": "keins",
+      "hint": "Ein Profil aus ~/.codex/config.toml, das für jede Nachricht gilt."
+    },
+    {
+      "key": "model",
+      "label": "Standardmodell",
+      "type": "text",
+      "section": "Modell",
+      "default": "",
+      "placeholder": "wie in config.toml",
+      "hint": "Gilt, solange im Chat „Standard“ gewählt ist — z. B. gpt-5-codex. Die Auswahl im Chat kommt von Codex selbst."
+    },
+    {
+      "key": "modelSource",
+      "label": "Modellliste von",
+      "type": "select",
+      "section": "Modell",
+      "default": "auto",
+      "hint": "„Automatisch“ liest ~/.codex/models_cache.json und fragt codex app-server, wenn die Datei fehlt oder du neu lädst.",
+      "choices": [
+        {
+          "value": "auto",
+          "label": "Automatisch (Cache, sonst CLI)"
+        },
+        {
+          "value": "cache",
+          "label": "Nur models_cache.json"
+        },
+        {
+          "value": "cli",
+          "label": "Immer codex app-server"
+        }
+      ]
+    },
+    {
+      "key": "showLegacyModels",
+      "label": "Ältere und ausgeblendete Modelle anbieten",
+      "type": "toggle",
+      "section": "Modell",
+      "default": "false",
+      "hint": "Nimmt auch Modelle in die Wahl auf, die Codex in seiner Liste versteckt."
+    },
+    {
+      "key": "modelCacheMinutes",
+      "label": "CLI-Modellliste zwischenspeichern (Minuten)",
+      "type": "number",
+      "section": "Modell",
+      "default": "60",
+      "min": 0,
+      "max": 10080,
+      "when": "modelSource=cli"
+    },
+    {
+      "key": "extraModels",
+      "label": "Weitere Modelle",
+      "type": "textarea",
+      "section": "Modell",
+      "rows": 2,
+      "default": "",
+      "placeholder": "gpt-5-codex | GPT-5 Codex (fest)",
+      "hint": "Zusätzlich zur Liste von Codex — eine Modell-ID pro Zeile, optional mit „| Anzeigename“."
+    },
+    {
+      "key": "reasoningEffort",
+      "label": "Standard-Denkaufwand",
+      "type": "select",
+      "section": "Modell",
+      "default": "auto",
+      "choices": [
+        {
+          "value": "auto",
+          "label": "Wie in config.toml"
+        },
+        {
+          "value": "none",
+          "label": "Kein"
+        },
+        {
+          "value": "minimal",
+          "label": "Minimal"
+        },
+        {
+          "value": "low",
+          "label": "Niedrig"
+        },
+        {
+          "value": "medium",
+          "label": "Mittel"
+        },
+        {
+          "value": "high",
+          "label": "Hoch"
+        },
+        {
+          "value": "xhigh",
+          "label": "Sehr hoch"
+        }
+      ],
+      "hint": "Gilt, solange im Chat kein Aufwand gewählt ist. Im Chat lässt er sich je Modell einstellen — angeboten werden nur die Stufen, die das Modell kann."
+    },
+    {
+      "key": "reasoningSummary",
+      "label": "Zusammenfassung des Denkens",
+      "type": "select",
+      "section": "Modell",
+      "default": "default",
+      "choices": [
+        {
+          "value": "default",
+          "label": "Wie in config.toml"
+        },
+        {
+          "value": "auto",
+          "label": "Automatisch"
+        },
+        {
+          "value": "concise",
+          "label": "Knapp"
+        },
+        {
+          "value": "detailed",
+          "label": "Ausführlich"
+        },
+        {
+          "value": "none",
+          "label": "Keine"
+        }
+      ]
+    },
+    {
+      "key": "verbosity",
+      "label": "Ausführlichkeit der Antworten",
+      "type": "select",
+      "section": "Modell",
+      "default": "auto",
+      "choices": [
+        {
+          "value": "auto",
+          "label": "Wie in config.toml"
+        },
+        {
+          "value": "low",
+          "label": "Knapp"
+        },
+        {
+          "value": "medium",
+          "label": "Mittel"
+        },
+        {
+          "value": "high",
+          "label": "Ausführlich"
+        }
+      ]
+    },
+    {
+      "key": "hideReasoning",
+      "label": "Gedankengang ausblenden",
+      "type": "toggle",
+      "section": "Modell",
+      "default": "false"
+    },
+    {
+      "key": "webSearch",
+      "label": "Websuche",
+      "type": "select",
+      "section": "Werkzeuge",
+      "default": "auto",
+      "choices": [
+        {
+          "value": "auto",
+          "label": "Wie in config.toml"
+        },
+        {
+          "value": "live",
+          "label": "Live"
+        },
+        {
+          "value": "cached",
+          "label": "Aus dem Cache"
+        },
+        {
+          "value": "disabled",
+          "label": "Aus"
+        }
+      ]
+    },
+    {
+      "key": "networkAccess",
+      "label": "Netzwerk im Sandbox-Modus „Projekt“",
+      "type": "select",
+      "section": "Werkzeuge",
+      "default": "auto",
+      "hint": "Ob Befehle im Modus „Im Projekt schreiben“ ins Netz dürfen (npm install, curl …).",
+      "choices": [
+        {
+          "value": "auto",
+          "label": "Wie in config.toml"
+        },
+        {
+          "value": "true",
+          "label": "Erlaubt"
+        },
+        {
+          "value": "false",
+          "label": "Gesperrt"
+        }
+      ]
+    },
+    {
+      "key": "approvalPolicy",
+      "label": "Freigaberegel",
+      "type": "select",
+      "section": "Berechtigungen",
+      "default": "never",
+      "hint": "Im Chat gibt es keine Rückfragen von Codex — was es darf, bestimmt der Sandbox-Modus. „Nie fragen“ verhindert, dass Codex auf eine Antwort wartet.",
+      "choices": [
+        {
+          "value": "never",
+          "label": "Nie fragen"
+        },
+        {
+          "value": "on-failure",
+          "label": "Bei Fehlschlag"
+        },
+        {
+          "value": "on-request",
+          "label": "Auf Anfrage des Modells"
+        },
+        {
+          "value": "untrusted",
+          "label": "Bei nicht vertrauenswürdigen Befehlen"
+        },
+        {
+          "value": "auto",
+          "label": "Wie in config.toml"
+        }
+      ]
+    },
+    {
+      "key": "allowFullAccess",
+      "label": "Modus „Voller Zugriff“ zulassen",
+      "type": "toggle",
+      "section": "Berechtigungen",
+      "default": "false",
+      "hint": "Achtung: Ohne Sandbox kann Codex jede Datei ändern und jeden Befehl ausführen. Nur in isolierten Umgebungen verwenden."
+    },
+    {
+      "key": "additionalDirectories",
+      "label": "Weitere beschreibbare Ordner",
+      "type": "textarea",
+      "section": "Berechtigungen",
+      "rows": 2,
+      "default": "",
+      "placeholder": "~/shared-lib",
+      "hint": "Einer pro Zeile."
+    },
+    {
+      "key": "skipGitRepoCheck",
+      "label": "Auch außerhalb von Git-Repositories arbeiten",
+      "type": "toggle",
+      "section": "Berechtigungen",
+      "default": "true"
+    },
+    {
+      "key": "configOverrides",
+      "label": "Weitere Konfiguration (-c)",
+      "type": "textarea",
+      "section": "Erweitert",
+      "rows": 3,
+      "default": "",
+      "placeholder": "model_verbosity=\"low\"\nhide_agent_reasoning=true",
+      "hint": "Je Zeile ein key=value im TOML-Format, wie bei `codex -c`."
+    },
+    {
+      "key": "env",
+      "label": "Umgebungsvariablen",
+      "type": "textarea",
+      "section": "Erweitert",
+      "rows": 3,
+      "default": "",
+      "placeholder": "OPENAI_API_KEY=…\nHTTPS_PROXY=http://proxy:3128",
+      "hint": "KEY=WERT, eine pro Zeile."
+    }
+  ],
+  "agents": [
+    {
+      "id": "codex",
+      "name": "Codex",
+      "description": "Frag Codex nach deinem Projekt: Code erklären, Fehler suchen, Änderungen vornehmen. Was Codex darf, bestimmt der Modus.",
+      "icon": "Cx",
+      "location": "right",
+      "images": true,
+      "placeholder": "Nachricht an Codex …  (Enter senden, Umschalt+Enter Zeilenumbruch, @ Dateien)",
+      "modelSetting": "model",
+      "models": [],
+      "modes": [
+        {
+          "id": "workspace-write",
+          "label": "Im Projekt",
+          "description": "Liest alles, ändert und führt aus nur im Projektordner"
+        },
+        {
+          "id": "read-only",
+          "label": "Nur lesen",
+          "description": "Liest und plant, ändert nichts"
+        },
+        {
+          "id": "danger-full-access",
+          "label": "Voller Zugriff",
+          "description": "Ohne Sandbox — muss in den Einstellungen freigeschaltet sein"
+        }
+      ],
+      "suggestions": [
+        "Erkläre mir den Aufbau dieses Projekts.",
+        "Finde mögliche Fehler in der geöffneten Datei.",
+        "Schreibe Tests für die aktuelle Auswahl.",
+        "Erstelle eine AGENTS.md für dieses Projekt."
+      ]
+    }
+  ]
 }

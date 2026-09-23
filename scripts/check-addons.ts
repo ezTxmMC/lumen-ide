@@ -15,9 +15,9 @@ import { createUserAddon, normalizeModel, type Graph, type GraphNode, type UserA
 import { MESSAGES } from '@/i18n/messages'
 import { ALL_ADDONS } from '@/addons'
 import { extensionAddons } from './lib/extension-addons'
-import { classicIconPack, lumenIconPack } from '@/addons/builtin/icons'
+import { classicIconPack, lumenIconPack, monoIconPack } from '@/addons/builtin/icons'
 import {
-  explainFileIcon, iconPackProblems, isIconPack, resolveFileIcon, resolveFolderIcon, uniqueIconPackId,
+  explainFileIcon, ICON_MAP_KEYS, iconPackProblems, isIconPack, resolveFileIcon, resolveFolderIcon, uniqueIconPackId,
 } from '@/core/icon-pack'
 
 let failures = 0
@@ -385,7 +385,7 @@ async function compileTests() {
 function iconPackTests() {
   console.log('\n— Icon packs —')
   const packs = ALL_ADDONS.flatMap((addon) => addon.iconPacks ?? [])
-  check('The bundled icon packs are present', packs.length >= 2)
+  check('The bundled icon packs are present', packs.length >= 3)
   for (const pack of packs) {
     const problems = iconPackProblems(pack)
     check(`Icon-Paket „${pack.name}“ gültig`, problems.length === 0, problems.slice(0, 5))
@@ -420,6 +420,11 @@ function iconPackTests() {
   check('A key in capitals is spotted', !isIconPack({ id: 'x', name: 'X', fileNames: { 'Makefile': { glyph: 'M' } } }))
   check('A unique id for copies', uniqueIconPackId('lumen-icons', ['lumen-icons', 'lumen-icons-kopie']) === 'lumen-icons-kopie-2')
   check('A round trip through JSON stays valid', isIconPack(JSON.parse(JSON.stringify(lumenIconPack))))
+  const monoColors = new Set([monoIconPack.file, monoIconPack.folder, ...ICON_MAP_KEYS.flatMap((key) => Object.values(monoIconPack[key] ?? {}))]
+    .map((def) => def?.color))
+  check('Monochrome: only the neutral theme tones', [...monoColors].every((color) => color === 'var(--c-text-muted)' || color === 'var(--c-text-subtle)'), [...monoColors])
+  check('Monochrome: the same entries as Lumen', ICON_MAP_KEYS.every((key) => Object.keys(monoIconPack[key] ?? {}).length === Object.keys(lumenIconPack[key] ?? {}).length))
+  check('Monochrome: a folder keeps its role shape', resolveFolderIcon(monoIconPack, 'tests').shape === 'folder-test')
 }
 
 async function projectAddonTests() {

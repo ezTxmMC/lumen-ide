@@ -1,7 +1,7 @@
 {
   "id": "ext.example",
   "name": "Beispiel",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Zeigt, was eine Erweiterung mitbringen kann: Sprache, Einstellungen und Seiten.",
   "author": "Lumen",
   "icon": "Bs",
@@ -9,7 +9,7 @@
   "category": "tool",
   "license": "MIT",
   "keywords": ["beispiel", "vorlage", "dokumentation"],
-  "minAppVersion": "0.3.0",
+  "minAppVersion": "0.5.0",
   "settings": [
     {
       "key": "greeting",

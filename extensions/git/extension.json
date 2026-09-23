@@ -1,0 +1,285 @@
+{
+  "id": "ext.git",
+  "name": "Git",
+  "version": "1.1.1",
+  "description": "Quellcodeverwaltung mit Git: Änderungen vormerken und committen, Diffs, Verlauf, Branches, Tags, Stashes, Push/Pull und Branch in der Statusleiste. Bringt Programmcode mit.",
+  "author": "Lumen",
+  "icon": "Gt",
+  "color": "#f05033",
+  "category": "tool",
+  "license": "MIT",
+  "keywords": [
+    "git",
+    "scm",
+    "source control",
+    "versionskontrolle",
+    "commit",
+    "branch"
+  ],
+  "minAppVersion": "0.5.0",
+  "settings": [
+    {
+      "key": "gitPath",
+      "label": "Pfad zu git",
+      "type": "path",
+      "pathKind": "file",
+      "default": "",
+      "placeholder": "git aus dem PATH",
+      "hint": "Leer lassen, um git im PATH zu verwenden.",
+      "section": "Allgemein"
+    },
+    {
+      "key": "showUntracked",
+      "label": "Nicht verfolgte Dateien anzeigen",
+      "type": "toggle",
+      "default": "true",
+      "section": "Allgemein"
+    },
+    {
+      "key": "historyLimit",
+      "label": "Commits im Verlauf",
+      "type": "number",
+      "default": "200",
+      "min": 20,
+      "max": 2000,
+      "step": 20,
+      "section": "Allgemein"
+    },
+    {
+      "key": "confirmDiscard",
+      "label": "Vor dem Verwerfen nachfragen",
+      "type": "toggle",
+      "default": "true",
+      "section": "Commits"
+    },
+    {
+      "key": "signOff",
+      "label": "Commits signieren (--signoff)",
+      "type": "toggle",
+      "default": "false",
+      "hint": "Hängt eine Signed-off-by-Zeile an jede Commit-Nachricht.",
+      "section": "Commits"
+    },
+    {
+      "key": "pullMode",
+      "label": "Pull-Verhalten",
+      "type": "select",
+      "default": "merge",
+      "section": "Synchronisieren",
+      "choices": [
+        {
+          "value": "merge",
+          "label": "Merge"
+        },
+        {
+          "value": "rebase",
+          "label": "Rebase"
+        },
+        {
+          "value": "ff-only",
+          "label": "Nur Fast-Forward"
+        }
+      ]
+    },
+    {
+      "key": "followTags",
+      "label": "Tags mitpushen (--follow-tags)",
+      "type": "toggle",
+      "default": "false",
+      "section": "Synchronisieren"
+    },
+    {
+      "key": "autoFetchMinutes",
+      "label": "Automatisch abrufen (Minuten)",
+      "type": "number",
+      "default": "0",
+      "min": 0,
+      "max": 240,
+      "step": 1,
+      "hint": "0 schaltet das automatische Fetch aus.",
+      "section": "Synchronisieren"
+    }
+  ],
+  "views": [
+    {
+      "id": "changes",
+      "title": "Quellcodeverwaltung",
+      "icon": "git-branch",
+      "location": "left",
+      "order": 15
+    },
+    {
+      "id": "branches",
+      "title": "Branches",
+      "icon": "git-fork",
+      "location": "left",
+      "order": 16
+    },
+    {
+      "id": "history",
+      "title": "Git-Verlauf",
+      "icon": "history",
+      "location": "bottom",
+      "order": 70
+    }
+  ],
+  "commands": [
+    {
+      "id": "git.refresh",
+      "title": "Git: Aktualisieren",
+      "category": "Git",
+      "icon": "refresh-cw"
+    },
+    {
+      "id": "git.open-changes",
+      "title": "Git: Quellcodeverwaltung anzeigen",
+      "category": "Git",
+      "icon": "git-branch",
+      "keybinding": "Ctrl+Shift+G"
+    },
+    {
+      "id": "git.open-history",
+      "title": "Git: Verlauf anzeigen",
+      "category": "Git",
+      "icon": "history"
+    },
+    {
+      "id": "git.open-branches",
+      "title": "Git: Branches anzeigen",
+      "category": "Git",
+      "icon": "git-branch"
+    },
+    {
+      "id": "git.commit",
+      "title": "Git: Commit",
+      "category": "Git",
+      "icon": "git-commit"
+    },
+    {
+      "id": "git.commit-amend",
+      "title": "Git: Letzten Commit ändern (Amend)",
+      "category": "Git",
+      "icon": "pencil"
+    },
+    {
+      "id": "git.stage-all",
+      "title": "Git: Alle Änderungen vormerken",
+      "category": "Git",
+      "icon": "plus"
+    },
+    {
+      "id": "git.unstage-all",
+      "title": "Git: Alle Vormerkungen zurücknehmen",
+      "category": "Git",
+      "icon": "minus"
+    },
+    {
+      "id": "git.discard-all",
+      "title": "Git: Alle Änderungen verwerfen",
+      "category": "Git",
+      "icon": "undo"
+    },
+    {
+      "id": "git.push",
+      "title": "Git: Push",
+      "category": "Git",
+      "icon": "push"
+    },
+    {
+      "id": "git.force-push",
+      "title": "Git: Force-Push (with lease)",
+      "category": "Git",
+      "icon": "push"
+    },
+    {
+      "id": "git.pull",
+      "title": "Git: Pull",
+      "category": "Git",
+      "icon": "pull"
+    },
+    {
+      "id": "git.fetch",
+      "title": "Git: Fetch",
+      "category": "Git",
+      "icon": "cloud-download"
+    },
+    {
+      "id": "git.sync",
+      "title": "Git: Synchronisieren (Pull & Push)",
+      "category": "Git",
+      "icon": "arrow-up-down"
+    },
+    {
+      "id": "git.checkout",
+      "title": "Git: Branch wechseln…",
+      "category": "Git",
+      "icon": "git-branch"
+    },
+    {
+      "id": "git.create-branch",
+      "title": "Git: Branch anlegen…",
+      "category": "Git",
+      "icon": "git-branch-plus"
+    },
+    {
+      "id": "git.merge",
+      "title": "Git: Branch mergen…",
+      "category": "Git",
+      "icon": "git-merge"
+    },
+    {
+      "id": "git.rebase",
+      "title": "Git: Rebase auf Branch…",
+      "category": "Git",
+      "icon": "git-compare"
+    },
+    {
+      "id": "git.create-tag",
+      "title": "Git: Tag anlegen…",
+      "category": "Git",
+      "icon": "tag"
+    },
+    {
+      "id": "git.stash",
+      "title": "Git: Stash anlegen…",
+      "category": "Git",
+      "icon": "archive"
+    },
+    {
+      "id": "git.stash-pop",
+      "title": "Git: Letzten Stash anwenden und entfernen",
+      "category": "Git",
+      "icon": "archive"
+    },
+    {
+      "id": "git.init",
+      "title": "Git: Repository anlegen",
+      "category": "Git",
+      "icon": "plus"
+    },
+    {
+      "id": "git.clone",
+      "title": "Git: Repository klonen…",
+      "category": "Git",
+      "icon": "download"
+    },
+    {
+      "id": "git.file-history",
+      "title": "Git: Verlauf der aktiven Datei",
+      "category": "Git",
+      "icon": "history"
+    },
+    {
+      "id": "git.blame",
+      "title": "Git: Blame der aktiven Datei",
+      "category": "Git",
+      "icon": "user"
+    },
+    {
+      "id": "git.open-terminal",
+      "title": "Git: Terminal im Repository öffnen",
+      "category": "Git",
+      "icon": "terminal"
+    }
+  ]
+}

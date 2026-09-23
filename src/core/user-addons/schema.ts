@@ -467,6 +467,16 @@ export interface UserSnippet {
 
 export type UserAddonCategory = 'language' | 'theme' | 'tool'
 
+/** A panel for the docks: Markdown or HTML, shown without scripts. */
+export interface UserPanel {
+  id: string
+  title: string
+  icon?: string
+  location: 'left' | 'right' | 'bottom'
+  format: 'markdown' | 'html'
+  content: string
+}
+
 export interface UserAddonModel {
   schema: typeof USER_ADDON_SCHEMA
   id: string
@@ -484,6 +494,8 @@ export interface UserAddonModel {
   templates: UserTemplate[]
   projectKinds: UserProjectKind[]
   snippets: UserSnippet[]
+  /** Optional in files from before panels existed; `normalizeModel` fills it in. */
+  panels?: UserPanel[]
 }
 
 /* ------------------------------------------------------------------ *
@@ -526,6 +538,7 @@ export function createUserAddon(name: string, existing: string[] = []): UserAddo
     templates: [],
     projectKinds: [],
     snippets: [],
+    panels: [],
   }
 }
 
@@ -561,6 +574,7 @@ export function normalizeModel(raw: unknown): UserAddonModel {
       facts: list(kind.facts),
     })),
     snippets: list(data.snippets),
+    panels: list(data.panels),
   }
 }
 

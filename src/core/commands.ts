@@ -18,9 +18,11 @@ import { terminals } from '@/lib/terminals'
 import {
   findReferences, formatDocument, gotoLocation, organizeImports, showCodeActions,
   startRename, triggerSignatureHelp,
-} from '@/components/lsp-extension'
+} from '@/components/editor/lsp-extension'
 import { EDITOR_COMMANDS } from '@/core/editor-commands'
 import { formatBindingsFor } from '@/core/keybindings'
+import { visibleGroups } from '@/state/popout'
+import { activeDockViewId, dockBackTargetKey } from '@/core/popout/active'
 import { LANGUAGES, t } from '@/i18n'
 import type { Command } from '@/core/types'
 
@@ -137,13 +139,7 @@ export function buildCommands(options: { includeHidden?: boolean } = {}): Comman
     { id: 'project.refresh', title: c('project.refresh'), category: cat.project, run: () => s().refreshProject(), when: () => Boolean(s().workspace) },
     {
       id: 'project.config', title: c('project.config'), category: cat.project,
-      run: async () => {
-        const root = s().workspace
-        if (!root) return
-        const path = `${root}/.lumen/project.json`
-        if (!(await window.lumen.fs.exists(path))) await s().updateProjectConfig({})
-        await s().openFile(path)
-      },
+      run: () => s().openProjectConfig(),
       when: () => Boolean(s().workspace),
     },
     {
@@ -171,14 +167,33 @@ export function buildCommands(options: { includeHidden?: boolean } = {}): Comman
     { id: 'view.problems', title: c('view.problems'), category: cat.view, run: () => s().showPanel('problems') },
     { id: 'view.references', title: c('view.references'), category: cat.view, run: () => s().showPanel('references') },
     { id: 'view.lsp', title: c('view.lsp'), category: cat.view, run: () => s().showPanel('lsp') },
-    { id: 'view.sidebar', title: c('view.sidebar'), category: cat.view, run: () => s().setSidebarView(s().sidebarView ? null : 'explorer') },
+    { id: 'view.sidebar', title: c('view.sidebar'), category: cat.view, run: () => s().toggleDock(s().layout.navSide) },
+    { id: 'view.secondarySidebar', title: c('view.secondarySidebar'), category: cat.view, run: () => s().toggleDock(s().layout.navSide === 'left' ? 'right' : 'left') },
+    { id: 'view.navLeft', title: c('view.navLeft'), category: cat.view, run: () => s().setNavSide('left'), when: () => s().layout.navSide === 'right' },
+    { id: 'view.navRight', title: c('view.navRight'), category: cat.view, run: () => s().setNavSide('right'), when: () => s().layout.navSide === 'left' },
+    { id: 'view.resetLayout', title: c('view.resetLayout'), category: cat.view, run: () => s().resetLayout() },
     { id: 'view.splitRight', title: c('view.splitRight'), category: cat.view, run: () => s().splitEditor('right'), when: () => Boolean(s().activeTabId) },
     { id: 'view.splitDown', title: c('view.splitDown'), category: cat.view, run: () => s().splitEditor('down'), when: () => Boolean(s().activeTabId) },
-    { id: 'view.unsplit', title: c('view.unsplit'), category: cat.view, run: () => s().unsplitEditor(), when: () => s().groups.length > 1 },
-    { id: 'view.focusNextGroup', title: c('view.focusNextGroup'), category: cat.view, run: () => s().focusNextGroup(), when: () => s().groups.length > 1 },
+    { id: 'view.unsplit', title: c('view.unsplit'), category: cat.view, run: () => s().unsplitEditor(), when: () => visibleGroups(s().groups, s().popouts).length > 1 },
+    { id: 'view.focusNextGroup', title: c('view.focusNextGroup'), category: cat.view, run: () => s().focusNextGroup(), when: () => visibleGroups(s().groups, s().popouts).length > 1 },
     { id: 'view.focusGroup1', title: c('view.focusGroup', { n: 1 }), category: cat.view, run: () => s().focusGroup(0) },
     { id: 'view.focusGroup2', title: c('view.focusGroup', { n: 2 }), category: cat.view, run: () => s().focusGroup(1), when: () => s().groups.length > 1 },
     { id: 'view.moveTabToOtherGroup', title: c('view.moveTabToOtherGroup'), category: cat.view, run: () => s().moveTabToOtherGroup(), when: () => Boolean(s().activeTabId) },
+    {
+      id: 'view.popOutView', title: c('view.popOutView'), category: cat.view,
+      run: () => { const id = activeDockViewId(); if (id) s().popOutView(id) },
+      when: () => Boolean(activeDockViewId()),
+    },
+    {
+      id: 'view.dockAllPoppedOut', title: c('view.dockAllPoppedOut'), category: cat.view,
+      run: () => s().dockAllBack(), when: () => s().popouts.length > 0,
+    },
+    { id: 'editor.moveTabToNewWindow', title: c('editor.moveTabToNewWindow'), category: cat.editor, run: () => s().popOutTab(), when: () => Boolean(s().activeTabId) },
+    {
+      id: 'editor.dockWindowBack', title: c('editor.dockWindowBack'), category: cat.editor,
+      run: () => { const key = dockBackTargetKey(); if (key) s().dockBack(key) },
+      when: () => s().popouts.length > 0,
+    },
     {
       id: 'view.minimap', title: c(effects.minimap ? 'view.minimapOff' : 'view.minimapOn'), category: cat.view,
       run: () => s().setEffects({ minimap: !s().effects.minimap }),
@@ -268,6 +283,22 @@ export function buildCommands(options: { includeHidden?: boolean } = {}): Comman
       },
     },
     { id: 'lsp.servers', title: c('lsp.servers'), category: cat.language, run: () => s().showPanel('lsp') },
+    {
+      id: 'lsp.javaReimport', title: c('lsp.javaReimport'), category: cat.language,
+      when: () => lsp.list().some((server) => /jdtls/i.test(server.command)),
+      run: async () => {
+        await lsp.reimportJava()
+        s().notify(t('lsp.java.reimporting'), 'info')
+      },
+    },
+    {
+      id: 'lsp.javaClean', title: c('lsp.javaClean'), category: cat.language,
+      when: () => lsp.list().some((server) => /jdtls/i.test(server.command)),
+      run: async () => {
+        s().notify(t('lsp.java.cleaning'), 'info')
+        await lsp.cleanJavaWorkspace()
+      },
+    },
 
     { id: 'search.everywhere', title: c('search.everywhere'), category: cat.search, run: () => s().openEverywhere('all') },
     { id: 'search.files', title: c('search.files'), category: cat.search, run: () => s().openEverywhere('files') },
@@ -359,7 +390,7 @@ export function buildCommands(options: { includeHidden?: boolean } = {}): Comman
       id: `lsp.install.${config.command}`,
       title: c('lsp.install', { server: config.label, language: languageId }),
       category: cat.language,
-      run: () => installServer(config),
+      run: () => installServer(config, languageId),
     }))
 
   const addonCommands: Command[] = registry

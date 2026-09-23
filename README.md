@@ -4,7 +4,7 @@ A lightweight, modern IDE — flat design, a theme system with optional effects,
 project handling with templates and package managers for every language, and an
 add-on system that consists of a single object.
 
-Built with **React 18**, **TypeScript**, **Vite 6**, **Electron 33**,
+Built with **React 18**, **TypeScript**, **Vite 8**, **Electron 44**,
 **Tailwind CSS 4** and **CodeMirror 6**.
 
 ```bash
@@ -82,6 +82,11 @@ useful for testing.
 
 ## Projects
 
+Lumen starts at the **project screen**: recent projects with a filter (type,
+↑/↓, Enter), workspaces, *New project* and *Open folder*, and folders that have
+gone missing dimmed. *Open last project on start* (on the screen or under
+*Settings → General*) skips it and reopens the last project instead.
+
 When a folder opens, Lumen recognises the build system and package manager from
 their files and shows tasks, facts, dependencies, environment variables and
 server preferences in the **project panel** (`Ctrl+Shift+J`).
@@ -146,8 +151,54 @@ showing.
 
 As before: **build · run · test** sit on `Ctrl+Shift+B`, `F5` and
 `Ctrl+Shift+F5`. Custom tasks, default tasks, environment variables and server
-preferences live in `.lumen/project.json`. Inside tasks, `${env:NAME}` is
-replaced by the environment variable of that name — `VCPKG_ROOT`, for instance.
+preferences live in the project configuration (`project.json`). Inside tasks,
+`${env:NAME}` is replaced by the environment variable of that name —
+`VCPKG_ROOT`, for instance.
+
+**Lumen keeps its own files out of your projects.** The project configuration,
+breakpoints and launch configurations live in a folder of their own per project,
+`~/.lumen/projects/<folder name>-<hash>/` (`project.json`, `breakpoints.json`,
+`debug.json`, and `location.json` naming the project). *Open project
+configuration* in the command palette or the project panel opens the file; it
+can be edited and saved like any other. Projects from older versions carried a
+`.lumen/` folder — it moves over the first time the project opens and is
+removed once empty.
+
+### Multi-module builds and custom tasks
+
+Maven reactors and Gradle multi-project builds show up as a **module tree** in
+the project panel. Lumen reads `<modules>` recursively, nested aggregators
+included, and `include(…)` in `settings.gradle(.kts)`, including
+`projectDir` overrides and implied parents such as `:libs` for `:libs:core`.
+Every module brings its own tasks: build, test, install, clean, dependency tree
+and, where it can start, run. Maven scopes them with `-pl <module> -am`, Gradle
+with `:module:task`, and the run task follows the module's plugins
+(`spring-boot:run`, `quarkus:dev`, `javafx:run`, `bootRun`, `run` …).
+
+**More tasks** lists what the build files add beyond the standard tasks. For
+Gradle these are tasks registered in the scripts (`tasks.register`, `task x`,
+`val x by tasks.registering`) with their group and description. For Maven they
+are plugin goals, including those bound in `<executions>` as `goal@execution`,
+and one `-P <id> package` task per profile.
+
+**Tasks from plugins** appear without running Gradle: `runClient`,
+`runServer`, `runData` … of Minecraft mods (Fabric Loom, Architectury Loom,
+NeoForge ModDevGradle and NeoGradle, ForgeGradle, VanillaGradle — one task per
+run declared in `runs { }`), `bootRun`/`bootJar`, `quarkusDev`, `shadowJar`,
+`runIde`, `jib`, `runServer` of run-paper, publishing, Spotless, ktlint and
+more. Plugins count wherever they are applied — the module's `plugins { }`,
+`subprojects { apply plugin: … }` in the root script, or a block that gives
+them away (`architectury { neoForge() }`, `loom { }`); `apply false` does not.
+In a multi-loader build the modules' run tasks (`fabric: runClient`) also join
+the project's main task list.
+
+Everything else a build defines — tasks of convention plugins and
+dependencies — comes from `gradle tasks --all`: Lumen runs it once in the
+background when a Gradle project without a cached list opens (*Settings →
+General → Load Gradle tasks when a project opens*), caches the result in the
+project's data folder, and sorts the tasks into their modules. *Load all Gradle
+tasks* fetches the list afresh. Every task runs in the output panel or,
+from its hover button, in a terminal.
 
 ### Project kinds and templates in add-ons
 ```ts
@@ -340,6 +391,29 @@ indentation and an entry in the run menu.
 
 Placeholders in `run`: `${file}` `${fileDir}` `${fileName}` `${fileStem}` `${workspace}` `${projectRoot}`.
 
+### Panels
+
+An add-on can put panels into the docks — a cheat sheet, a guide, a status page.
+They are Markdown or HTML, shown in a sealed frame without scripts; `location`
+is only where a panel starts, the user can drag it anywhere:
+
+```ts
+panels: [{
+  id: 'cheatsheet',
+  title: 'Lua cheat sheet',
+  icon: 'book-open',          // an icon-pack shape or action icon
+  location: 'right',          // left · right · bottom
+  format: 'markdown',
+  content: '# Lua\n\n| … | … |',
+}],
+```
+
+In the **Add-on Studio** the same comes as the *Panels* area, with a live
+preview. Extensions have panels too (`pages/*.md` with `location: left|right|
+bottom`), and extensions with program code get **views with live content**,
+commands, status-bar items, dialogs, secrets and more — see
+[extensions/README.md](extensions/README.md).
+
 ### Beyond languages
 
 ```ts
@@ -398,17 +472,41 @@ and JavaScript especially thorough ones. In the editor that gives you:
 - **Java**: jumping into JDK and jar classes opens the decompiled source
   (`jdt://`) as a read-only tab
 
+**Servers start with the project**: when a project opens, the chosen server of
+every language the project uses starts right away — indexing is under way
+before the first file opens (*Settings → Language servers → Start with the
+project*). Choosing another server in the project panel stops the old one and
+starts the new one at once.
+
 Lumen installs nothing without asking. Before starting a server it looks in
 its own environment (`~/.lumen/lsp/bin`), then on the PATH, then in the places
 it knows (`candidates`: Mason, Homebrew, `node_modules/.bin`, LLVM
-directories). When the server is missing, things quietly fall back to the
-built-in completion, and Lumen offers to install it: when a file of that
-language is opened, from the language server panel, and right after
-installing an extension (**one or all** of its servers).
+directories). When a server is missing, the built-in completion takes over and
+Lumen opens the **install dialog**: when a file of that language is opened,
+from the language-server or project panel, and right after installing an
+extension. The dialog lists every server of the language, whether it is already
+there, and each way to install it on this machine. It shows the exact command
+before anything runs, then streams progress with a log and a cancel button.
+Afterwards the server starts by itself.
 
-**Installing happens in a closed environment.** Nothing goes to a global npm,
-pip or the system — every server and every tool needed to install it lives
-under `~/.lumen/lsp`:
+There are three ways to install, in this order of preference:
+
+- **Lumen environment** (`package`): into `~/.lumen/lsp`, with no root and no
+  change to the system (see the table below).
+- **System package manager** (`systemPackages`): Lumen detects the manager
+  itself (pacman, APT, DNF, zypper, apk, XBPS, Portage, Homebrew, winget, Scoop,
+  Chocolatey), builds the command, and runs it non-interactively.
+- **Install command** (`installCommands`): the add-on's command for this
+  platform. It can be edited in the dialog.
+
+Where a command needs root, Lumen asks for the password in its own dialog. It
+is passed once to `sudo` and never stored or logged; `pkexec` can be used
+instead where it is installed. No manual download is needed for any server that
+is a package or known to a system package manager.
+
+**The Lumen environment is closed.** Nothing goes to a global npm, pip or the
+system — every server and every tool needed to install it lives under
+`~/.lumen/lsp`:
 
 | Kind | How | Toolchain (downloaded by Lumen, checksum-verified) |
 |---|---|---|
@@ -433,7 +531,7 @@ server subscribed to them.
 
 | Language | Server | Notes |
 | --- | --- | --- |
-| Java | jdtls, java-language-server | a data folder per project under `userData/lsp`, `JDTLS_JVM_ARGS`, auto-import, organise imports, class sources out of jars |
+| Java | jdtls, NetBeans (nb-javac), java-language-server | **jdtls:** the whole Maven/Gradle build as its root, Gradle run with the project's JDK; module dependencies Gradle's Eclipse model drops (Architectury's `namedElements`, `compileOnly project(':common')` next to ModDevGradle) added through an init script for the import — workspaces imported with an older version of it are re-imported once; the same script keeps ModDevGradle from writing `.eclipse/` launch files (it keeps its IDE sync); `.project`, `.classpath` and `.settings` live in jdtls' workspace, not in the project, and ones generated earlier are removed once before the start (unless git tracks them); code is checked with javac through jdtls' javac backend where it is installed (*Settings → Language servers*, on by default) — on a JDK within the range its manifest names, with a load-time repair of the backend's class-cache bug (`electron/features/jdtls-agent.ts`) — so generic code the Eclipse compiler rejects but javac compiles shows no false errors; open files re-checked once the import finishes, import problems reported; *Java: Reimport Projects* and *Java: Clean Language Server Workspace and Restart*; JVM options through the launcher's `--jvm-arg` (2 GB heap); a data folder per project under `userData/lsp`, auto-import, organise imports, class sources out of jars · **NetBeans:** Apache NetBeans' Java server as Oracle ships it (installed from Open VSX into `~/.lumen/lsp`), real javac and Gradle/Maven through their tooling models; runs on the project's JDK or the newest installed LTS |
 | Kotlin | kotlin-language-server, kotlin-lsp (JetBrains) | inlay hints, Gradle/Maven root |
 | C / C++ | clangd, ccls | `--compile-commands-dir=<root>/build`, clang-tidy, IWYU header insertion; the CMake “configure” task produces `compile_commands.json` |
 | TypeScript / JavaScript | typescript-language-server, vtsls, deno lsp | the project's own `node_modules/.bin` first, inlay hints, auto-import, renaming files |
@@ -458,7 +556,11 @@ lsp: [{
 Placeholders in `args`, `candidates` and `env`: `${root}` (project root),
 `${workspace}`, `${home}`, `${dataDir}` (a folder per server and root under
 `userData/lsp`). `rootMarkers` decides the project root: the search runs from
-the file's folder upwards to the workspace folder. Which server a language
+the file's folder upwards to the workspace folder. With `rootSearch: 'outermost'` the highest
+folder with a marker wins — Java and Kotlin use it, so the server sees the
+whole Maven reactor or Gradle build and resolves classes across modules, not
+just the module of the open file (`.git` then only counts when nothing else
+is found). Which server a language
 prefers can be chosen per project in the project panel.
 
 All of it can be switched off under *Settings → Language servers*, which also
@@ -469,17 +571,17 @@ and organising imports on save.
 
 ### Add-ons and extensions
 
-**Built in** (always active): Novus · Java · HTML · CSS · JavaScript · TypeScript · Lumen Themes
+**Built in** (always active): Novus · Java · HTML · CSS · JavaScript · TypeScript · Diff · Lumen Themes · Lumen Icons
 
-**Bundled** (can be switched off): Minecraft Development · Discord Rich
-Presence. These two stay in the program because they run code — an `activate()`
-— and a manifest carries data, never code.
+**Bundled**: none any more — Minecraft Development, the last one, is an
+extension with code for the window since extensions can bring one.
 
 **From an extension server**: React · Vue · Angular · Astro · MDX · C++ · C ·
 C# · Kotlin · Tailwind CSS · PHP · Crystal · Rust · Go · Python · build tools
 (CMake, Makefile, XML, Gradle/Groovy, Properties, Dockerfile) · Essentials
-(JSON, YAML, TOML, Markdown, Shell, SQL). Open *Extensions* in the activity
-bar; `lumen-extensions.eztxm.de` is set up and vetted.
+(JSON, YAML, TOML, Markdown, Shell, SQL) · **Git** · **GitHub** · **Claude
+Code** · **ChatGPT Codex** · **Minecraft Development**. Open *Extensions* in
+the navigation strip; `lumen-extensions.eztxm.de` is set up and vetted.
 
 Together: 35 languages, 20 project kinds with 16 package-manager integrations,
 30 project templates, around 470 snippets and around 10,000 completion words.
@@ -517,6 +619,45 @@ directives `@theme`, `@utility` and `@variant`.
 Files with no matching language open as plain text — so the IDE works with
 anything, and highlights everything registered.
 
+### Git and GitHub
+
+**Git** (`ext.git`) brings source control into the docks: a *Source Control*
+view with a commit box (commit, commit & push, amend), merge conflicts, staged,
+changed and untracked files — diff, stage, unstage and discard per file or per
+group, continuing or aborting a merge, rebase or cherry-pick — plus *Branches*
+(local and remote with ahead/behind, tags, stashes, remotes) and a *Git
+history* with branch and tag badges, cherry-pick, revert and reset. The status
+bar shows the branch and the sync state; everything else is in the command
+palette (`Git: …`), including the active file's history and blame. It refreshes
+on save, on window focus and while the views are in use, and can fetch in the
+background. git always runs without a shell and never waits for a terminal
+prompt. Diffs open in a read-only tab with the built-in *Diff* colouring.
+
+**GitHub** (`ext.github`) shows the pull requests, issues and Actions runs of
+the repository in the open folder: check out, review, approve, comment and
+merge pull requests, or create one from the current branch (pushing it first
+when needed); create, comment on and close issues; re-run or cancel workflow
+runs. The status bar shows the CI state of the current branch. It signs in with
+a personal access token kept in the system's key store, or with the GitHub
+CLI's login (`gh auth login`); GitHub Enterprise works through the API address
+setting.
+
+### AI agents
+
+Two extensions bring coding agents into a chat that docks on the right (drag it
+anywhere): **Claude Code** runs the Claude Agent SDK on the installed `claude`
+program — login, `CLAUDE.md`, settings and MCP servers apply — and **ChatGPT
+Codex** drives the installed `codex` CLI in its JSON mode. Both stream their
+answers as Markdown, show thinking, tool calls with diffs and command output,
+the agent's plan and the tokens and cost of every turn; Claude Code asks before
+each action (allow, always allow, deny with a reason), Codex works within the
+sandbox level chosen as its mode. Several chats per agent, earlier sessions to
+resume, a model picker, `/` commands and `@` files in the composer, pasted
+images, and the open file and selection sent along on request. Everything else
+— models, effort and thinking, turn and cost limits, extra instructions,
+allowed and blocked tools, extra folders, MCP servers, profiles, `-c`
+overrides, environment variables — is configured under *Settings → Extensions*.
+
 ---
 
 ## Editor
@@ -527,6 +668,25 @@ anything, and highlights everything registered.
   and so on. The layout is remembered per project.
 - **Position per file**: scroll position, cursor, folds and undo history are
   kept per file, including when switching between groups.
+- **Pop out**: any dock view (explorer, terminal, problems, an agent's chat, an
+  extension's page …) and any editor tab or group can open in a window of its
+  own — the dock button or the view's context menu, *Move into New Window* on
+  a tab (`Ctrl+K Ctrl+E`), *View → Pop Out Active View* (`Ctrl+K Ctrl+V`).
+  The window shares the running app, so terminals, diagnostics and unsaved
+  text stay live, and it follows the theme as you change it. The dock shows
+  where the view went, with *Bring Back*; closing the window, the dock-back
+  button, `Ctrl+K Ctrl+H` (*Dock Window Back*) or *Dock All Popped-Out Views*
+  put things where they came from. Pop-outs close with the main window and
+  are not restored on restart. Dialogs and the command palette open in the
+  main window, which comes forward when a pop-out asks for one.
+- **Images, video, audio, PDF and fonts** open in viewers instead of the text
+  editor: images fit the window or show at 100 % (Ctrl+wheel zooms, dragging
+  pans, a checkerboard shows transparency), SVGs preview and switch to text,
+  video and audio play with seeking, PDFs use Chromium's viewer, fonts show a
+  sample text. Other binary files show a hex view of their first 64 KB and
+  open in the system's default app. The files stream from disk through the
+  `lumen-file://` scheme — only files inside the open folders or opened
+  explicitly — and reload when they change on disk.
 - **Minimap** on the right with syntax colours, error and warning marks, the
   current line and a draggable viewport (`Ctrl+K Ctrl+N`, width in the
   settings).
@@ -592,8 +752,8 @@ layout. The switcher sits in the title bar:
 
 A click in the narrow strip left of the line numbers sets a breakpoint;
 right-clicking offers a condition, a hit count, a logpoint, “run to here” and
-“debug from here”. Breakpoints move along as you type and live in
-`.lumen/breakpoints.json`.
+“debug from here”. Breakpoints move along as you type and live in the
+project's `breakpoints.json` (in `~/.lumen/projects/…`).
 
 - The **Run & debug** sidebar: variables (values editable), watches, the call
   stack with threads, breakpoints, exception filters.
@@ -603,7 +763,7 @@ right-clicking offers a condition, a hit count, a logpoint, “run to here” an
   (C/C++/Rust/Crystal), debugpy, vscode-js-debug (Node/TypeScript), Delve,
   java-debug through jdtls, vscode-php-debug, netcoredbg,
   kotlin-debug-adapter.
-- Launch configurations of your own in `.lumen/debug.json` (`name`, `type`,
+- Launch configurations of your own in the project's `debug.json` (`name`, `type`,
   `request`, `adapter`, and the placeholders `${file}`, `${fileDir}`,
   `${fileStem}`, `${projectRoot}`, `${workspace}`, `${projectName}`). In
   add-ons, `LanguageSpec.debug` supplies the adapters.
@@ -618,37 +778,60 @@ Azul Zulu** as well as Liberica, Microsoft, SapMachine, GraalVM CE and Semeru
 through the foojay API, with progress, cancelling and a SHA-256 check, into
 `~/.lumen/jdks`. JDKs already present are found (JAVA_HOME, `/usr/lib/jvm`,
 SDKMAN, `~/.jdks`, Gradle, asdf, mise …). A default JDK, and a per-project one
-(`jdk` in `.lumen/project.json`), set `JAVA_HOME` and `PATH` for tasks,
+(`jdk` in the project configuration), set `JAVA_HOME` and `PATH` for tasks,
 terminals and jdtls.
 
 ## Discord Rich Presence
 
-The **Discord Rich Presence** add-on — off by default, because data goes to
-Discord — shows what you are working on in your profile: “Editing Main.java”,
-“in lumen-ide”, the language and the elapsed time. Lumen speaks the local
-Discord client's IPC protocol itself (socket `discord-ipc-N`, Flatpak and Snap
-included; a named pipe on Windows) with no extra packages. Updates are batched
-to one every 15 seconds, and with Discord closed it quietly reconnects.
+Discord Rich Presence is an **extension** now (`extensions/discord`, install
+it from the extension catalog) — it used to be a bundled add-on, and whoever
+had that switched on is told once where it went. It shows what you are working
+on in your profile: “Editing Main.java”, “in lumen-ide”, the language and the
+elapsed time. Its code speaks the local Discord client's IPC protocol itself
+(socket `discord-ipc-N`, Flatpak and Snap included; a named pipe on Windows)
+with no extra packages. Updates are batched to one every 15 seconds, and with
+Discord closed it quietly reconnects.
 
-- Create an application at
-  [discord.com/developers](https://discord.com/developers/applications); its
-  name appears as “Playing …”. Put the *Application ID* into *Discord:
-  Settings…*.
-- Under *Rich Presence → Art Assets*, upload images named after the language
-  ids (`java`, `typescript`, `python` …) plus `lumen`.
-- In *Discord: Settings…* the file name, project, language and time can each be
-  switched off, and a text for “no file open” set. *Discord: Hide file names*
-  toggles quickly, and *Discord: Reconnect* rebuilds the connection at once.
+- The settings (*Settings → Extensions*) switch the file name, project,
+  language and time off one by one, pick where the time counts from, set an
+  idle text and after how many minutes without focus Lumen counts as idle, and
+  add a “View repository” button for public repositories.
+- Private projects — marked with *Discord: Toggle Private Project* or listed
+  as folders in the settings — show no names (or nothing at all).
+- A *Discord* entry in the status bar shows the connection; a click
+  reconnects. *Discord: Enable / Disable Rich Presence* switch it on and off.
+- For your own “Playing …” name, create an application at
+  [discord.com/developers](https://discord.com/developers/applications), put
+  its *Application ID* into the settings and upload art assets named after the
+  language ids (`java`, `typescript`, `python` …) plus `lumen`.
 
 ## Minecraft Development
 
-The add-on creates plugins for **Spigot, Paper, Leaf, Velocity, BungeeCord**
-and mods for **Fabric, Forge, NeoForge, Quilt, Architectury** — with a
-Minecraft version, the Java version derived from it, Gradle (Kotlin/Groovy) or
-Maven, an example command, a listener, mixins, data generation and
-`runData` …. *Minecraft: Update versions* fetches the latest loader and API
-versions; *Minecraft: Insert snippet…* brings listeners, commands, mixins and
-registrations.
+An extension (`extensions/minecraft`, with code for the window) that creates
+plugins for **Spigot, Paper, Folia, Purpur, Leaf, Velocity, BungeeCord** and
+mods for **Fabric, NeoForge, Forge, Quilt, Architectury** — for every Minecraft
+version from 1.7.10 to the newest that the platform supports. Anyone who had
+the old built-in add-on switched on gets a one-time hint to install it.
+
+- **Every version field is a searchable list loaded live** for the chosen
+  Minecraft version — releases from Mojang's manifest (snapshots on request for
+  Fabric), loaders and APIs from FabricMC, QuiltMC, NeoForged, Forge (with its
+  *recommended*/*latest* promotions), PaperMC, SpigotMC, Architectury and
+  Modrinth, newest first with badges. Lists are cached (12 hours by default)
+  and work offline from the cache or built-in defaults; *Minecraft: Update
+  versions* fetches them afresh.
+- **Builds match the era**: Java 8/16/17/21/25 as Mojang ships it; Forge as its
+  MDK builds (ForgeGradle 6 or 7, ModDevGradle Legacy for 1.17.1–1.19.3,
+  RetroFuturaGradle for 1.7.10 and 1.12.2); NeoForge with ModDevGradle (Legacy
+  for 1.20.1); Fabric Loom with or without remapping; Mojang, Yarn or
+  Parchment mappings. The Gradle wrapper is set up from a small build of its
+  own, with a daemon JDK that fits (`gradle/gradle-daemon-jvm.properties`).
+- **Paper and its forks from 26.1** name builds `26.2.build.128-stable`; the
+  first choice keeps the newest build of the version (`26.2.build.+` in
+  Gradle, `[26.2.build,26.2.1)` in Maven).
+- Project kinds for existing projects with `runClient`, `runServer`,
+  `runData` …; *Minecraft: Insert snippet…* brings listeners, commands, mixins
+  and registrations.
 
 ## Add-on Studio
 
@@ -696,9 +879,25 @@ completeness and placeholders.
 
 ## Interface
 
-- The activity bar: explorer, search, project, outline and debug at the top;
-  **add-ons, settings, keyboard shortcuts and themes** at the bottom, each a
-  large dialog with its own search and navigation.
+- **Three docks and a navigation strip.** Everything that is not the editor —
+  explorer, search, project, outline, run & debug, output, terminal, problems,
+  references, language servers, extension pages, agent chats, Git and GitHub —
+  is a *view* that lives in one of three docks: **left**, **right** or
+  **bottom**. The icon strips at the outer edges of the window open the views of
+  the side docks, the bottom dock shows its views as tabs.
+- **Drag and drop**: pick up any icon or tab and drop it on the other strip, on
+  the bottom tab bar, or on one of the targets that appear over the editor
+  (left, right, bottom). The order within a dock changes the same way. A
+  right-click on an icon or tab offers *Move to left/right/bottom*; the layout is
+  remembered.
+- **Navigation left or right**: *Settings → Window → Panel navigation* (or
+  *Move Panel Navigation Right* in the command palette) puts the strip with
+  **extensions, settings, keyboard shortcuts and themes** on the right; the two
+  side docks trade places with it. *Reset Window Layout* puts every view back.
+- The title bar toggles the navigation-side dock, the bottom dock and the
+  secondary side dock; the bottom dock can be maximised over the editor.
+- Context menus render above everything else and never end up offset inside a
+  panel.
 - **Wayland**: under Wayland, Lumen starts natively, with proper window
   decoration, scaling and input methods. *Settings → Window* chooses automatic,
   Wayland or X11; `LUMEN_X11=1 npm run dev` forces X11 during development.
@@ -797,10 +996,22 @@ without a shape show the tinted arrow.
 
 Bundled:
 
-  Webpack, ESLint, Prettier, Maven, Gradle, Ant, CMake, Make, Meson, xmake,
-  Ninja, Bazel, Conan, vcpkg, Cargo, Go modules, Poetry, uv, pip, Composer,
-  Bundler, .NET, Shards, CI files, Minecraft mods; folders by role (`src`,
-  `test`, `docs`, `node_modules`, `.github`, `build` …)
+- **Lumen** (default) — shapes and marks for about 1,700 file names, extensions,
+  languages and folders: every language, build system and package manager
+  (npm/pnpm/Yarn/Bun/Deno, Maven, Gradle, CMake, Meson, Bazel, Cargo, Go,
+  uv/Poetry, Composer, .NET …), framework and tool configs (Vite, Next, Nuxt,
+  Astro, Svelte, Tailwind, ESLint, Prettier, Biome, Jest, Vitest, Playwright,
+  tsconfig …), CI, containers and deployment, env files, certificates, docs,
+  licences, media, fonts and archives — in one coordinated palette, with brand
+  colours where a tool is known by them. Folders with a role (`src`, `test`,
+  `docs`, `assets`, `components`, `api`, `routes`, `styles`, `i18n`,
+  `migrations`, `config`, `scripts`, `dist`, `node_modules`, `.github` …) carry
+  an emblem inside the folder outline. 343 shapes in all: Lucide's plus 61 drawn
+  for Lumen on the same grid (role folders and marks such as Git, GitHub,
+  Markdown, Vue, Angular, GraphQL, Tailwind, Kotlin, Docker).
+- **Lumen Monochrome** — the same coverage and the same shapes, drawn in one
+  neutral tone that follows the theme (files in the muted, folders in the subtle
+  text colour).
 - **Lumen Classic** — nothing but the language add-ons' glyphs, folders as
   tinted arrows
 
@@ -876,7 +1087,9 @@ everything:
 electron/main.ts        window, IPC, file system, process runner, server processes
 electron/terminal.ts    finding shells and external terminals, PTY sessions (node-pty)
 electron/preload.ts     typed bridge (contextIsolation, no nodeIntegration)
-electron/features/      SDK downloads, debug adapters, user add-ons, network, Wayland, updater
+electron/features/      SDK downloads, debug adapters, user add-ons, network, Wayland, updater,
+                        project data (~/.lumen/projects), privileged installs, output capture
+electron/features/extension-host/  extension code: activation, ctx, agents, views, services
 src/core/types.ts       the whole add-on API (languages, themes, project kinds, templates)
 src/core/tokenizer.ts   LanguageSpec → CodeMirror StreamParser
 src/core/language.ts    language association, completion, indentation
@@ -892,12 +1105,21 @@ src/core/extensions/    extensions from a server: trust, catalogue, install
 src/features/           features that register themselves at startup
 src/i18n/               translations (8 languages)
 src/core/lsp/           JSON-RPC client, server management, protocol types
-src/core/project/       project detection, .lumen/project.json, field values and creating templates
+src/core/project/       project detection, the project configuration (~/.lumen/projects), templates
 src/addons/             the add-ons themselves
 src/addons/lib/         project kinds, package managers and templates (jvm, native, node, web, lang)
 src/lib/                Markdown renderer, workspace edits, runner, editor bridge, symbols
-src/state/store.ts      application state (zustand)
-src/components/         interface (panels, ThemeStudio, the editor's LSP wiring)
+src/core/views.ts       the registry of views every dock draws from
+src/state/store.ts      application state (zustand), put together from slices:
+src/state/slices/       app · workspace · editor · layout · appearance · extensions
+src/state/layout.ts     the window layout as data: docks, moving views, the navigation side
+src/components/shell/   title bar, status bar, toasts, welcome
+src/components/workbench/  docks, navigation strips, drag and drop, built-in views
+src/components/editor/  editor groups, CodeMirror, minimap, the editor's LSP wiring
+src/components/overlays/   command palette, search everywhere, forms
+src/components/panels/  the views themselves (explorer, project, terminal, output …)
+src/components/extension-view/  draws extension views from their data
+src/components/…        dialogs, studios, agent chat, debug, settings, ui
 extension-server/       standalone extension server (catalogue, publishing, project pages)
 extensions/             extension sources, built and published from here
 ```
@@ -933,8 +1155,9 @@ write into a user's own project.
 - An add-on's snippets cannot (yet) be attached to another language from
   outside — which is why the Minecraft snippets arrive through a command.
 - The debugger has no function or data breakpoints and no memory view; attach
-  works only through `.lumen/debug.json`.
+  works only through the project's `debug.json`.
 - During development, Wayland can only be switched through `vite.config.ts` or
   `LUMEN_X11`; the setting itself applies to the built program.
-- Install buttons exist only for servers that install without root (npm, brew,
-  pipx, cargo); system packages are merely named.
+- Servers that are neither a package nor in a known system package manager (a
+  download page, say) can't be installed automatically. The install dialog
+  shows their install hint and docs link.

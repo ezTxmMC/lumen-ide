@@ -5,7 +5,7 @@
  * The kinds themselves come from the add-ons (`Addon.projectKinds`).
  */
 
-import type { ProjectContext, ProjectKind, ProjectMeta, ProjectTask } from '@/core/types'
+import type { ProjectContext, ProjectKind, ProjectMeta, ProjectModule, ProjectTask } from '@/core/types'
 
 export interface DetectedKind {
   kind: ProjectKind
@@ -24,6 +24,10 @@ export interface ProjectInfo {
   /** Tasks of every kind, excluding the custom ones from the project configuration. */
   tasks: ProjectTask[]
   meta: ProjectMeta
+  /** Modules of a multi-module build (Maven reactor, Gradle includes), as a tree. */
+  modules: ProjectModule[]
+  /** Tasks found in the build files beyond the standard ones (Gradle tasks, plugin goals, profiles). */
+  customTasks: ProjectTask[]
   /** Languages belonging to the recognised kinds. */
   languages: string[]
   detectedAt: number
@@ -121,6 +125,8 @@ export async function detectProject(
     primary,
     tasks: dedupe(ordered.flatMap((d) => d.tasks)),
     meta,
+    modules: ordered.find((d) => d.meta.modules?.length)?.meta.modules ?? [],
+    customTasks: dedupe(ordered.flatMap((d) => d.meta.customTasks ?? [])),
     languages: [...new Set(ordered.flatMap((d) => d.kind.languageIds ?? []))],
     detectedAt: Date.now(),
   }

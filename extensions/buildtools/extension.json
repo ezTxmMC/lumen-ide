@@ -1,7 +1,7 @@
 {
   "id": "ext.buildtools",
   "name": "Build-Werkzeuge",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "CMake, Makefile, XML (pom.xml), Gradle (Groovy), Properties und Dockerfile — alles, was in Java-, Kotlin-, C-, C++- und Node-Projekten neben dem Code liegt.",
   "author": "Lumen",
   "icon": "⚙",
@@ -17,5 +17,5 @@
     "properties",
     "dockerfile"
   ],
-  "minAppVersion": "0.3.0"
+  "minAppVersion": "0.5.0"
 }

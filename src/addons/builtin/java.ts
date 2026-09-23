@@ -2,7 +2,7 @@ import type { Addon, LanguageSpec } from '@/core/types'
 import { gradleKind, javaPlainTemplate, javaProjectTemplate, mavenKind } from '../lib/jvm-project'
 import { bazelKind } from '../lib/native-project'
 import { javaDebug } from '@/core/debug/adapters'
-import { LSP_PACKAGES } from '../lib/lsp-packages'
+import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages'
 
 /** The settings for jdtls — sent at `initialize` and as configuration. */
 const JAVA_SETTINGS = {
@@ -46,6 +46,16 @@ const JAVA_SETTINGS = {
   errors: { incompleteClasspath: { severity: 'warning' } },
   trace: { server: 'off' },
 }
+
+/** JVM options for jdtls — memory, the collector, and no metadata files in the project. */
+const JDTLS_JVM_OPTIONS = [
+  '-Xmx2G',
+  '-XX:+UseParallelGC',
+  '-XX:GCTimeRatio=4',
+  '-XX:AdaptiveSizePolicyWeight=90',
+  '-Dsun.zip.disableMemoryMapping=true',
+  '-Djava.import.generatesMetadataFilesAtProjectRoot=false',
+]
 
 export const javaSpec: LanguageSpec = {
   id: 'java',
@@ -128,8 +138,12 @@ export const javaSpec: LanguageSpec = {
     {
       label: 'jdtls',
       command: 'jdtls',
-      // The data folder lies per project root under userData/lsp/jdtls.
-      args: ['-data', '${dataDir}'],
+      // The data folder lies per project root under userData/lsp/jdtls. JVM
+      // options go through the launcher's `--jvm-arg` — it ignores
+      // JDTLS_JVM_ARGS. `generatesMetadataFilesAtProjectRoot` is read only as
+      // a system property: without it jdtls writes .project, .classpath and
+      // .settings into every module.
+      args: ['-data', '${dataDir}', ...JDTLS_JVM_OPTIONS.map((option) => `--jvm-arg=${option}`)],
       candidates: [
         '~/.local/share/nvim/mason/bin/jdtls',
         '~/.local/share/jdtls/bin/jdtls',
@@ -140,9 +154,13 @@ export const javaSpec: LanguageSpec = {
         '/opt/homebrew/bin/jdtls',
         '/usr/local/bin/jdtls',
       ],
-      env: { JDTLS_JVM_ARGS: '-Xmx2G -XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true' },
+      // Older wrapper scripts read the options from here instead.
+      env: { JDTLS_JVM_ARGS: JDTLS_JVM_OPTIONS.join(' ') },
       languageId: 'java',
       rootMarkers: ['pom.xml', 'build.gradle.kts', 'build.gradle', 'settings.gradle.kts', 'settings.gradle', 'mvnw', 'gradlew', '.git'],
+      // The whole build, not the module of the open file — otherwise classes of
+      // sibling modules (`project(':common')`, a reactor module) stay unknown.
+      rootSearch: 'outermost',
       initializationOptions: {
         bundles: [],
         extendedClientCapabilities: {
@@ -164,7 +182,36 @@ export const javaSpec: LanguageSpec = {
       settings: { java: JAVA_SETTINGS },
       install: 'Arch: pacman -S jdtls · macOS: brew install jdtls · sonst https://github.com/eclipse-jdtls/eclipse.jdt.ls (Skript „jdtls“ in den PATH)',
       package: LSP_PACKAGES.jdtls,
+      systemPackages: SYSTEM_PACKAGES.jdtls,
       docs: 'https://github.com/eclipse-jdtls/eclipse.jdt.ls',
+    },
+    {
+      // Apache NetBeans' Java server: real javac (nb-javac) and Gradle/Maven
+      // through their own tooling models — the same verdicts as the build, and
+      // module dependencies Gradle's Eclipse model drops resolve anyway.
+      label: 'NetBeans (nb-javac)',
+      command: 'nbcode',
+      args: ['--start-java-language-server=stdio', '--userdir', '${dataDir}', '-J-Xmx2G'],
+      languageId: 'java',
+      rootMarkers: ['pom.xml', 'build.gradle.kts', 'build.gradle', 'settings.gradle.kts', 'settings.gradle', 'mvnw', 'gradlew', '.git'],
+      rootSearch: 'outermost',
+      initializationOptions: {
+        nbcodeCapabilities: {
+          wantsJavaSupport: true,
+          wantsGroovySupport: false,
+          commandPrefix: 'jdk',
+          configurationPrefix: 'jdk.',
+          altConfigurationPrefix: 'jdk.',
+          statusBarMessageSupport: false,
+          testResultsSupport: false,
+          showHtmlPageSupport: false,
+          wantsTelemetryEnabled: false,
+          wantsNotebookSupport: false,
+        },
+      },
+      install: 'https://open-vsx.org/extension/Oracle/oracle-java (nbcode)',
+      package: LSP_PACKAGES.netbeansJava,
+      docs: 'https://github.com/apache/netbeans/tree/master/java/java.lsp.server',
     },
     {
       label: 'java-language-server',
@@ -172,7 +219,8 @@ export const javaSpec: LanguageSpec = {
       args: [],
       candidates: ['~/.local/share/java-language-server/dist/lang_server_linux.sh'],
       languageId: 'java',
-      rootMarkers: ['pom.xml', 'build.gradle', 'build.gradle.kts', '.git'],
+      rootMarkers: ['pom.xml', 'build.gradle', 'build.gradle.kts', 'settings.gradle', 'settings.gradle.kts', '.git'],
+      rootSearch: 'outermost',
       install: 'https://github.com/georgewfraser/java-language-server',
       docs: 'https://github.com/georgewfraser/java-language-server',
     },

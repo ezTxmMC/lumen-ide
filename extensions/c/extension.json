@@ -1,7 +1,7 @@
 {
   "id": "ext.c",
   "name": "C",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "C99 bis C23 mit Präprozessor-Hervorhebung, gcc/clang-Runner und clangd. Make-Projekte erkennt die Erweiterung „Essentials“.",
   "author": "Lumen",
   "icon": "C",
@@ -11,5 +11,5 @@
   "keywords": [
     "c"
   ],
-  "minAppVersion": "0.3.0"
+  "minAppVersion": "0.5.0"
 }

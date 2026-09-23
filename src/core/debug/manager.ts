@@ -199,7 +199,7 @@ class Debugger {
     this.state = structuredClone(EMPTY_DEBUG_STATE)
     this.stateFileExists = false
     if (root) {
-      this.stateFileExists = await window.lumen.fs.exists(statePath(root)).catch(() => false)
+      this.stateFileExists = await window.lumen.fs.exists(await statePath(root)).catch(() => false)
       this.state = await loadDebugState(root)
     }
     if (this.workspace !== root) return

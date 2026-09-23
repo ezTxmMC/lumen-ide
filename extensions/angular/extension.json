@@ -1,7 +1,7 @@
 {
   "id": "ext.angular",
   "name": "Angular",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Angular-Templates mit dem neuen Kontrollfluss (@if, @for, @defer) und Angular-TypeScript mit Signals, Standalone-Komponenten und ngserver.",
   "author": "Lumen",
   "icon": "A",
@@ -13,5 +13,5 @@
     "angular-html",
     "angular-ts"
   ],
-  "minAppVersion": "0.3.0"
+  "minAppVersion": "0.5.0"
 }

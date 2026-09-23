@@ -2,7 +2,7 @@ import type { Addon, LanguageSpec } from '@/core/types'
 import { denoKind, denoTemplate, npmKind, tsLibraryTemplate, tsNodeTemplate, tsViteTemplate } from '../lib/node-project'
 import { javascriptSpec, TS_INLAY_HINTS, TS_PREFERENCES, VTSLS_PREFERENCES, VTSLS_SUGGEST } from './javascript'
 import { jsDebugTypeScript } from '@/core/debug/adapters'
-import { LSP_PACKAGES } from '../lib/lsp-packages'
+import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages'
 
 export const typescriptSpec: LanguageSpec = {
   ...javascriptSpec,
@@ -72,6 +72,7 @@ export const typescriptSpec: LanguageSpec = {
       },
       install: 'npm i -g typescript typescript-language-server',
       package: LSP_PACKAGES.typescriptLanguageServer,
+      systemPackages: SYSTEM_PACKAGES.typescriptLanguageServer,
       docs: 'https://github.com/typescript-language-server/typescript-language-server',
     },
     {
@@ -101,6 +102,7 @@ export const typescriptSpec: LanguageSpec = {
       settings: { deno: { enable: true, lint: true } },
       install: 'curl -fsSL https://deno.land/install.sh | sh',
       package: LSP_PACKAGES.deno,
+      systemPackages: SYSTEM_PACKAGES.deno,
       docs: 'https://docs.deno.com/runtime/reference/lsp_integration/',
     },
   ],

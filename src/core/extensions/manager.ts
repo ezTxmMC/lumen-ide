@@ -22,6 +22,9 @@ import { fetchManifest } from './client'
 import { normalizeServerUrl } from './trust'
 import { isNewer } from './version'
 import { EXTENSION_ID_PATTERN, type ExtensionManifest, type ExtensionPage, type InstalledExtension } from './types'
+import { appVersion } from './app-version'
+import { fitsApp } from './compat'
+import { codeHashInput } from '../../../electron/features/extension-host/code-hash'
 
 /** Thrown when an extension's code has not been approved yet — the caller asks the user and tries again. */
 export class CodeApprovalRequired extends Error {
@@ -106,9 +109,12 @@ export const extensions = {
    * stored and the first message is passed on.
    */
   async install(manifest: ExtensionManifest, server: string, options: { approveCode?: boolean } = {}): Promise<void> {
+    if (!fitsApp(manifest.minAppVersion, appVersion())) {
+      throw new Error(t('extensions.needsNewerApp', { name: manifest.name, required: manifest.minAppVersion ?? '', current: appVersion() }))
+    }
     const { code, ...stored } = manifest
     const known = installed.get(manifest.id)?.codeHash
-    const codeHash = code ? await sha256Hex(code.main) : undefined
+    const codeHash = code ? await sha256Hex(codeHashInput(code)) : undefined
     // Code that was approved before and has not changed runs on; anything else asks first.
     if (code && codeHash !== known && !options.approveCode) throw new CodeApprovalRequired(manifest, codeHash ?? '')
 
@@ -117,7 +123,7 @@ export const extensions = {
     const blocking = blockingIssues(issues)
     if (blocking.length) throw new Error(blocking[0].message)
 
-    if (code && codeHash) await window.lumen.extensions.installCode(manifest.id, code.main, codeHash)
+    if (code && codeHash) await window.lumen.extensions.installCode(manifest.id, code, codeHash)
     if (!code && known) await window.lumen.extensions.removeCode(manifest.id)
 
     const record: InstalledExtension = {
@@ -169,6 +175,8 @@ export const extensions = {
       for (const entry of entries) {
         const remote = index.extensions.find((candidate) => candidate.id === entry.manifest.id)
         if (!remote || !isNewer(remote.version, entry.manifest.version)) continue
+        // The newest version wants a newer Lumen — this one keeps what it has.
+        if (!fitsApp(remote.minAppVersion, appVersion())) continue
         out.push({ id: entry.manifest.id, from: entry.manifest.version, to: remote.version, server })
       }
     }))

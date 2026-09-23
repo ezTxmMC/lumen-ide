@@ -6,6 +6,7 @@ import { Logo } from "./Logo";
 
 const SECTIONS = [
   { hash: "#editing", label: "Editing" },
+  { hash: "#workbench", label: "Workbench" },
   { hash: "#projects", label: "Projects" },
   { hash: "#themes", label: "Themes" },
   { hash: "#addons", label: "Add-ons" },

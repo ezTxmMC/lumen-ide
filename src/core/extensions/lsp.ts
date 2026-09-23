@@ -3,19 +3,19 @@
  *
  * An extension brings languages, and most languages expect a language server
  * that is not part of the extension itself. Rather than leaving the install to
- * the language-server panel, Lumen asks right after installing: one server,
- * all of them, or none.
+ * the language-server panel, Lumen asks right after installing — the install
+ * dialog lists every missing server, all selected, each one deselectable.
  *
  * Only servers that are worth asking about are offered:
  *   • languages that already have a working server are left alone,
- *   • a server needs a package or an install command for this platform,
+ *   • a server needs a way to install it here — a package, the system's
+ *     package manager or an install command,
  *   • a program shared by several languages is offered once.
  */
 
 import { useStore } from '@/state/store'
 import { lsp } from '@/core/lsp/manager'
-import { installServers } from '@/lib/run'
-import { t } from '@/i18n'
+import { openServersInstall } from '@/lib/lsp-install'
 import type { LspConfig } from '@/core/types'
 import type { ExtensionManifest } from './types'
 
@@ -40,48 +40,10 @@ export async function installableServers(manifest: ExtensionManifest): Promise<L
   return [...byCommand.values()]
 }
 
-/** Ask whether to install one or all of the extension's language servers. */
+/** Offer the extension's missing language servers in the install dialog — all selected, each deselectable. */
 export async function offerServers(manifest: ExtensionManifest): Promise<void> {
-  const state = useStore.getState()
-  if (!state.effects.lsp) return
+  if (!useStore.getState().effects.lsp) return
   const servers = await installableServers(manifest)
   if (!servers.length) return
-
-  const modes = [
-    { value: 'all', label: t('lsp.serversAll', { count: String(servers.length) }) },
-    { value: 'one', label: t('lsp.serversOne') },
-    { value: 'none', label: t('lsp.serversNone') },
-  ].filter((mode) => mode.value !== 'one' || servers.length > 1)
-
-  state.openForm({
-    title: t('lsp.serversTitle'),
-    description: t('lsp.serversBody', {
-      name: manifest.name,
-      servers: servers.map((config) => config.label).join(', '),
-    }),
-    submitLabel: t('lsp.installSubmit'),
-    fields: [
-      { id: 'mode', label: t('lsp.serversChoice'), type: 'select', default: 'all', choices: modes },
-      {
-        id: 'server',
-        label: t('lsp.serversPick'),
-        type: 'select',
-        default: servers[0].command,
-        choices: servers.map((config) => ({
-          value: config.command,
-          label: config.label,
-          hint: lsp.installHint(config) ?? undefined,
-        })),
-        when: (values) => values.mode === 'one',
-      },
-    ],
-    onSubmit: async (values) => {
-      if (values.mode === 'none') return
-      if (values.mode === 'one') {
-        await installServers(servers.filter((config) => config.command === values.server))
-        return
-      }
-      await installServers(servers)
-    },
-  })
+  openServersInstall(manifest.name, servers)
 }

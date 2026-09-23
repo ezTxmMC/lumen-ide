@@ -13,6 +13,7 @@
  */
 
 import type { UserAddonModel } from '@/core/user-addons/schema'
+import type { AgentModel } from '../../../electron/features/extension-host/contract'
 
 /** Version of the manifest format Lumen understands. */
 export const EXTENSION_SCHEMA = 1
@@ -25,9 +26,17 @@ export const OFFICIAL_HOST = 'lumen-extensions.eztxm.de'
 
 export const OFFICIAL_SERVER_URL = `https://${OFFICIAL_HOST}`
 
-export type ExtensionSettingType = 'text' | 'number' | 'toggle' | 'select'
+/**
+ * The kinds of setting:
+ *   text · number (min/max/step) · toggle · select (choices) · textarea (rows)
+ *   path (a file or folder chooser, `pathKind`) · color · secret (a token or
+ *   key — encrypted in the main process, never in the settings file)
+ *   multiselect (several of the choices, stored comma-separated) · list (free
+ *   entries such as paths or arguments, stored one per line)
+ */
+export type ExtensionSettingType = 'text' | 'number' | 'toggle' | 'select' | 'multiselect' | 'list' | 'textarea' | 'path' | 'color' | 'secret'
 
-/** A setting that shows up under “Extensions”. */
+/** A setting that shows up under *Settings → Extensions*. */
 export interface ExtensionSetting {
   key: string
   label: string
@@ -36,10 +45,78 @@ export interface ExtensionSetting {
   hint?: string
   placeholder?: string
   choices?: { value: string; label: string }[]
+  /** Settings with the same section are grouped under that heading. */
+  section?: string
+  min?: number
+  max?: number
+  step?: number
+  /** For `textarea`: the height in lines. */
+  rows?: number
+  /** For `path`: what the chooser picks. Defaults to `file`. */
+  pathKind?: 'file' | 'folder'
+  /** Show the setting only while another toggle is on (`"key"`) or a setting has a value (`"key=value"`). */
+  when?: string
+  /** Texts in other interface languages, by language (`en`, `fr` …); missing ones fall back to the fields above. */
+  i18n?: Record<string, ExtensionSettingTexts>
+}
+
+/** The translatable texts of a setting; `choices` maps a choice's value to its label. */
+export interface ExtensionSettingTexts {
+  label?: string
+  hint?: string
+  placeholder?: string
+  section?: string
+  choices?: Record<string, string>
 }
 
 export type ExtensionPageFormat = 'markdown' | 'html'
-export type ExtensionPageLocation = 'sidebar' | 'editor'
+/** `sidebar` is the old name of `left`. */
+export type ExtensionPageLocation = 'sidebar' | 'left' | 'right' | 'bottom' | 'editor'
+
+/** A dock of the window a view can go to. */
+export type ExtensionViewLocation = 'left' | 'right' | 'bottom'
+
+/**
+ * A view whose content the extension's code provides (`ctx.views.register`) —
+ * a Git panel, a list of pull requests. Where it appears is only its default:
+ * the user can drag it to any dock. `editor` views are not docked: the code
+ * opens them as tabs in the editor area (`ctx.views.open`), one per instance.
+ */
+export interface ExtensionView {
+  id: string
+  title: string
+  /** A lucide icon name (`git-branch`) or an icon-pack shape (`github`). */
+  icon?: string
+  location?: ExtensionViewLocation | 'editor'
+  /** Order within the dock; lower comes first. */
+  order?: number
+  /** `title` in other interface languages, by language. */
+  i18n?: Record<string, { title?: string }>
+}
+
+/**
+ * Files the extension can open (“Open with …”): a command of its own gets
+ * `{ path }` when the user picks it for a file matching one of the patterns
+ * (`*.db`, `*.mv.db` — a `*` prefix and a suffix; case does not matter).
+ */
+export interface ExtensionOpenWith {
+  command: string
+  title: string
+  patterns: string[]
+  /** `title` in other interface languages, by language. */
+  i18n?: Record<string, { title?: string }>
+}
+
+/** A command the extension's code handles (`ctx.commands.register`). */
+export interface ExtensionCommand {
+  id: string
+  title: string
+  category?: string
+  keybinding?: string
+  icon?: string
+  /** `title` and `category` in other interface languages, by language. */
+  i18n?: Record<string, { title?: string; category?: string }>
+}
 
 /** A page the extension contributes to Lumen. */
 export interface ExtensionPage {
@@ -72,11 +149,29 @@ export interface ExtensionAgent {
   placeholder?: string
   /** The first one is the default. */
   modes?: ExtensionAgentMode[]
+  /** Models the panel offers besides those the agent's code reports; `efforts` are the levels each understands. */
+  models?: AgentModel[]
+  /** The extension setting holding the default model (`model`). */
+  modelSetting?: string
+  /** Where the chat goes by default. Defaults to `right`. */
+  location?: ExtensionViewLocation
+  /** Ready-made prompts shown in an empty chat. */
+  suggestions?: string[]
+  /** Can the agent take images (pasted screenshots)? */
+  images?: boolean
 }
 
-/** Program code: one bundled ES module for Lumen's main process. */
+/**
+ * Program code — at least one of the two parts.
+ *
+ * `main` is a bundled ES module for Lumen's main process (`activate(ctx)`).
+ * `renderer` is one for the window: it exports `addon(lumen)`, which returns
+ * an add-on like the built-in ones — project templates and kinds whose files
+ * are computed, snippets, commands (`src/core/extensions/renderer-code.ts`).
+ */
 export interface ExtensionCode {
-  main: string
+  main?: string
+  renderer?: string
 }
 
 /** The full manifest, as a server delivers it. */
@@ -99,6 +194,9 @@ export interface ExtensionManifest {
   settings?: ExtensionSetting[]
   pages?: ExtensionPage[]
   agents?: ExtensionAgent[]
+  views?: ExtensionView[]
+  commands?: ExtensionCommand[]
+  openWith?: ExtensionOpenWith[]
   /** Not kept in the installed record — the code lives in its own file. */
   code?: ExtensionCode
   addon: UserAddonModel

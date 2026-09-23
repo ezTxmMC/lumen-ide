@@ -1,7 +1,7 @@
 import type { Addon, LanguageSpec } from '@/core/types'
 import { denoKind, jsBrowserTemplate, jsNodeTemplate, npmKind } from '../lib/node-project'
 import { jsDebugNode } from '@/core/debug/adapters'
-import { LSP_PACKAGES } from '../lib/lsp-packages'
+import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages'
 
 /** Inlay hints and suggestion settings, shared by the tsserver front ends. */
 export const TS_INLAY_HINTS = {
@@ -134,6 +134,7 @@ export const javascriptSpec: LanguageSpec = {
       },
       install: 'npm i -g typescript typescript-language-server',
       package: LSP_PACKAGES.typescriptLanguageServer,
+      systemPackages: SYSTEM_PACKAGES.typescriptLanguageServer,
       docs: 'https://github.com/typescript-language-server/typescript-language-server',
     },
     {
@@ -163,6 +164,7 @@ export const javascriptSpec: LanguageSpec = {
       settings: { deno: { enable: true, lint: true } },
       install: 'curl -fsSL https://deno.land/install.sh | sh',
       package: LSP_PACKAGES.deno,
+      systemPackages: SYSTEM_PACKAGES.deno,
       docs: 'https://docs.deno.com/runtime/reference/lsp_integration/',
     },
   ],

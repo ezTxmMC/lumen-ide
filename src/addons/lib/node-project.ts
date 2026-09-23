@@ -423,7 +423,7 @@ export const jsBrowserTemplate: ProjectTemplate = {
       'index.html': htmlShell(name, `<main>\n      <h1>${name}</h1>\n      <button id="zaehler">Klicks: 0</button>\n    </main>`, 'main.js', 'style.css'),
       'main.js': "let klicks = 0\nconst button = document.querySelector('#zaehler')\nbutton.addEventListener('click', () => {\n  klicks++\n  button.textContent = `Klicks: ${klicks}`\n})\n",
       'style.css': BASE_CSS,
-      '.gitignore': '.lumen/\n',
+      '.gitignore': '.DS_Store\n',
     }
   },
 }
@@ -449,7 +449,7 @@ export const denoTemplate: ProjectTemplate = {
       }),
       'main.ts': `export function add(a: number, b: number): number {\n  return a + b\n}\n\nif (import.meta.main) {\n  console.log('Hallo aus ${values.name}! 2 + 3 =', add(2, 3))\n}\n`,
       'main_test.ts': "import { assertEquals } from '@std/assert'\nimport { add } from './main.ts'\n\nDeno.test('add', () => {\n  assertEquals(add(2, 3), 5)\n})\n",
-      '.gitignore': '.lumen/\n',
+      '.gitignore': '.deno/\nnode_modules/\n',
     }
   },
 }

@@ -70,7 +70,7 @@ export default {
     },
     form: {
       projectTitle: 'Projekt-JDK wählen',
-      projectDescription: 'Gilt für Aufgaben, Runner, Terminals und den Java-Language-Server dieses Projekts (.lumen/project.json).',
+      projectDescription: 'Gilt für Aufgaben, Runner, Terminals und den Java-Language-Server dieses Projekts (project.json).',
       defaultTitle: 'Standard-JDK wählen',
       defaultDescription: 'Gilt für alle Projekte ohne eigenes JDK.',
       jdk: 'JDK',
@@ -153,7 +153,7 @@ export default {
     },
     form: {
       projectTitle: 'Select project JDK',
-      projectDescription: 'Applies to tasks, runners, terminals and the Java language server of this project (.lumen/project.json).',
+      projectDescription: 'Applies to tasks, runners, terminals and the Java language server of this project (project.json).',
       defaultTitle: 'Select default JDK',
       defaultDescription: 'Applies to all projects without their own JDK.',
       jdk: 'JDK',
@@ -236,7 +236,7 @@ export default {
     },
     form: {
       projectTitle: 'Elegir JDK del proyecto',
-      projectDescription: 'Se aplica a tareas, ejecutores, terminales y al servidor de lenguaje Java de este proyecto (.lumen/project.json).',
+      projectDescription: 'Se aplica a tareas, ejecutores, terminales y al servidor de lenguaje Java de este proyecto (project.json).',
       defaultTitle: 'Elegir JDK predeterminado',
       defaultDescription: 'Se aplica a todos los proyectos sin JDK propio.',
       jdk: 'JDK',
@@ -319,7 +319,7 @@ export default {
     },
     form: {
       projectTitle: 'Choisir le JDK du projet',
-      projectDescription: 'S’applique aux tâches, lanceurs, terminaux et au serveur de langage Java de ce projet (.lumen/project.json).',
+      projectDescription: 'S’applique aux tâches, lanceurs, terminaux et au serveur de langage Java de ce projet (project.json).',
       defaultTitle: 'Choisir le JDK par défaut',
       defaultDescription: 'S’applique à tous les projets sans JDK propre.',
       jdk: 'JDK',
@@ -402,7 +402,7 @@ export default {
     },
     form: {
       projectTitle: 'Wybierz JDK projektu',
-      projectDescription: 'Dotyczy zadań, uruchamiania, terminali i serwera języka Java tego projektu (.lumen/project.json).',
+      projectDescription: 'Dotyczy zadań, uruchamiania, terminali i serwera języka Java tego projektu (project.json).',
       defaultTitle: 'Wybierz domyślne JDK',
       defaultDescription: 'Dotyczy wszystkich projektów bez własnego JDK.',
       jdk: 'JDK',
@@ -485,7 +485,7 @@ export default {
     },
     form: {
       projectTitle: 'Scegli JDK del progetto',
-      projectDescription: 'Vale per attività, runner, terminali e il language server Java di questo progetto (.lumen/project.json).',
+      projectDescription: 'Vale per attività, runner, terminali e il language server Java di questo progetto (project.json).',
       defaultTitle: 'Scegli JDK predefinito',
       defaultDescription: 'Vale per tutti i progetti senza un JDK proprio.',
       jdk: 'JDK',
@@ -568,7 +568,7 @@ export default {
     },
     form: {
       projectTitle: 'Escolher JDK do projeto',
-      projectDescription: 'Vale para tarefas, execuções, terminais e o servidor de linguagem Java deste projeto (.lumen/project.json).',
+      projectDescription: 'Vale para tarefas, execuções, terminais e o servidor de linguagem Java deste projeto (project.json).',
       defaultTitle: 'Escolher JDK padrão',
       defaultDescription: 'Vale para todos os projetos sem JDK próprio.',
       jdk: 'JDK',
@@ -651,7 +651,7 @@ export default {
     },
     form: {
       projectTitle: 'Project-JDK kiezen',
-      projectDescription: 'Geldt voor taken, runners, terminals en de Java-taalserver van dit project (.lumen/project.json).',
+      projectDescription: 'Geldt voor taken, runners, terminals en de Java-taalserver van dit project (project.json).',
       defaultTitle: 'Standaard-JDK kiezen',
       defaultDescription: 'Geldt voor alle projecten zonder eigen JDK.',
       jdk: 'JDK',

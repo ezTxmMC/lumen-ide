@@ -12,7 +12,7 @@ const FACTS = [
   ["20", "project kinds"],
   ["16", "package managers"],
   ["30", "templates"],
-  ["18", "extensions"],
+  ["25", "extensions"],
   ["8", "interface languages"],
 ];
 
@@ -63,6 +63,7 @@ export function Home() {
       <Hero version={release?.version} />
       <Facts />
       <Editing />
+      <Workbench />
       <Projects />
       <Themes />
       <Addons />
@@ -115,7 +116,7 @@ function Editing() {
       </Head>
       <div className="mt-[34px] grid gap-5 md:grid-cols-2 md:gap-x-16">
         <Point title="Language servers" tag="LSP">
-          Diagnostics, go to definition, find references, rename, formatting, inlay hints and signature help. Lumen finds the server on your PATH — and offers to install it when it is missing, falling back to its own completion until then.
+          Diagnostics, go to definition, find references, rename, formatting, inlay hints and signature help. Lumen finds the server on your PATH — and offers to install it when it is missing, falling back to its own completion until then. Java runs on jdtls or Apache NetBeans, and the server you pick for a project is the one that starts.
         </Point>
         <Point title="Syntax from data" tag="35 languages">
           A language is a list of keywords and a few regexes. The half-dozen that need more — Markdown, JSX, the markup of Vue, Astro and Angular — name a tokenizer that ships with the editor.
@@ -126,6 +127,22 @@ function Editing() {
         <Point title="The debugger your toolchain already uses" tag="DAP">
           delve, debugpy, js-debug, lldb-dap, gdb-dap, codelldb, java-debug, kotlin-debug, netcoredbg and php-debug. Breakpoints, call stack, variables and watches — and child sessions attach on their own.
         </Point>
+      </div>
+    </Section>
+  );
+}
+
+function Workbench() {
+  return (
+    <Section id="workbench">
+      <Head eyebrow="Workbench" title="Every panel goes where you want it — or out of the window.">
+        Views live in a left, right or bottom dock; drag them between docks, or move the whole navigation to the other side. Any view, editor tab or editor group can also open in a window of its own and be docked back later, without losing its state.
+      </Head>
+      <div className="mt-10 grid gap-[22px] [grid-template-columns:repeat(auto-fit,minmax(250px,1fr))]">
+        <Tile title="A menu bar you know">File, Edit, Selection, View, Go, Run, Terminal and Help, with the shortcuts beside each entry. Switch projects from the title bar and choose, once or always, whether they open in this window or a new one.</Tile>
+        <Tile title="Beyond text">Images, video, audio, PDFs and fonts open as themselves, large files are streamed rather than loaded, and any other binary gets a hex view. SVGs preview and switch back to source.</Tile>
+        <Tile title="Files, in bulk">Select several files and folders with Ctrl and Shift, then move, copy, cut, paste or delete them together. Changes an agent makes on disk show up in your open tabs as they happen.</Tile>
+        <Tile title="Merge conflicts">Conflict blocks are marked in the editor with Accept Current, Incoming or Both above each one, and a merge editor shows both sides beside the result. Completing it stages the file.</Tile>
       </div>
     </Section>
   );
@@ -151,7 +168,7 @@ function Projects() {
         <Tile title="Add a dependency">
           npm, pnpm, Yarn, Bun, Deno, Maven, Gradle, pip, uv, Poetry, Cargo, Go modules, Composer, NuGet, Shards, vcpkg and Conan. What already sits in your <code>~/.m2</code> or Gradle cache comes up as a suggestion.
         </Tile>
-        <Tile title="Start something new">Thirty templates, each a short form: package manager, test framework, language variant. What comes out builds on the first try, because every combination is tested before release.</Tile>
+        <Tile title="Start something new">A project page with categories, search and a live preview of the files it will create. Version fields load the real lists — every Minecraft release from 1.7.10, with the loader and API builds that fit it — and what comes out builds on the first try.</Tile>
       </div>
     </Section>
   );
@@ -253,6 +270,9 @@ const CATALOGUE = [
   { glyph: "⚛", bg: "#61dafb", fg: "#06202b", name: "React", detail: "ext.react · JSX tokenizer, Vite template" },
   { glyph: "V", bg: "#42b883", fg: "#fff", name: "Vue", detail: "ext.vue · SFC highlighting" },
   { glyph: "⌘", bg: "#cbcb41", fg: "#1d1d05", name: "Essentials", detail: "ext.essentials · JSON, YAML, TOML, Markdown, Shell, SQL" },
+  { glyph: "DB", bg: "#4f8fd8", fg: "#fff", name: "Database", detail: "ext.database · SQLite, H2, PostgreSQL, MariaDB, SQL Server, Redis, MongoDB" },
+  { glyph: "MC", bg: "#5ba03c", fg: "#fff", name: "Minecraft", detail: "ext.minecraft · Fabric, NeoForge, Forge, Quilt, Paper, Spigot" },
+  { glyph: "Git", bg: "#f05133", fg: "#fff", name: "Git & GitHub", detail: "ext.git, ext.github · changes, history, merge conflicts, pull requests" },
 ];
 
 function Addons() {
@@ -286,12 +306,12 @@ function Addons() {
           ))}
         </div>
         <div className="order-1 lg:order-2">
-          <Head eyebrow="Extensions" title="Data, never code.">
-            Extensions come from a server as a manifest. A hostile one can define a language badly or ship an ugly page — it cannot reach your files, your network or your shell, because there is no code in it to run.
+          <Head eyebrow="Extensions" title="Data first, code only when you say so.">
+            Most extensions are a manifest: a language, a template, a page. Those cannot reach your files, your network or your shell. One that needs logic — Git, a database client, Discord presence — ships program code, and Lumen shows its fingerprint and asks before it runs anything. Each extension also names the oldest Lumen it works with.
           </Head>
           <div className="mt-[34px] grid gap-5">
             <Point title="One vetted server, and any you add">
-              Eighteen extensions are published at{" "}
+              Twenty-five extensions are published at{" "}
               <a className="text-accent underline-offset-2 hover:underline" href="https://lumen-extensions.eztxm.de">
                 lumen-extensions.eztxm.de
               </a>

@@ -2,11 +2,12 @@ import { contextBridge } from 'electron'
 import { invoke, subscribe } from './features/ipc'
 import { sdkApi } from './features/sdk-api'
 import { lspPackagesApi } from './features/lsp-packages-api'
+import { privilegedApi } from './features/privileged-api'
 import { dapApi } from './features/dap-api'
 import { userAddonsApi } from './features/user-addons-api'
 import { updaterApi } from './features/updater-api'
-import { agentApi } from './features/agent-api'
-import { discordApi } from './features/discord-rpc-api'
+import { agentApi, extensionHostApi } from './features/agent-api'
+import { mediaApi } from './features/media-api'
 
 export interface DirEntry {
   name: string
@@ -42,6 +43,14 @@ const api = {
     isMaximized: (): Promise<boolean> => invoke('window:isMaximized'),
     onState: (cb: (s: { maximized?: boolean; fullscreen?: boolean }) => void) =>
       subscribe('window:state', cb),
+    /** Open a project in a window of its own (or focus the window that has it); without one, an empty window. */
+    openProject: (folder?: string): Promise<'opened' | 'focused'> => invoke('window:openProject', folder),
+    /** Clipboard and selection commands, run on whatever has focus in this window. */
+    edit: (action: 'cut' | 'copy' | 'paste' | 'selectAll'): Promise<void> => invoke('window:edit', action),
+    toggleDevTools: (): Promise<void> => invoke('window:toggleDevTools'),
+    /** Window controls of a pop-out window this window opened, by the name it was opened under. */
+    popout: (name: string, action: 'minimize' | 'toggleMaximize' | 'focus' | 'close'): Promise<boolean> =>
+      invoke('window:popout', name, action),
   },
 
   app: {
@@ -51,6 +60,8 @@ const api = {
     }> => invoke('app:info'),
     /** Start Lumen afresh (after a change of window system, say). */
     relaunch: (): Promise<void> => invoke('app:relaunch'),
+    /** Close every window (each asks about unsaved changes); the app ends with the last. */
+    quit: (): Promise<void> => invoke('app:quit'),
     /** The projects opened most recently, for the jump list, the dock or the desktop entry. */
     setRecentProjects: (
       list: { path: string; name: string }[],
@@ -84,7 +95,10 @@ const api = {
     save: (id: string, content: string): Promise<void> => invoke('extensions:save', id, content),
     remove: (id: string): Promise<void> => invoke('extensions:remove', id),
     /** Saves approved program code and starts it; `hash` is the SHA-256 the user was shown. */
-    installCode: (id: string, code: string, hash: string): Promise<void> => invoke('extensions:code:install', id, code, hash),
+    installCode: (id: string, code: { main?: string; renderer?: string }, hash: string): Promise<void> =>
+      invoke('extensions:code:install', id, code, hash),
+    /** The approved window part of an extension's code (`code.renderer`), or `null`. */
+    rendererCode: (id: string): Promise<string | null> => invoke('extensions:code:renderer', id),
     removeCode: (id: string): Promise<void> => invoke('extensions:code:remove', id),
   },
 
@@ -93,6 +107,9 @@ const api = {
     /** Choose a folder without changing the working folder (write access is granted). */
     chooseFolder: (title?: string, defaultPath?: string): Promise<string | null> =>
       invoke('dialog:chooseFolder', title, defaultPath),
+    /** Pick a file and return only its path (no write access is granted). */
+    chooseFile: (title?: string, defaultPath?: string): Promise<string | null> =>
+      invoke('dialog:chooseFile', title, defaultPath),
     openFile: (): Promise<{ path: string; content: string } | null> =>
       invoke('dialog:openFile'),
     saveFile: (suggested: string): Promise<string | null> =>
@@ -113,18 +130,27 @@ const api = {
     rename: (from: string, to: string): Promise<boolean> =>
       invoke('fs:rename', from, to),
     remove: (target: string): Promise<boolean> => invoke('fs:delete', target),
+    /** Copy a file or a whole folder; fails when `to` exists. */
+    copy: (from: string, to: string): Promise<boolean> => invoke('fs:copy', from, to),
+    /** The files open in tabs — watched even where the workspace watcher does not look. */
+    watchOpenFiles: (files: string[]): Promise<boolean> => invoke('fs:watchOpenFiles', files),
     listFiles: (root: string, limit?: number): Promise<string[]> =>
       invoke('fs:listFiles', root, limit),
     search: (root: string, query: string, limit?: number): Promise<SearchHit[]> =>
       invoke('fs:search', root, query, limit),
-    findRoot: (startDir: string, markers: string[]): Promise<string | null> =>
-      invoke('fs:findRoot', startDir, markers),
+    findRoot: (startDir: string, markers: string[], mode?: 'nearest' | 'outermost'): Promise<string | null> =>
+      invoke('fs:findRoot', startDir, markers, mode),
     onChanged: (cb: (changes: FsChange[]) => void) => subscribe('fs:changed', cb),
   },
 
   workspace: {
     /** Set the working folder; `extras` are further folders of a workspace (watched, writable). */
     set: (root: string, extras?: string[]): Promise<string> => invoke('workspace:set', root, extras),
+  },
+
+  projectData: {
+    /** Lumen's own folder for a project (`~/.lumen/projects/…`), created and migrated on first use. */
+    dir: (root: string): Promise<string> => invoke('projectData:dir', root),
   },
 
   settings: {
@@ -138,6 +164,11 @@ const api = {
       id: string, cmd: string, args: string[], cwd: string, env?: Record<string, string>,
     ): Promise<string> => invoke('run:start', id, cmd, args, cwd, env),
     kill: (id: string): Promise<void> => invoke('run:kill', id),
+    /** Run a command and return its whole output (discovery such as `gradle tasks --all`); nothing reaches the output panel. */
+    capture: (
+      command: string, args: string[], cwd: string, env?: Record<string, string>, timeoutMs?: number,
+    ): Promise<{ code: number | null; stdout: string; stderr: string; timedOut: boolean }> =>
+      invoke('run:capture', command, args, cwd, env, timeoutMs),
     onData: (cb: (p: { id: string; stream: 'stdout' | 'stderr'; data: string }) => void) =>
       subscribe('run:data', cb),
     onExit: (cb: (p: { id: string; code: number | null }) => void) =>
@@ -156,6 +187,21 @@ const api = {
     send: (id: string, message: unknown): Promise<boolean> =>
       invoke('lsp:send', id, message),
     stop: (id: string): Promise<void> => invoke('lsp:stop', id),
+    /** Delete a server's data folder below userData/lsp (jdtls' workspace). */
+    clearData: (dir: string): Promise<void> => invoke('lsp:clearData', dir),
+    /** The Gradle init script jdtls' import runs (module dependencies Gradle's Eclipse model lacks). */
+    gradleInitScript: (): Promise<string> => invoke('lsp:gradleInitScript'),
+    /** Was this jdtls workspace imported with Lumen's current Gradle init script? */
+    javaImportState: (dataDir: string): Promise<'current' | 'stale'> => invoke('lsp:javaImportState', dataDir),
+    javaImportDone: (dataDir: string): Promise<void> => invoke('lsp:javaImportDone', dataDir),
+    /** Remove the Eclipse metadata jdtls generated in a project (what git tracks stays). */
+    javaCleanMetadata: (root: string): Promise<{ removed: string[]; kept: string[] }> => invoke('lsp:javaCleanMetadata', root),
+    /** The javac backend of the jdtls behind this launcher — the JDK majors it runs on — or `null`. */
+    jdtlsJavacBackend: (command: string): Promise<{ minJava: number; buildJava: number } | null> =>
+      invoke('lsp:jdtlsJavacBackend', command),
+    /** The agent that repairs jdtls' javac backend, built with this JDK — or `null`. */
+    jdtlsJavacAgent: (command: string, javaHome: string): Promise<string | null> =>
+      invoke('lsp:jdtlsJavacAgent', command, javaHome),
     onMessage: (cb: (p: { id: string; message: Record<string, unknown> }) => void) =>
       subscribe('lsp:message', cb),
     onStderr: (cb: (p: { id: string; text: string }) => void) =>
@@ -195,11 +241,13 @@ const api = {
 
   sdk: sdkApi,
   lspPackages: lspPackagesApi,
+  privileged: privilegedApi,
   dap: dapApi,
   userAddons: userAddonsApi,
   updater: updaterApi,
   agent: agentApi,
-  discord: discordApi,
+  extensionHost: extensionHostApi,
+  media: mediaApi,
 }
 
 contextBridge.exposeInMainWorld('lumen', api)

@@ -66,6 +66,9 @@ const LUMEN: BindingMap = {
   'view.splitDown': ['Ctrl+K Ctrl+\\'],
   'view.focusNextGroup': ['Ctrl+K Ctrl+Right'],
   'view.moveTabToOtherGroup': ['Ctrl+K Ctrl+M'],
+  'editor.moveTabToNewWindow': ['Ctrl+K Ctrl+E'],
+  'editor.dockWindowBack': ['Ctrl+K Ctrl+H'],
+  'view.popOutView': ['Ctrl+K Ctrl+V'],
   'view.minimap': ['Ctrl+K Ctrl+N'],
   'terminal.toggle': ['Ctrl+`', 'Ctrl+Ö', 'Alt+F12'],
   'terminal.new': ['Ctrl+Shift+`'],
@@ -122,6 +125,9 @@ const LUMEN: BindingMap = {
   'debug.stop': ['Shift+F5', 'Ctrl+F2'],
   'debug.restart': ['Ctrl+Shift+F9'],
   'debug.runToCursor': ['Alt+F9'],
+  'nav.back': ['Ctrl+Alt+-'],
+  'nav.forward': ['Ctrl+Shift+-'],
+  'editor.shrinkSelection': ['Shift+Alt+Left'],
 }
 
 const JETBRAINS: BindingMap = {
@@ -192,6 +198,9 @@ const JETBRAINS: BindingMap = {
   'debug.stop': ['Ctrl+F2'],
   'debug.restart': ['Ctrl+F5'],
   'debug.runToCursor': ['Alt+F9'],
+  'nav.back': ['Ctrl+Alt+Left'],
+  'nav.forward': ['Ctrl+Alt+Right'],
+  'editor.shrinkSelection': ['Ctrl+Shift+W'],
 }
 
 const VSCODE: BindingMap = {
@@ -275,6 +284,10 @@ const VSCODE: BindingMap = {
   'debug.stepOut': ['Shift+F11'],
   'debug.stop': ['Shift+F5'],
   'debug.restart': ['Ctrl+Shift+F5'],
+  'nav.back': ['Ctrl+Alt+-'],
+  'nav.forward': ['Ctrl+Shift+-'],
+  'editor.shrinkSelection': ['Shift+Alt+Left'],
+  'window.new': ['Ctrl+Shift+N'],
 }
 
 const VISUALSTUDIO: BindingMap = {
@@ -341,6 +354,8 @@ const VISUALSTUDIO: BindingMap = {
   'debug.stop': ['Shift+F5'],
   'debug.restart': ['Ctrl+Shift+F5'],
   'debug.runToCursor': ['Ctrl+F10'],
+  'nav.back': ['Ctrl+Alt+-'],
+  'nav.forward': ['Ctrl+Shift+-'],
 }
 
 const ECLIPSE: BindingMap = {
@@ -401,6 +416,8 @@ const ECLIPSE: BindingMap = {
   'debug.stepOut': ['F7'],
   'debug.stop': ['Ctrl+F2'],
   'debug.runToCursor': ['Ctrl+R'],
+  'nav.back': ['Alt+Left'],
+  'nav.forward': ['Alt+Right'],
 }
 
 const PRESET_MAPS: Record<PresetId, BindingMap> = {

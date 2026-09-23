@@ -13,6 +13,9 @@
  *     README.md         becomes the project page on the server
  *     pages/<id>.md     pages that Lumen itself displays
  *     main.js           program code (optional) — bundled into `code.main`
+ *     package.json      the code's own npm dependencies (optional) — installed
+ *                       here on the first build, bundled like everything else
+ *     renderer.js|ts    code for Lumen's window (optional) — bundled into `code.renderer`
  *
  * The result lands in `extensions/dist/<id>-<version>.json` and goes to
  * `POST /api/v1/publish` exactly as it is.
@@ -22,6 +25,7 @@
  * accept — mistakes surface at build time, not at publishing time.
  */
 
+import { spawnSync } from 'node:child_process'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
@@ -108,16 +112,42 @@ async function collectPages(dir) {
 }
 
 /**
+ * An extension's own dependencies: `package.json` next to `main.js`. Installed
+ * into its folder when missing, so a fresh checkout builds without a manual
+ * step. `lumenBuild.alias` swaps a package for a local file — a stub for an
+ * optional part a driver imports but the extension never uses.
+ */
+async function prepareDependencies(dir) {
+  const pkg = await readJson(path.join(dir, 'package.json'), { required: false })
+  if (!pkg) return {}
+  const hasDependencies = Object.keys(pkg.dependencies ?? {}).length > 0
+  const installed = await fs.stat(path.join(dir, 'node_modules')).then(() => true, () => false)
+  if (hasDependencies && !installed) {
+    const lock = await fs.stat(path.join(dir, 'package-lock.json')).then(() => true, () => false)
+    process.stdout.write(`  installing the dependencies of ${path.basename(dir)} …\n`)
+    const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
+    const result = spawnSync(npm, [lock ? 'ci' : 'install', '--no-audit', '--no-fund', '--ignore-scripts'], {
+      cwd: dir, stdio: 'inherit', shell: process.platform === 'win32',
+    })
+    if (result.status !== 0) throw new Error(`npm could not install the dependencies of ${path.basename(dir)}`)
+  }
+  const alias = Object.fromEntries(Object.entries(pkg.lumenBuild?.alias ?? {}).map(([name, file]) => [name, path.resolve(dir, file)]))
+  return Object.keys(alias).length ? { alias } : {}
+}
+
+/**
  * Bundle an extension's program code into one ES module.
  *
  * `main.js` may import packages from node_modules; they end up inside the
  * bundle, so nothing has to be installed next to it on the user's machine.
  * Node's own modules stay imports — the code runs in Lumen's main process.
  */
-async function bundleCode(dir) {
+async function bundleMain(dir) {
   const entry = path.join(dir, 'main.js')
   if (!(await readText(entry))) return null
+  const options = await prepareDependencies(dir)
   const result = await bundle({
+    ...options,
     entryPoints: [entry],
     bundle: true,
     write: false,
@@ -130,7 +160,43 @@ async function bundleCode(dir) {
     // Bundled CommonJS packages call `require`, which an ES module does not have.
     banner: { js: "import { createRequire as __lumenRequire } from 'node:module'; const require = __lumenRequire(import.meta.url);" },
   })
-  return { main: result.outputFiles[0].text }
+  return result.outputFiles[0].text
+}
+
+/**
+ * Bundle the window's code: `renderer.ts` or `renderer.js`, one ES module for
+ * the browser. It exports `addon(lumen)`; everything from Lumen it needs comes
+ * through that `lumen` argument, never through imports of the app.
+ */
+async function bundleRenderer(dir) {
+  const entries = [path.join(dir, 'renderer.ts'), path.join(dir, 'renderer.js')]
+  let entry = null
+  for (const candidate of entries) {
+    if (await readText(candidate)) {
+      entry = candidate
+      break
+    }
+  }
+  if (!entry) return null
+  const result = await bundle({
+    entryPoints: [entry],
+    bundle: true,
+    write: false,
+    platform: 'browser',
+    format: 'esm',
+    target: 'es2022',
+    minify: true,
+    legalComments: 'none',
+    logLevel: 'silent',
+  })
+  return result.outputFiles[0].text
+}
+
+async function bundleCode(dir) {
+  const main = await bundleMain(dir)
+  const renderer = await bundleRenderer(dir)
+  if (!main && !renderer) return null
+  return { ...(main ? { main } : {}), ...(renderer ? { renderer } : {}) }
 }
 
 /** Assemble a source folder into a manifest. */

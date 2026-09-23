@@ -17,6 +17,9 @@ export default {
     newFileInSelected: 'Neue Datei (im gewählten Ordner)', newFolderInSelected: 'Neuer Ordner (im gewählten Ordner)',
     refresh: 'Aktualisieren', collapseAll: 'Alle zuklappen',
     folderEmpty: 'Ordner ist leer', folderEmptyHint: 'Rechtsklick oder die Schaltflächen oben legen Dateien an.',
+    cut: 'Ausschneiden', copy: 'Kopieren', paste: 'Einfügen', copyPaths: 'Pfade kopieren', copyRelativePaths: 'Relative Pfade kopieren',
+    deleteSelected: '{count} Elemente löschen', confirmTrashMany: '{count} Elemente in den Papierkorb verschieben?',
+    moveIntoItself: '„{name}“ kann nicht in sich selbst verschoben werden', alreadyExists: '„{name}“ gibt es im Zielordner schon',
   },
   en: {
     unsaved: 'Unsaved', newFileHere: 'New File Here', newFolderHere: 'New Folder Here',
@@ -33,6 +36,9 @@ export default {
     newFileInSelected: 'New File (in selected folder)', newFolderInSelected: 'New Folder (in selected folder)',
     refresh: 'Refresh', collapseAll: 'Collapse All',
     folderEmpty: 'Folder is empty', folderEmptyHint: 'Right-click or use the buttons above to create files.',
+    cut: 'Cut', copy: 'Copy', paste: 'Paste', copyPaths: 'Copy Paths', copyRelativePaths: 'Copy Relative Paths',
+    deleteSelected: 'Delete {count} Items', confirmTrashMany: 'Move {count} items to the trash?',
+    moveIntoItself: '“{name}” cannot be moved into itself', alreadyExists: '“{name}” already exists in the target folder',
   },
   es: {
     unsaved: 'Sin guardar', newFileHere: 'Nuevo archivo aquí', newFolderHere: 'Nueva carpeta aquí',
@@ -49,6 +55,9 @@ export default {
     newFileInSelected: 'Nuevo archivo (en la carpeta seleccionada)', newFolderInSelected: 'Nueva carpeta (en la carpeta seleccionada)',
     refresh: 'Actualizar', collapseAll: 'Contraer todo',
     folderEmpty: 'La carpeta está vacía', folderEmptyHint: 'Haz clic derecho o usa los botones de arriba para crear archivos.',
+    cut: 'Cortar', copy: 'Copiar', paste: 'Pegar', copyPaths: 'Copiar rutas', copyRelativePaths: 'Copiar rutas relativas',
+    deleteSelected: 'Eliminar {count} elementos', confirmTrashMany: '¿Mover {count} elementos a la papelera?',
+    moveIntoItself: '«{name}» no se puede mover dentro de sí mismo', alreadyExists: '«{name}» ya existe en la carpeta de destino',
   },
   fr: {
     unsaved: 'Non enregistré', newFileHere: 'Nouveau fichier ici', newFolderHere: 'Nouveau dossier ici',
@@ -65,6 +74,9 @@ export default {
     newFileInSelected: 'Nouveau fichier (dans le dossier sélectionné)', newFolderInSelected: 'Nouveau dossier (dans le dossier sélectionné)',
     refresh: 'Actualiser', collapseAll: 'Tout réduire',
     folderEmpty: 'Le dossier est vide', folderEmptyHint: 'Clic droit ou boutons ci-dessus pour créer des fichiers.',
+    cut: 'Couper', copy: 'Copier', paste: 'Coller', copyPaths: 'Copier les chemins', copyRelativePaths: 'Copier les chemins relatifs',
+    deleteSelected: 'Supprimer {count} éléments', confirmTrashMany: 'Mettre {count} éléments à la corbeille ?',
+    moveIntoItself: '« {name} » ne peut pas être déplacé dans lui-même', alreadyExists: '« {name} » existe déjà dans le dossier cible',
   },
   pl: {
     unsaved: 'Niezapisane', newFileHere: 'Nowy plik tutaj', newFolderHere: 'Nowy folder tutaj',
@@ -81,6 +93,9 @@ export default {
     newFileInSelected: 'Nowy plik (w wybranym folderze)', newFolderInSelected: 'Nowy folder (w wybranym folderze)',
     refresh: 'Odśwież', collapseAll: 'Zwiń wszystko',
     folderEmpty: 'Folder jest pusty', folderEmptyHint: 'Kliknij prawym przyciskiem lub użyj przycisków powyżej, aby tworzyć pliki.',
+    cut: 'Wytnij', copy: 'Kopiuj', paste: 'Wklej', copyPaths: 'Kopiuj ścieżki', copyRelativePaths: 'Kopiuj ścieżki względne',
+    deleteSelected: 'Usuń elementy ({count})', confirmTrashMany: 'Przenieść elementy ({count}) do kosza?',
+    moveIntoItself: 'Nie można przenieść „{name}” do samego siebie', alreadyExists: '„{name}” już istnieje w folderze docelowym',
   },
   it: {
     unsaved: 'Non salvato', newFileHere: 'Nuovo file qui', newFolderHere: 'Nuova cartella qui',
@@ -97,6 +112,9 @@ export default {
     newFileInSelected: 'Nuovo file (nella cartella selezionata)', newFolderInSelected: 'Nuova cartella (nella cartella selezionata)',
     refresh: 'Aggiorna', collapseAll: 'Comprimi tutto',
     folderEmpty: 'La cartella è vuota', folderEmptyHint: 'Clic destro o i pulsanti in alto creano file.',
+    cut: 'Taglia', copy: 'Copia', paste: 'Incolla', copyPaths: 'Copia percorsi', copyRelativePaths: 'Copia percorsi relativi',
+    deleteSelected: 'Elimina {count} elementi', confirmTrashMany: 'Spostare {count} elementi nel cestino?',
+    moveIntoItself: '“{name}” non può essere spostato in sé stesso', alreadyExists: '“{name}” esiste già nella cartella di destinazione',
   },
   pt: {
     unsaved: 'Não salvo', newFileHere: 'Novo arquivo aqui', newFolderHere: 'Nova pasta aqui',
@@ -113,6 +131,9 @@ export default {
     newFileInSelected: 'Novo arquivo (na pasta selecionada)', newFolderInSelected: 'Nova pasta (na pasta selecionada)',
     refresh: 'Atualizar', collapseAll: 'Recolher tudo',
     folderEmpty: 'A pasta está vazia', folderEmptyHint: 'Clique com o botão direito ou use os botões acima para criar arquivos.',
+    cut: 'Recortar', copy: 'Copiar', paste: 'Colar', copyPaths: 'Copiar caminhos', copyRelativePaths: 'Copiar caminhos relativos',
+    deleteSelected: 'Excluir {count} itens', confirmTrashMany: 'Mover {count} itens para a lixeira?',
+    moveIntoItself: '“{name}” não pode ser movido para dentro de si mesmo', alreadyExists: '“{name}” já existe na pasta de destino',
   },
   nl: {
     unsaved: 'Niet opgeslagen', newFileHere: 'Nieuw bestand hier', newFolderHere: 'Nieuwe map hier',
@@ -129,5 +150,8 @@ export default {
     newFileInSelected: 'Nieuw bestand (in geselecteerde map)', newFolderInSelected: 'Nieuwe map (in geselecteerde map)',
     refresh: 'Vernieuwen', collapseAll: 'Alles samenvouwen',
     folderEmpty: 'Map is leeg', folderEmptyHint: 'Klik met rechts of gebruik de knoppen hierboven om bestanden te maken.',
+    cut: 'Knippen', copy: 'Kopiëren', paste: 'Plakken', copyPaths: 'Paden kopiëren', copyRelativePaths: 'Relatieve paden kopiëren',
+    deleteSelected: '{count} items verwijderen', confirmTrashMany: '{count} items naar de prullenbak verplaatsen?',
+    moveIntoItself: '“{name}” kan niet in zichzelf worden verplaatst', alreadyExists: '“{name}” bestaat al in de doelmap',
   },
 } satisfies NamespaceMessages

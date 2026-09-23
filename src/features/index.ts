@@ -11,13 +11,16 @@ import { init as initRecentProjects } from './recentProjects'
 import { init as initLspInstall } from './lspInstall'
 import { init as initExtensions } from './extensions'
 import { init as initAgents } from './agents'
+import { init as initGradleTasks } from './gradleTasks'
+import { init as initMerge } from './merge'
+import { init as initMenubar } from './menubar'
 
 let started = false
 
 export function initFeatures() {
   if (started) return
   started = true
-  for (const [name, init] of [['sdk', initSdk], ['debug', initDebug], ['userAddons', initUserAddons], ['updater', initUpdater], ['recentProjects', initRecentProjects], ['lspInstall', initLspInstall], ['extensions', initExtensions], ['agents', initAgents]] as const) {
+  for (const [name, init] of [['sdk', initSdk], ['debug', initDebug], ['userAddons', initUserAddons], ['updater', initUpdater], ['recentProjects', initRecentProjects], ['lspInstall', initLspInstall], ['extensions', initExtensions], ['agents', initAgents], ['gradleTasks', initGradleTasks], ['merge', initMerge], ['menubar', initMenubar]] as const) {
     try {
       void init()
     } catch (err) {

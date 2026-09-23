@@ -1,6 +1,6 @@
 {
   "name": "lumen-extension-server",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Erweiterungsserver für Lumen — Katalog, Veröffentlichung und Projektseiten",
   "type": "module",
   "license": "MIT",

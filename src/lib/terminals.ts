@@ -224,19 +224,25 @@ class TerminalManager {
     })
   }
 
-  /** Copy and paste as in other terminals; global shortcuts pass through. */
+  /**
+   * Copy and paste as in other terminals; global shortcuts pass through.
+   *
+   * Pasting is left to the browser: Ctrl+V / Ctrl+Shift+V / Cmd+V fire a
+   * native `paste` event on xterm's textarea, which xterm turns into input
+   * (bracketed paste included). Reading the clipboard here as well used to
+   * insert everything twice. Returning `false` only keeps xterm from sending
+   * the key itself (`^V`) — the default action, the paste, still happens.
+   */
   private handleKey(session: TerminalSession, event: KeyboardEvent): boolean {
     if (event.type !== 'keydown') return true
     const mod = event.ctrlKey || event.metaKey
     const key = event.key.toLowerCase()
     if (mod && event.shiftKey && key === 'c') {
+      event.preventDefault()
       if (session.term.hasSelection()) void navigator.clipboard.writeText(session.term.getSelection())
       return false
     }
-    if (mod && event.shiftKey && key === 'v') {
-      void navigator.clipboard.readText().then((text) => session.term.paste(text)).catch(() => {})
-      return false
-    }
+    if (mod && key === 'v') return false
     // Ctrl+C with a selection copies rather than sending SIGINT (as Windows Terminal and IntelliJ do).
     if (event.ctrlKey && !event.shiftKey && key === 'c' && session.term.hasSelection()) {
       void navigator.clipboard.writeText(session.term.getSelection())
@@ -330,6 +336,8 @@ class TerminalManager {
     if (session.element.parentElement !== host) {
       host.replaceChildren(session.element)
     }
+    // A terminal moved into another window (a pop-out, or back) must learn of it, or its renderer keeps waiting on the old one.
+    session.term.open(session.element)
     this.fit(id)
   }
 

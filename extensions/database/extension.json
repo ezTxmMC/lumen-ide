@@ -1,0 +1,740 @@
+{
+  "id": "ext.database",
+  "name": "Datenbanken",
+  "version": "1.0.1",
+  "description": "Datenbanken durchsuchen und bearbeiten: SQLite- und H2-Dateien, MariaDB/MySQL, PostgreSQL, SQL Server, Redis und MongoDB — Tabellen, SQL-Konsole, Export. Bringt Programmcode mit.",
+  "author": "Lumen",
+  "icon": "Db",
+  "color": "#e0a526",
+  "category": "tool",
+  "license": "MIT",
+  "keywords": [
+    "database",
+    "datenbank",
+    "sql",
+    "sqlite",
+    "postgresql",
+    "mysql",
+    "mariadb",
+    "mssql",
+    "h2",
+    "redis",
+    "mongodb"
+  ],
+  "minAppVersion": "0.5.0",
+  "settings": [
+    {
+      "key": "pageSize",
+      "label": "Zeilen pro Seite",
+      "type": "number",
+      "default": "200",
+      "min": 10,
+      "max": 10000,
+      "step": 10,
+      "section": "Daten",
+      "i18n": {
+        "en": {
+          "label": "Rows per page",
+          "section": "Data"
+        },
+        "es": {
+          "label": "Filas por página",
+          "section": "Datos"
+        },
+        "fr": {
+          "label": "Lignes par page",
+          "section": "Données"
+        },
+        "it": {
+          "label": "Righe per pagina",
+          "section": "Dati"
+        },
+        "nl": {
+          "label": "Rijen per pagina",
+          "section": "Gegevens"
+        },
+        "pl": {
+          "label": "Wierszy na stronę",
+          "section": "Dane"
+        },
+        "pt": {
+          "label": "Linhas por página",
+          "section": "Dados"
+        }
+      }
+    },
+    {
+      "key": "confirmCommit",
+      "label": "Vor dem Übernehmen nachfragen",
+      "type": "toggle",
+      "default": "true",
+      "hint": "Zeigt die SQL-Anweisungen, bevor geänderte Zeilen geschrieben werden.",
+      "section": "Daten",
+      "i18n": {
+        "en": {
+          "label": "Ask before committing",
+          "hint": "Shows the SQL statements before changed rows are written.",
+          "section": "Data"
+        },
+        "es": {
+          "label": "Preguntar antes de confirmar",
+          "hint": "Muestra las sentencias SQL antes de escribir las filas modificadas.",
+          "section": "Datos"
+        },
+        "fr": {
+          "label": "Demander avant de valider",
+          "hint": "Affiche les instructions SQL avant d’écrire les lignes modifiées.",
+          "section": "Données"
+        },
+        "it": {
+          "label": "Chiedi prima di confermare",
+          "hint": "Mostra le istruzioni SQL prima di scrivere le righe modificate.",
+          "section": "Dati"
+        },
+        "nl": {
+          "label": "Vragen vóór het doorvoeren",
+          "hint": "Toont de SQL-instructies voordat gewijzigde rijen worden geschreven.",
+          "section": "Gegevens"
+        },
+        "pl": {
+          "label": "Pytaj przed zatwierdzeniem",
+          "hint": "Pokazuje instrukcje SQL przed zapisaniem zmienionych wierszy.",
+          "section": "Dane"
+        },
+        "pt": {
+          "label": "Perguntar antes de confirmar",
+          "hint": "Mostra as instruções SQL antes de gravar as linhas alteradas.",
+          "section": "Dados"
+        }
+      }
+    },
+    {
+      "key": "csvSeparator",
+      "label": "CSV-Trennzeichen",
+      "type": "select",
+      "default": "comma",
+      "section": "Daten",
+      "choices": [
+        {
+          "value": "comma",
+          "label": "Komma (,)"
+        },
+        {
+          "value": "semicolon",
+          "label": "Semikolon (;)"
+        },
+        {
+          "value": "tab",
+          "label": "Tabulator"
+        }
+      ],
+      "i18n": {
+        "en": {
+          "label": "CSV separator",
+          "section": "Data",
+          "choices": {
+            "comma": "Comma (,)",
+            "semicolon": "Semicolon (;)",
+            "tab": "Tab"
+          }
+        },
+        "es": {
+          "label": "Separador CSV",
+          "section": "Datos",
+          "choices": {
+            "comma": "Coma (,)",
+            "semicolon": "Punto y coma (;)",
+            "tab": "Tabulador"
+          }
+        },
+        "fr": {
+          "label": "Séparateur CSV",
+          "section": "Données",
+          "choices": {
+            "comma": "Virgule (,)",
+            "semicolon": "Point-virgule (;)",
+            "tab": "Tabulation"
+          }
+        },
+        "it": {
+          "label": "Separatore CSV",
+          "section": "Dati",
+          "choices": {
+            "comma": "Virgola (,)",
+            "semicolon": "Punto e virgola (;)",
+            "tab": "Tabulazione"
+          }
+        },
+        "nl": {
+          "label": "CSV-scheidingsteken",
+          "section": "Gegevens",
+          "choices": {
+            "comma": "Komma (,)",
+            "semicolon": "Puntkomma (;)",
+            "tab": "Tab"
+          }
+        },
+        "pl": {
+          "label": "Separator CSV",
+          "section": "Dane",
+          "choices": {
+            "comma": "Przecinek (,)",
+            "semicolon": "Średnik (;)",
+            "tab": "Tabulator"
+          }
+        },
+        "pt": {
+          "label": "Separador CSV",
+          "section": "Dados",
+          "choices": {
+            "comma": "Vírgula (,)",
+            "semicolon": "Ponto e vírgula (;)",
+            "tab": "Tabulação"
+          }
+        }
+      }
+    },
+    {
+      "key": "maxRows",
+      "label": "Höchstens Zeilen im Ergebnis einer Abfrage",
+      "type": "number",
+      "default": "1000",
+      "min": 10,
+      "max": 100000,
+      "step": 100,
+      "section": "Abfragen",
+      "i18n": {
+        "en": {
+          "label": "Maximum rows in a query result",
+          "section": "Queries"
+        },
+        "es": {
+          "label": "Máximo de filas en el resultado de una consulta",
+          "section": "Consultas"
+        },
+        "fr": {
+          "label": "Nombre maximal de lignes d’un résultat",
+          "section": "Requêtes"
+        },
+        "it": {
+          "label": "Righe massime nel risultato di una query",
+          "section": "Query"
+        },
+        "nl": {
+          "label": "Maximaal aantal rijen in een queryresultaat",
+          "section": "Query’s"
+        },
+        "pl": {
+          "label": "Maksymalna liczba wierszy w wyniku zapytania",
+          "section": "Zapytania"
+        },
+        "pt": {
+          "label": "Máximo de linhas no resultado de uma consulta",
+          "section": "Consultas"
+        }
+      }
+    },
+    {
+      "key": "queryTimeout",
+      "label": "Zeitlimit für Abfragen (Sekunden)",
+      "type": "number",
+      "default": "30",
+      "min": 0,
+      "max": 86400,
+      "step": 5,
+      "hint": "0 heißt: kein Zeitlimit.",
+      "section": "Abfragen",
+      "i18n": {
+        "en": {
+          "label": "Query timeout (seconds)",
+          "hint": "0 means no limit.",
+          "section": "Queries"
+        },
+        "es": {
+          "label": "Tiempo límite de consulta (segundos)",
+          "hint": "0 significa sin límite.",
+          "section": "Consultas"
+        },
+        "fr": {
+          "label": "Délai d’expiration des requêtes (secondes)",
+          "hint": "0 signifie aucune limite.",
+          "section": "Requêtes"
+        },
+        "it": {
+          "label": "Timeout delle query (secondi)",
+          "hint": "0 significa nessun limite.",
+          "section": "Query"
+        },
+        "nl": {
+          "label": "Time-out voor query’s (seconden)",
+          "hint": "0 betekent geen limiet.",
+          "section": "Query’s"
+        },
+        "pl": {
+          "label": "Limit czasu zapytania (sekundy)",
+          "hint": "0 oznacza brak limitu.",
+          "section": "Zapytania"
+        },
+        "pt": {
+          "label": "Tempo limite da consulta (segundos)",
+          "hint": "0 significa sem limite.",
+          "section": "Consultas"
+        }
+      }
+    },
+    {
+      "key": "redisScanLimit",
+      "label": "Höchstens Schlüssel je Suche",
+      "type": "number",
+      "default": "1000",
+      "min": 50,
+      "max": 100000,
+      "step": 50,
+      "section": "Redis",
+      "i18n": {
+        "en": {
+          "label": "Maximum keys per search",
+          "section": "Redis"
+        },
+        "es": {
+          "label": "Máximo de claves por búsqueda",
+          "section": "Redis"
+        },
+        "fr": {
+          "label": "Nombre maximal de clés par recherche",
+          "section": "Redis"
+        },
+        "it": {
+          "label": "Chiavi massime per ricerca",
+          "section": "Redis"
+        },
+        "nl": {
+          "label": "Maximaal aantal sleutels per zoekopdracht",
+          "section": "Redis"
+        },
+        "pl": {
+          "label": "Maksymalna liczba kluczy na wyszukiwanie",
+          "section": "Redis"
+        },
+        "pt": {
+          "label": "Máximo de chaves por pesquisa",
+          "section": "Redis"
+        }
+      }
+    },
+    {
+      "key": "javaPath",
+      "label": "Pfad zu java",
+      "type": "path",
+      "pathKind": "file",
+      "default": "",
+      "placeholder": "JAVA_HOME oder java aus dem PATH",
+      "hint": "Nur für H2-Datenbanken nötig (Java 11 oder neuer).",
+      "section": "H2",
+      "i18n": {
+        "en": {
+          "label": "Path to java",
+          "hint": "Only needed for H2 databases (Java 11 or newer).",
+          "placeholder": "JAVA_HOME or java from the PATH",
+          "section": "H2"
+        },
+        "es": {
+          "label": "Ruta de java",
+          "hint": "Solo necesario para bases de datos H2 (Java 11 o posterior).",
+          "placeholder": "JAVA_HOME o java del PATH",
+          "section": "H2"
+        },
+        "fr": {
+          "label": "Chemin de java",
+          "hint": "Nécessaire uniquement pour les bases H2 (Java 11 ou plus récent).",
+          "placeholder": "JAVA_HOME ou java du PATH",
+          "section": "H2"
+        },
+        "it": {
+          "label": "Percorso di java",
+          "hint": "Necessario solo per i database H2 (Java 11 o successivo).",
+          "placeholder": "JAVA_HOME o java dal PATH",
+          "section": "H2"
+        },
+        "nl": {
+          "label": "Pad naar java",
+          "hint": "Alleen nodig voor H2-databases (Java 11 of nieuwer).",
+          "placeholder": "JAVA_HOME of java uit het PATH",
+          "section": "H2"
+        },
+        "pl": {
+          "label": "Ścieżka do java",
+          "hint": "Potrzebne tylko dla baz H2 (Java 11 lub nowsza).",
+          "placeholder": "JAVA_HOME lub java z PATH",
+          "section": "H2"
+        },
+        "pt": {
+          "label": "Caminho do java",
+          "hint": "Necessário apenas para bancos H2 (Java 11 ou mais recente).",
+          "placeholder": "JAVA_HOME ou java do PATH",
+          "section": "H2"
+        }
+      }
+    },
+    {
+      "key": "h2Version",
+      "label": "H2-Version",
+      "type": "text",
+      "default": "2.3.232",
+      "hint": "Wird beim ersten Öffnen von Maven Central geladen. Muss zum Format der Datei passen.",
+      "section": "H2",
+      "i18n": {
+        "en": {
+          "label": "H2 version",
+          "hint": "Downloaded from Maven Central on first use. Must match the format of the file.",
+          "section": "H2"
+        },
+        "es": {
+          "label": "Versión de H2",
+          "hint": "Se descarga de Maven Central la primera vez. Debe coincidir con el formato del archivo.",
+          "section": "H2"
+        },
+        "fr": {
+          "label": "Version de H2",
+          "hint": "Téléchargée depuis Maven Central à la première utilisation. Doit correspondre au format du fichier.",
+          "section": "H2"
+        },
+        "it": {
+          "label": "Versione di H2",
+          "hint": "Scaricata da Maven Central al primo utilizzo. Deve corrispondere al formato del file.",
+          "section": "H2"
+        },
+        "nl": {
+          "label": "H2-versie",
+          "hint": "Wordt bij het eerste gebruik van Maven Central gedownload. Moet passen bij het formaat van het bestand.",
+          "section": "H2"
+        },
+        "pl": {
+          "label": "Wersja H2",
+          "hint": "Pobierana z Maven Central przy pierwszym użyciu. Musi pasować do formatu pliku.",
+          "section": "H2"
+        },
+        "pt": {
+          "label": "Versão do H2",
+          "hint": "Baixada do Maven Central no primeiro uso. Deve corresponder ao formato do arquivo.",
+          "section": "H2"
+        }
+      }
+    }
+  ],
+  "views": [
+    {
+      "id": "connections",
+      "title": "Datenbanken",
+      "icon": "database",
+      "location": "left",
+      "order": 40,
+      "i18n": {
+        "en": {
+          "title": "Databases"
+        },
+        "es": {
+          "title": "Bases de datos"
+        },
+        "fr": {
+          "title": "Bases de données"
+        },
+        "it": {
+          "title": "Database"
+        },
+        "nl": {
+          "title": "Databases"
+        },
+        "pl": {
+          "title": "Bazy danych"
+        },
+        "pt": {
+          "title": "Bancos de dados"
+        }
+      }
+    },
+    {
+      "id": "data",
+      "title": "Datenbank",
+      "icon": "table",
+      "location": "editor",
+      "i18n": {
+        "en": {
+          "title": "Database"
+        },
+        "es": {
+          "title": "Base de datos"
+        },
+        "fr": {
+          "title": "Base de données"
+        },
+        "it": {
+          "title": "Database"
+        },
+        "nl": {
+          "title": "Database"
+        },
+        "pl": {
+          "title": "Baza danych"
+        },
+        "pt": {
+          "title": "Banco de dados"
+        }
+      }
+    }
+  ],
+  "commands": [
+    {
+      "id": "database.show",
+      "title": "Datenbanken: Verbindungen anzeigen",
+      "category": "Datenbanken",
+      "icon": "database",
+      "i18n": {
+        "en": {
+          "title": "Databases: Show Connections",
+          "category": "Databases"
+        },
+        "es": {
+          "title": "Bases de datos: Mostrar conexiones",
+          "category": "Bases de datos"
+        },
+        "fr": {
+          "title": "Bases de données: Afficher les connexions",
+          "category": "Bases de données"
+        },
+        "it": {
+          "title": "Database: Mostra connessioni",
+          "category": "Database"
+        },
+        "nl": {
+          "title": "Databases: Verbindingen tonen",
+          "category": "Databases"
+        },
+        "pl": {
+          "title": "Bazy danych: Pokaż połączenia",
+          "category": "Bazy danych"
+        },
+        "pt": {
+          "title": "Bancos de dados: Mostrar conexões",
+          "category": "Bancos de dados"
+        }
+      }
+    },
+    {
+      "id": "database.add-connection",
+      "title": "Datenbanken: Verbindung hinzufügen…",
+      "category": "Datenbanken",
+      "icon": "plus",
+      "i18n": {
+        "en": {
+          "title": "Databases: Add Connection…",
+          "category": "Databases"
+        },
+        "es": {
+          "title": "Bases de datos: Añadir conexión…",
+          "category": "Bases de datos"
+        },
+        "fr": {
+          "title": "Bases de données: Ajouter une connexion…",
+          "category": "Bases de données"
+        },
+        "it": {
+          "title": "Database: Aggiungi connessione…",
+          "category": "Database"
+        },
+        "nl": {
+          "title": "Databases: Verbinding toevoegen…",
+          "category": "Databases"
+        },
+        "pl": {
+          "title": "Bazy danych: Dodaj połączenie…",
+          "category": "Bazy danych"
+        },
+        "pt": {
+          "title": "Bancos de dados: Adicionar conexão…",
+          "category": "Bancos de dados"
+        }
+      }
+    },
+    {
+      "id": "database.open-file",
+      "title": "Datenbanken: Datenbankdatei öffnen…",
+      "category": "Datenbanken",
+      "icon": "folder-open",
+      "i18n": {
+        "en": {
+          "title": "Databases: Open Database File…",
+          "category": "Databases"
+        },
+        "es": {
+          "title": "Bases de datos: Abrir archivo de base de datos…",
+          "category": "Bases de datos"
+        },
+        "fr": {
+          "title": "Bases de données: Ouvrir un fichier de base de données…",
+          "category": "Bases de données"
+        },
+        "it": {
+          "title": "Database: Apri file di database…",
+          "category": "Database"
+        },
+        "nl": {
+          "title": "Databases: Databasebestand openen…",
+          "category": "Databases"
+        },
+        "pl": {
+          "title": "Bazy danych: Otwórz plik bazy danych…",
+          "category": "Bazy danych"
+        },
+        "pt": {
+          "title": "Bancos de dados: Abrir arquivo de banco de dados…",
+          "category": "Bancos de dados"
+        }
+      }
+    },
+    {
+      "id": "database.new-query",
+      "title": "Datenbanken: Neue SQL-Konsole",
+      "category": "Datenbanken",
+      "icon": "square-terminal",
+      "i18n": {
+        "en": {
+          "title": "Databases: New SQL Console",
+          "category": "Databases"
+        },
+        "es": {
+          "title": "Bases de datos: Nueva consola SQL",
+          "category": "Bases de datos"
+        },
+        "fr": {
+          "title": "Bases de données: Nouvelle console SQL",
+          "category": "Bases de données"
+        },
+        "it": {
+          "title": "Database: Nuova console SQL",
+          "category": "Database"
+        },
+        "nl": {
+          "title": "Databases: Nieuwe SQL-console",
+          "category": "Databases"
+        },
+        "pl": {
+          "title": "Bazy danych: Nowa konsola SQL",
+          "category": "Bazy danych"
+        },
+        "pt": {
+          "title": "Bancos de dados: Novo console SQL",
+          "category": "Bancos de dados"
+        }
+      }
+    },
+    {
+      "id": "database.refresh",
+      "title": "Datenbanken: Aktualisieren",
+      "category": "Datenbanken",
+      "icon": "refresh-cw",
+      "i18n": {
+        "en": {
+          "title": "Databases: Refresh",
+          "category": "Databases"
+        },
+        "es": {
+          "title": "Bases de datos: Actualizar",
+          "category": "Bases de datos"
+        },
+        "fr": {
+          "title": "Bases de données: Actualiser",
+          "category": "Bases de données"
+        },
+        "it": {
+          "title": "Database: Aggiorna",
+          "category": "Database"
+        },
+        "nl": {
+          "title": "Databases: Vernieuwen",
+          "category": "Databases"
+        },
+        "pl": {
+          "title": "Bazy danych: Odśwież",
+          "category": "Bazy danych"
+        },
+        "pt": {
+          "title": "Bancos de dados: Atualizar",
+          "category": "Bancos de dados"
+        }
+      }
+    },
+    {
+      "id": "database.disconnect-all",
+      "title": "Datenbanken: Alle Verbindungen trennen",
+      "category": "Datenbanken",
+      "icon": "log-out",
+      "i18n": {
+        "en": {
+          "title": "Databases: Disconnect All",
+          "category": "Databases"
+        },
+        "es": {
+          "title": "Bases de datos: Desconectar todas",
+          "category": "Bases de datos"
+        },
+        "fr": {
+          "title": "Bases de données: Tout déconnecter",
+          "category": "Bases de données"
+        },
+        "it": {
+          "title": "Database: Disconnetti tutte",
+          "category": "Database"
+        },
+        "nl": {
+          "title": "Databases: Alles verbreken",
+          "category": "Databases"
+        },
+        "pl": {
+          "title": "Bazy danych: Rozłącz wszystkie",
+          "category": "Bazy danych"
+        },
+        "pt": {
+          "title": "Bancos de dados: Desconectar todas",
+          "category": "Bancos de dados"
+        }
+      }
+    }
+  ],
+  "openWith": [
+    {
+      "command": "database.open-file",
+      "title": "Datenbank-Ansicht",
+      "patterns": [
+        "*.db",
+        "*.sqlite",
+        "*.sqlite3",
+        "*.db3",
+        "*.mv.db"
+      ],
+      "i18n": {
+        "en": {
+          "title": "Database view"
+        },
+        "es": {
+          "title": "Vista de base de datos"
+        },
+        "fr": {
+          "title": "Vue base de données"
+        },
+        "it": {
+          "title": "Vista database"
+        },
+        "nl": {
+          "title": "Databaseweergave"
+        },
+        "pl": {
+          "title": "Widok bazy danych"
+        },
+        "pt": {
+          "title": "Visualização do banco de dados"
+        }
+      }
+    }
+  ]
+}

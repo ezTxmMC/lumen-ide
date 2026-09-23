@@ -5,7 +5,7 @@ import {
 import { useStore } from '@/state/store'
 import { lsp } from '@/core/lsp/manager'
 import { registry } from '@/core/registry'
-import { installServer } from '@/lib/run'
+import { openLspInstall } from '@/lib/lsp-install'
 import { statusDot } from '@/lib/status'
 import { locale, tr, useT } from '@/i18n'
 import { Button } from '../ui'
@@ -30,7 +30,6 @@ export function LspPanel() {
   const registryVersion = useStore((s) => s.registryVersion)
   const enabled = useStore((s) => s.effects.lsp)
   const setEffects = useStore((s) => s.setEffects)
-  const openFile = useStore((s) => s.openFile)
   const notify = useStore((s) => s.notify)
   const [filter, setFilter] = useState<string | null>(null)
   const [stderr, setStderr] = useState(false)
@@ -118,7 +117,9 @@ export function LspPanel() {
             <div className="mt-2 px-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-subtle">{t('panels.lsp.notInstalled')}</div>
           )}
           {missing.map(({ languageId, config }) => {
-            const command = lsp.installHint(config)
+            // Any server of the language that installs here will do — the dialog offers them all.
+            const alternatives = registry.languages().find((l) => l.id === languageId)?.lsp ?? [config]
+            const command = lsp.installHint(alternatives.find((candidate) => lsp.canInstall(candidate)) ?? config)
             return (
               <div key={languageId} className="mb-1 rounded-lumen-sm border border-dashed border-edge px-2 py-1.5">
                 <div className="flex items-center gap-1.5">
@@ -129,7 +130,7 @@ export function LspPanel() {
                 <p className="mt-0.5 text-[10.5px] leading-snug text-subtle">{tr(config.install)}</p>
                 <div className="mt-1 flex items-center gap-1">
                   {command && (
-                    <Button size="sm" variant="outline" title={command} onClick={() => void installServer(config)}>
+                    <Button size="sm" variant="outline" title={command} onClick={() => openLspInstall(languageId, { server: config.label })}>
                       <Download size={11} /> {t('common.install')}
                     </Button>
                   )}
@@ -174,7 +175,7 @@ export function LspPanel() {
         </div>
         <div className="border-t border-edge px-3 py-1 text-[10.5px] text-subtle">
           {t('panels.lsp.dataDir')}{' '}
-          <button className="text-muted hover:text-fg" onClick={() => { const ws = useStore.getState().workspace; if (ws) void openFile(`${ws}/.lumen/project.json`) }}>
+          <button className="text-muted hover:text-fg" onClick={() => void useStore.getState().openProjectConfig()}>
             {t('panels.lsp.projectDefaults')}
           </button>
         </div>

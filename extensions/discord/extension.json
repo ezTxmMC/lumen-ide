@@ -1,0 +1,807 @@
+{
+  "id": "ext.discord",
+  "name": "Discord Rich Presence",
+  "version": "1.0.1",
+  "description": "Zeigt in Discord, woran du arbeitest: Datei, Projekt, Sprache und Dauer — mit Leerlauf, privaten Projekten und Repository-Knopf. Bringt Programmcode mit.",
+  "author": "Lumen",
+  "icon": "DC",
+  "color": "#5865f2",
+  "category": "tool",
+  "license": "MIT",
+  "keywords": [
+    "discord",
+    "rich presence",
+    "presence",
+    "status",
+    "rpc"
+  ],
+  "minAppVersion": "0.5.0",
+  "settings": [
+    {
+      "key": "clientId",
+      "label": "Client-ID (Application ID)",
+      "type": "text",
+      "default": "1550197013260275863",
+      "placeholder": "123456789012345678",
+      "hint": "Die Anwendung, deren Name in Discord als „Spielt …“ erscheint. Eine eigene legst du unter discord.com/developers an; ihre Bilder heißen wie die Sprach-IDs (java, typescript …) plus lumen. Leer = keine Verbindung.",
+      "section": "Verbindung",
+      "i18n": {
+        "en": {
+          "label": "Client ID (Application ID)",
+          "hint": "The application whose name appears in Discord as “Playing …”. Create your own at discord.com/developers; its art assets are named after the language IDs (java, typescript …) plus lumen. Empty = no connection.",
+          "section": "Connection"
+        },
+        "es": {
+          "label": "ID de cliente (Application ID)",
+          "hint": "La aplicación cuyo nombre aparece en Discord como «Jugando a …». Crea la tuya en discord.com/developers; sus imágenes se llaman como los ID de lenguaje (java, typescript …) más lumen. Vacío = sin conexión.",
+          "section": "Conexión"
+        },
+        "fr": {
+          "label": "ID client (Application ID)",
+          "hint": "L’application dont le nom apparaît dans Discord comme « Joue à … ». Créez la vôtre sur discord.com/developers ; ses images portent le nom des ID de langage (java, typescript …) plus lumen. Vide = aucune connexion.",
+          "section": "Connexion"
+        },
+        "pl": {
+          "label": "ID klienta (Application ID)",
+          "hint": "Aplikacja, której nazwa pojawia się w Discordzie jako „Gra w …”. Własną utworzysz na discord.com/developers; jej obrazy nazywają się jak identyfikatory języków (java, typescript …) oraz lumen. Puste = brak połączenia.",
+          "section": "Połączenie"
+        },
+        "it": {
+          "label": "ID client (Application ID)",
+          "hint": "L’applicazione il cui nome compare su Discord come “Sta giocando a …”. Creane una tua su discord.com/developers; le sue immagini si chiamano come gli ID dei linguaggi (java, typescript …) più lumen. Vuoto = nessuna connessione.",
+          "section": "Connessione"
+        },
+        "pt": {
+          "label": "ID do cliente (Application ID)",
+          "hint": "A aplicação cujo nome aparece no Discord como “Jogando …”. Crie a sua em discord.com/developers; as imagens têm o nome dos IDs de linguagem (java, typescript …) mais lumen. Vazio = sem conexão.",
+          "section": "Conexão"
+        },
+        "nl": {
+          "label": "Client-ID (Application ID)",
+          "hint": "De applicatie waarvan de naam in Discord verschijnt als „Speelt …”. Maak je eigen aan op discord.com/developers; de afbeeldingen heten zoals de taal-ID’s (java, typescript …) plus lumen. Leeg = geen verbinding.",
+          "section": "Verbinding"
+        }
+      }
+    },
+    {
+      "key": "showFileName",
+      "label": "Dateiname",
+      "type": "toggle",
+      "default": "true",
+      "section": "Angezeigt wird",
+      "i18n": {
+        "en": {
+          "label": "File name",
+          "section": "Shown in Discord"
+        },
+        "es": {
+          "label": "Nombre de archivo",
+          "section": "Se muestra"
+        },
+        "fr": {
+          "label": "Nom du fichier",
+          "section": "Affiché"
+        },
+        "pl": {
+          "label": "Nazwa pliku",
+          "section": "Pokazywane"
+        },
+        "it": {
+          "label": "Nome del file",
+          "section": "Mostrato"
+        },
+        "pt": {
+          "label": "Nome do arquivo",
+          "section": "Exibido"
+        },
+        "nl": {
+          "label": "Bestandsnaam",
+          "section": "Getoond"
+        }
+      }
+    },
+    {
+      "key": "showProject",
+      "label": "Projekt",
+      "type": "toggle",
+      "default": "true",
+      "section": "Angezeigt wird",
+      "i18n": {
+        "en": {
+          "label": "Project",
+          "section": "Shown in Discord"
+        },
+        "es": {
+          "label": "Proyecto",
+          "section": "Se muestra"
+        },
+        "fr": {
+          "label": "Projet",
+          "section": "Affiché"
+        },
+        "pl": {
+          "label": "Projekt",
+          "section": "Pokazywane"
+        },
+        "it": {
+          "label": "Progetto",
+          "section": "Mostrato"
+        },
+        "pt": {
+          "label": "Projeto",
+          "section": "Exibido"
+        },
+        "nl": {
+          "label": "Project",
+          "section": "Getoond"
+        }
+      }
+    },
+    {
+      "key": "showLanguage",
+      "label": "Sprache (als Bild)",
+      "type": "toggle",
+      "default": "true",
+      "section": "Angezeigt wird",
+      "i18n": {
+        "en": {
+          "label": "Language (as image)",
+          "section": "Shown in Discord"
+        },
+        "es": {
+          "label": "Lenguaje (como imagen)",
+          "section": "Se muestra"
+        },
+        "fr": {
+          "label": "Langage (en image)",
+          "section": "Affiché"
+        },
+        "pl": {
+          "label": "Język (jako obraz)",
+          "section": "Pokazywane"
+        },
+        "it": {
+          "label": "Linguaggio (come immagine)",
+          "section": "Mostrato"
+        },
+        "pt": {
+          "label": "Linguagem (como imagem)",
+          "section": "Exibido"
+        },
+        "nl": {
+          "label": "Taal (als afbeelding)",
+          "section": "Getoond"
+        }
+      }
+    },
+    {
+      "key": "showElapsed",
+      "label": "Verstrichene Zeit",
+      "type": "toggle",
+      "default": "true",
+      "section": "Angezeigt wird",
+      "i18n": {
+        "en": {
+          "label": "Elapsed time",
+          "section": "Shown in Discord"
+        },
+        "es": {
+          "label": "Tiempo transcurrido",
+          "section": "Se muestra"
+        },
+        "fr": {
+          "label": "Temps écoulé",
+          "section": "Affiché"
+        },
+        "pl": {
+          "label": "Upływający czas",
+          "section": "Pokazywane"
+        },
+        "it": {
+          "label": "Tempo trascorso",
+          "section": "Mostrato"
+        },
+        "pt": {
+          "label": "Tempo decorrido",
+          "section": "Exibido"
+        },
+        "nl": {
+          "label": "Verstreken tijd",
+          "section": "Getoond"
+        }
+      }
+    },
+    {
+      "key": "elapsedFrom",
+      "label": "Zeit gezählt ab",
+      "type": "select",
+      "default": "session",
+      "when": "showElapsed",
+      "section": "Angezeigt wird",
+      "choices": [
+        {
+          "value": "session",
+          "label": "Start von Lumen"
+        },
+        {
+          "value": "project",
+          "label": "Öffnen des Projekts"
+        },
+        {
+          "value": "file",
+          "label": "Wechsel zur Datei"
+        }
+      ],
+      "i18n": {
+        "en": {
+          "label": "Count time from",
+          "section": "Shown in Discord",
+          "choices": {
+            "session": "Lumen’s start",
+            "project": "Opening the project",
+            "file": "Switching to the file"
+          }
+        },
+        "es": {
+          "label": "Contar el tiempo desde",
+          "section": "Se muestra",
+          "choices": {
+            "session": "el inicio de Lumen",
+            "project": "la apertura del proyecto",
+            "file": "el cambio al archivo"
+          }
+        },
+        "fr": {
+          "label": "Compter le temps depuis",
+          "section": "Affiché",
+          "choices": {
+            "session": "le démarrage de Lumen",
+            "project": "l’ouverture du projet",
+            "file": "le passage au fichier"
+          }
+        },
+        "pl": {
+          "label": "Licz czas od",
+          "section": "Pokazywane",
+          "choices": {
+            "session": "uruchomienia Lumen",
+            "project": "otwarcia projektu",
+            "file": "przełączenia na plik"
+          }
+        },
+        "it": {
+          "label": "Conta il tempo da",
+          "section": "Mostrato",
+          "choices": {
+            "session": "l’avvio di Lumen",
+            "project": "l’apertura del progetto",
+            "file": "il passaggio al file"
+          }
+        },
+        "pt": {
+          "label": "Contar o tempo desde",
+          "section": "Exibido",
+          "choices": {
+            "session": "o início do Lumen",
+            "project": "a abertura do projeto",
+            "file": "a troca para o arquivo"
+          }
+        },
+        "nl": {
+          "label": "Tijd tellen vanaf",
+          "section": "Getoond",
+          "choices": {
+            "session": "de start van Lumen",
+            "project": "het openen van het project",
+            "file": "het wisselen naar het bestand"
+          }
+        }
+      }
+    },
+    {
+      "key": "repoButton",
+      "label": "Knopf „Repository ansehen“",
+      "type": "toggle",
+      "default": "false",
+      "hint": "Verlinkt das origin-Remote des Projekts (ohne Zugangsdaten). Nur für öffentliche Repositorys einschalten.",
+      "section": "Angezeigt wird",
+      "i18n": {
+        "en": {
+          "label": "“View repository” button",
+          "hint": "Links the project’s origin remote (without credentials). Only turn on for public repositories.",
+          "section": "Shown in Discord"
+        },
+        "es": {
+          "label": "Botón «Ver repositorio»",
+          "hint": "Enlaza el remoto origin del proyecto (sin credenciales). Actívalo solo para repositorios públicos.",
+          "section": "Se muestra"
+        },
+        "fr": {
+          "label": "Bouton « Voir le dépôt »",
+          "hint": "Pointe vers le remote origin du projet (sans identifiants). À activer uniquement pour les dépôts publics.",
+          "section": "Affiché"
+        },
+        "pl": {
+          "label": "Przycisk „Zobacz repozytorium”",
+          "hint": "Linkuje do zdalnego origin projektu (bez danych logowania). Włączaj tylko dla publicznych repozytoriów.",
+          "section": "Pokazywane"
+        },
+        "it": {
+          "label": "Pulsante “Vedi repository”",
+          "hint": "Collega il remote origin del progetto (senza credenziali). Attivalo solo per repository pubblici.",
+          "section": "Mostrato"
+        },
+        "pt": {
+          "label": "Botão “Ver repositório”",
+          "hint": "Aponta para o remoto origin do projeto (sem credenciais). Ligue apenas para repositórios públicos.",
+          "section": "Exibido"
+        },
+        "nl": {
+          "label": "Knop „Repository bekijken”",
+          "hint": "Linkt naar de origin-remote van het project (zonder inloggegevens). Alleen aanzetten voor openbare repository’s.",
+          "section": "Getoond"
+        }
+      }
+    },
+    {
+      "key": "idleMinutes",
+      "label": "Leerlauf nach (Minuten ohne Fokus)",
+      "type": "number",
+      "default": "5",
+      "min": 0,
+      "max": 240,
+      "step": 1,
+      "hint": "0 schaltet den Leerlauf aus.",
+      "section": "Leerlauf",
+      "i18n": {
+        "en": {
+          "label": "Idle after (minutes without focus)",
+          "hint": "0 turns idle detection off.",
+          "section": "Idle"
+        },
+        "es": {
+          "label": "Inactivo tras (minutos sin foco)",
+          "hint": "0 desactiva la detección de inactividad.",
+          "section": "Inactividad"
+        },
+        "fr": {
+          "label": "Inactif après (minutes sans focus)",
+          "hint": "0 désactive la détection d’inactivité.",
+          "section": "Inactivité"
+        },
+        "pl": {
+          "label": "Bezczynność po (minutach bez fokusu)",
+          "hint": "0 wyłącza wykrywanie bezczynności.",
+          "section": "Bezczynność"
+        },
+        "it": {
+          "label": "Inattivo dopo (minuti senza focus)",
+          "hint": "0 disattiva il rilevamento dell’inattività.",
+          "section": "Inattività"
+        },
+        "pt": {
+          "label": "Ocioso após (minutos sem foco)",
+          "hint": "0 desliga a detecção de ociosidade.",
+          "section": "Ociosidade"
+        },
+        "nl": {
+          "label": "Inactief na (minuten zonder focus)",
+          "hint": "0 schakelt inactiviteitsdetectie uit.",
+          "section": "Inactiviteit"
+        }
+      }
+    },
+    {
+      "key": "idleAction",
+      "label": "Im Leerlauf",
+      "type": "select",
+      "default": "idle",
+      "section": "Leerlauf",
+      "choices": [
+        {
+          "value": "idle",
+          "label": "Leerlauf-Text zeigen"
+        },
+        {
+          "value": "clear",
+          "label": "Nichts anzeigen"
+        }
+      ],
+      "i18n": {
+        "en": {
+          "label": "When idle",
+          "section": "Idle",
+          "choices": {
+            "idle": "Show the idle text",
+            "clear": "Show nothing"
+          }
+        },
+        "es": {
+          "label": "Al estar inactivo",
+          "section": "Inactividad",
+          "choices": {
+            "idle": "Mostrar el texto de inactividad",
+            "clear": "No mostrar nada"
+          }
+        },
+        "fr": {
+          "label": "En cas d’inactivité",
+          "section": "Inactivité",
+          "choices": {
+            "idle": "Afficher le texte d’inactivité",
+            "clear": "Ne rien afficher"
+          }
+        },
+        "pl": {
+          "label": "Podczas bezczynności",
+          "section": "Bezczynność",
+          "choices": {
+            "idle": "Pokaż tekst bezczynności",
+            "clear": "Nic nie pokazuj"
+          }
+        },
+        "it": {
+          "label": "In caso di inattività",
+          "section": "Inattività",
+          "choices": {
+            "idle": "Mostra il testo di inattività",
+            "clear": "Non mostrare nulla"
+          }
+        },
+        "pt": {
+          "label": "Quando ocioso",
+          "section": "Ociosidade",
+          "choices": {
+            "idle": "Mostrar o texto de ociosidade",
+            "clear": "Não mostrar nada"
+          }
+        },
+        "nl": {
+          "label": "Bij inactiviteit",
+          "section": "Inactiviteit",
+          "choices": {
+            "idle": "Inactiviteitstekst tonen",
+            "clear": "Niets tonen"
+          }
+        }
+      }
+    },
+    {
+      "key": "idleText",
+      "label": "Leerlauf-Text",
+      "type": "text",
+      "default": "",
+      "placeholder": "Im Leerlauf",
+      "hint": "Erscheint im Leerlauf und ohne offene Datei. Leer = Standardtext.",
+      "section": "Leerlauf",
+      "i18n": {
+        "en": {
+          "label": "Idle text",
+          "hint": "Shown when idle and when no file is open. Empty = default text.",
+          "placeholder": "Idle",
+          "section": "Idle"
+        },
+        "es": {
+          "label": "Texto de inactividad",
+          "hint": "Se muestra en inactividad y sin archivo abierto. Vacío = texto predeterminado.",
+          "placeholder": "Inactivo",
+          "section": "Inactividad"
+        },
+        "fr": {
+          "label": "Texte d’inactivité",
+          "hint": "Affiché en cas d’inactivité et sans fichier ouvert. Vide = texte par défaut.",
+          "placeholder": "Inactif",
+          "section": "Inactivité"
+        },
+        "pl": {
+          "label": "Tekst bezczynności",
+          "hint": "Pokazywany podczas bezczynności i bez otwartego pliku. Puste = tekst domyślny.",
+          "placeholder": "Bezczynny",
+          "section": "Bezczynność"
+        },
+        "it": {
+          "label": "Testo di inattività",
+          "hint": "Mostrato in caso di inattività e senza file aperto. Vuoto = testo predefinito.",
+          "placeholder": "Inattivo",
+          "section": "Inattività"
+        },
+        "pt": {
+          "label": "Texto de ociosidade",
+          "hint": "Exibido quando ocioso e sem arquivo aberto. Vazio = texto padrão.",
+          "placeholder": "Ocioso",
+          "section": "Ociosidade"
+        },
+        "nl": {
+          "label": "Inactiviteitstekst",
+          "hint": "Getoond bij inactiviteit en zonder geopend bestand. Leeg = standaardtekst.",
+          "placeholder": "Inactief",
+          "section": "Inactiviteit"
+        }
+      }
+    },
+    {
+      "key": "privateMode",
+      "label": "In privaten Projekten",
+      "type": "select",
+      "default": "names",
+      "hint": "Ein Projekt wird privat über „Discord: Projekt privat schalten“ oder die Liste darunter.",
+      "section": "Privatsphäre",
+      "choices": [
+        {
+          "value": "names",
+          "label": "Datei- und Projektnamen verbergen"
+        },
+        {
+          "value": "hide",
+          "label": "Gar nichts anzeigen"
+        }
+      ],
+      "i18n": {
+        "en": {
+          "label": "In private projects",
+          "hint": "Mark a project private with “Discord: Toggle Private Project” or the list below.",
+          "section": "Privacy",
+          "choices": {
+            "names": "Hide file and project names",
+            "hide": "Show nothing at all"
+          }
+        },
+        "es": {
+          "label": "En proyectos privados",
+          "hint": "Marca un proyecto como privado con «Discord: Alternar proyecto privado» o con la lista de abajo.",
+          "section": "Privacidad",
+          "choices": {
+            "names": "Ocultar nombres de archivo y proyecto",
+            "hide": "No mostrar nada"
+          }
+        },
+        "fr": {
+          "label": "Dans les projets privés",
+          "hint": "Rendez un projet privé avec « Discord : Basculer le projet privé » ou la liste ci-dessous.",
+          "section": "Confidentialité",
+          "choices": {
+            "names": "Masquer les noms de fichier et de projet",
+            "hide": "Ne rien afficher du tout"
+          }
+        },
+        "pl": {
+          "label": "W prywatnych projektach",
+          "hint": "Oznacz projekt jako prywatny poleceniem „Discord: Przełącz projekt prywatny” lub listą poniżej.",
+          "section": "Prywatność",
+          "choices": {
+            "names": "Ukryj nazwy plików i projektu",
+            "hide": "Nie pokazuj niczego"
+          }
+        },
+        "it": {
+          "label": "Nei progetti privati",
+          "hint": "Rendi privato un progetto con “Discord: Attiva/disattiva progetto privato” o con l’elenco qui sotto.",
+          "section": "Privacy",
+          "choices": {
+            "names": "Nascondi i nomi di file e progetto",
+            "hide": "Non mostrare nulla"
+          }
+        },
+        "pt": {
+          "label": "Em projetos privados",
+          "hint": "Marque um projeto como privado com “Discord: Alternar projeto privado” ou com a lista abaixo.",
+          "section": "Privacidade",
+          "choices": {
+            "names": "Ocultar nomes de arquivo e projeto",
+            "hide": "Não mostrar nada"
+          }
+        },
+        "nl": {
+          "label": "In privéprojecten",
+          "hint": "Maak een project privé met „Discord: Privéproject wisselen” of met de lijst hieronder.",
+          "section": "Privacy",
+          "choices": {
+            "names": "Bestands- en projectnamen verbergen",
+            "hide": "Helemaal niets tonen"
+          }
+        }
+      }
+    },
+    {
+      "key": "privateProjects",
+      "label": "Private Ordner",
+      "type": "textarea",
+      "default": "",
+      "rows": 3,
+      "placeholder": "/home/ich/arbeit",
+      "hint": "Ein absoluter Pfad pro Zeile; Projekte darin gelten als privat.",
+      "section": "Privatsphäre",
+      "i18n": {
+        "en": {
+          "label": "Private folders",
+          "hint": "One absolute path per line; projects inside count as private.",
+          "placeholder": "/home/me/work",
+          "section": "Privacy"
+        },
+        "es": {
+          "label": "Carpetas privadas",
+          "hint": "Una ruta absoluta por línea; los proyectos dentro se consideran privados.",
+          "placeholder": "/home/yo/trabajo",
+          "section": "Privacidad"
+        },
+        "fr": {
+          "label": "Dossiers privés",
+          "hint": "Un chemin absolu par ligne ; les projets qu’il contient sont considérés comme privés.",
+          "placeholder": "/home/moi/travail",
+          "section": "Confidentialité"
+        },
+        "pl": {
+          "label": "Prywatne foldery",
+          "hint": "Jedna ścieżka bezwzględna na wiersz; projekty w środku są prywatne.",
+          "placeholder": "/home/ja/praca",
+          "section": "Prywatność"
+        },
+        "it": {
+          "label": "Cartelle private",
+          "hint": "Un percorso assoluto per riga; i progetti al suo interno sono privati.",
+          "placeholder": "/home/io/lavoro",
+          "section": "Privacy"
+        },
+        "pt": {
+          "label": "Pastas privadas",
+          "hint": "Um caminho absoluto por linha; os projetos dentro contam como privados.",
+          "placeholder": "/home/eu/trabalho",
+          "section": "Privacidade"
+        },
+        "nl": {
+          "label": "Privémappen",
+          "hint": "Eén absoluut pad per regel; projecten daarin gelden als privé.",
+          "placeholder": "/home/ik/werk",
+          "section": "Privacy"
+        }
+      }
+    }
+  ],
+  "commands": [
+    {
+      "id": "discord.reconnect",
+      "title": "Discord: Neu verbinden",
+      "category": "Discord",
+      "icon": "refresh-cw",
+      "i18n": {
+        "en": {
+          "title": "Discord: Reconnect"
+        },
+        "es": {
+          "title": "Discord: Reconectar"
+        },
+        "fr": {
+          "title": "Discord : Se reconnecter"
+        },
+        "pl": {
+          "title": "Discord: Połącz ponownie"
+        },
+        "it": {
+          "title": "Discord: Riconnetti"
+        },
+        "pt": {
+          "title": "Discord: Reconectar"
+        },
+        "nl": {
+          "title": "Discord: Opnieuw verbinden"
+        }
+      }
+    },
+    {
+      "id": "discord.enable",
+      "title": "Discord: Rich Presence einschalten",
+      "category": "Discord",
+      "icon": "play",
+      "i18n": {
+        "en": {
+          "title": "Discord: Enable Rich Presence"
+        },
+        "es": {
+          "title": "Discord: Activar Rich Presence"
+        },
+        "fr": {
+          "title": "Discord : Activer la Rich Presence"
+        },
+        "pl": {
+          "title": "Discord: Włącz Rich Presence"
+        },
+        "it": {
+          "title": "Discord: Attiva Rich Presence"
+        },
+        "pt": {
+          "title": "Discord: Ligar Rich Presence"
+        },
+        "nl": {
+          "title": "Discord: Rich Presence aanzetten"
+        }
+      }
+    },
+    {
+      "id": "discord.disable",
+      "title": "Discord: Rich Presence ausschalten",
+      "category": "Discord",
+      "icon": "pause",
+      "i18n": {
+        "en": {
+          "title": "Discord: Disable Rich Presence"
+        },
+        "es": {
+          "title": "Discord: Desactivar Rich Presence"
+        },
+        "fr": {
+          "title": "Discord : Désactiver la Rich Presence"
+        },
+        "pl": {
+          "title": "Discord: Wyłącz Rich Presence"
+        },
+        "it": {
+          "title": "Discord: Disattiva Rich Presence"
+        },
+        "pt": {
+          "title": "Discord: Desligar Rich Presence"
+        },
+        "nl": {
+          "title": "Discord: Rich Presence uitzetten"
+        }
+      }
+    },
+    {
+      "id": "discord.toggle",
+      "title": "Discord: Rich Presence ein-/ausschalten",
+      "category": "Discord",
+      "icon": "messages",
+      "i18n": {
+        "en": {
+          "title": "Discord: Toggle Rich Presence"
+        },
+        "es": {
+          "title": "Discord: Alternar Rich Presence"
+        },
+        "fr": {
+          "title": "Discord : Basculer la Rich Presence"
+        },
+        "pl": {
+          "title": "Discord: Przełącz Rich Presence"
+        },
+        "it": {
+          "title": "Discord: Attiva/disattiva Rich Presence"
+        },
+        "pt": {
+          "title": "Discord: Alternar Rich Presence"
+        },
+        "nl": {
+          "title": "Discord: Rich Presence wisselen"
+        }
+      }
+    },
+    {
+      "id": "discord.toggle-private",
+      "title": "Discord: Projekt privat schalten",
+      "category": "Discord",
+      "icon": "eye-off",
+      "i18n": {
+        "en": {
+          "title": "Discord: Toggle Private Project"
+        },
+        "es": {
+          "title": "Discord: Alternar proyecto privado"
+        },
+        "fr": {
+          "title": "Discord : Basculer le projet privé"
+        },
+        "pl": {
+          "title": "Discord: Przełącz projekt prywatny"
+        },
+        "it": {
+          "title": "Discord: Attiva/disattiva progetto privato"
+        },
+        "pt": {
+          "title": "Discord: Alternar projeto privado"
+        },
+        "nl": {
+          "title": "Discord: Privéproject wisselen"
+        }
+      }
+    }
+  ]
+}

@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { Check, Copy, Download, Pencil, Plus, Shapes, Trash2, Upload } from 'lucide-react'
 import { useStore } from '@/state/store'
-import { useT } from '@/i18n'
+import { tr, useT } from '@/i18n'
 import { registry } from '@/core/registry'
 import { iconPackSize, resolveFileIcon, resolveFolderIcon } from '@/core/icon-pack'
 import type { IconPack } from '@/core/types'
@@ -119,7 +119,7 @@ export function IconPacksSection({ query }: { query: string }) {
                   )}
                 </div>
               </div>
-              {pack.description && <p className="line-clamp-2 text-[11.5px] leading-snug text-muted">{pack.description}</p>}
+              {pack.description && <p className="line-clamp-2 text-[11.5px] leading-snug text-muted">{tr(pack.description)}</p>}
               <PackPreview pack={pack} />
             </div>
           )

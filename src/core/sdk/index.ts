@@ -4,4 +4,6 @@ export * from './types'
 export * from './env'
 export * from './state'
 export { javaProvider, javaDistribution, JAVA_DISTRIBUTIONS, compareVersions, normalizeJavaVersion } from './java'
-export { createJvmServerDecorator } from './lsp'
+export {
+  createGradleImportDecorator, createJavacBackendDecorator, createJvmServerDecorator, createNetBeansDecorator, javacBackendArgs, javacBackendRuntime,
+} from './lsp'

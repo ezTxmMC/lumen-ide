@@ -341,10 +341,14 @@
               "win32-arm64": "^server\\.zip$"
             }
           },
+          "systemPackages": {
+            "brew": "kotlin-language-server"
+          },
           "installCommands": {
             "darwin": "brew install kotlin-language-server"
           },
-          "docs": "https://github.com/fwcd/kotlin-language-server"
+          "docs": "https://github.com/fwcd/kotlin-language-server",
+          "rootSearch": "outermost"
         },
         {
           "label": "kotlin-lsp (JetBrains)",
@@ -363,7 +367,8 @@
             ".git"
           ],
           "install": "https://github.com/Kotlin/kotlin-lsp — Archiv entpacken, kotlin-lsp.sh in den PATH",
-          "docs": "https://github.com/Kotlin/kotlin-lsp"
+          "docs": "https://github.com/Kotlin/kotlin-lsp",
+          "rootSearch": "outermost"
         }
       ],
       "debug": [

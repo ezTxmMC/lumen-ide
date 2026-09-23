@@ -1,0 +1,20 @@
+{
+  "name": "lumen-extension-database",
+  "private": true,
+  "description": "Drivers of the Database extension \u2014 bundled into its code by extensions/build.mjs.",
+  "type": "module",
+  "dependencies": {
+    "ioredis": "^5.6.1",
+    "mongodb": "^7.0.0",
+    "mysql2": "^3.14.0",
+    "pg": "^8.16.0",
+    "pg-cursor": "^2.22.0",
+    "tedious": "^20.0.0"
+  },
+  "lumenBuild": {
+    "alias": {
+      "@azure/identity": "./src/stubs/azure-identity.js",
+      "aws-ssl-profiles": "./src/stubs/aws-ssl-profiles.js"
+    }
+  }
+}

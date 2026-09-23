@@ -1,4 +1,7 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme } from 'electron'
+import {
+  app, BrowserWindow, ipcMain, dialog, shell, nativeTheme,
+  type OpenDialogOptions, type SaveDialogOptions, type WebContents,
+} from 'electron'
 import { spawn, type ChildProcess } from 'node:child_process'
 import fs from 'node:fs/promises'
 import fsSync from 'node:fs'
@@ -6,21 +9,28 @@ import path from 'node:path'
 import os from 'node:os'
 import { fileURLToPath } from 'node:url'
 import {
-  createTerminal, detectExternalTerminals, detectShells, killAllTerminals, killTerminal,
-  openExternalTerminal, resizeTerminal, writeTerminal, type TerminalOptions,
+  createTerminal, detectExternalTerminals, detectShells, killAllTerminals, killTerminal, killTerminalsOf,
+  openExternalTerminal, resizeTerminal, terminalKey, writeTerminal, type TerminalOptions,
 } from './terminal'
 import { registerSdkIpc } from './features/sdk'
-import { registerDapIpc, stopAllDebugAdapters } from './features/dap'
+import { registerDapIpc, stopAllDebugAdapters, stopDebugAdaptersOf } from './features/dap'
 import { registerUserAddonIpc } from './features/user-addons'
 import { registerNetIpc } from './features/net'
 import { registerUpdaterIpc } from './features/updater'
 import { registerExtensionHostIpc } from './features/extension-host'
-import { registerDiscordIpc, stopDiscordRpc } from './features/discord-rpc'
 import { applyWindowSystem, currentWindowSystem, isWaylandSession, relaunchApp } from './features/window-system'
 import { folderFromArgv, registerRecentProjectsIpc } from './features/recent-projects'
 import { registerLocalRepoIpc } from './features/local-repos'
+import { registerCaptureIpc } from './features/capture'
 import { registerExtensionIpc } from './features/extensions'
+import { registerMediaIpc } from './features/media'
 import { managedCommand, registerLspPackageIpc } from './features/lsp-packages'
+import { registerPrivilegedIpc } from './features/privileged'
+import { isProjectDataPath, registerProjectDataIpc } from './features/project-data'
+import { registerJdtlsIpc } from './features/jdtls-support'
+import { setWorkspaceRoots } from './features/workspace-roots'
+import { registerOpenFileWatchIpc } from './features/open-file-watch'
+import { popoutOpenResult, registerPopoutIpc, trackPopouts } from './features/popout'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -28,17 +38,105 @@ process.env.APP_ROOT = path.join(__dirname, '..')
 const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL
 const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 
-let win: BrowserWindow | null = null
+/**
+ * Every window holds a project of its own: its folders, the watchers on them,
+ * and the processes it started. Events go back to the window that owns them —
+ * never to whichever window happens to have focus.
+ */
+interface WindowContext {
+  win: BrowserWindow
+  /** `webContents.id`, kept because the contents are gone by the time the window has closed. */
+  id: number
+  workspaceRoot: string | null
+  /** Further folders of a workspace (multi-root). */
+  extraRoots: string[]
+  watchers: WorkspaceWatcher[]
+  /** The renderer has settled unsaved changes — close without asking again. */
+  forceClose: boolean
+}
+
+const contexts = new Map<number, WindowContext>()
+/** The window focused last: dialogs, the jump list and features without an owner of their own go there. */
+let lastFocused: BrowserWindow | null = null
+/** Quitting for an update or a relaunch: every window closes without asking. */
 let forceClose = false
+
+function activeWindow(): BrowserWindow | null {
+  if (lastFocused && !lastFocused.isDestroyed()) return lastFocused
+  for (const ctx of contexts.values()) {
+    if (!ctx.win.isDestroyed()) return ctx.win
+  }
+  return null
+}
+
+const contextOf = (contents: WebContents) => contexts.get(contents.id) ?? null
+
+/** Process ids come from the renderer, and every window counts from the same start — scope them per window. */
+const scopedId = (contents: WebContents, id: string) => `${contents.id}:${id}`
+
+/** Features outside this file learn the folders of the window in front. */
+function syncWorkspaceRoots() {
+  const win = activeWindow()
+  const ctx = win ? contexts.get(win.webContents.id) : undefined
+  setWorkspaceRoots(ctx?.workspaceRoot ?? null, ctx?.extraRoots ?? [])
+}
+
+function setContextRoots(ctx: WindowContext, root: string, extras: string[]) {
+  ctx.workspaceRoot = root
+  ctx.extraRoots = extras
+  for (const existing of ctx.watchers) existing.close()
+  ctx.watchers = [root, ...extras.filter((extra) => extra !== root)].map((dir) => new WorkspaceWatcher(dir, ctx.win.webContents))
+  syncWorkspaceRoots()
+}
+
+/** A window has gone: end everything it started. */
+function releaseWindow(ctx: WindowContext) {
+  const prefix = `${ctx.id}:`
+  for (const key of [...running.keys()]) if (key.startsWith(prefix)) killCommand(key)
+  for (const key of [...servers.keys()]) if (key.startsWith(prefix)) stopLsp(key)
+  for (const existing of ctx.watchers) existing.close()
+  ctx.watchers = []
+  killTerminalsOf(ctx.id)
+  stopDebugAdaptersOf(ctx.id)
+  contexts.delete(ctx.id)
+  if (lastFocused === ctx.win) lastFocused = null
+  syncWorkspaceRoots()
+}
+
+/** Dialogs sit on the window that asked for them. */
+function showOpen(contents: WebContents, options: OpenDialogOptions) {
+  const parent = BrowserWindow.fromWebContents(contents)
+  if (parent) return dialog.showOpenDialog(parent, options)
+  return dialog.showOpenDialog(options)
+}
+
+function showSave(contents: WebContents, options: SaveDialogOptions) {
+  const parent = BrowserWindow.fromWebContents(contents)
+  if (parent) return dialog.showSaveDialog(parent, options)
+  return dialog.showSaveDialog(options)
+}
 
 /* ------------------------------------------------------------------ *
  * The window
  * ------------------------------------------------------------------ */
 
-function createWindow() {
-  win = new BrowserWindow({
-    width: 1440,
-    height: 900,
+/** Where a further window goes: a little below and to the right of the one in front. */
+function nextBounds(): { x?: number; y?: number; width: number; height: number } {
+  const front = activeWindow()
+  if (!front || front.isDestroyed()) return { width: 1440, height: 900 }
+  const bounds = front.getNormalBounds()
+  return { x: bounds.x + 28, y: bounds.y + 28, width: bounds.width, height: bounds.height }
+}
+
+/**
+ * A window. `project` opens that folder straight away (a query parameter the
+ * renderer reads at start) instead of the project screen or the last project;
+ * a `fresh` window starts at the project screen even when “open last project
+ * on start” is on — that setting is about starting the app.
+ */
+function createWindow(project?: string, fresh = false) {
+  const win = new BrowserWindow({
+    ...nextBounds(),
     minWidth: 820,
     minHeight: 520,
     show: false,
@@ -55,27 +153,37 @@ function createWindow() {
     },
   })
 
+  const contents = win.webContents
+  const ctx: WindowContext = { win, id: contents.id, workspaceRoot: null, extraRoots: [], watchers: [], forceClose: false }
+  contexts.set(ctx.id, ctx)
+  lastFocused = win
+
   // Under Wayland `ready-to-show` does not always arrive for hidden windows —
   // show it anyway once loading is through, or after a short wait.
-  const reveal = () => { if (win && !win.isDestroyed() && !win.isVisible()) win.show() }
+  const reveal = () => { if (!win.isDestroyed() && !win.isVisible()) win.show() }
   win.once('ready-to-show', reveal)
-  win.webContents.once('did-finish-load', () => setTimeout(reveal, 400))
+  contents.once('did-finish-load', () => setTimeout(reveal, 400))
   setTimeout(reveal, 4000)
-  // Reloading the renderer (hot reload) orphans the shells running — end them then.
-  win.webContents.on('did-start-navigation', (details) => {
-    if (details.isMainFrame && !details.isSameDocument) killAllTerminals()
+  // Reloading the renderer (hot reload) orphans this window's shells — end them then.
+  contents.on('did-start-navigation', (details) => {
+    if (details.isMainFrame && !details.isSameDocument) killTerminalsOf(ctx.id)
   })
-  win.on('closed', () => { win = null })
+  win.on('focus', () => {
+    lastFocused = win
+    syncWorkspaceRoots()
+  })
+  win.on('closed', () => releaseWindow(ctx))
 
   // Close only after asking in the renderer (unsaved changes).
   win.on('close', (event) => {
-    if (forceClose) return
+    if (forceClose || ctx.forceClose) return
     event.preventDefault()
-    win?.webContents.send('app:close-request')
+    contents.send('app:close-request')
   })
 
-  const emit = (channel: string, payload?: unknown) =>
-    win?.webContents.send(channel, payload)
+  const emit = (channel: string, payload?: unknown) => {
+    if (!contents.isDestroyed()) contents.send(channel, payload)
+  }
 
   win.on('maximize', () => emit('window:state', { maximized: true }))
   win.on('unmaximize', () => emit('window:state', { maximized: false }))
@@ -83,16 +191,38 @@ function createWindow() {
   win.on('leave-full-screen', () => emit('window:state', { fullscreen: false }))
 
   // Never open external links in the app window.
-  win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:\/\//.test(url)) shell.openExternal(url)
+  // Except the windows the renderer opens itself for pop-out views and editor groups.
+  win.webContents.setWindowOpenHandler((details) => {
+    const popout = popoutOpenResult(details)
+    if (popout) return popout
+    if (/^https?:\/\//.test(details.url)) shell.openExternal(details.url)
     return { action: 'deny' }
   })
+  trackPopouts(win)
 
+  const query: Record<string, string> = {}
+  if (project) query.project = project
+  if (fresh && !project) query.fresh = '1'
   if (VITE_DEV_SERVER_URL) {
-    win.loadURL(VITE_DEV_SERVER_URL)
-    return
+    const url = new URL(VITE_DEV_SERVER_URL)
+    for (const [key, value] of Object.entries(query)) url.searchParams.set(key, value)
+    void win.loadURL(url.toString())
+    return win
   }
-  win.loadFile(path.join(RENDERER_DIST, 'index.html'))
+  void win.loadFile(path.join(RENDERER_DIST, 'index.html'), { query })
+  return win
+}
+
+/** Open a project in a window of its own — or bring forward the window that has it open already. */
+function openProjectWindow(project?: string) {
+  const existing = project ? [...contexts.values()].find((ctx) => ctx.workspaceRoot === project) : undefined
+  if (existing && !existing.win.isDestroyed()) {
+    if (existing.win.isMinimized()) existing.win.restore()
+    existing.win.focus()
+    return 'focused'
+  }
+  createWindow(project, true)
+  return 'opened'
 }
 
 const relaunching = applyWindowSystem()
@@ -114,6 +244,7 @@ let pendingFolder = folderFromArgv(process.argv)
 
 app.on('second-instance', (_event, argv) => {
   const folder = folderFromArgv(argv)
+  const win = activeWindow()
   if (!win || win.isDestroyed()) return
   if (win.isMinimized()) win.restore()
   win.focus()
@@ -126,16 +257,22 @@ app.whenReady().then(() => {
   nativeTheme.themeSource = 'dark'
   registerIpc()
   registerNetIpc()
-  registerSdkIpc(() => win)
-  registerLspPackageIpc(() => win)
-  registerDapIpc(() => win)
-  registerUserAddonIpc(() => win)
-  registerUpdaterIpc(() => win, () => { forceClose = true })
-  registerDiscordIpc(() => win)
-  registerRecentProjectsIpc(() => win)
+  registerSdkIpc(activeWindow)
+  registerLspPackageIpc(activeWindow)
+  registerPrivilegedIpc(activeWindow)
+  registerDapIpc()
+  registerUserAddonIpc(activeWindow)
+  registerUpdaterIpc(() => { forceClose = true })
+  registerRecentProjectsIpc(activeWindow)
   registerLocalRepoIpc()
-  registerExtensionHostIpc(() => win)
+  registerCaptureIpc()
+  registerProjectDataIpc()
+  registerJdtlsIpc()
+  registerExtensionHostIpc(activeWindow)
   registerExtensionIpc()
+  registerMediaIpc()
+  registerPopoutIpc()
+  registerOpenFileWatchIpc((owner, file) => contextOf(owner)?.watchers.some((watcher) => watcher.covers(file)) ?? false)
   createWindow()
 
   app.on('activate', () => {
@@ -202,15 +339,19 @@ function isInside(parent: string, target: string) {
 
 function assertWritable(target: string) {
   if (grantedPaths.has(target)) return
-  if (workspaceRoot && isInside(workspaceRoot, target)) return
-  for (const extra of extraRoots) if (isInside(extra, target)) return
+  // Lumen's own project files (~/.lumen/projects) — opened and saved like any other file.
+  if (isProjectDataPath(target)) return
+  // The folders of every window: each one writes only through its own tree anyway.
+  for (const root of openRoots()) if (isInside(root, target)) return
   for (const granted of grantedPaths) if (isInside(granted, target)) return
   throw new Error('Path lies outside the workspace folder')
 }
 
-let workspaceRoot: string | null = null
-/** Further folders of a workspace (multi-root). */
-let extraRoots: string[] = []
+/** The folders open in any window. */
+function openRoots(): string[] {
+  return [...contexts.values()].flatMap((ctx) => (ctx.workspaceRoot ? [ctx.workspaceRoot, ...ctx.extraRoots] : ctx.extraRoots))
+}
+
 interface FsChange {
   path: string
   /** 1 created · 2 changed · 3 deleted */
@@ -218,12 +359,27 @@ interface FsChange {
 }
 
 /** Dot folders watched all the same (the project configuration). */
-const WATCHED_DOT_DIRS = new Set(['.lumen', '.vscode', '.github'])
+const WATCHED_DOT_DIRS = new Set(['.vscode', '.github'])
 const MAX_WATCHED_DIRS = 12_000
+/** Quiet time before a batch goes out … */
+const BATCH_QUIET_MS = 150
+/** … and the longest a change waits: a log written every few ms must not hold the rest back. */
+const BATCH_MAX_DELAY_MS = 600
+/** Files reported for a folder that appeared with contents already inside. */
+const MAX_FOUND_IN_NEW_DIR = 500
 
 function ignoredSegment(segment: string) {
   if (IGNORED.has(segment)) return true
   return segment.startsWith('.') && segment.length > 1 && !WATCHED_DOT_DIRS.has(segment) && segment !== '.env'
+}
+
+/**
+ * Is a change to this entry worth reporting? Hidden folders are not descended
+ * into, but a dot *file* (.gitignore, .eslintrc) is shown and edited like any
+ * other — only the heavy folders themselves are dropped.
+ */
+function ignoredLeaf(name: string) {
+  return IGNORED.has(name)
 }
 
 /**
@@ -238,9 +394,10 @@ class WorkspaceWatcher {
   private watchers = new Map<string, fsSync.FSWatcher>()
   private pending = new Map<string, 'rename' | 'change'>()
   private timer: NodeJS.Timeout | null = null
+  private firstPending = 0
   private closed = false
 
-  constructor(private readonly root: string) {
+  constructor(private readonly root: string, private readonly owner: WebContents) {
     if (process.platform === 'linux') {
       void this.watchTree(root)
       return
@@ -253,7 +410,8 @@ class WorkspaceWatcher {
       const watcher = fsSync.watch(this.root, { recursive: true }, (event, filename) => {
         const name = filename?.toString() ?? ''
         if (!name) return
-        if (name.split(/[\\/]/).some(ignoredSegment)) return
+        const parts = name.split(/[\\/]/)
+        if (parts.slice(0, -1).some(ignoredSegment) || ignoredLeaf(parts[parts.length - 1])) return
         this.record(path.join(this.root, name), event)
       })
       watcher.on('error', () => this.close())
@@ -263,12 +421,18 @@ class WorkspaceWatcher {
     }
   }
 
-  private async watchTree(dir: string) {
+  /**
+   * `found` collects the files already inside — for a folder that appeared
+   * with contents (an agent creating a package and its first class at once),
+   * whose files were written before this watcher existed.
+   */
+  private async watchTree(dir: string, found?: string[]) {
     if (this.closed || this.watchers.has(dir) || this.watchers.size >= MAX_WATCHED_DIRS) return
+    if (dir !== this.root && ignoredSegment(path.basename(dir))) return
     try {
       const watcher = fsSync.watch(dir, (event, filename) => {
         const name = filename?.toString() ?? ''
-        if (!name || ignoredSegment(name)) return
+        if (!name || ignoredLeaf(name)) return
         this.record(path.join(dir, name), event)
       })
       watcher.on('error', () => this.unwatch(dir))
@@ -283,9 +447,20 @@ class WorkspaceWatcher {
       return
     }
     for (const entry of entries) {
+      if (found && entry.isFile() && found.length < MAX_FOUND_IN_NEW_DIR && !ignoredLeaf(entry.name)) {
+        found.push(path.join(dir, entry.name))
+      }
       if (!entry.isDirectory() || ignoredSegment(entry.name)) continue
-      await this.watchTree(path.join(dir, entry.name))
+      await this.watchTree(path.join(dir, entry.name), found)
     }
+  }
+
+  /** Does a change to this file reach the renderer through this watcher? */
+  covers(file: string) {
+    if (this.closed || !isInside(this.root, file) || ignoredLeaf(path.basename(file))) return false
+    if (process.platform === 'linux') return this.watchers.has(path.dirname(file))
+    if (!this.watchers.size) return false
+    return !path.relative(this.root, path.dirname(file)).split(/[\\/]/).some(ignoredSegment)
   }
 
   private unwatch(dir: string) {
@@ -299,11 +474,17 @@ class WorkspaceWatcher {
   private record(file: string, event: string) {
     const previous = this.pending.get(file)
     this.pending.set(file, event === 'rename' || previous === 'rename' ? 'rename' : 'change')
+    const now = Date.now()
+    if (!this.timer) this.firstPending = now
     if (this.timer) clearTimeout(this.timer)
-    this.timer = setTimeout(() => void this.flush(), 150)
+    // Debounced, but never beyond the cap — continuous writes elsewhere would
+    // otherwise keep every change (an agent's edit included) waiting.
+    const wait = Math.max(0, Math.min(BATCH_QUIET_MS, this.firstPending + BATCH_MAX_DELAY_MS - now))
+    this.timer = setTimeout(() => void this.flush(), wait)
   }
 
   private async flush() {
+    this.timer = null
     const batch = [...this.pending]
     this.pending.clear()
     const changes: FsChange[] = []
@@ -314,11 +495,15 @@ class WorkspaceWatcher {
         changes.push({ path: file, type: 3 })
         continue
       }
-      if (stat.isDirectory() && process.platform === 'linux') await this.watchTree(file)
+      if (stat.isDirectory() && process.platform === 'linux') {
+        const found: string[] = []
+        await this.watchTree(file, kind === 'rename' ? found : undefined)
+        for (const inner of found) changes.push({ path: inner, type: 1 })
+      }
       changes.push({ path: file, type: kind === 'rename' ? 1 : 2 })
     }
-    if (this.closed || !changes.length) return
-    win?.webContents.send('fs:changed', changes)
+    if (this.closed || !changes.length || this.owner.isDestroyed()) return
+    this.owner.send('fs:changed', changes)
   }
 
   close() {
@@ -329,12 +514,6 @@ class WorkspaceWatcher {
   }
 }
 
-let watchers: WorkspaceWatcher[] = []
-
-function watchWorkspace(root: string, extras: string[] = []) {
-  for (const existing of watchers) existing.close()
-  watchers = [root, ...extras.filter((extra) => extra !== root)].map((dir) => new WorkspaceWatcher(dir))
-}
 
 /* ------------------------------------------------------------------ *
  * Settings (userData/settings.json)
@@ -359,6 +538,7 @@ async function saveSettings(data: Record<string, unknown>) {
  * The process runner
  * ------------------------------------------------------------------ */
 
+/** Keyed by `scopedId`; the output goes to `owner` under the renderer's own id. */
 const running = new Map<string, ChildProcess>()
 
 /** Replace `${env:NAME}` with the environment variable. */
@@ -367,10 +547,11 @@ function expandEnv(value: string, env: Record<string, string | undefined>) {
 }
 
 function runCommand(
-  id: string, command: string, rawArgs: string[], cwd: string,
+  owner: WebContents, id: string, command: string, rawArgs: string[], cwd: string,
   env: Record<string, string> = {},
 ) {
-  killCommand(id)
+  const key = scopedId(owner, id)
+  killCommand(key)
   const merged = { ...process.env, ...env }
   const args = rawArgs.map((a) => expandEnv(a, merged))
   const child = spawn(expandEnv(command, merged), args, {
@@ -378,31 +559,34 @@ function runCommand(
     env: { ...process.env, FORCE_COLOR: '0', ...env },
     shell: process.platform === 'win32',
   })
-  running.set(id, child)
+  running.set(key, child)
 
+  const post = (channel: string, payload: unknown) => {
+    if (!owner.isDestroyed()) owner.send(channel, payload)
+  }
   const send = (stream: 'stdout' | 'stderr', data: Buffer) =>
-    win?.webContents.send('run:data', { id, stream, data: data.toString() })
+    post('run:data', { id, stream, data: data.toString() })
 
   child.stdout?.on('data', (d: Buffer) => send('stdout', d))
   child.stderr?.on('data', (d: Buffer) => send('stderr', d))
+  // A rerun under the same id replaced this child — its late end must not remove the new one.
+  const release = () => { if (running.get(key) === child) running.delete(key) }
   child.on('error', (err) => {
-    win?.webContents.send('run:data', {
-      id, stream: 'stderr', data: `${err.message}\n`,
-    })
-    running.delete(id)
-    win?.webContents.send('run:exit', { id, code: -1 })
+    post('run:data', { id, stream: 'stderr', data: `${err.message}\n` })
+    release()
+    post('run:exit', { id, code: -1 })
   })
   child.on('close', (code) => {
-    running.delete(id)
-    win?.webContents.send('run:exit', { id, code })
+    release()
+    post('run:exit', { id, code })
   })
 }
 
-function killCommand(id: string) {
-  const child = running.get(id)
+function killCommand(key: string) {
+  const child = running.get(key)
   if (!child) return
   child.kill('SIGTERM')
-  running.delete(id)
+  running.delete(key)
 }
 
 app.on('before-quit', () => {
@@ -410,8 +594,7 @@ app.on('before-quit', () => {
   for (const id of [...servers.keys()]) stopLsp(id)
   killAllTerminals()
   stopAllDebugAdapters()
-  stopDiscordRpc()
-  for (const existing of watchers) existing.close()
+  for (const ctx of contexts.values()) for (const existing of ctx.watchers) existing.close()
 })
 
 /* ------------------------------------------------------------------ *
@@ -422,9 +605,18 @@ interface LspProcess {
   child: ChildProcess
   /** A buffer for messages not yet complete. */
   buffer: Buffer
+  /** The renderer's id for the server — `servers` keys it per window. */
+  id: string
+  owner: WebContents
 }
 
+/** Keyed by `scopedId`. */
 const servers = new Map<string, LspProcess>()
+
+function postLsp(server: LspProcess, channel: string, payload: unknown) {
+  if (server.owner.isDestroyed()) return
+  server.owner.send(channel, payload)
+}
 
 /** Checks whether a program lies in the PATH. */
 function commandExists(command: string): Promise<boolean> {
@@ -472,7 +664,7 @@ async function resolveFirst(candidates: string[]): Promise<string | null> {
  * Splits the stdout stream into LSP messages.
  * The frame: `Content-Length: <n>\r\n\r\n<n bytes of JSON>`
  */
-function drainLsp(id: string, server: LspProcess) {
+function drainLsp(server: LspProcess) {
   for (;;) {
     const headerEnd = server.buffer.indexOf('\r\n\r\n')
     if (headerEnd === -1) return
@@ -493,18 +685,33 @@ function drainLsp(id: string, server: LspProcess) {
     server.buffer = server.buffer.subarray(start + length)
 
     try {
-      win?.webContents.send('lsp:message', { id, message: JSON.parse(body) })
+      postLsp(server, 'lsp:message', { id: server.id, message: JSON.parse(body) })
     } catch {
       // Skip broken JSON rather than lose the stream.
     }
   }
 }
 
+/**
+ * The environment of a language server. Variables of a VS Code session that
+ * started Lumen stay out: ModDevGradle, run inside jdtls' Gradle import,
+ * takes `VSCODE_PID` as “running in VS Code” and writes `.vscode/launch.json`
+ * into the project.
+ */
+function serverEnvironment(extra: Record<string, string>): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...process.env, ...extra }
+  for (const key of Object.keys(env)) {
+    if (key.startsWith('VSCODE_')) delete env[key]
+  }
+  return env
+}
+
 function startLsp(
-  id: string, command: string, args: string[], cwd: string,
+  owner: WebContents, id: string, command: string, args: string[], cwd: string,
   env: Record<string, string> = {},
 ) {
-  stopLsp(id)
+  const key = scopedId(owner, id)
+  stopLsp(key)
   // Create the data folder (jdtls -data, say) where the arguments name one.
   for (const arg of args) {
     if (arg.startsWith(app.getPath('userData'))) {
@@ -516,36 +723,46 @@ function startLsp(
   const child = spawn(quoted ? `"${command}"` : command, args, {
     cwd,
     stdio: ['pipe', 'pipe', 'pipe'],
-    env: { ...process.env, ...env },
+    env: serverEnvironment(env),
     shell: process.platform === 'win32',
   })
-  const server: LspProcess = { child, buffer: Buffer.alloc(0) }
-  servers.set(id, server)
+  const server: LspProcess = { child, buffer: Buffer.alloc(0), id, owner }
+  servers.set(key, server)
 
   child.stdout?.on('data', (chunk: Buffer) => {
     server.buffer = Buffer.concat([server.buffer, chunk])
-    drainLsp(id, server)
+    drainLsp(server)
   })
   // The servers' stderr is often chatty — pass it on for debugging only.
   child.stderr?.on('data', (chunk: Buffer) => {
-    win?.webContents.send('lsp:stderr', { id, text: chunk.toString() })
+    postLsp(server, 'lsp:stderr', { id, text: chunk.toString() })
   })
   // A restart uses the same id. The late end of the old process must neither
   // delete the entry of the new one nor report its client as having crashed.
   child.on('error', (err) => {
-    if (servers.get(id) !== server) return
-    servers.delete(id)
-    win?.webContents.send('lsp:closed', { id, reason: err.message })
+    if (servers.get(key) !== server) return
+    servers.delete(key)
+    postLsp(server, 'lsp:closed', { id, reason: err.message })
   })
   child.on('close', (code) => {
-    if (servers.get(id) !== server) return
-    servers.delete(id)
-    win?.webContents.send('lsp:closed', { id, reason: `beendet (Code ${code})` })
+    if (servers.get(key) !== server) return
+    servers.delete(key)
+    postLsp(server, 'lsp:closed', { id, reason: `beendet (Code ${code})` })
   })
 }
 
-function sendLsp(id: string, message: unknown) {
-  const server = servers.get(id)
+/** `LUMEN_TRACE_LSP=1` prints the document sync sent to servers — for debugging drift between editor and server. */
+const TRACE_LSP = process.env.LUMEN_TRACE_LSP === '1'
+
+function traceLsp(id: string, message: unknown) {
+  const { method, params } = message as { method?: string; params?: { textDocument?: { uri?: string; version?: number }; contentChanges?: unknown[] } }
+  if (!method?.startsWith('textDocument/did') && method !== 'workspace/didChangeWatchedFiles') return
+  console.log(`[lsp ${id}] ${method} ${params?.textDocument?.uri ?? ''} v${params?.textDocument?.version ?? ''} ${JSON.stringify(params?.contentChanges ?? (params as Record<string, unknown>)?.changes ?? '').slice(0, 400)}`)
+}
+
+function sendLsp(key: string, message: unknown) {
+  if (TRACE_LSP) traceLsp(key, message)
+  const server = servers.get(key)
   if (!server?.child.stdin?.writable) return false
   const body = Buffer.from(JSON.stringify(message), 'utf8')
   server.child.stdin.write(`Content-Length: ${body.length}\r\n\r\n`)
@@ -553,10 +770,10 @@ function sendLsp(id: string, message: unknown) {
   return true
 }
 
-function stopLsp(id: string) {
-  const server = servers.get(id)
+function stopLsp(key: string) {
+  const server = servers.get(key)
   if (!server) return
-  servers.delete(id)
+  servers.delete(key)
   server.child.stdin?.end()
   server.child.kill('SIGTERM')
   // Kill hanging servers outright after a short wait.
@@ -566,23 +783,87 @@ function stopLsp(id: string) {
   }, 2000)
 }
 
+/** Marker folders that only say “a repository starts here” — the last resort for a root. */
+const VCS_MARKERS = new Set(['.git', '.hg', '.svn'])
+
+async function hasAny(dir: string, markers: string[]): Promise<boolean> {
+  for (const marker of markers) {
+    if (await fs.access(path.join(dir, marker)).then(() => true, () => false)) return true
+  }
+  return false
+}
+
+/** The folders from `startDir` up to the working folder containing it (or the file system root). */
+function ancestors(startDir: string): string[] {
+  const containing = openRoots().find((dir) => isInside(dir, startDir))
+  const limit = containing ?? path.parse(startDir).root
+  const out: string[] = []
+  let dir = startDir
+  for (;;) {
+    out.push(dir)
+    const parent = path.dirname(dir)
+    if (dir === limit || parent === dir) return out
+    dir = parent
+  }
+}
+
+async function findProjectRoot(startDir: string, markers: string[], mode: 'nearest' | 'outermost'): Promise<string | null> {
+  const dirs = ancestors(startDir)
+  const build = markers.filter((marker) => !VCS_MARKERS.has(marker))
+  const vcs = markers.filter((marker) => VCS_MARKERS.has(marker))
+  if (mode === 'nearest') {
+    for (const dir of dirs) if (await hasAny(dir, markers)) return dir
+    return null
+  }
+  let outermost: string | null = null
+  for (const dir of dirs) if (await hasAny(dir, build)) outermost = dir
+  if (outermost) return outermost
+  for (const dir of dirs) if (await hasAny(dir, vcs)) return dir
+  return null
+}
+
 /* ------------------------------------------------------------------ *
  * IPC
  * ------------------------------------------------------------------ */
 
 function registerIpc() {
-  ipcMain.handle('window:minimize', () => win?.minimize())
-  ipcMain.handle('window:toggleMaximize', () => {
+  // Window controls act on the window that asked.
+  const senderWindow = (contents: WebContents) => BrowserWindow.fromWebContents(contents)
+  ipcMain.handle('window:minimize', (e) => senderWindow(e.sender)?.minimize())
+  ipcMain.handle('window:toggleMaximize', (e) => {
+    const win = senderWindow(e.sender)
     if (!win) return false
-    win.isMaximized() ? win.unmaximize() : win.maximize()
-    return win.isMaximized()
+    if (win.isMaximized()) {
+      win.unmaximize()
+      return false
+    }
+    win.maximize()
+    return true
   })
-  ipcMain.handle('window:close', () => win?.webContents.send('app:close-request'))
-  ipcMain.handle('window:forceClose', () => {
-    forceClose = true
+  ipcMain.handle('window:close', (e) => e.sender.send('app:close-request'))
+  ipcMain.handle('window:forceClose', (e) => {
+    const ctx = contextOf(e.sender)
+    if (ctx) ctx.forceClose = true
+    const win = senderWindow(e.sender)
     if (win && !win.isDestroyed()) win.close()
   })
-  ipcMain.handle('window:isMaximized', () => win?.isMaximized() ?? false)
+  ipcMain.handle('window:isMaximized', (e) => senderWindow(e.sender)?.isMaximized() ?? false)
+  /** A project in a window of its own; without one, an empty window at the project screen. */
+  ipcMain.handle('window:openProject', (_e, folder?: string) => {
+    const project = typeof folder === 'string' && path.isAbsolute(folder) ? folder : undefined
+    return openProjectWindow(project)
+  })
+  /** Clipboard and selection commands for the menu bar — they act on whatever has focus. */
+  ipcMain.handle('window:edit', (e, action: string) => {
+    const actions: Record<string, () => void> = {
+      cut: () => e.sender.cut(),
+      copy: () => e.sender.copy(),
+      paste: () => e.sender.paste(),
+      selectAll: () => e.sender.selectAll(),
+    }
+    actions[String(action)]?.()
+  })
+  ipcMain.handle('window:toggleDevTools', (e) => e.sender.toggleDevTools())
 
   // Once only: the renderer collects the start folder, after which it is spent.
   ipcMain.handle('app:startupFolder', () => {
@@ -602,22 +883,28 @@ function registerIpc() {
     electron: process.versions.electron,
     chrome: process.versions.chrome,
   }))
+  /** “Exit”: every window asks about its unsaved changes and closes; the last one ends the app. */
+  ipcMain.handle('app:quit', () => {
+    for (const ctx of contexts.values()) {
+      if (!ctx.win.isDestroyed()) ctx.win.webContents.send('app:close-request')
+    }
+  })
   ipcMain.handle('app:relaunch', () => {
     forceClose = true
     relaunchApp()
   })
 
-  ipcMain.handle('dialog:openFolder', async () => {
-    const res = await dialog.showOpenDialog(win!, { properties: ['openDirectory'] })
-    if (res.canceled || !res.filePaths[0]) return null
-    workspaceRoot = res.filePaths[0]
-    extraRoots = []
-    watchWorkspace(workspaceRoot)
-    return workspaceRoot
+  ipcMain.handle('dialog:openFolder', async (e) => {
+    const res = await showOpen(e.sender, { properties: ['openDirectory'] })
+    const folder = res.filePaths[0]
+    if (res.canceled || !folder) return null
+    const ctx = contextOf(e.sender)
+    if (ctx) setContextRoots(ctx, folder, [])
+    return folder
   })
 
-  ipcMain.handle('dialog:chooseFolder', async (_e, title?: string, defaultPath?: string) => {
-    const res = await dialog.showOpenDialog(win!, {
+  ipcMain.handle('dialog:chooseFolder', async (e, title?: string, defaultPath?: string) => {
+    const res = await showOpen(e.sender, {
       title: title ?? 'Ordner wählen',
       defaultPath,
       properties: ['openDirectory', 'createDirectory'],
@@ -627,16 +914,22 @@ function registerIpc() {
     return res.filePaths[0]
   })
 
-  ipcMain.handle('dialog:openFile', async () => {
-    const res = await dialog.showOpenDialog(win!, { properties: ['openFile'] })
+  ipcMain.handle('dialog:chooseFile', async (e, title?: string, defaultPath?: string) => {
+    const res = await showOpen(e.sender, { title, defaultPath, properties: ['openFile'] })
+    if (res.canceled || !res.filePaths[0]) return null
+    return res.filePaths[0]
+  })
+
+  ipcMain.handle('dialog:openFile', async (e) => {
+    const res = await showOpen(e.sender, { properties: ['openFile'] })
     if (res.canceled || !res.filePaths[0]) return null
     const file = res.filePaths[0]
     grantedPaths.add(file)
     return { path: file, content: await fs.readFile(file, 'utf8') }
   })
 
-  ipcMain.handle('dialog:saveFile', async (_e, suggested: string) => {
-    const res = await dialog.showSaveDialog(win!, { defaultPath: suggested })
+  ipcMain.handle('dialog:saveFile', async (e, suggested: string) => {
+    const res = await showSave(e.sender, { defaultPath: suggested })
     if (res.canceled || !res.filePath) return null
     grantedPaths.add(res.filePath)
     return res.filePath
@@ -709,6 +1002,17 @@ function registerIpc() {
     return true
   })
 
+  ipcMain.handle('fs:copy', async (_e, from: string, to: string) => {
+    assertWritable(to)
+    if (isInside(from, to)) throw new Error(`“${path.basename(from)}” cannot be copied into itself`)
+    if (await fs.access(to).then(() => true, () => false)) {
+      throw new Error(`“${path.basename(to)}” already exists`)
+    }
+    await fs.mkdir(path.dirname(to), { recursive: true })
+    await fs.cp(from, to, { recursive: true, errorOnExist: true, force: false })
+    return true
+  })
+
   ipcMain.handle('fs:delete', async (_e, target: string) => {
     assertWritable(target)
     await shell.trashItem(target)
@@ -764,10 +1068,10 @@ function registerIpc() {
     return hits
   })
 
-  ipcMain.handle('workspace:set', (_e, root: string, extras?: string[]) => {
-    workspaceRoot = root
-    extraRoots = Array.isArray(extras) ? extras.filter((dir) => typeof dir === 'string' && path.isAbsolute(dir)) : []
-    watchWorkspace(root, extraRoots)
+  ipcMain.handle('workspace:set', (e, root: string, extras?: string[]) => {
+    const ctx = contextOf(e.sender)
+    if (!ctx) return root
+    setContextRoots(ctx, root, Array.isArray(extras) ? extras.filter((dir) => typeof dir === 'string' && path.isAbsolute(dir)) : [])
     return root
   })
 
@@ -775,43 +1079,40 @@ function registerIpc() {
   ipcMain.handle('settings:save', (_e, data: Record<string, unknown>) => saveSettings(data))
 
   ipcMain.handle('run:start', (
-    _e, id: string, cmd: string, args: string[], cwd: string, env?: Record<string, string>,
+    e, id: string, cmd: string, args: string[], cwd: string, env?: Record<string, string>,
   ) => {
-    runCommand(id, cmd, args, cwd, env ?? {})
+    runCommand(e.sender, id, cmd, args, cwd, env ?? {})
     return id
   })
-  ipcMain.handle('run:kill', (_e, id: string) => killCommand(id))
+  ipcMain.handle('run:kill', (e, id: string) => killCommand(scopedId(e.sender, id)))
 
-  /** Searches from `startDir` upwards (as far as the working folder) for project markers. */
-  ipcMain.handle('fs:findRoot', async (_e, startDir: string, markers: string[]) => {
-    const containing = [workspaceRoot, ...extraRoots].find((dir): dir is string => Boolean(dir && isInside(dir, startDir)))
-    const limit = containing ?? path.parse(startDir).root
-    let dir = startDir
-    for (;;) {
-      for (const marker of markers) {
-        try {
-          await fs.access(path.join(dir, marker))
-          return dir
-        } catch { /* weiter */ }
-      }
-      if (dir === limit) break
-      const parent = path.dirname(dir)
-      if (parent === dir) break
-      dir = parent
-    }
-    return null
-  })
+  /**
+   * Searches from `startDir` upwards (as far as the working folder) for project
+   * markers. `nearest` returns the first folder holding one; `outermost` the
+   * highest — the top of a multi-module build (the Maven reactor, the folder
+   * with `settings.gradle`) rather than the module the file sits in. Version
+   * control folders (`.git` …) only count when no other marker is found.
+   */
+  ipcMain.handle('fs:findRoot', (_e, startDir: string, markers: string[], mode: 'nearest' | 'outermost' = 'nearest') =>
+    findProjectRoot(startDir, markers, mode))
 
   ipcMain.handle('lsp:available', (_e, command: string) => commandExists(command))
   ipcMain.handle('lsp:resolve', (_e, candidates: string[]) => resolveFirst(candidates))
   ipcMain.handle('lsp:start', (
-    _e, id: string, cmd: string, args: string[], cwd: string, env?: Record<string, string>,
+    e, id: string, cmd: string, args: string[], cwd: string, env?: Record<string, string>,
   ) => {
-    startLsp(id, cmd, args, cwd, env ?? {})
+    startLsp(e.sender, id, cmd, args, cwd, env ?? {})
     return id
   })
-  ipcMain.handle('lsp:send', (_e, id: string, message: unknown) => sendLsp(id, message))
-  ipcMain.handle('lsp:stop', (_e, id: string) => stopLsp(id))
+  ipcMain.handle('lsp:send', (e, id: string, message: unknown) => sendLsp(scopedId(e.sender, id), message))
+  ipcMain.handle('lsp:stop', (e, id: string) => stopLsp(scopedId(e.sender, id)))
+  /** Delete a server's data folder (jdtls' workspace) — only below userData/lsp. */
+  ipcMain.handle('lsp:clearData', async (_e, dir: string) => {
+    const base = path.join(app.getPath('userData'), 'lsp')
+    const target = path.resolve(String(dir))
+    if (!isInside(base, target) || target === base) throw new Error('Not a language server data folder')
+    await fs.rm(target, { recursive: true, force: true })
+  })
 
   ipcMain.handle('shell:openExternal', (_e, url: string) => {
     if (/^https?:\/\//.test(url)) return shell.openExternal(url)
@@ -820,11 +1121,11 @@ function registerIpc() {
   ipcMain.handle('terminal:external', () => detectExternalTerminals())
   ipcMain.handle('terminal:create', (e, id: string, options: TerminalOptions) =>
     createTerminal(id, options, e.sender))
-  ipcMain.handle('terminal:write', (_e, id: string, data: string) => writeTerminal(id, data))
-  ipcMain.handle('terminal:resize', (_e, id: string, cols: number, rows: number) => resizeTerminal(id, cols, rows))
-  ipcMain.handle('terminal:kill', (_e, id: string) => killTerminal(id))
-  ipcMain.handle('terminal:openExternal', (_e, cwd: string, terminalId?: string) => {
-    const target = cwd && fsSync.existsSync(cwd) ? cwd : (workspaceRoot ?? os.homedir())
+  ipcMain.handle('terminal:write', (e, id: string, data: string) => writeTerminal(terminalKey(e.sender, id), data))
+  ipcMain.handle('terminal:resize', (e, id: string, cols: number, rows: number) => resizeTerminal(terminalKey(e.sender, id), cols, rows))
+  ipcMain.handle('terminal:kill', (e, id: string) => killTerminal(terminalKey(e.sender, id)))
+  ipcMain.handle('terminal:openExternal', (e, cwd: string, terminalId?: string) => {
+    const target = cwd && fsSync.existsSync(cwd) ? cwd : (contextOf(e.sender)?.workspaceRoot ?? os.homedir())
     return openExternalTerminal(target, terminalId)
   })
 

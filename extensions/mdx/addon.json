@@ -116,6 +116,10 @@
               "darwin-arm64": "^marksman-macos$",
               "win32-x64": "^marksman\\.exe$"
             }
+          },
+          "systemPackages": {
+            "brew": "marksman",
+            "scoop": "marksman"
           }
         }
       ],

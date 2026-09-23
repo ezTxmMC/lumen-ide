@@ -21,16 +21,15 @@ import { htmlAddon } from './builtin/html'
 import { cssAddon } from './builtin/css'
 import { javascriptAddon } from './builtin/javascript'
 import { typescriptAddon } from './builtin/typescript'
+import { diffAddon } from './builtin/diff'
 
-// Bundled, active by default, can be switched off at any time.
-//
-// Only what an extension cannot be: both of these have an `activate()`, and a
-// manifest carries data, never code. Everything else that used to stand here —
-// the languages, the project kinds and the templates for Go, Rust, PHP,
-// Crystal, React, Vue, Angular, Astro, Tailwind, MDX, C, C++, C#, Kotlin,
-// Python and the build tools — now comes from an extension server.
-import { minecraftAddon } from './extra/minecraft'
-import { discordAddon } from './extra/discord'
+// Bundled, active by default, can be switched off at any time — none at the
+// moment. Everything that used to stand here — the languages, the project
+// kinds and the templates for Go, Rust, PHP, Crystal, React, Vue, Angular,
+// Astro, Tailwind, MDX, C, C++, C#, Kotlin, Python and the build tools,
+// Discord Rich Presence (now `extensions/discord`) and Minecraft Development
+// (now `extensions/minecraft`, window code included) — comes from an
+// extension server.
 
 export const BUILTIN_ADDONS: Addon[] = [
   themesAddon,
@@ -41,20 +40,15 @@ export const BUILTIN_ADDONS: Addon[] = [
   cssAddon,
   javascriptAddon,
   typescriptAddon,
+  diffAddon,
 ]
 
-export const BUNDLED_ADDONS: Addon[] = [
-  minecraftAddon,
-  discordAddon,
-]
+export const BUNDLED_ADDONS: Addon[] = []
 
 export const ALL_ADDONS: Addon[] = [...BUILTIN_ADDONS, ...BUNDLED_ADDONS]
 
-/** Bundled, but active only on request (because data goes to a third party, say). */
-const OPT_IN = new Set([discordAddon.id])
-
 /** Active on the first start. */
-export const DEFAULT_ENABLED = BUNDLED_ADDONS.map((a) => a.id).filter((id) => !OPT_IN.has(id))
+export const DEFAULT_ENABLED = BUNDLED_ADDONS.map((a) => a.id)
 
 /** The fallback when no language fits. */
 export const PLAIN_TEXT = {

@@ -3,7 +3,7 @@
  * environment (`~/.lumen/lsp`) — see `LspPackage`.
  */
 
-import type { LspPackage } from '@/core/types'
+import type { LspPackage, SystemPackages } from '@/core/types'
 
 /** `<prefix><rust target><suffix>` for every platform, as Rust-built releases name them. */
 function rustTargets(prefix: string, suffix: string, windowsSuffix = suffix): Record<string, string> {
@@ -35,6 +35,14 @@ export const LSP_PACKAGES = {
       'win32-arm64': '^aarch64-windows\\.zip$',
     },
   },
+  // The Apache NetBeans Java server as Oracle ships it for VS Code (Open VSX):
+  // nb-javac and Gradle/Maven through their tooling APIs.
+  netbeansJava: {
+    type: 'archive',
+    url: 'https://open-vsx.org/api/Oracle/oracle-java/26.0.2/file/Oracle.oracle-java-26.0.2.vsix',
+    bin: 'extension/nbcode/bin/nbcode.sh',
+    executables: ['extension/nbcode/platform/lib/nbexec.sh', 'extension/nbcode/java/maven/bin/mvn.sh'],
+  },
   jdtls: {
     type: 'archive',
     url: 'https://download.eclipse.org/jdtls/snapshots/jdt-language-server-latest.tar.gz',
@@ -42,3 +50,14 @@ export const LSP_PACKAGES = {
     runtime: 'python',
   },
 } satisfies Record<string, LspPackage>
+
+/**
+ * The same servers in the system's package managers — the alternative the
+ * install dialog offers beside Lumen's own environment.
+ */
+export const SYSTEM_PACKAGES = {
+  typescriptLanguageServer: { pacman: 'typescript-language-server', brew: 'typescript-language-server' },
+  langserversExtracted: { brew: 'vscode-langservers-extracted' },
+  deno: { pacman: 'deno', brew: 'deno', winget: 'DenoLand.Deno', scoop: 'deno', choco: 'deno' },
+  jdtls: { brew: 'jdtls' },
+} satisfies Record<string, SystemPackages>

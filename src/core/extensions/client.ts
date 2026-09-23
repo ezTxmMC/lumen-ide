@@ -118,7 +118,10 @@ export async function fetchManifest(url: string, id: string, version?: string): 
   // Foreign data: what the panel and the loader rely on has to have the right shape.
   if (data.code !== undefined) {
     const code = data.code as Record<string, unknown> | null
-    if (!code || typeof code !== 'object' || typeof code.main !== 'string' || !code.main) throw new Error('The manifest\'s code is malformed')
+    const parts = [code?.main, code?.renderer].filter((part) => part !== undefined)
+    if (!code || typeof code !== 'object' || !parts.length || parts.some((part) => typeof part !== 'string' || !part)) {
+      throw new Error('The manifest\'s code is malformed')
+    }
   }
   if (data.agents !== undefined) {
     if (!Array.isArray(data.agents)) throw new Error('The manifest\'s agents are malformed')

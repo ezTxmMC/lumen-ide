@@ -106,6 +106,17 @@ async function main() {
     rejects(sample({ settings: [{ key: 'a', label: 'A' }, { key: 'a', label: 'B' }] }), 'settings.key'))
   await check('Auswahl ohne Einträge wird abgelehnt', () =>
     rejects(sample({ settings: [{ key: 'a', label: 'A', type: 'select' }] }), 'settings[0].choices'))
+  await check('Übersetzungen einer Einstellung werden angenommen', () => {
+    const checked = checkManifest(sample({ settings: [{
+      key: 'mode', label: 'Modus', type: 'select', choices: [{ value: 'a', label: 'A' }],
+      i18n: { en: { label: 'Mode', hint: 'Pick one', choices: { a: 'Ay' } }, 'pt-BR': { label: 'Modo' } },
+    }] }))
+    assert.equal(checked.settings[0].i18n.en.label, 'Mode')
+  })
+  await check('unbekanntes Feld in Übersetzungen wird abgelehnt', () =>
+    rejects(sample({ settings: [{ key: 'a', label: 'A', i18n: { en: { key: 'b' } } }] }), 'settings[0].i18n.en.key'))
+  await check('Übersetzung mit ungültigem Sprachkürzel wird abgelehnt', () =>
+    rejects(sample({ settings: [{ key: 'a', label: 'A', i18n: { 'English!': { label: 'B' } } }] }), 'settings[0].i18n.English!'))
   await check('Seite ohne Inhalt wird abgelehnt', () =>
     rejects(sample({ pages: [{ id: 'a', title: 'A' }] }), 'pages[0].content'))
   await check('doppelte Seitenkennung wird abgelehnt', () =>

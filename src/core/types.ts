@@ -120,7 +120,15 @@ export type LspPackage =
   | { type: 'go'; module: string; bin?: string }
   | { type: 'dotnet'; package: string; bin?: string }
   | { type: 'github'; repo: string; assets: Record<string, string>; bin?: string; version?: string; runtime?: 'python' | 'node' }
-  | { type: 'archive'; url: string | Record<string, string>; bin?: string; runtime?: 'python' | 'node' }
+  | { type: 'archive'; url: string | Record<string, string>; bin?: string; runtime?: 'python' | 'node'; executables?: string[] }
+
+/** System package managers Lumen can drive — the keys of `LspConfig.systemPackages`. */
+export type SystemPackageManager =
+  | 'pacman' | 'apt' | 'dnf' | 'zypper' | 'apk' | 'xbps' | 'emerge'
+  | 'brew' | 'winget' | 'scoop' | 'choco'
+
+/** Package names per system package manager; several packages separated by spaces. */
+export type SystemPackages = Partial<Record<SystemPackageManager, string>>
 
 export interface LspConfig {
   /** Display name, for instance "typescript-language-server". */
@@ -143,6 +151,14 @@ export interface LspConfig {
    * With no hit the opened folder is used.
    */
   rootMarkers?: string[]
+  /**
+   * `nearest` (the default) takes the first folder upwards holding a marker.
+   * `outermost` takes the highest one within the workspace folder — for build
+   * tools with modules (Maven, Gradle), whose server has to see the whole build
+   * to resolve one module's classes in another. VCS markers such as `.git`
+   * then only count when nothing else is found.
+   */
+  rootSearch?: 'nearest' | 'outermost'
   initializationOptions?: unknown
   /** Sent through `workspace/didChangeConfiguration`. */
   settings?: unknown
@@ -156,6 +172,13 @@ export interface LspConfig {
   installCommands?: Partial<Record<'linux' | 'darwin' | 'win32', string>>
   /** Installs the server into Lumen's own environment; preferred over `installCommands`. */
   package?: LspPackage
+  /**
+   * The package that provides the server in the system's package manager, per
+   * manager (`{ pacman: 'clang', apt: 'clangd', brew: 'llvm' }`). Lumen detects
+   * the manager itself, builds the command and asks for the administrator
+   * password where the manager needs root.
+   */
+  systemPackages?: SystemPackages
   /** Link to the server's documentation. */
   docs?: string
   /**
@@ -260,6 +283,11 @@ export interface ProjectTask {
   then?: { command: string; args: string[] }
   /** Short description for the panel. */
   detail?: string
+  /**
+   * Where a discovered task belongs — a Gradle task group (`Build`, `Help`)
+   * or a Maven plugin prefix (`spring-boot`). Used to group custom tasks.
+   */
+  category?: string
 }
 
 export interface ProjectDependency {
@@ -267,6 +295,27 @@ export interface ProjectDependency {
   version?: string
   /** For instance "test", "dev", "compile". */
   scope?: string
+}
+
+/**
+ * A module of a multi-module build — a Maven module listed under `<modules>`
+ * or a Gradle project `include`d in the settings script. Modules nest.
+ */
+export interface ProjectModule {
+  /** Unique within the project: the Maven module path or the Gradle project path (`:app:core`). */
+  id: string
+  name: string
+  /** Folder relative to the project root (`services/api`). */
+  path: string
+  /** A short kind: Maven packaging (`jar`, `pom`) or the Gradle flavour (`application`, `library`). */
+  kind?: string
+  /** Tasks scoped to this module (`mvn -pl … -am`, `gradle :app:build`), custom ones included. */
+  tasks: ProjectTask[]
+  facts?: Record<string, string>
+  dependencies?: ProjectDependency[]
+  /** Build file relative to the project root. */
+  buildFile?: string
+  modules?: ProjectModule[]
 }
 
 export interface ProjectMeta {
@@ -280,6 +329,10 @@ export interface ProjectMeta {
   sourceRoots?: string[]
   /** File offered when the project opens (`pom.xml`). */
   buildFile?: string
+  /** Modules of a multi-module build, as a tree. */
+  modules?: ProjectModule[]
+  /** Tasks found in the build files beyond the standard ones — Gradle tasks, Maven plugin goals, profiles. */
+  customTasks?: ProjectTask[]
 }
 
 export interface ProjectContext {
@@ -298,17 +351,43 @@ export interface ProjectContext {
 
 export type FormValues = Record<string, string>
 
+/** One entry of a select. `group` puts it under a heading (“Releases”, “Snapshots”). */
+export interface FieldChoice {
+  value: string
+  label: string
+  hint?: string
+  group?: string
+  /** A short tag beside the label — “latest”, “recommended”, “beta”. */
+  badge?: string
+}
+
 /** An input in a dialog. Values are always strings — `'true'`/`'false'` for switches. */
 export interface FormField {
   id: string
   label: string
-  /** Defaults to `text`. */
-  type?: 'text' | 'select' | 'toggle'
+  /**
+   * Defaults to `text`. `combobox` is a select with a search box, for long
+   * lists such as every Minecraft version or every loader build.
+   */
+  type?: 'text' | 'select' | 'combobox' | 'toggle' | 'password' | 'textarea'
   /** A fixed starting value, or one derived from other fields until someone edits it. */
   default?: string | ((values: FormValues) => string)
   placeholder?: string
   hint?: string
-  choices?: { value: string; label: string; hint?: string }[]
+  choices?: FieldChoice[]
+  /** Choices computed from the other fields — replaces `choices` when given. */
+  choicesFor?: (values: FormValues) => FieldChoice[]
+  /**
+   * Choices fetched on demand — versions from a Maven repository, say. Called
+   * when the form opens and again whenever a field named in `dependsOn`
+   * changes; `signal` aborts a fetch that has been overtaken. While it runs
+   * the field shows a spinner; on failure the error with a retry. When the
+   * current value is not among the result, the field's `default` (or the
+   * first choice) takes its place.
+   */
+  loadChoices?: (values: FormValues, signal: AbortSignal) => Promise<FieldChoice[]>
+  /** Fields whose change reloads `loadChoices` (and recomputes `choicesFor`). */
+  dependsOn?: string[]
   /** Regular expression source; the whole value has to match. */
   pattern?: string
   /** Message shown when `pattern` does not match. */
@@ -414,6 +493,13 @@ export interface ProjectTemplate {
   id: string
   name: string
   description?: string
+  /**
+   * The group on the project page — “Minecraft”, “Web”, “JVM” … Without one
+   * the template's language names the group.
+   */
+  category?: string
+  /** Search terms beyond the name — “spigot bukkit plugin”, say. */
+  keywords?: string[]
   languageId?: string
   /** Kind of project this produces (`maven`, say) — may depend on the fields. */
   kindId?: string | ((values: FormValues) => string | undefined)
@@ -421,8 +507,11 @@ export interface ProjectTemplate {
   color?: string
   /** Fields in the dialog, beyond name and target folder. */
   fields?: FormField[]
-  /** Relative path → contents. */
-  files(ctx: TemplateContext): Record<string, string>
+  /**
+   * Relative path → contents. May be asynchronous (to fetch a file); the
+   * project page previews the paths of a synchronous result only.
+   */
+  files(ctx: TemplateContext): Record<string, string> | Promise<Record<string, string>>
   /** File opened once the project exists (relative). */
   open?: string | ((ctx: TemplateContext) => string)
   /** Commands to run afterwards — installing dependencies and such — only on request. */
@@ -560,6 +649,21 @@ export interface IconPack {
   folder?: IconDef
 }
 
+/**
+ * A panel an add-on puts into one of the window's docks — a cheat sheet, a
+ * guide, a status page. Markdown or HTML, shown in a sealed frame (no scripts).
+ * The user can drag it to any dock; `location` is only where it starts.
+ */
+export interface AddonPanel {
+  id: string
+  title: string
+  /** An icon-pack shape or action icon name (`book-open`, `rocket` …). */
+  icon?: string
+  location?: 'left' | 'right' | 'bottom'
+  format?: 'markdown' | 'html'
+  content: string
+}
+
 export interface Addon {
   id: string
   name: string
@@ -572,6 +676,8 @@ export interface Addon {
   builtin?: boolean
   /** Made in the Add-on Studio (a file under userData/addons). */
   user?: boolean
+  /** Not listed on its own — the window code of an extension, which belongs to that extension's entry. */
+  hidden?: boolean
   /** Category in the add-on manager. */
   category?: 'language' | 'theme' | 'tool'
 
@@ -581,6 +687,8 @@ export interface Addon {
   iconPacks?: IconPack[]
   /** Snippets for other add-ons' languages — Minecraft snippets for `java`, say. */
   snippets?: AddonSnippet[]
+  /** Panels for the docks (left, right, bottom). */
+  panels?: AddonPanel[]
   commands?: Command[]
   /** Project kinds the add-on recognises (Maven, CMake, npm …). */
   projectKinds?: ProjectKind[]

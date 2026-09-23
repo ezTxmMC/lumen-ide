@@ -85,6 +85,73 @@ const lumen = {
 }
 ;(globalThis as unknown as { window: unknown }).window = { lumen }
 
+/* Installing — package managers, root detection and install plans. Pure
+   functions, so they are checked even where clangd is missing. */
+{
+  const managers = await import('../electron/features/package-managers')
+  const plans = await import('@/core/lsp/install-plan')
+  let bad = 0
+  const expect = (cond: boolean, label: string) => { console.log(`  ${cond ? '✓' : '✗'}  ${label}`); if (!cond) bad++ }
+  const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+
+  const pacman = managers.installInvocation('pacman', ['clang'])
+  expect(same(pacman.argv, ['pacman', '-S', '--noconfirm', '--needed', 'clang']) && pacman.root, 'pacman: -S --noconfirm --needed, as root')
+  const apt = managers.installInvocation('apt', ['clangd'])
+  expect(same(apt.argv, ['apt-get', 'install', '-y', 'clangd']) && apt.env.DEBIAN_FRONTEND === 'noninteractive', 'apt: apt-get install -y, non-interactive')
+  expect(same(managers.installInvocation('dnf', ['a', 'b']).argv, ['dnf', 'install', '-y', 'a', 'b']), 'dnf: several packages')
+  expect(same(managers.installInvocation('zypper', ['x']).argv, ['zypper', '--non-interactive', 'install', 'x']), 'zypper: --non-interactive')
+  expect(same(managers.installInvocation('apk', ['x']).argv, ['apk', 'add', '--no-cache', 'x']), 'apk: --no-cache')
+  expect(!managers.installInvocation('brew', ['llvm']).root, 'Homebrew needs no root')
+  expect(managers.formatInvocation(pacman) === 'sudo pacman -S --noconfirm --needed clang', 'preview puts sudo in front')
+  const rejects = (fn: () => unknown) => { try { fn(); return false } catch { return true } }
+  expect(rejects(() => managers.installInvocation('pacman', ['clang; rm -rf /'])), 'a package name with shell syntax is refused')
+  expect(rejects(() => managers.installInvocation('pacman', ['--overwrite=*'])), 'an option smuggled in as a package is refused')
+  expect(rejects(() => managers.installInvocation('winget', ['A.B', 'C.D'])), 'winget takes one package at a time')
+  expect(rejects(() => managers.installInvocation('nope' as never, ['x'])), 'an unknown manager is refused')
+
+  const arch = managers.parseOsRelease('NAME="Arch Linux"\nID=arch\n')
+  expect(managers.managerForDistro(arch) === 'pacman', 'Arch → pacman')
+  const mint = managers.parseOsRelease('ID=linuxmint\nID_LIKE="ubuntu debian"\n')
+  expect(managers.managerForDistro(mint) === 'apt', 'Linux Mint → apt')
+  const derived = managers.parseOsRelease('ID=someos\nID_LIKE=fedora\n')
+  expect(managers.managerForDistro(derived) === 'dnf', 'ID_LIKE=fedora → dnf')
+  expect(managers.candidateManagers('linux', 'apt')[0] === 'apt', 'the distribution\'s manager is probed first')
+  expect(!managers.candidateManagers('darwin', null).includes('pacman'), 'macOS probes no Linux managers')
+
+  expect(managers.commandNeedsRoot('sudo apt install clangd'), 'sudo … needs root')
+  expect(managers.commandNeedsRoot('pacman -S ccls'), 'pacman needs root')
+  expect(!managers.commandNeedsRoot('cargo install taplo-cli'), 'cargo needs no root')
+  expect(managers.stripElevation('sudo -E apt install x') === 'apt install x', 'sudo is taken off a command')
+  expect(managers.isWrongPassword('Sorry, try again.\nsudo: 1 incorrect password attempt'), 'a wrong password is recognised')
+  expect(!managers.isWrongPassword('error: target not found: clangx'), 'a package error is not a wrong password')
+
+  const system = { platform: 'linux', managers: ['pacman' as const], isRoot: false, sudo: true, pkexec: false }
+  const clangd = { label: 'clangd', command: 'clangd', systemPackages: { pacman: 'clang', apt: 'clangd' } }
+  const onlySystem = plans.installPlans(clangd, { platform: 'linux', platformKey: 'linux-x64', system })
+  expect(onlySystem.length === 1 && onlySystem[0].kind === 'system' && onlySystem[0].root, 'systemPackages → a pacman plan with root')
+  expect(onlySystem[0]?.summary === 'sudo pacman -S --noconfirm --needed clang', `plan preview: ${onlySystem[0]?.summary}`)
+  const asRoot = plans.installPlans(clangd, { platform: 'linux', system: { ...system, isRoot: true } })
+  expect(asRoot[0]?.kind === 'system' && !asRoot[0].root, 'running as root needs no sudo')
+  const npm = plans.installPlans({ label: 'x', command: 'x', installCommands: { linux: 'npm i -g x-server' } }, { platform: 'linux', system })
+  expect(npm.length === 1 && npm[0].kind === 'managed', 'a plain npm install becomes a managed plan only')
+  const both = plans.installPlans({
+    label: 'deno', command: 'deno',
+    package: { type: 'github', repo: 'denoland/deno', assets: { 'linux-x64': 'x' } },
+    systemPackages: { pacman: 'deno' },
+    installCommands: { linux: 'sh -c "curl -fsSL https://deno.land/install.sh | sh"' },
+  }, { platform: 'linux', platformKey: 'linux-x64', system })
+  expect(same(both.map((p) => p.kind), ['managed', 'system', 'command']), 'order: managed, system, command')
+  const noAsset = plans.installPlans({ label: 'y', command: 'y', package: { type: 'github', repo: 'a/b', assets: {} } }, { platform: 'linux', platformKey: 'linux-x64', system: null })
+  expect(noAsset.length === 0, 'a release without a download for this platform offers nothing')
+  const sudoCommand = plans.installPlans({ label: 'z', command: 'z', installCommands: { linux: 'sudo apt install z' } }, { platform: 'linux', system })
+  expect(sudoCommand[0]?.kind === 'command' && sudoCommand[0].root, 'a sudo command is marked as needing root')
+
+  if (bad) {
+    console.log(`\n${bad} install check(s) failed`)
+    process.exit(1)
+  }
+}
+
 if (spawnSync('clangd', ['--version'], { stdio: 'ignore' }).error) {
   console.log('clangd not on the PATH — LSP check skipped')
   process.exit(0)
@@ -230,6 +297,86 @@ await lsp.openDocument(cppSpec, plainFile, plainText)
 const warned = () => lsp.diagnostics(plainFile).some((d) => d.severity === 2)
 for (let i = 0; i < 100 && !warned(); i++) await new Promise((r) => setTimeout(r, 100))
 ok(warned(), `Warnung ohne compile_commands.json: ${lsp.diagnostics(plainFile).map((d) => d.message).join(' | ') || '(keine)'}`)
+
+console.log('\nDocument sync:')
+{
+  const { applyContentChanges } = await import('@/core/lsp/client')
+  const before = 'class Main {\n  int a;\n}\n'
+  const pos = (line: number, character: number) => ({ line, character })
+  // Back to front in the old coordinates — as the editor reports them.
+  const changes = [
+    { range: { start: pos(2, 0), end: pos(2, 0) }, text: '  // end\n' },
+    { range: { start: pos(1, 2), end: pos(1, 5) }, text: 'long' },
+  ]
+  ok(applyContentChanges(before, changes) === 'class Main {\n  long a;\n  // end\n}\n', 'Content changes apply back to front')
+  ok(applyContentChanges(before, [{ range: { start: pos(9, 0), end: pos(9, 0) }, text: 'x' }]) === `${before}x`, 'A position past the end clamps to the end')
+}
+
+console.log('\nDefinition fallback:')
+{
+  const { declarationHits, declarationPattern, definitionSymbols, searchExtensions } = await import('@/components/editor/definition-fallback')
+  const at = (uri: string, line: number) => ({ uri, range: { start: { line, character: 0 }, end: { line, character: 1 } } })
+  const symbols = [
+    { name: 'StorageNetworks', kind: 5, location: at('file:///p/core/StorageNetworks.java', 3) },
+    { name: 'storageNetworks', kind: 8, location: at('file:///p/app/Main.java', 9) },
+    { name: 'StorageNetworks', kind: 13, location: at('file:///p/app/Other.java', 2) },
+    { name: 'StorageNetworksImpl', kind: 5, location: at('file:///p/core/Impl.java', 1) },
+  ]
+  const found = definitionSymbols(symbols, 'StorageNetworks')
+  ok(found.length === 1 && found[0].uri.endsWith('core/StorageNetworks.java'), 'Workspace symbols: the class wins over a variable of the same name')
+  ok(definitionSymbols([{ name: 'X', kind: 5, location: { uri: 'file:///x' } }], 'X').length === 0, 'Workspace symbols without a range are skipped')
+  const pattern = declarationPattern('EnergyCableNetworks')
+  ok(pattern.test('public final class EnergyCableNetworks extends Base {') && pattern.test('record EnergyCableNetworks(int a) {')
+    && pattern.test('object EnergyCableNetworks') && !pattern.test('EnergyCableNetworks.register(x);') && !pattern.test('class EnergyCableNetworksTest {'),
+  'Declaration pattern: class/record/object, not uses or longer names')
+  const exts = searchExtensions(['.java'])
+  ok(exts.has('.kt') && exts.has('.java'), 'Java searches Kotlin files too')
+  const hits = declarationHits([
+    { path: '/p/core/src/EnergyCableNetworks.java', line: 12, text: 'public class EnergyCableNetworks {' },
+    { path: '/p/app/src/Main.java', line: 4, text: 'EnergyCableNetworks.init();' },
+    { path: '/p/docs/notes.md', line: 1, text: 'class EnergyCableNetworks is great' },
+  ], 'EnergyCableNetworks', exts)
+  ok(hits.length === 1 && hits[0].range.start.line === 11 && hits[0].uri.includes('core/src'), 'Text search: only the declaration in a source file, 0-based line')
+}
+
+console.log('\nJumps into dependencies:')
+{
+  const { preferCurrentModule, jdtModule } = await import('@/components/editor/definition-fallback')
+  const at = (uri: string) => ({ uri, range: { start: { line: 0, character: 0 }, end: { line: 0, character: 1 } } })
+  const hits = ['fabric', 'common', 'neoforge'].map((m) => at(`jdt://contents/mc.jar/net/X/ArmorMaterial.java?=${m}/%5C/home%5C/x`))
+  ok(jdtModule(hits[1].uri) === 'common', 'The module is read from the jdt:// query')
+  const own = preferCurrentModule(hits, '/p/neoforge/src/main/java/A.java')
+  ok(own.length === 1 && jdtModule(own[0].uri) === 'neoforge', 'Only the hit of the current module stays')
+  ok(preferCurrentModule(hits, '/p/other/A.java').length === 3, 'Without a matching module all hits stay')
+}
+
+console.log('\njdtls javac backend:')
+{
+  const { javacBackendArgs, javacBackendRuntime } = await import('@/core/sdk/lsp')
+  const { javacBackendRange } = await import('../electron/features/javac-backend')
+  const manifest = 'Build-Jdk-Spec: 26\r\nRequire-Capability: osgi.ee; filter:="(&(osgi.ee=JavaSE)(vers\r\n ion=25))"\r\n'
+  const parsed = javacBackendRange(manifest)
+  ok(parsed?.minJava === 25 && parsed.buildJava === 26, 'Backend range read from the manifest, across a continuation line')
+  const jdk = (home: string, major: number) => ({
+    providerId: 'java', home, version: `${major}.0.1`, major, distribution: '', vendor: '', sources: [], managed: false, runtimeOnly: false,
+  })
+  const installed = [jdk('/jdk/21', 21), jdk('/jdk/25', 25), jdk('/jdk/26', 26), jdk('/jdk/27', 27)]
+  const range = { minJava: 25, buildJava: 26 }
+  ok(javacBackendRuntime({ home: '/jdk/25', major: 25 }, installed, range)?.switched === false, 'An active JDK in range runs jdtls itself')
+  const fitting = javacBackendRuntime({ home: '/jdk/21', major: 21 }, installed, range)
+  ok(fitting?.home === '/jdk/26' && fitting.switched, 'With JDK 21 active, the installed JDK the backend was built with runs jdtls')
+  ok(javacBackendRuntime({ home: '/jdk/27', major: 27 }, installed, range)?.home === '/jdk/26', 'A JDK newer than the backend is passed over (javac internals differ)')
+  ok(javacBackendRuntime({ home: '/jdk/21', major: 21 }, [jdk('/jdk/17', 17), jdk('/jdk/27', 27)], range) === null, 'Without a fitting JDK the Eclipse compiler stays')
+  const { netBeansRuntime } = await import('@/core/sdk/lsp')
+  ok(netBeansRuntime(null, installed) === '/jdk/25', 'NetBeans without an active JDK: the newest LTS, not an early-access 27')
+  ok(netBeansRuntime({ home: '/jdk/26', major: 26 }, installed) === '/jdk/26', 'NetBeans takes an active JDK 17+')
+  ok(netBeansRuntime({ home: '/jdk/8', major: 8 }, [jdk('/jdk/11', 11)]) === null, 'NetBeans without any JDK 17+: none')
+  const args = javacBackendArgs({ home: '/jdk/26', switched: true }, '/agent.jar')
+  ok(args[0] === '--java-executable=/jdk/26/bin/java'
+    && args.includes('--jvm-arg=-javaagent:/agent.jar')
+    && args.includes('--jvm-arg=-DAbstractImageBuilder.compilerFactory=org.eclipse.jdt.internal.javac.JavacCompilerFactory')
+    && args.every((arg, i) => i === 0 || arg.startsWith('--jvm-arg=')), 'Launcher arguments: the JDK, then the backend options as --jvm-arg')
+}
 
 await lsp.shutdownAll()
 await new Promise((r) => setTimeout(r, 300))

@@ -38,7 +38,7 @@ export default {
       notInstalled: 'Nicht installiert', log: 'Protokoll', clearLog: 'Protokoll leeren',
       logEmpty: 'Meldungen der Server (window/logMessage, Statusmeldungen) erscheinen hier.',
       dataDir: 'Datenordner der Server (jdtls-Workspace, Caches) liegen unter userData/lsp.',
-      projectDefaults: 'Server-Vorgaben je Projekt: .lumen/project.json',
+      projectDefaults: 'Server-Vorgaben je Projekt: project.json',
     },
     terminal: {
       doubleClickRename: 'Doppelklick: umbenennen', close: 'Terminal schließen', new: 'Neues Terminal',
@@ -84,7 +84,7 @@ export default {
       notInstalled: 'Not installed', log: 'Log', clearLog: 'Clear Log',
       logEmpty: 'Server messages (window/logMessage, status messages) appear here.',
       dataDir: 'Server data folders (jdtls workspace, caches) are located in userData/lsp.',
-      projectDefaults: 'Per-project server preferences: .lumen/project.json',
+      projectDefaults: 'Per-project server preferences: project.json',
     },
     terminal: {
       doubleClickRename: 'Double-click: rename', close: 'Close Terminal', new: 'New Terminal',
@@ -130,7 +130,7 @@ export default {
       notInstalled: 'No instalados', log: 'Registro', clearLog: 'Borrar registro',
       logEmpty: 'Los mensajes de los servidores (window/logMessage, mensajes de estado) aparecen aquí.',
       dataDir: 'Las carpetas de datos de los servidores (workspace de jdtls, cachés) están en userData/lsp.',
-      projectDefaults: 'Preferencias de servidor por proyecto: .lumen/project.json',
+      projectDefaults: 'Preferencias de servidor por proyecto: project.json',
     },
     terminal: {
       doubleClickRename: 'Doble clic: cambiar nombre', close: 'Cerrar terminal', new: 'Nuevo terminal',
@@ -176,7 +176,7 @@ export default {
       notInstalled: 'Non installés', log: 'Journal', clearLog: 'Effacer le journal',
       logEmpty: 'Les messages des serveurs (window/logMessage, messages d’état) apparaissent ici.',
       dataDir: 'Les dossiers de données des serveurs (workspace jdtls, caches) se trouvent dans userData/lsp.',
-      projectDefaults: 'Préférences de serveur par projet : .lumen/project.json',
+      projectDefaults: 'Préférences de serveur par projet : project.json',
     },
     terminal: {
       doubleClickRename: 'Double-clic : renommer', close: 'Fermer le terminal', new: 'Nouveau terminal',
@@ -222,7 +222,7 @@ export default {
       notInstalled: 'Niezainstalowane', log: 'Dziennik', clearLog: 'Wyczyść dziennik',
       logEmpty: 'Tutaj pojawiają się komunikaty serwerów (window/logMessage, komunikaty stanu).',
       dataDir: 'Foldery danych serwerów (workspace jdtls, pamięć podręczna) znajdują się w userData/lsp.',
-      projectDefaults: 'Ustawienia serwerów dla projektu: .lumen/project.json',
+      projectDefaults: 'Ustawienia serwerów dla projektu: project.json',
     },
     terminal: {
       doubleClickRename: 'Dwuklik: zmień nazwę', close: 'Zamknij terminal', new: 'Nowy terminal',
@@ -268,7 +268,7 @@ export default {
       notInstalled: 'Non installati', log: 'Log', clearLog: 'Svuota log',
       logEmpty: 'I messaggi dei server (window/logMessage, messaggi di stato) appaiono qui.',
       dataDir: 'Le cartelle dati dei server (workspace jdtls, cache) si trovano in userData/lsp.',
-      projectDefaults: 'Preferenze server per progetto: .lumen/project.json',
+      projectDefaults: 'Preferenze server per progetto: project.json',
     },
     terminal: {
       doubleClickRename: 'Doppio clic: rinomina', close: 'Chiudi terminale', new: 'Nuovo terminale',
@@ -314,7 +314,7 @@ export default {
       notInstalled: 'Não instalados', log: 'Log', clearLog: 'Limpar log',
       logEmpty: 'As mensagens dos servidores (window/logMessage, mensagens de status) aparecem aqui.',
       dataDir: 'As pastas de dados dos servidores (workspace do jdtls, caches) ficam em userData/lsp.',
-      projectDefaults: 'Preferências de servidor por projeto: .lumen/project.json',
+      projectDefaults: 'Preferências de servidor por projeto: project.json',
     },
     terminal: {
       doubleClickRename: 'Clique duplo: renomear', close: 'Fechar terminal', new: 'Novo terminal',
@@ -360,7 +360,7 @@ export default {
       notInstalled: 'Niet geïnstalleerd', log: 'Logboek', clearLog: 'Logboek wissen',
       logEmpty: 'Meldingen van de servers (window/logMessage, statusmeldingen) verschijnen hier.',
       dataDir: 'Gegevensmappen van de servers (jdtls-workspace, caches) staan in userData/lsp.',
-      projectDefaults: 'Servervoorkeuren per project: .lumen/project.json',
+      projectDefaults: 'Servervoorkeuren per project: project.json',
     },
     terminal: {
       doubleClickRename: 'Dubbelklik: naam wijzigen', close: 'Terminal sluiten', new: 'Nieuwe terminal',

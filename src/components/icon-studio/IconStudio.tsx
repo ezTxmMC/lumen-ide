@@ -342,7 +342,10 @@ function EntryRow({ entryKey, def, renameable = false, taken, onRename, onChange
 function ShapePicker({ value, color, onChange }: { value?: string; color?: string; onChange: (shape: string | undefined) => void }) {
   const t = useT()
   const [open, setOpen] = useState(false)
+  const [filter, setFilter] = useState('')
   const root = useRef<HTMLDivElement>(null)
+  const needle = filter.trim().toLowerCase()
+  const shapes = needle ? ICON_SHAPE_NAMES.filter((shape) => shape.includes(needle)) : ICON_SHAPE_NAMES
 
   useEffect(() => {
     if (!open) return
@@ -373,8 +376,17 @@ function ShapePicker({ value, color, onChange }: { value?: string; color?: strin
           >
             {t('iconPacks.studio.noShape')}
           </button>
-          <div className="grid max-h-[220px] grid-cols-8 gap-0.5 overflow-y-auto">
-            {ICON_SHAPE_NAMES.map((shape) => (
+          <input
+            autoFocus
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false) }}
+            placeholder={t('iconPacks.studio.shapeFilter')}
+            className="mb-1 w-full rounded-[5px] border border-edge bg-input px-2 py-1 text-[11.5px] outline-none focus:border-accent"
+          />
+          {shapes.length === 0 && <div className="px-2 py-3 text-center text-[11.5px] text-subtle">{t('iconPacks.studio.noShapeFound')}</div>}
+          <div className="grid max-h-[260px] grid-cols-8 gap-0.5 overflow-y-auto">
+            {shapes.map((shape) => (
               <button
                 key={shape}
                 title={shape}

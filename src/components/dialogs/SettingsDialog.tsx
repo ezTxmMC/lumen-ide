@@ -8,10 +8,12 @@ import { registry } from '@/core/registry'
 import { lsp } from '@/core/lsp/manager'
 import { statusDot } from '@/lib/status'
 import { terminals } from '@/lib/terminals'
-import { LANGUAGES, systemLanguage, useT } from '@/i18n'
+import { LANGUAGES, getLanguage, systemLanguage, useT } from '@/i18n'
+import { localizeSetting } from '@/core/extensions/localize'
 import { checkForUpdates, downloadUpdate, installUpdate, useUpdater } from '@/features/updater'
 import { extensions as installedExtensions } from '@/core/extensions/manager'
-import type { ExtensionSetting } from '@/core/extensions/types'
+import { ExtensionSettingRow, settingVisible } from '../settings/ExtensionSettingRow'
+import { ExtensionSettingsPage } from '../settings/ExtensionSettingsPage'
 import { Button, Empty, Select, Slider, Toggle } from '../ui'
 import { DialogShell, type DialogSection } from './DialogShell'
 
@@ -69,6 +71,8 @@ export function SettingsDialog() {
   const workspace = useStore((s) => s.workspace)
   const registryVersion = useStore((s) => s.registryVersion)
   const lspVersion = useStore((s) => s.lspVersion)
+  const extensionSettings = useStore((s) => s.extensionSettings)
+  const navSide = useStore((s) => s.layout.navSide)
   useSyncExternalStore(terminals.subscribe.bind(terminals), terminals.getVersion)
   useSyncExternalStore(installedExtensions.subscribe, installedExtensions.getVersion)
 
@@ -135,6 +139,27 @@ export function SettingsDialog() {
         </div>
       ),
     },
+    toggle('general', 'reopenLastProject', t('settings.general.reopenLastProject'), t('settings.general.reopenLastProjectHint')),
+    {
+      section: 'general',
+      text: `${t('projectSwitcher.setting.label')} ${t('projectSwitcher.setting.hint')}`,
+      node: (
+        <div className="py-2">
+          <Select
+            label={t('projectSwitcher.setting.label')}
+            value={effects.openProjectsIn}
+            options={[
+              { value: 'ask', label: t('projectSwitcher.setting.ask') },
+              { value: 'this', label: t('projectSwitcher.setting.this') },
+              { value: 'new', label: t('projectSwitcher.setting.new') },
+            ]}
+            onChange={(v) => setEffects({ openProjectsIn: v })}
+          />
+          <p className="text-[11.5px] leading-snug text-subtle">{t('projectSwitcher.setting.hint')}</p>
+        </div>
+      ),
+    },
+    toggle('general', 'gradleTasksOnOpen', t('settings.general.gradleTasksOnOpen'), t('settings.general.gradleTasksOnOpenHint')),
     toggle('general', 'restoreOpenFiles', t('settings.general.restoreOpenFiles'), t('settings.general.restoreOpenFilesHint')),
     {
       section: 'general',
@@ -276,6 +301,8 @@ export function SettingsDialog() {
     },
 
     toggle('lsp', 'lsp', t('settings.lsp.enabled'), t('settings.lsp.enabledHint', { count: stats.lspLanguages })),
+    toggle('lsp', 'lspAutoStart', t('settings.lsp.autoStart'), t('settings.lsp.autoStartHint'), !effects.lsp),
+    toggle('lsp', 'javacBackend', t('settings.lsp.javac'), t('settings.lsp.javacHint'), !effects.lsp),
     toggle('lsp', 'inlayHints', t('settings.lsp.inlayHints'), t('settings.lsp.inlayHintsHint'), !effects.lsp),
     toggle('lsp', 'signatureHelp', t('settings.lsp.signatureHelp'), t('settings.lsp.signatureHelpHint'), !effects.lsp),
     toggle('lsp', 'documentHighlight', t('settings.lsp.documentHighlight'), t('settings.lsp.documentHighlightHint'), !effects.lsp),
@@ -381,6 +408,38 @@ export function SettingsDialog() {
 
     {
       section: 'window',
+      text: `${t('settings.window.navSide')} ${t('settings.window.navSideHint')} layout panel`,
+      node: (
+        <div className="py-2">
+          <Select
+            label={t('settings.window.navSide')}
+            value={navSide}
+            options={[
+              { value: 'left', label: t('shell.layout.navLeft') },
+              { value: 'right', label: t('shell.layout.navRight') },
+            ]}
+            onChange={(side) => useStore.getState().setNavSide(side)}
+          />
+          <p className="text-[11.5px] leading-snug text-subtle">{t('settings.window.navSideHint')}</p>
+        </div>
+      ),
+    },
+    {
+      section: 'window',
+      text: `${t('settings.window.resetLayout')} ${t('settings.window.resetLayoutHint')} layout`,
+      node: (
+        <div className="flex items-center justify-between gap-4 py-2">
+          <div className="min-w-0">
+            <div className="text-[13px] text-fg">{t('settings.window.resetLayout')}</div>
+            <div className="mt-0.5 text-[11.5px] leading-snug text-subtle">{t('settings.window.resetLayoutHint')}</div>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => useStore.getState().resetLayout()}>{t('shell.layout.reset')}</Button>
+        </div>
+      ),
+    },
+
+    {
+      section: 'window',
       text: `${t('settings.window.system')} ${t('settings.window.systemHint')} wayland x11`,
       node: (
         <div className="py-2">
@@ -430,21 +489,29 @@ export function SettingsDialog() {
     },
     toggle('updates', 'autoUpdate', t('updater.auto'), t('updater.autoHint')),
 
-    ...installedExtensions.list().flatMap(({ manifest }) =>
-      (manifest.settings ?? []).map((setting): Row => ({
-        section: 'extensions',
+    ...installedExtensions.list().flatMap(({ manifest }) => {
+      const settings = (manifest.settings ?? []).map((setting) => localizeSetting(setting, getLanguage()))
+      const values = extensionSettings[manifest.id]
+      const visible = settings.filter((setting) => settingVisible(setting, settings, values))
+      return visible.flatMap((setting, index): Row[] => {
         // The extension's name belongs in the search text: typing “Go” should
         // find its settings, not merely match a label.
-        text: `${manifest.name} ${setting.label} ${setting.hint ?? ''} ${setting.key}`,
-        node: (
-          <ExtensionSettingRow
-            extensionId={manifest.id}
-            extensionName={manifest.name}
-            setting={setting}
-          />
-        ),
-      })),
-    ),
+        const text = `${manifest.name} ${setting.section ?? ''} ${setting.label} ${setting.hint ?? ''} ${setting.key}`
+        const row: Row = {
+          section: 'extensions',
+          text,
+          node: <ExtensionSettingRow extensionId={manifest.id} extensionName={manifest.name} setting={setting} />,
+        }
+        const opensGroup = index === 0 || visible[index - 1].section !== setting.section
+        if (!opensGroup) return [row]
+        const heading = setting.section ? `${manifest.name} — ${setting.section}` : manifest.name
+        return [{
+          section: 'extensions',
+          text,
+          node: <h4 className="mt-3 border-b border-edge pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-subtle">{heading}</h4>,
+        }, row]
+      })
+    }),
     ...(installedExtensions.list().some(({ manifest }) => manifest.settings?.length)
       ? []
       : [{
@@ -513,16 +580,19 @@ export function SettingsDialog() {
       onSearch={setQuery}
       searchPlaceholder={t('settings.searchPlaceholder')}
     >
-      <div className="mx-auto max-w-[680px] px-6 py-4">
+      <div className={`mx-auto px-6 py-4 ${!needle && section === 'extensions' ? 'max-w-[900px]' : 'max-w-[680px]'}`}>
         {!needle && (
           <h3 className="mb-2 text-[16px] font-medium text-fg">{t(`settings.sections.${section}`)}</h3>
         )}
         {needle && visible.length === 0 && <Empty title={t('settings.noResults', { query })} />}
-        <div className="divide-y divide-edge/60">
-          {visible.map((row, index) => (
-            row.node ? <div key={`${row.section}-${index}`}>{row.node}</div> : null
-          ))}
-        </div>
+        {!needle && section === 'extensions' && <ExtensionSettingsPage />}
+        {(needle || section !== 'extensions') && (
+          <div className="divide-y divide-edge/60">
+            {visible.map((row, index) => (
+              row.node ? <div key={`${row.section}-${index}`}>{row.node}</div> : null
+            ))}
+          </div>
+        )}
       </div>
     </DialogShell>
   )
@@ -605,59 +675,6 @@ function LinkRow({ icon: Icon, label, hint, action, onClick }: {
         {hint && <div className="mt-0.5 text-[11.5px] leading-snug text-subtle">{hint}</div>}
       </div>
       <Button variant="outline" size="sm" onClick={onClick}>{action}</Button>
-    </div>
-  )
-}
-
-/**
- * One setting of an installed extension.
- *
- * The values live in the application settings rather than in the manifest, so
- * updating the extension never overwrites what someone typed. The label names
- * the extension too, because under “Extensions” the settings of several sit
- * side by side.
- */
-function ExtensionSettingRow({ extensionId, extensionName, setting }: {
-  extensionId: string
-  extensionName: string
-  setting: ExtensionSetting
-}) {
-  const value = useStore((s) => s.extensionSettings[extensionId]?.[setting.key])
-  const setSetting = useStore((s) => s.setExtensionSetting)
-  const current = value ?? setting.default ?? (setting.type === 'toggle' ? 'false' : '')
-  const label = `${extensionName} · ${setting.label}`
-  const write = (next: string) => setSetting(extensionId, setting.key, next)
-
-  if (setting.type === 'toggle') {
-    return <Toggle label={label} hint={setting.hint} checked={current === 'true'} onChange={(v) => write(String(v))} />
-  }
-
-  if (setting.type === 'select') {
-    return (
-      <div className="py-2">
-        <Select
-          label={label}
-          value={current}
-          options={(setting.choices ?? []).map((choice) => ({ value: choice.value, label: choice.label }))}
-          onChange={write}
-        />
-        {setting.hint && <p className="text-[11.5px] leading-snug text-subtle">{setting.hint}</p>}
-      </div>
-    )
-  }
-
-  return (
-    <div className="py-2">
-      <label className="mb-1 block text-[11.5px] text-muted">{label}</label>
-      <input
-        type={setting.type === 'number' ? 'number' : 'text'}
-        value={current}
-        spellCheck={false}
-        placeholder={setting.placeholder}
-        onChange={(e) => write(e.target.value)}
-        className="lm-transition w-full rounded-lumen-sm border border-edge bg-input px-2.5 py-1.5 font-mono text-[12px] outline-none focus:border-accent"
-      />
-      {setting.hint && <p className="mt-1 text-[11.5px] leading-snug text-subtle">{setting.hint}</p>}
     </div>
   )
 }

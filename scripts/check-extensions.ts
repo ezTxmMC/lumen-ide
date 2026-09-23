@@ -10,6 +10,7 @@
  * rejects on installing would have surfaced only at the user.
  */
 
+import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -60,8 +61,29 @@ function main() {
     report(true, `${manifest.id} ${manifest.version} — ${languages} Sprachen, ${settings} Einstellungen, ${pages} Seiten${agents ? `, ${agents} Agenten` : ''}${code}`)
   }
 
+  runExtensionTests()
+
   process.stdout.write(`\n${checked} checked, ${failed} error(s)\n`)
   if (failed) process.exit(1)
+}
+
+/**
+ * The tests an extension brings along (`extensions/<name>/test.mjs`) — offline
+ * ones; network tests run on request with the file's own flag.
+ */
+function runExtensionTests() {
+  const root = path.join(process.cwd(), 'extensions')
+  const folders = fs.readdirSync(root, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort()
+  for (const name of folders) {
+    const file = path.join(root, name, 'test.mjs')
+    if (!fs.existsSync(file)) continue
+    checked++
+    const result = spawnSync(process.execPath, [file], { cwd: process.cwd(), encoding: 'utf8' })
+    const output = `${result.stdout ?? ''}${result.stderr ?? ''}`
+    const summary = output.trim().split('\n').filter(Boolean).at(-1) ?? ''
+    report(result.status === 0, `extensions/${name}/test.mjs — ${summary}`)
+    if (result.status !== 0) process.stdout.write(output.split('\n').filter((line) => line.startsWith('✗') || /Error/.test(line)).slice(0, 20).join('\n') + '\n')
+  }
 }
 
 main()

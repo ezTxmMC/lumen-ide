@@ -303,6 +303,10 @@
             "packages": [
               "pyright"
             ]
+          },
+          "systemPackages": {
+            "pacman": "pyright",
+            "brew": "pyright"
           }
         },
         {
@@ -356,6 +360,12 @@
           "package": {
             "type": "pypi",
             "package": "ruff"
+          },
+          "systemPackages": {
+            "pacman": "ruff",
+            "apk": "ruff",
+            "brew": "ruff",
+            "scoop": "ruff"
           }
         },
         {
@@ -367,6 +377,12 @@
           "package": {
             "type": "pypi",
             "package": "python-lsp-server"
+          },
+          "systemPackages": {
+            "pacman": "python-lsp-server",
+            "apt": "python3-pylsp",
+            "dnf": "python3-lsp-server",
+            "brew": "python-lsp-server"
           }
         }
       ],
