@@ -1,23 +1,33 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The Studio's “panels” area: pages for the window's docks — a cheat sheet on
  * the right, a guide on the left, a status page at the bottom. Markdown or
  * HTML, with a live preview in the same sealed frame the dock uses.
  */
 
-import { useEffect, useState } from 'react'
-import { PanelsTopLeft, Trash2 } from 'lucide-react'
-import { t as translate, useT } from '@/i18n'
-import type { UserAddonModel, UserPanel } from '@/core/user-addons/schema'
-import type { ValidationIssue } from '@/core/user-addons/validate'
-import { Button, Empty } from '../ui'
-import { ExtensionPageView } from '../panels/ExtensionPageView'
-import { namedIcon } from '../ui/named-icons'
-import { AreaField, Heading, ItemList, TextField, inputClass } from './fields'
+import { useEffect, useState } from 'react';
+import { PanelsTopLeft, Trash2 } from 'lucide-react';
+import { t as translate, useT } from '@/i18n';
+import type { UserAddonModel, UserPanel } from '@/core/user-addons/schema';
+import type { ValidationIssue } from '@/core/user-addons/validate';
+import { Button, Empty } from '../ui';
+import { ExtensionPageView } from '../panels/ExtensionPageView';
+import { namedIcon } from '../ui/named-icons';
+import { AreaField, Heading, ItemList, TextField, inputClass } from './fields';
 
-const LOCATIONS: UserPanel['location'][] = ['left', 'right', 'bottom']
+const LOCATIONS: UserPanel['location'][] = ['left', 'right', 'bottom'];
 
 export function newPanel(model: UserAddonModel): UserPanel {
-  const n = (model.panels?.length ?? 0) + 1
+  const n = (model.panels?.length ?? 0) + 1;
   return {
     id: `panel-${n}`,
     title: translate('studioProject.panels.defaultTitle', { n }),
@@ -25,39 +35,41 @@ export function newPanel(model: UserAddonModel): UserPanel {
     location: 'right',
     format: 'markdown',
     content: translate('studioProject.panels.defaultContent'),
-  }
+  };
 }
 
 export function PanelsPage({
   model, onChange, issues, focus,
 }: {
-  model: UserAddonModel
-  onChange: (panels: UserPanel[]) => void
-  issues: ValidationIssue[]
-  focus?: { index: number; token: number } | null
+  model: UserAddonModel;
+  onChange: (panels: UserPanel[]) => void;
+  issues: ValidationIssue[];
+  focus?: { index: number; token: number; } | null;
 }) {
-  const t = useT()
-  const [selected, setSelected] = useState(0)
+  const t = useT();
+  const [selected, setSelected] = useState(0);
   useEffect(() => {
-    if (focus) setSelected(focus.index)
-  }, [focus])
+    if (focus) {
+      setSelected(focus.index);
+    }
+  }, [focus]);
 
-  const panels = model.panels ?? []
-  const index = Math.min(selected, panels.length - 1)
-  const panel = panels[index]
+  const panels = model.panels ?? [];
+  const index = Math.min(selected, panels.length - 1);
+  const panel = panels[index];
 
   if (!panel) {
     return (
       <div className="flex h-full flex-col items-center justify-center">
         <Empty icon={<PanelsTopLeft size={28} strokeWidth={1.4} />} title={t('studioProject.panels.empty')} hint={t('studioProject.panels.emptyHint')} />
-        <Button variant="solid" onClick={() => { onChange([newPanel(model)]); setSelected(0) }}>{t('studioProject.panels.add')}</Button>
+        <Button variant="solid" onClick={() => { onChange([newPanel(model)]); setSelected(0); }}>{t('studioProject.panels.add')}</Button>
       </div>
-    )
+    );
   }
 
-  const patch = (next: Partial<UserPanel>) => onChange(panels.map((entry, i) => (i === index ? { ...entry, ...next } : entry)))
-  const errors = issues.filter((issue) => issue.index === index).map((issue) => issue.message)
-  const Icon = namedIcon(panel.icon)
+  const patch = (next: Partial<UserPanel>) => onChange(panels.map((entry, i) => (i === index ? { ...entry, ...next } : entry)));
+  const errors = issues.filter((issue) => issue.index === index).map((issue) => issue.message);
+  const Icon = namedIcon(panel.icon);
 
   return (
     <div className="flex h-full min-h-0">
@@ -66,7 +78,7 @@ export function PanelsPage({
         selected={index}
         onSelect={setSelected}
         render={(entry) => ({ title: entry.title || entry.id || '—', subtitle: t(`shell.layout.${entry.location}`), color: model.color })}
-        onAdd={() => { onChange([...panels, newPanel(model)]); setSelected(panels.length) }}
+        onAdd={() => { onChange([...panels, newPanel(model)]); setSelected(panels.length); }}
         addLabel={t('studioProject.panels.add')}
         errorIndexes={new Set(issues.filter((issue) => issue.index !== undefined).map((issue) => issue.index as number))}
       />
@@ -75,8 +87,8 @@ export function PanelsPage({
           <Icon size={15} className="shrink-0 text-accent" />
           <h3 className="min-w-0 flex-1 truncate text-[14px] font-medium">{panel.title || '—'}</h3>
           <Button size="sm" variant="danger" title={t('common.delete')} onClick={() => {
-            onChange(panels.filter((_, i) => i !== index))
-            setSelected(Math.max(0, index - 1))
+            onChange(panels.filter((_, i) => i !== index));
+            setSelected(Math.max(0, index - 1));
           }}>
             <Trash2 size={12} />
           </Button>
@@ -109,5 +121,5 @@ export function PanelsPage({
         </div>
       </div>
     </div>
-  )
+  );
 }

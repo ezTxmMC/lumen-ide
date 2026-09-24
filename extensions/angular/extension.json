@@ -2,7 +2,7 @@
   "id": "ext.angular",
   "name": "Angular",
   "version": "1.0.3",
-  "description": "Angular-Templates mit dem neuen Kontrollfluss (@if, @for, @defer) und Angular-TypeScript mit Signals, Standalone-Komponenten und ngserver.",
+  "description": "Angular templates with the new control flow (@if, @for, @defer) and Angular TypeScript with signals, standalone components and ngserver.",
   "author": "Lumen",
   "icon": "A",
   "color": "#dd0031",

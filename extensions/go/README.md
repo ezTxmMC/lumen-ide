@@ -1,24 +1,24 @@
 # Go
 
-Go-Unterstützung für Lumen: Syntax, Snippets, `gopls`, Delve, Projekterkennung
-für Go-Module und eine Projektvorlage.
+Go support for Lumen: syntax, snippets, `gopls`, Delve, project detection for
+Go modules and a project template.
 
-## Inhalt
+## Contents
 
-- **Sprache** `.go` — Backtick-Strings, Kanal-Operatoren (`<-`, `:=`, `&^`),
-  Großschreibung als Typ, 13 Snippets von `iferr` bis zum tabellengetriebenen Test
-- **Language-Server** `gopls` mit `staticcheck`, `gofumpt` und Vorschlägen aus
-  nicht importierten Paketen
+- **Language** `.go`: backtick strings, channel operators (`<-`, `:=`, `&^`),
+  capitalization as a type, 13 snippets from `iferr` to the table-driven test
+- **Language server** `gopls` with `staticcheck`, `gofumpt` and suggestions from
+  packages that are not yet imported
 - **Debugger** Delve
-- **Projektart** Go-Modul (`go.mod`, `go.work`) mit Build-, Test- und
-  Tidy-Aufgaben; `go get` fügt Abhängigkeiten hinzu
-- **Vorlage** Modul als Programm (`cmd/`) oder als Bibliothek
+- **Project kind** Go module (`go.mod`, `go.work`) with build, test and tidy
+  tasks; `go get` adds dependencies
+- **Template** module as a program (`cmd/`) or as a library
 
-## Werkzeuge
+## Tools
 
 ```sh
 go install golang.org/x/tools/gopls@latest
 go install github.com/go-delve/delve/cmd/dlv@latest
 ```
 
-Fehlt `gopls`, bietet Lumen die Installation beim Öffnen einer `.go`-Datei an.
+If `gopls` is missing, Lumen offers to install it when a `.go` file is opened.

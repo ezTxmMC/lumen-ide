@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Tasks that Gradle plugins add — without starting Gradle.
  *
@@ -21,35 +31,35 @@
  * Pure text functions; tested in `scripts/check-project.ts`.
  */
 
-import { closingBrace, stripComments, type GradleTaskInfo } from './jvm-tasks'
-import { parseGradlePlugins } from './jvm-modules'
+import { closingBrace, stripComments, type GradleTaskInfo } from './jvm-tasks';
+import { parseGradlePlugins } from './jvm-modules';
 
-type Group = 'build' | 'run' | 'test' | 'other'
+type Group = 'build' | 'run' | 'test' | 'other';
 
 interface PluginTask {
-  name: string
-  group: Group
-  description?: string
+  name: string;
+  group: Group;
+  description?: string;
 }
 
 interface PluginEntry {
   /** A readable name, the category the tasks are listed under. */
-  category: string
-  match: (id: string) => boolean
-  tasks: PluginTask[]
+  category: string;
+  match: (id: string) => boolean;
+  tasks: PluginTask[];
   /** The run configurations the plugin creates when the script declares none. */
-  defaultRuns?: string[]
+  defaultRuns?: string[];
   /** Only runs declared in `runs { }` exist — ModDevGradle, NeoGradle, ForgeGradle. */
-  declaredRuns?: boolean
+  declaredRuns?: boolean;
 }
 
-const id = (...ids: string[]) => (candidate: string) => ids.includes(candidate)
-const pattern = (re: RegExp) => (candidate: string) => re.test(candidate)
+const id = (...ids: string[]) => (candidate: string) => ids.includes(candidate);
+const pattern = (re: RegExp) => (candidate: string) => re.test(candidate);
 
-const run = (name: string, description?: string): PluginTask => ({ name, group: 'run', description })
-const build = (name: string, description?: string): PluginTask => ({ name, group: 'build', description })
-const other = (name: string, description?: string): PluginTask => ({ name, group: 'other', description })
-const test = (name: string, description?: string): PluginTask => ({ name, group: 'test', description })
+const run = (name: string, description?: string): PluginTask => ({ name, group: 'run', description });
+const build = (name: string, description?: string): PluginTask => ({ name, group: 'build', description });
+const other = (name: string, description?: string): PluginTask => ({ name, group: 'other', description });
+const test = (name: string, description?: string): PluginTask => ({ name, group: 'test', description });
 
 /** The plugins Lumen knows the tasks of. The first match per plugin id wins. */
 export const PLUGIN_CATALOG: PluginEntry[] = [
@@ -131,7 +141,7 @@ export const PLUGIN_CATALOG: PluginEntry[] = [
   { category: 'Kotlin Multiplatform', match: id('org.jetbrains.kotlin.multiplatform'), tasks: [test('allTests')] },
   { category: 'Android', match: pattern(/^com\.android\.application$/), tasks: [build('assembleDebug'), build('assembleRelease'), run('installDebug'), test('connectedAndroidTest')] },
   { category: 'Versions', match: id('com.github.ben-manes.versions'), tasks: [other('dependencyUpdates')] },
-]
+];
 
 /* ------------------------------------------------------------------ *
  * Reading scripts
@@ -139,59 +149,83 @@ export const PLUGIN_CATALOG: PluginEntry[] = [
 
 /** The contents of every `name { … }` block of a script (top level or nested). */
 export function blocksNamed(text: string, name: string): string[] {
-  const out: string[] = []
-  const re = new RegExp(`(?:^|[\\s;{(])${name}\\s*(?:\\([^)]*\\)\\s*)?\\{`, 'g')
+  const out: string[] = [];
+  const re = new RegExp(`(?:^|[\\s;{(])${name}\\s*(?:\\([^)]*\\)\\s*)?\\{`, 'g');
   for (const match of text.matchAll(re)) {
-    const start = (match.index ?? 0) + match[0].length
-    const end = closingBrace(text, start)
-    if (end !== -1) out.push(text.slice(start, end))
+    const start = (match.index ?? 0) + match[0].length;
+    const end = closingBrace(text, start);
+    if (end !== -1) {
+      out.push(text.slice(start, end));
+    }
   }
-  return out
+  return out;
 }
 
 /** Plugin ids named in `plugins { }` with `apply false` — declared for subprojects, not applied here. */
 export function notAppliedPlugins(script: string): Set<string> {
-  const text = stripComments(script)
-  const found = new Set<string>()
-  for (const m of text.matchAll(/\bid\s*\(?\s*["']([^"']+)["']\s*\)?[^\n]*\bapply\s*\(?\s*false/g)) found.add(m[1])
-  for (const m of text.matchAll(/\balias\s*\(\s*libs\.plugins\.([\w.]+)\s*\)[^\n]*\bapply\s*\(?\s*false/g)) found.add(m[1].replace(/\./g, '-'))
-  return found
+  const text = stripComments(script);
+  const found = new Set<string>();
+  for (const m of text.matchAll(/\bid\s*\(?\s*["']([^"']+)["']\s*\)?[^\n]*\bapply\s*\(?\s*false/g)) {
+    found.add(m[1]);
+  }
+  for (const m of text.matchAll(/\balias\s*\(\s*libs\.plugins\.([\w.]+)\s*\)[^\n]*\bapply\s*\(?\s*false/g)) {
+    found.add(m[1].replace(/\./g, '-'));
+  }
+  return found;
 }
 
 /** Plugin ids a script applies to itself. */
 export function appliedPlugins(script: string): string[] {
-  const skipped = notAppliedPlugins(script)
-  return parseGradlePlugins(script).filter((plugin) => !skipped.has(plugin))
+  const skipped = notAppliedPlugins(script);
+  return parseGradlePlugins(script).filter((plugin) => !skipped.has(plugin));
 }
 
 /** Plugins applied through `apply plugin: 'x'`, `apply(plugin = "x")` or `plugins.apply("x")` inside a text. */
 function applyCalls(text: string): string[] {
-  const out = new Set<string>()
-  for (const m of text.matchAll(/\bapply\s*\(?\s*plugin\s*[:=]\s*["']([^"']+)["']/g)) out.add(m[1])
-  for (const m of text.matchAll(/\bplugins\s*\.\s*(?:apply|id)\s*\(\s*["']([^"']+)["']/g)) out.add(m[1])
-  for (const m of text.matchAll(/\bpluginManager\s*\.\s*apply\s*\(\s*["']([^"']+)["']/g)) out.add(m[1])
-  return [...out]
+  const out = new Set<string>();
+  for (const m of text.matchAll(/\bapply\s*\(?\s*plugin\s*[:=]\s*["']([^"']+)["']/g)) {
+    out.add(m[1]);
+  }
+  for (const m of text.matchAll(/\bplugins\s*\.\s*(?:apply|id)\s*\(\s*["']([^"']+)["']/g)) {
+    out.add(m[1]);
+  }
+  for (const m of text.matchAll(/\bpluginManager\s*\.\s*apply\s*\(\s*["']([^"']+)["']/g)) {
+    out.add(m[1]);
+  }
+  return [...out];
 }
 
 /** What the root script applies to its subprojects (`subprojects { }`, `allprojects { }`). */
 export function inheritedPlugins(rootScript: string): string[] {
-  const text = stripComments(rootScript)
-  const blocks = [...blocksNamed(text, 'subprojects'), ...blocksNamed(text, 'allprojects'), ...blocksNamed(text, 'configure')]
-  return [...new Set(blocks.flatMap(applyCalls))]
+  const text = stripComments(rootScript);
+  const blocks = [...blocksNamed(text, 'subprojects'), ...blocksNamed(text, 'allprojects'), ...blocksNamed(text, 'configure')];
+  return [...new Set(blocks.flatMap(applyCalls))];
 }
 
 /** Plugins a script does not name but gives away through what it configures. */
 export function impliedPlugins(script: string): string[] {
-  const text = stripComments(script)
-  const out: string[] = []
-  const architectury = blocksNamed(text, 'architectury').join('\n')
-  if (/\b(fabric|forge|neoForge|quilt|platformSetupLoomIde)\s*\(/.test(architectury)) out.push('dev.architectury.loom')
-  if (blocksNamed(text, 'loom').length) out.push('fabric-loom')
-  if (/\bminecraft\s*\(?\s*["']com\.mojang:minecraft:/.test(text) && /\bmappings\b/.test(text)) out.push('fabric-loom')
-  if (/\bmod(Implementation|Api|CompileOnly|RuntimeOnly)\b/.test(text)) out.push('fabric-loom')
-  if (blocksNamed(text, 'neoForge').length || /\bneoForge\s*\.\s*version\b/.test(text)) out.push('net.neoforged.moddev')
-  if (blocksNamed(text, 'minecraft').some((block) => /\bmappings\s+channel\b|\bmappings\s*\(\s*channel/.test(block))) out.push('net.minecraftforge.gradle')
-  return out
+  const text = stripComments(script);
+  const out: string[] = [];
+  const architectury = blocksNamed(text, 'architectury').join('\n');
+  if (/\b(fabric|forge|neoForge|quilt|platformSetupLoomIde)\s*\(/.test(architectury)) {
+    out.push('dev.architectury.loom');
+  }
+  if (blocksNamed(text, 'loom').length) {
+    out.push('fabric-loom');
+  }
+  if (/\bminecraft\s*\(?\s*["']com\.mojang:minecraft:/.test(text) && /\bmappings\b/.test(text)) {
+    out.push('fabric-loom');
+  }
+  if (/\bmod(Implementation|Api|CompileOnly|RuntimeOnly)\b/.test(text)) {
+    out.push('fabric-loom');
+  }
+  if (blocksNamed(text, 'neoForge').length || /\bneoForge\s*\.\s*version\b/.test(text)) {
+    out.push('net.neoforged.moddev');
+  }
+  if (blocksNamed(text, 'minecraft').some((block) => /\bmappings\s+channel\b|\bmappings\s*\(\s*channel/.test(block))) {
+    out.push('net.minecraftforge.gradle');
+  }
+  return out;
 }
 
 /**
@@ -200,40 +234,52 @@ export function impliedPlugins(script: string): string[] {
  * `"name" { }`. Configuration inside (`client()`, `ideName = …`) is ignored.
  */
 export function parseRuns(script: string): string[] {
-  const text = stripComments(script)
-  const names: string[] = []
+  const text = stripComments(script);
+  const names: string[] = [];
   const add = (name: string) => {
-    if (!names.includes(name)) names.push(name)
-  }
+    if (!names.includes(name)) {
+      names.push(name);
+    }
+  };
   for (const block of blocksNamed(text, 'runs')) {
-    let depth = 0
-    let line = ''
+    let depth = 0;
+    let line = '';
     for (let i = 0; i < block.length; i++) {
-      const ch = block[i]
+      const ch = block[i];
       if (ch === '{' && depth === 0) {
-        const head = line.trim()
+        const head = line.trim();
         const named = /(?:create|register|named|maybeCreate)\s*\(\s*["']([\w-]+)["']\s*\)$/.exec(head)
-          ?? /^["']?([A-Za-z][\w-]*)["']?$/.exec(head)
-        if (named && !/^(configureEach|all|each|named|withType)$/.test(named[1])) add(named[1])
+          ?? /^["']?([A-Za-z][\w-]*)["']?$/.exec(head);
+        if (named && !/^(configureEach|all|each|named|withType)$/.test(named[1])) {
+          add(named[1]);
+        }
       }
-      if (ch === '{') depth++
-      if (ch === '}') depth--
-      if (ch === '\n' || ch === ';' || ch === '{' || ch === '}') line = ''
-      if (ch !== '\n' && ch !== ';' && ch !== '{' && ch !== '}') line += ch
+      if (ch === '{') {
+        depth++;
+      }
+      if (ch === '}') {
+        depth--;
+      }
+      if (ch === '\n' || ch === ';' || ch === '{' || ch === '}') {
+        line = '';
+      }
+      if (ch !== '\n' && ch !== ';' && ch !== '{' && ch !== '}') {
+        line += ch;
+      }
     }
   }
-  return names
+  return names;
 }
 
 /** `client` → `runClient`, `gameTestServer` → `runGameTestServer`. */
-export const runTaskName = (run: string) => `run${run.charAt(0).toUpperCase()}${run.slice(1).replace(/[-_](\w)/g, (_m, c: string) => c.toUpperCase())}`
+export const runTaskName = (run: string) => `run${run.charAt(0).toUpperCase()}${run.slice(1).replace(/[-_](\w)/g, (_m, c: string) => c.toUpperCase())}`;
 
 /* ------------------------------------------------------------------ *
  * Tasks
  * ------------------------------------------------------------------ */
 
 export interface PluginTaskInfo extends GradleTaskInfo {
-  runGroup: Group
+  runGroup: Group;
 }
 
 /**
@@ -241,21 +287,27 @@ export interface PluginTaskInfo extends GradleTaskInfo {
  * root script applies to every subproject.
  */
 export function pluginTasks(script: string, inherited: string[] = []): PluginTaskInfo[] {
-  const plugins = [...new Set([...appliedPlugins(script), ...inherited, ...impliedPlugins(script)])]
-  const runs = parseRuns(script)
-  const out: PluginTaskInfo[] = []
-  const seen = new Set<string>()
+  const plugins = [...new Set([...appliedPlugins(script), ...inherited, ...impliedPlugins(script)])];
+  const runs = parseRuns(script);
+  const out: PluginTaskInfo[] = [];
+  const seen = new Set<string>();
   const push = (task: PluginTask, category: string) => {
-    if (seen.has(task.name)) return
-    seen.add(task.name)
-    out.push({ name: task.name, group: category, runGroup: task.group, ...(task.description ? { description: task.description } : {}) })
-  }
-  const entries = PLUGIN_CATALOG.filter((entry) => plugins.some((plugin) => entry.match(plugin)))
+    if (seen.has(task.name)) {
+      return;
+    }
+    seen.add(task.name);
+    out.push({ name: task.name, group: category, runGroup: task.group, ...(task.description ? { description: task.description } : {}) });
+  };
+  const entries = PLUGIN_CATALOG.filter((entry) => plugins.some((plugin) => entry.match(plugin)));
   for (const entry of entries) {
-    const declared = runs.length ? runs : entry.defaultRuns ?? []
-    const names = entry.declaredRuns ? runs : declared
-    for (const name of names) push(run(runTaskName(name)), entry.category)
-    for (const task of entry.tasks) push(task, entry.category)
+    const declared = runs.length ? runs : entry.defaultRuns ?? [];
+    const names = entry.declaredRuns ? runs : declared;
+    for (const name of names) {
+      push(run(runTaskName(name)), entry.category);
+    }
+    for (const task of entry.tasks) {
+      push(task, entry.category);
+    }
   }
-  return out
+  return out;
 }

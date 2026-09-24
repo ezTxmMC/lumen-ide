@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * One way in for every kind of database. A driver is a plain object:
  *
@@ -24,11 +34,13 @@ const OPENERS = {
   mssql: async () => (await import('./mssql.js')).openMssql,
   redis: async () => (await import('./redis.js')).openRedis,
   mongo: async () => (await import('./mongo.js')).openMongo,
-}
+};
 
 export async function openDriver(connection, deps) {
-  const load = OPENERS[connection.type]
-  if (!load) throw new Error(`Unknown database type: ${connection.type}`)
-  const open = await load()
-  return open(connection, deps)
+  const load = OPENERS[connection.type];
+  if (!load) {
+    throw new Error(`Unknown database type: ${connection.type}`);
+  }
+  const open = await load();
+  return open(connection, deps);
 }

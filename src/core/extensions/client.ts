@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Fetching from an extension server.
  *
@@ -12,47 +22,55 @@
  * else in the program starts counting on it.
  */
 
-import { EXTENSION_ID_PATTERN, EXTENSION_SCHEMA, type ExtensionIndex, type ExtensionManifest, type ExtensionSummary } from './types'
-import { normalizeServerUrl } from './trust'
+import { EXTENSION_ID_PATTERN, EXTENSION_SCHEMA, type ExtensionIndex, type ExtensionManifest, type ExtensionSummary } from './types';
+import { normalizeServerUrl } from './trust';
 
 export interface ServerInfo {
-  name: string
-  url: string
-  extensions: number
+  name: string;
+  url: string;
+  extensions: number;
 }
 
 function asObject(value: unknown, what: string): Record<string, unknown> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${what}: unexpected response`)
-  return value as Record<string, unknown>
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`${what}: unexpected response`);
+  }
+  return value as Record<string, unknown>;
 }
 
 function asString(value: unknown, fallback = ''): string {
-  return typeof value === 'string' ? value : fallback
+  return typeof value === 'string' ? value : fallback;
 }
 
 /** Fetch the profile — which also tells us an extension server is there at all. */
 export async function fetchServerInfo(url: string): Promise<ServerInfo> {
-  const server = normalizeServerUrl(url)
-  const data = asObject(await window.lumen.extensions.info(server), 'Steckbrief')
+  const server = normalizeServerUrl(url);
+  const data = asObject(await window.lumen.extensions.info(server), 'Steckbrief');
   if (data.product !== 'lumen-extension-server') {
-    throw new Error('No Lumen extension server answers there')
+    throw new Error('No Lumen extension server answers there');
   }
   return {
     name: asString(data.name) || server,
     url: server,
     extensions: typeof data.extensions === 'number' ? data.extensions : 0,
-  }
+  };
 }
 
 /** Reduce a catalogue entry to the fields Lumen knows. */
 function toSummary(raw: unknown): ExtensionSummary | null {
-  if (!raw || typeof raw !== 'object') return null
-  const entry = raw as Record<string, unknown>
-  const id = asString(entry.id)
-  if (!EXTENSION_ID_PATTERN.test(id)) return null
-  const name = asString(entry.name)
-  const version = asString(entry.version)
-  if (!name || !version) return null
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const entry = raw as Record<string, unknown>;
+  const id = asString(entry.id);
+  if (!EXTENSION_ID_PATTERN.test(id)) {
+    return null;
+  }
+  const name = asString(entry.name);
+  const version = asString(entry.version);
+  if (!name || !version) {
+    return null;
+  }
   return {
     id,
     name,
@@ -72,14 +90,14 @@ function toSummary(raw: unknown): ExtensionSummary | null {
     preview: asString(entry.preview) || undefined,
     publishedAt: asString(entry.publishedAt) || undefined,
     updatedAt: asString(entry.updatedAt) || undefined,
-  }
+  };
 }
 
 /** A server's catalogue, optionally searched. */
 export async function fetchIndex(url: string, query?: string): Promise<ExtensionIndex> {
-  const server = normalizeServerUrl(url)
-  const data = asObject(await window.lumen.extensions.index(server, query), 'Katalog')
-  const list = Array.isArray(data.extensions) ? data.extensions : []
+  const server = normalizeServerUrl(url);
+  const data = asObject(await window.lumen.extensions.index(server, query), 'Katalog');
+  const list = Array.isArray(data.extensions) ? data.extensions : [];
   return {
     schema: typeof data.schema === 'number' ? data.schema : EXTENSION_SCHEMA,
     server: data.server && typeof data.server === 'object'
@@ -87,7 +105,7 @@ export async function fetchIndex(url: string, query?: string): Promise<Extension
       : undefined,
     updatedAt: asString(data.updatedAt) || undefined,
     extensions: list.map(toSummary).filter((entry): entry is ExtensionSummary => entry !== null),
-  }
+  };
 }
 
 /**
@@ -98,39 +116,53 @@ export async function fetchIndex(url: string, query?: string): Promise<Extension
  * past the rules that apply to user add-ons.
  */
 export async function fetchManifest(url: string, id: string, version?: string): Promise<ExtensionManifest> {
-  const server = normalizeServerUrl(url)
-  if (!EXTENSION_ID_PATTERN.test(id)) throw new Error(`Invalid id: ${id}`)
+  const server = normalizeServerUrl(url);
+  if (!EXTENSION_ID_PATTERN.test(id)) {
+    throw new Error(`Invalid id: ${id}`);
+  }
 
   const raw = version
     ? await window.lumen.extensions.manifest(server, id, version)
-    : asObject(await window.lumen.extensions.detail(server, id), 'Einzelheiten').manifest
+    : asObject(await window.lumen.extensions.detail(server, id), 'Einzelheiten').manifest;
 
-  const data = asObject(raw, 'Manifest')
-  if (data.schema !== EXTENSION_SCHEMA) throw new Error(`Unknown manifest format: ${String(data.schema)}`)
-  if (data.id !== id) throw new Error('The manifest names a different id than the one requested')
+  const data = asObject(raw, 'Manifest');
+  if (data.schema !== EXTENSION_SCHEMA) {
+    throw new Error(`Unknown manifest format: ${String(data.schema)}`);
+  }
+  if (data.id !== id) {
+    throw new Error('The manifest names a different id than the one requested');
+  }
 
-  const addon = data.addon
-  if (!addon || typeof addon !== 'object' || Array.isArray(addon)) throw new Error('The manifest has no add-on')
-  const model = addon as Record<string, unknown>
-  if (model.id !== data.id) throw new Error('The add-on id does not match the extension')
-  if (model.version !== data.version) throw new Error('The add-on version does not match the extension')
+  const addon = data.addon;
+  if (!addon || typeof addon !== 'object' || Array.isArray(addon)) {
+    throw new Error('The manifest has no add-on');
+  }
+  const model = addon as Record<string, unknown>;
+  if (model.id !== data.id) {
+    throw new Error('The add-on id does not match the extension');
+  }
+  if (model.version !== data.version) {
+    throw new Error('The add-on version does not match the extension');
+  }
 
   // Foreign data: what the panel and the loader rely on has to have the right shape.
   if (data.code !== undefined) {
-    const code = data.code as Record<string, unknown> | null
-    const parts = [code?.main, code?.renderer].filter((part) => part !== undefined)
+    const code = data.code as Record<string, unknown> | null;
+    const parts = [code?.main, code?.renderer].filter((part) => part !== undefined);
     if (!code || typeof code !== 'object' || !parts.length || parts.some((part) => typeof part !== 'string' || !part)) {
-      throw new Error('The manifest\'s code is malformed')
+      throw new Error('The manifest\'s code is malformed');
     }
   }
   if (data.agents !== undefined) {
-    if (!Array.isArray(data.agents)) throw new Error('The manifest\'s agents are malformed')
+    if (!Array.isArray(data.agents)) {
+      throw new Error('The manifest\'s agents are malformed');
+    }
     for (const agent of data.agents as Record<string, unknown>[]) {
       if (!agent || typeof agent.id !== 'string' || typeof agent.name !== 'string' || !/^[a-z][a-z0-9-]*$/.test(agent.id)) {
-        throw new Error('The manifest\'s agents are malformed')
+        throw new Error('The manifest\'s agents are malformed');
       }
     }
   }
 
-  return data as unknown as ExtensionManifest
+  return data as unknown as ExtensionManifest;
 }

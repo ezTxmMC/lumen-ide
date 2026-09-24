@@ -1,7 +1,17 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /** The preload bridge of the SDK management (detecting, installing and removing JDKs). */
 
-import { invoke, subscribe } from './ipc'
-import type { DetectedJdk, InstallProgress, InstallRequest, SdkEnvironment } from './sdk'
+import { invoke, subscribe } from './ipc';
+import type { DetectedJdk, InstallProgress, InstallRequest, SdkEnvironment } from './sdk';
 
 export const sdkApi = {
   /** PATH, platform and where things are stored — for the environment of tasks and terminals. */
@@ -15,4 +25,4 @@ export const sdkApi = {
   /** Only installations under ~/.lumen/jdks. */
   remove: (home: string): Promise<boolean> => invoke('sdk:remove', home),
   onProgress: (cb: (progress: InstallProgress) => void) => subscribe('sdk:progress', cb),
-}
+};

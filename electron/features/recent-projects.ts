@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The projects opened most recently, on the icon in the taskbar or the dock.
  *
@@ -16,26 +26,26 @@
  * there, not in the main process.
  */
 
-import { BrowserWindow, Menu, app, ipcMain } from 'electron'
-import fs from 'node:fs'
-import os from 'node:os'
-import path from 'node:path'
+import { BrowserWindow, Menu, app, ipcMain } from 'electron';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 export interface RecentProject {
-  path: string
-  name: string
+  path: string;
+  name: string;
 }
 
 export interface RecentProjectsLabels {
   /** The heading of the jump list under Windows. */
-  category: string
+  category: string;
 }
 
 /** The switch with which an entry opens a folder. */
-const OPEN_FLAG = '--open-folder='
+const OPEN_FLAG = '--open-folder=';
 
 /** At most this many entries — none of the desktops shows more. */
-const MAX_ENTRIES = 10
+const MAX_ENTRIES = 10;
 
 /* ------------------------------------------------------------------ *
  * The folder from the command line
@@ -44,11 +54,15 @@ const MAX_ENTRIES = 10
 /** The folder from `--open-folder=…`, where the command line names one. */
 export function folderFromArgv(argv: readonly string[]): string | null {
   for (const arg of argv) {
-    if (!arg.startsWith(OPEN_FLAG)) continue
-    const value = arg.slice(OPEN_FLAG.length).replace(/^"|"$/g, '')
-    if (value) return value
+    if (!arg.startsWith(OPEN_FLAG)) {
+      continue;
+    }
+    const value = arg.slice(OPEN_FLAG.length).replace(/^"|"$/g, '');
+    if (value) {
+      return value;
+    }
   }
-  return null
+  return null;
 }
 
 /* ------------------------------------------------------------------ *
@@ -57,19 +71,21 @@ export function folderFromArgv(argv: readonly string[]): string | null {
 
 /** The command that starts this program — for an AppImage, its own path. */
 function launcher(): string {
-  return process.env.APPIMAGE ?? process.execPath
+  return process.env.APPIMAGE ?? process.execPath;
 }
 
 /** Does the desktop entry belong to this program? */
 function belongsToApp(content: string): boolean {
-  const exec = /^Exec=(.*)$/m.exec(content)?.[1] ?? ''
-  if (exec.includes(launcher())) return true
-  return /^Name=Lumen\s*$/m.test(content)
+  const exec = /^Exec=(.*)$/m.exec(content)?.[1] ?? '';
+  if (exec.includes(launcher())) {
+    return true;
+  }
+  return /^Name=Lumen\s*$/m.test(content);
 }
 
 function applicationsDir(): string {
-  const dataHome = process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share')
-  return path.join(dataHome, 'applications')
+  const dataHome = process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share');
+  return path.join(dataHome, 'applications');
 }
 
 /**
@@ -77,20 +93,24 @@ function applicationsDir(): string {
  * updater moved the AppImage, so menu entries and pins keep working.
  */
 export function repointDesktopEntries(from: string, to: string) {
-  const dir = applicationsDir()
-  let names: string[] = []
+  const dir = applicationsDir();
+  let names: string[] = [];
   try {
-    names = fs.readdirSync(dir)
+    names = fs.readdirSync(dir);
   } catch {
-    return
+    return;
   }
   for (const name of names) {
-    if (!name.endsWith('.desktop')) continue
-    const file = path.join(dir, name)
+    if (!name.endsWith('.desktop')) {
+      continue;
+    }
+    const file = path.join(dir, name);
     try {
-      const content = fs.readFileSync(file, 'utf8')
-      if (!content.includes(from)) continue
-      fs.writeFileSync(file, content.split(from).join(to), 'utf8')
+      const content = fs.readFileSync(file, 'utf8');
+      if (!content.includes(from)) {
+        continue;
+      }
+      fs.writeFileSync(file, content.split(from).join(to), 'utf8');
     } catch {
       // Read-only entries stay as they are.
     }
@@ -99,57 +119,65 @@ export function repointDesktopEntries(from: string, to: string) {
 
 /** The user's desktop entries that belong to this program. */
 function desktopEntries(): string[] {
-  const dir = applicationsDir()
-  let names: string[] = []
+  const dir = applicationsDir();
+  let names: string[] = [];
   try {
-    names = fs.readdirSync(dir)
+    names = fs.readdirSync(dir);
   } catch {
-    return []
+    return [];
   }
-  const out: string[] = []
+  const out: string[] = [];
   for (const name of names) {
-    if (!name.endsWith('.desktop')) continue
-    const file = path.join(dir, name)
+    if (!name.endsWith('.desktop')) {
+      continue;
+    }
+    const file = path.join(dir, name);
     try {
-      if (belongsToApp(fs.readFileSync(file, 'utf8'))) out.push(file)
+      if (belongsToApp(fs.readFileSync(file, 'utf8'))) {
+        out.push(file);
+      }
     } catch {
       // Pass over entries that cannot be read.
     }
   }
-  return out
+  return out;
 }
 
 /** Escape lines: in desktop entries `%` and line breaks are special. */
 function desktopValue(text: string): string {
-  return text.replace(/%/g, '%%').replace(/[\r\n]+/g, ' ').trim()
+  return text.replace(/%/g, '%%').replace(/[\r\n]+/g, ' ').trim();
 }
 
 /** Remove the actions so far along with their sections. */
 function withoutActions(content: string): string {
-  const head = content.split(/^\[Desktop Action /m)[0]
-  return head.replace(/^Actions=.*$\n?/m, '').replace(/\s+$/, '')
+  const head = content.split(/^\[Desktop Action /m)[0];
+  return head.replace(/^Actions=.*$\n?/m, '').replace(/\s+$/, '');
 }
 
 function desktopFileFor(content: string, projects: readonly RecentProject[]): string {
-  const base = withoutActions(content)
-  if (!projects.length) return `${base}\n`
+  const base = withoutActions(content);
+  if (!projects.length) {
+    return `${base}\n`;
+  }
 
-  const ids = projects.map((_, index) => `lumen-recent-${index}`)
+  const ids = projects.map((_, index) => `lumen-recent-${index}`);
   const sections = projects.map((project, index) => [
     `[Desktop Action ${ids[index]}]`,
     `Name=${desktopValue(project.name)}`,
     `Exec=${desktopValue(launcher())} ${OPEN_FLAG}${desktopValue(project.path)}`,
-  ].join('\n'))
-  return `${base}\nActions=${ids.join(';')};\n\n${sections.join('\n\n')}\n`
+  ].join('\n'));
+  return `${base}\nActions=${ids.join(';')};\n\n${sections.join('\n\n')}\n`;
 }
 
 function applyLinux(projects: readonly RecentProject[]) {
   for (const file of desktopEntries()) {
     try {
-      const content = fs.readFileSync(file, 'utf8')
-      const next = desktopFileFor(content, projects)
-      if (next === content) continue
-      fs.writeFileSync(file, next, 'utf8')
+      const content = fs.readFileSync(file, 'utf8');
+      const next = desktopFileFor(content, projects);
+      if (next === content) {
+        continue;
+      }
+      fs.writeFileSync(file, next, 'utf8');
     } catch {
       // Read-only or system-wide entries stay as they are.
     }
@@ -162,8 +190,8 @@ function applyLinux(projects: readonly RecentProject[]) {
 
 function applyWindows(projects: readonly RecentProject[], labels: RecentProjectsLabels) {
   if (!projects.length) {
-    app.setJumpList(null)
-    return
+    app.setJumpList(null);
+    return;
   }
   app.setJumpList([{
     type: 'custom',
@@ -177,14 +205,16 @@ function applyWindows(projects: readonly RecentProject[], labels: RecentProjects
       iconPath: process.execPath,
       iconIndex: 0,
     })),
-  }])
+  }]);
 }
 
 function applyMac(projects: readonly RecentProject[], open: (folder: string) => void) {
-  if (!app.dock) return
+  if (!app.dock) {
+    return;
+  }
   if (!projects.length) {
-    app.dock.setMenu(Menu.buildFromTemplate([]))
-    return
+    app.dock.setMenu(Menu.buildFromTemplate([]));
+    return;
   }
   app.dock.setMenu(Menu.buildFromTemplate(
     projects.map((project) => ({
@@ -192,7 +222,7 @@ function applyMac(projects: readonly RecentProject[], open: (folder: string) => 
       toolTip: project.path,
       click: () => open(project.path),
     })),
-  ))
+  ));
 }
 
 /* ------------------------------------------------------------------ *
@@ -201,27 +231,31 @@ function applyMac(projects: readonly RecentProject[], open: (folder: string) => 
 
 export function registerRecentProjectsIpc(getWindow: () => BrowserWindow | null) {
   const open = (folder: string) => {
-    const win = getWindow()
-    if (!win || win.isDestroyed()) return
-    if (win.isMinimized()) win.restore()
-    win.focus()
-    win.webContents.send('app:open-folder', folder)
-  }
+    const win = getWindow();
+    if (!win || win.isDestroyed()) {
+      return;
+    }
+    if (win.isMinimized()) {
+      win.restore();
+    }
+    win.focus();
+    win.webContents.send('app:open-folder', folder);
+  };
 
   ipcMain.handle('app:setRecentProjects', (_event, list: RecentProject[], labels: RecentProjectsLabels) => {
     const projects = (Array.isArray(list) ? list : [])
       .filter((entry) => entry && typeof entry.path === 'string' && typeof entry.name === 'string')
-      .slice(0, MAX_ENTRIES)
+      .slice(0, MAX_ENTRIES);
     if (process.platform === 'win32') {
-      applyWindows(projects, labels)
-      return
+      applyWindows(projects, labels);
+      return;
     }
     if (process.platform === 'darwin') {
-      applyMac(projects, open)
-      return
+      applyMac(projects, open);
+      return;
     }
-    applyLinux(projects)
-  })
+    applyLinux(projects);
+  });
 
-  return { open }
+  return { open };
 }

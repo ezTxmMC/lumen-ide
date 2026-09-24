@@ -1,36 +1,46 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /** The Studio's “general”, “themes” and “JSON” areas. */
 
-import { useEffect, useState } from 'react'
-import { AlertTriangle, CircleAlert, Link2, Package, Palette, Trash2 } from 'lucide-react'
-import { useStore } from '@/state/store'
-import { useT } from '@/i18n'
-import type { Theme } from '@/core/types'
+import { useEffect, useState } from 'react';
+import { AlertTriangle, CircleAlert, Link2, Package, Palette, Trash2 } from 'lucide-react';
+import { useStore } from '@/state/store';
+import { useT } from '@/i18n';
+import type { Theme } from '@/core/types';
 import {
   normalizeModel, USER_ADDON_PREFIX, type UserAddonCategory, type UserAddonModel, type UserThemeEntry,
-} from '@/core/user-addons/schema'
-import { validateAddon, type StudioSection, type ValidationIssue } from '@/core/user-addons/validate'
-import { Button, Empty } from '../ui'
-import { AreaField, ColorField, Heading, TextField, inputClass } from './fields'
+} from '@/core/user-addons/schema';
+import { validateAddon, type StudioSection, type ValidationIssue } from '@/core/user-addons/validate';
+import { Button, Empty } from '../ui';
+import { AreaField, ColorField, Heading, TextField, inputClass } from './fields';
 
-const CATEGORIES: UserAddonCategory[] = ['tool', 'language', 'theme']
+const CATEGORIES: UserAddonCategory[] = ['tool', 'language', 'theme'];
 
 export function GeneralPage({
   model, onChange, issues, onJump,
 }: {
-  model: UserAddonModel
-  onChange: (patch: Partial<UserAddonModel>) => void
-  issues: ValidationIssue[]
-  onJump: (issue: ValidationIssue) => void
+  model: UserAddonModel;
+  onChange: (patch: Partial<UserAddonModel>) => void;
+  issues: ValidationIssue[];
+  onJump: (issue: ValidationIssue) => void;
 }) {
-  const t = useT()
-  const fieldError = (field: string) => issues.find((i) => i.section === 'general' && i.field === field)?.message ?? null
+  const t = useT();
+  const fieldError = (field: string) => issues.find((i) => i.section === 'general' && i.field === field)?.message ?? null;
   const stats: [string, number][] = [
     ['languages', model.languages.length],
     ['commands', model.commands.length],
     ['events', model.events.length],
     ['templates', model.templates.length],
     ['themes', model.themes.length],
-  ]
+  ];
 
   return (
     <div className="mx-auto max-w-[760px] px-5 py-4">
@@ -91,35 +101,35 @@ export function GeneralPage({
         </button>
       ))}
     </div>
-  )
+  );
 }
 
 /* ------------------------------------------------------------------ */
 
-function Swatches({ theme }: { theme: Theme }) {
+function Swatches({ theme }: { theme: Theme; }) {
   return (
     <span className="flex shrink-0 overflow-hidden rounded-[4px] border border-edge">
       {[theme.ui.bg, theme.ui.bgElevated, theme.ui.accent, theme.ui.text].map((color, i) => (
         <span key={i} className="block h-6 w-4" style={{ background: color }} />
       ))}
     </span>
-  )
+  );
 }
 
 export function ThemesPage({
   themes, onChange,
 }: {
-  themes: UserThemeEntry[]
-  onChange: (themes: UserThemeEntry[]) => void
+  themes: UserThemeEntry[];
+  onChange: (themes: UserThemeEntry[]) => void;
 }) {
-  const t = useT()
-  const customThemes = useStore((s) => s.customThemes)
-  const setTheme = useStore((s) => s.setTheme)
-  const [pick, setPick] = useState('')
+  const t = useT();
+  const customThemes = useStore((s) => s.customThemes);
+  const setTheme = useStore((s) => s.setTheme);
+  const [pick, setPick] = useState('');
 
-  const resolve = (entry: UserThemeEntry) => ('theme' in entry ? entry.theme : customThemes.find((th) => th.id === entry.ref))
-  const linked = new Set(themes.map((entry) => ('ref' in entry ? entry.ref : entry.theme.id)))
-  const available = customThemes.filter((th) => !linked.has(th.id))
+  const resolve = (entry: UserThemeEntry) => ('theme' in entry ? entry.theme : customThemes.find((th) => th.id === entry.ref));
+  const linked = new Set(themes.map((entry) => ('ref' in entry ? entry.ref : entry.theme.id)));
+  const available = customThemes.filter((th) => !linked.has(th.id));
 
   return (
     <div className="mx-auto max-w-[760px] px-5 py-4">
@@ -129,14 +139,16 @@ export function ThemesPage({
           <option value="">{t('addonStudio.themes.choose')}</option>
           {available.map((th) => <option key={th.id} value={th.id}>{th.name}</option>)}
         </select>
-        <Button size="sm" variant="outline" disabled={!pick} onClick={() => { onChange([...themes, { ref: pick }]); setPick('') }}>
+        <Button size="sm" variant="outline" disabled={!pick} onClick={() => { onChange([...themes, { ref: pick }]); setPick(''); }}>
           <Link2 size={12} /> {t('addonStudio.themes.link')}
         </Button>
         <Button size="sm" variant="outline" disabled={!pick} onClick={() => {
-          const theme = customThemes.find((th) => th.id === pick)
-          if (!theme) return
-          onChange([...themes, { theme: structuredClone(theme) }])
-          setPick('')
+          const theme = customThemes.find((th) => th.id === pick);
+          if (!theme) {
+            return;
+          }
+          onChange([...themes, { theme: structuredClone(theme) }]);
+          setPick('');
         }}>
           <Package size={12} /> {t('addonStudio.themes.embed')}
         </Button>
@@ -145,8 +157,8 @@ export function ThemesPage({
 
       {themes.length === 0 && <Empty icon={<Palette size={26} strokeWidth={1.4} />} title={t('addonStudio.themes.empty')} />}
       {themes.map((entry, i) => {
-        const theme = resolve(entry)
-        const isRef = 'ref' in entry
+        const theme = resolve(entry);
+        const isRef = 'ref' in entry;
         return (
           <div key={i} className="mb-1.5 flex items-center gap-3 rounded-lumen-sm border border-edge px-2.5 py-2">
             {theme && <Swatches theme={theme} />}
@@ -171,44 +183,48 @@ export function ThemesPage({
               <Trash2 size={12} />
             </Button>
           </div>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
 /* ------------------------------------------------------------------ */
 
-export function JsonPage({ model, onReplace }: { model: UserAddonModel; onReplace: (model: UserAddonModel) => void }) {
-  const t = useT()
-  const serialized = JSON.stringify(model, null, 2)
-  const [text, setText] = useState(serialized)
-  const [dirty, setDirty] = useState(false)
+export function JsonPage({ model, onReplace }: { model: UserAddonModel; onReplace: (model: UserAddonModel) => void; }) {
+  const t = useT();
+  const serialized = JSON.stringify(model, null, 2);
+  const [text, setText] = useState(serialized);
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
-    if (!dirty) setText(serialized)
-  }, [serialized, dirty])
+    if (!dirty) {
+      setText(serialized);
+    }
+  }, [serialized, dirty]);
 
-  let parseError: string | null = null
-  let parsed: UserAddonModel | null = null
+  let parseError: string | null = null;
+  let parsed: UserAddonModel | null = null;
   try {
-    parsed = normalizeModel(JSON.parse(text))
+    parsed = normalizeModel(JSON.parse(text));
   } catch (err) {
-    parseError = (err as Error).message
+    parseError = (err as Error).message;
   }
-  const issues = parsed ? validateAddon(parsed).filter((i) => !i.warning) : []
+  const issues = parsed ? validateAddon(parsed).filter((i) => !i.warning) : [];
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-2 p-3">
       <div className="flex shrink-0 items-center gap-2">
         <p className="min-w-0 flex-1 text-[11.5px] text-subtle">{t('addonStudio.json.hint')}</p>
-        <Button size="sm" variant="outline" disabled={!dirty} onClick={() => { setText(serialized); setDirty(false) }}>
+        <Button size="sm" variant="outline" disabled={!dirty} onClick={() => { setText(serialized); setDirty(false); }}>
           {t('common.reset')}
         </Button>
         <Button size="sm" variant="solid" disabled={!dirty || !parsed} onClick={() => {
-          if (!parsed) return
-          onReplace(parsed)
-          setDirty(false)
+          if (!parsed) {
+            return;
+          }
+          onReplace(parsed);
+          setDirty(false);
         }}>
           {t('common.apply')}
         </Button>
@@ -216,15 +232,17 @@ export function JsonPage({ model, onReplace }: { model: UserAddonModel; onReplac
       <textarea
         value={text}
         spellCheck={false}
-        onChange={(e) => { setText(e.target.value); setDirty(true) }}
+        onChange={(e) => { setText(e.target.value); setDirty(true); }}
         onKeyDown={(e) => {
-          if (e.key !== 'Tab') return
-          e.preventDefault()
-          const el = e.currentTarget
-          const start = el.selectionStart
-          setText(`${el.value.slice(0, start)}  ${el.value.slice(el.selectionEnd)}`)
-          setDirty(true)
-          requestAnimationFrame(() => el.setSelectionRange(start + 2, start + 2))
+          if (e.key !== 'Tab') {
+            return;
+          }
+          e.preventDefault();
+          const el = e.currentTarget;
+          const start = el.selectionStart;
+          setText(`${el.value.slice(0, start)}  ${el.value.slice(el.selectionEnd)}`);
+          setDirty(true);
+          requestAnimationFrame(() => el.setSelectionRange(start + 2, start + 2));
         }}
         className={`${inputClass} min-h-0 flex-1 resize-none font-mono text-[12px] leading-relaxed ${parseError ? 'border-bad' : 'border-edge'}`}
       />
@@ -234,7 +252,7 @@ export function JsonPage({ model, onReplace }: { model: UserAddonModel; onReplac
         {!parseError && issues.length === 0 && <span className="text-ok">{t('addonStudio.json.valid')}</span>}
       </div>
     </div>
-  )
+  );
 }
 
-export const SECTION_ORDER: StudioSection[] = ['general', 'languages', 'commands', 'events', 'templates', 'themes', 'json']
+export const SECTION_ORDER: StudioSection[] = ['general', 'languages', 'commands', 'events', 'templates', 'themes', 'json'];

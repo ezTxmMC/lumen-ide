@@ -376,7 +376,7 @@
         },
         {
           "label": "fetch",
-          "detail": "fetch mit await",
+          "detail": "fetch with await",
           "body": "const res = await fetch('${url}')\nif (!res.ok) throw new Error(res.statusText)\nconst data = await res.json()$0"
         },
         {
@@ -462,17 +462,17 @@
         {
           "label": "ue",
           "detail": "useEffect",
-          "body": "useEffect(() => {\n  $0\n}, [${abhängigkeit}])"
+          "body": "useEffect(() => {\n  $0\n}, [${dependency}])"
         },
         {
           "label": "uec",
-          "detail": "useEffect mit Aufräumen",
-          "body": "useEffect(() => {\n  $0\n  return () => {\n    // aufräumen\n  }\n}, [])"
+          "detail": "useEffect with cleanup",
+          "body": "useEffect(() => {\n  $0\n  return () => {\n    // clean up\n  }\n}, [])"
         },
         {
           "label": "um",
           "detail": "useMemo",
-          "body": "const ${wert} = useMemo(() => $0, [${abhängigkeit}])"
+          "body": "const ${wert} = useMemo(() => $0, [${dependency}])"
         },
         {
           "label": "uc",
@@ -486,8 +486,8 @@
         },
         {
           "label": "ctx",
-          "detail": "Context mit Hook",
-          "body": "const ${Name}Context = createContext<${Typ} | null>(null)\n\nexport function use${Name}() {\n  const value = useContext(${Name}Context)\n  if (!value) throw new Error('use${Name} außerhalb des Providers')\n  return value\n}$0"
+          "detail": "Context with hook",
+          "body": "const ${Name}Context = createContext<${Typ} | null>(null)\n\nexport function use${Name}() {\n  const value = useContext(${Name}Context)\n  if (!value) throw new Error('use${Name} outside the provider')\n  return value\n}$0"
         },
         {
           "label": "hook",
@@ -517,7 +517,7 @@
         {
           "label": "lazy",
           "detail": "Lazy Route",
-          "body": "const ${Name} = lazy(() => import('${./Name}'))\n\n<Suspense fallback={<div>Lädt…</div>}>\n  <${Name} />\n</Suspense>$0"
+          "body": "const ${Name} = lazy(() => import('${./Name}'))\n\n<Suspense fallback={<div>Loading…</div>}>\n  <${Name} />\n</Suspense>$0"
         },
         {
           "label": "form",
@@ -1208,7 +1208,7 @@
         },
         {
           "label": "fetch",
-          "detail": "fetch mit await",
+          "detail": "fetch with await",
           "body": "const res = await fetch('${url}')\nif (!res.ok) throw new Error(res.statusText)\nconst data = await res.json()$0"
         },
         {
@@ -1294,17 +1294,17 @@
         {
           "label": "ue",
           "detail": "useEffect",
-          "body": "useEffect(() => {\n  $0\n}, [${abhängigkeit}])"
+          "body": "useEffect(() => {\n  $0\n}, [${dependency}])"
         },
         {
           "label": "uec",
-          "detail": "useEffect mit Aufräumen",
-          "body": "useEffect(() => {\n  $0\n  return () => {\n    // aufräumen\n  }\n}, [])"
+          "detail": "useEffect with cleanup",
+          "body": "useEffect(() => {\n  $0\n  return () => {\n    // clean up\n  }\n}, [])"
         },
         {
           "label": "um",
           "detail": "useMemo",
-          "body": "const ${wert} = useMemo(() => $0, [${abhängigkeit}])"
+          "body": "const ${wert} = useMemo(() => $0, [${dependency}])"
         },
         {
           "label": "uc",
@@ -1318,8 +1318,8 @@
         },
         {
           "label": "ctx",
-          "detail": "Context mit Hook",
-          "body": "const ${Name}Context = createContext<${Typ} | null>(null)\n\nexport function use${Name}() {\n  const value = useContext(${Name}Context)\n  if (!value) throw new Error('use${Name} außerhalb des Providers')\n  return value\n}$0"
+          "detail": "Context with hook",
+          "body": "const ${Name}Context = createContext<${Typ} | null>(null)\n\nexport function use${Name}() {\n  const value = useContext(${Name}Context)\n  if (!value) throw new Error('use${Name} outside the provider')\n  return value\n}$0"
         },
         {
           "label": "hook",
@@ -1349,7 +1349,7 @@
         {
           "label": "lazy",
           "detail": "Lazy Route",
-          "body": "const ${Name} = lazy(() => import('${./Name}'))\n\n<Suspense fallback={<div>Lädt…</div>}>\n  <${Name} />\n</Suspense>$0"
+          "body": "const ${Name} = lazy(() => import('${./Name}'))\n\n<Suspense fallback={<div>Loading…</div>}>\n  <${Name} />\n</Suspense>$0"
         },
         {
           "label": "form",
@@ -2017,7 +2017,7 @@
             "field": "lang",
             "equals": "ts"
           },
-          "content": "<!doctype html>\n<html lang=\"de\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.tsx\"></script>\n  </body>\n</html>\n"
+          "content": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.tsx\"></script>\n  </body>\n</html>\n"
         },
         {
           "path": "index.html",
@@ -2025,7 +2025,7 @@
             "field": "lang",
             "equals": "js"
           },
-          "content": "<!doctype html>\n<html lang=\"de\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.jsx\"></script>\n  </body>\n</html>\n"
+          "content": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.jsx\"></script>\n  </body>\n</html>\n"
         },
         {
           "path": "src/main.tsx",

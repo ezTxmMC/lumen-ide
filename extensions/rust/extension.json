@@ -2,7 +2,7 @@
   "id": "ext.rust",
   "name": "Rust",
   "version": "1.0.3",
-  "description": "Rust mit Attributen, Raw-Strings, Lifetimes und cargo-Runner.",
+  "description": "Rust with attributes, raw strings, lifetimes and a cargo runner.",
   "author": "Lumen",
   "icon": "Rs",
   "color": "#dea584",

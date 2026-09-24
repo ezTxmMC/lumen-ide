@@ -1,4 +1,15 @@
-import type { Addon, Theme } from '@/core/types'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import type { Addon, Theme } from '@/core/types';
+import { t } from '@/i18n';
 
 export const lumenDark: Theme = {
   id: 'lumen-dark',
@@ -24,7 +35,7 @@ export const lumenDark: Theme = {
     tag: '#ff7a93', attribute: '#ffc46b', meta: '#b3a1ff',
     regexp: '#8ee6c8', invalid: '#ff5c5c',
   },
-}
+};
 
 export const lumenLight: Theme = {
   id: 'lumen-light',
@@ -49,7 +60,7 @@ export const lumenLight: Theme = {
     tag: '#b2114a', attribute: '#953800', meta: '#6639ba',
     regexp: '#0a7d32', invalid: '#cf222e',
   },
-}
+};
 
 export const midnight: Theme = {
   id: 'midnight',
@@ -74,7 +85,7 @@ export const midnight: Theme = {
     tag: '#f472b6', attribute: '#fbbf24', meta: '#c084fc',
     regexp: '#5eead4', invalid: '#fb7185',
   },
-}
+};
 
 export const forest: Theme = {
   id: 'forest',
@@ -99,7 +110,7 @@ export const forest: Theme = {
     tag: '#f0946a', attribute: '#e3b341', meta: '#b6a5e8',
     regexp: '#7fd6c1', invalid: '#f0796a',
   },
-}
+};
 
 export const solar: Theme = {
   id: 'solar',
@@ -124,7 +135,7 @@ export const solar: Theme = {
     tag: '#b91c1c', attribute: '#a16207', meta: '#7c3aed',
     regexp: '#4d7c0f', invalid: '#b91c1c',
   },
-}
+};
 
 export const graphite: Theme = {
   id: 'graphite',
@@ -150,17 +161,19 @@ export const graphite: Theme = {
     tag: '#d4d4da', attribute: '#a9a9b3', meta: '#8f8f99',
     regexp: '#9fb59f', invalid: '#e59a9a',
   },
-}
+};
 
 export const themesAddon: Addon = {
   id: 'themes.lumen',
   name: 'Lumen Themes',
   version: '1.0.0',
-  description: 'Sechs abgestimmte Themes — drei dunkle, zwei helle und ein monochromes.',
+  get description() {
+    return t('addons.themes');
+  },
   icon: '◐',
   builtin: true,
   category: 'theme',
   themes: [lumenDark, midnight, forest, graphite, lumenLight, solar],
-}
+};
 
-export const DEFAULT_THEME_ID = lumenDark.id
+export const DEFAULT_THEME_ID = lumenDark.id;

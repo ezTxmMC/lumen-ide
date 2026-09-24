@@ -2,7 +2,7 @@
   "id": "ext.essentials",
   "name": "Essentials",
   "version": "1.0.4",
-  "description": "JSON, YAML, TOML, Markdown, Shell und SQL — die üblichen Begleitdateien.",
+  "description": "JSON, YAML, TOML, Markdown, Shell and SQL — the usual companion files.",
   "author": "Lumen",
   "icon": "⌘",
   "color": "#cbcb41",

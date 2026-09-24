@@ -2,7 +2,7 @@
   "id": "ext.c",
   "name": "C",
   "version": "1.0.4",
-  "description": "C99 bis C23 mit Präprozessor-Hervorhebung, gcc/clang-Runner und clangd. Make-Projekte erkennt die Erweiterung „Essentials“.",
+  "description": "C99 to C23 with preprocessor highlighting, gcc/clang runner and clangd. Make projects are detected by the “Essentials” extension.",
   "author": "Lumen",
   "icon": "C",
   "color": "#5c6bc0",

@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The project kinds and templates for JavaScript and TypeScript: npm, pnpm,
  * Yarn, Bun (package.json) and Deno.
@@ -5,52 +15,70 @@
 
 import type {
   DependencySupport, FormValues, ProjectContext, ProjectKind, ProjectTask, ProjectTemplate,
-} from '@/core/types'
-import { GITIGNORE } from '@/core/project/scaffold'
+} from '@/core/types';
+import { GITIGNORE } from '@/core/project/scaffold';
 import {
   commonFields, compact, json, NODE_PM, nodePackageManagerField, toggle, type NodePm,
-} from './fields'
+} from './fields';
 
 interface PackageJson {
-  name?: string
-  version?: string
-  description?: string
-  type?: string
-  packageManager?: string
-  workspaces?: string[] | { packages?: string[] }
-  scripts?: Record<string, string>
-  dependencies?: Record<string, string>
-  devDependencies?: Record<string, string>
-  peerDependencies?: Record<string, string>
-  engines?: Record<string, string>
+  name?: string;
+  version?: string;
+  description?: string;
+  type?: string;
+  packageManager?: string;
+  workspaces?: string[] | { packages?: string[]; };
+  scripts?: Record<string, string>;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+  engines?: Record<string, string>;
 }
 
 async function readPackage(ctx: ProjectContext): Promise<PackageJson | null> {
-  const raw = await ctx.readFile('package.json')
-  if (!raw) return null
+  const raw = await ctx.readFile('package.json');
+  if (!raw) {
+    return null;
+  }
   try {
-    return JSON.parse(raw) as PackageJson
+    return JSON.parse(raw) as PackageJson;
   } catch {
-    return null
+    return null;
   }
 }
 
 /** Work out the package manager: the `packageManager` field, then the lockfile, otherwise npm. */
 export async function detectPackageManager(ctx: ProjectContext, pkg: PackageJson | null): Promise<NodePm> {
-  const declared = pkg?.packageManager?.split('@')[0]
-  if (declared && declared in NODE_PM) return declared as NodePm
-  if (await ctx.exists('bun.lock') || await ctx.exists('bun.lockb')) return 'bun'
-  if (await ctx.exists('pnpm-lock.yaml')) return 'pnpm'
-  if (await ctx.exists('yarn.lock')) return 'yarn'
-  return 'npm'
+  const declared = pkg?.packageManager?.split('@')[0];
+  if (declared && declared in NODE_PM) {
+    return declared as NodePm;
+  }
+  if (await ctx.exists('bun.lock') || await ctx.exists('bun.lockb')) {
+    return 'bun';
+  }
+  if (await ctx.exists('pnpm-lock.yaml')) {
+    return 'pnpm';
+  }
+  if (await ctx.exists('yarn.lock')) {
+    return 'yarn';
+  }
+  return 'npm';
 }
 
 function scriptGroup(name: string): ProjectTask['group'] {
-  if (/^(dev|start|serve|preview|watch)$/.test(name)) return 'run'
-  if (/^(build|compile|bundle|dist)(:|$)/.test(name)) return 'build'
-  if (/^(test|check|lint|typecheck|e2e)/.test(name)) return 'test'
-  if (/^clean/.test(name)) return 'clean'
-  return 'other'
+  if (/^(dev|start|serve|preview|watch)$/.test(name)) {
+    return 'run';
+  }
+  if (/^(build|compile|bundle|dist)(:|$)/.test(name)) {
+    return 'build';
+  }
+  if (/^(test|check|lint|typecheck|e2e)/.test(name)) {
+    return 'test';
+  }
+  if (/^clean/.test(name)) {
+    return 'clean';
+  }
+  return 'other';
 }
 
 const nodeDependencies: DependencySupport = {
@@ -64,19 +92,19 @@ const nodeDependencies: DependencySupport = {
     { value: 'optionalDependencies', label: 'optionalDependencies' },
   ],
   async add(ctx, dep) {
-    const pkg = await readPackage(ctx)
-    const pm = await detectPackageManager(ctx, pkg)
-    const spec = dep.version ? `${dep.name}@${dep.version}` : dep.name
+    const pkg = await readPackage(ctx);
+    const pm = await detectPackageManager(ctx, pkg);
+    const spec = dep.version ? `${dep.name}@${dep.version}` : dep.name;
     const flags: Record<string, Record<NodePm, string[]>> = {
       dependencies: { npm: ['install'], pnpm: ['add'], yarn: ['add'], bun: ['add'] },
       devDependencies: { npm: ['install', '-D'], pnpm: ['add', '-D'], yarn: ['add', '-D'], bun: ['add', '-d'] },
       peerDependencies: { npm: ['install', '--save-peer'], pnpm: ['add', '--save-peer'], yarn: ['add', '-P'], bun: ['add', '--peer'] },
       optionalDependencies: { npm: ['install', '-O'], pnpm: ['add', '-O'], yarn: ['add', '-O'], bun: ['add', '--optional'] },
-    }
-    const args = flags[dep.scope ?? 'dependencies']?.[pm] ?? flags.dependencies[pm]
-    return { type: 'task', task: { id: 'npm:add', label: `${pm} add ${spec}`, command: pm, args: [...args, spec] } }
+    };
+    const args = flags[dep.scope ?? 'dependencies']?.[pm] ?? flags.dependencies[pm];
+    return { type: 'task', task: { id: 'npm:add', label: `${pm} add ${spec}`, command: pm, args: [...args, spec] } };
   },
-}
+};
 
 export const npmKind: ProjectKind = {
   id: 'npm',
@@ -88,18 +116,20 @@ export const npmKind: ProjectKind = {
   languageIds: ['javascript', 'typescript'],
   dependencies: nodeDependencies,
   async tasks(ctx) {
-    const pkg = await readPackage(ctx)
-    const pm = await detectPackageManager(ctx, pkg)
+    const pkg = await readPackage(ctx);
+    const pm = await detectPackageManager(ctx, pkg);
     const frozen: Record<NodePm, string[]> = {
       npm: ['ci'], pnpm: ['install', '--frozen-lockfile'], yarn: ['install', '--immutable'], bun: ['install', '--frozen-lockfile'],
-    }
-    const update: Record<NodePm, string[]> = { npm: ['update'], pnpm: ['update'], yarn: ['up'], bun: ['update'] }
+    };
+    const update: Record<NodePm, string[]> = { npm: ['update'], pnpm: ['update'], yarn: ['up'], bun: ['update'] };
     const tasks: ProjectTask[] = [
       { id: 'npm:install', label: 'templates.tasks.installDeps', command: pm, args: ['install'], group: 'build', detail: `${pm} install` },
       { id: 'npm:ci', label: 'templates.node.cleanInstall', command: pm, args: frozen[pm], group: 'build', detail: `${pm} ${frozen[pm].join(' ')}` },
-    ]
+    ];
     for (const [script, cmd] of Object.entries(pkg?.scripts ?? {})) {
-      if (/^(pre|post)[a-z]/.test(script)) continue
+      if (/^(pre|post)[a-z]/.test(script)) {
+        continue;
+      }
       tasks.push({
         id: `npm:${script}`,
         label: script,
@@ -107,33 +137,49 @@ export const npmKind: ProjectKind = {
         args: NODE_PM[pm].run(script),
         group: scriptGroup(script),
         detail: cmd.slice(0, 80),
-      })
+      });
     }
     tasks.push(
       { id: 'npm:update', label: 'templates.tasks.updateDeps', command: pm, args: update[pm], group: 'other' },
       { id: 'npm:outdated', label: 'templates.tasks.outdated', command: pm, args: ['outdated'], group: 'other' },
-    )
-    if (pm !== 'bun') tasks.push({ id: 'npm:audit', label: 'templates.node.audit', command: pm, args: pm === 'yarn' ? ['npm', 'audit'] : ['audit'], group: 'other' })
-    if (pm === 'npm' || pm === 'pnpm') tasks.push({ id: 'npm:dedupe', label: 'templates.node.dedupe', command: pm, args: ['dedupe'], group: 'other' })
-    return tasks
+    );
+    if (pm !== 'bun') {
+      tasks.push({ id: 'npm:audit', label: 'templates.node.audit', command: pm, args: pm === 'yarn' ? ['npm', 'audit'] : ['audit'], group: 'other' });
+    }
+    if (pm === 'npm' || pm === 'pnpm') {
+      tasks.push({ id: 'npm:dedupe', label: 'templates.node.dedupe', command: pm, args: ['dedupe'], group: 'other' });
+    }
+    return tasks;
   },
   async inspect(ctx) {
-    const pkg = await readPackage(ctx)
-    const pm = await detectPackageManager(ctx, pkg)
-    const facts: Record<string, string> = { 'templates.fields.packageManager': pkg?.packageManager ?? pm }
-    if (pkg?.type) facts['templates.facts.moduleSystem'] = pkg.type
-    if (pkg?.engines?.node) facts.Node = pkg.engines.node
-    if (await ctx.exists('tsconfig.json')) facts.TypeScript = 'tsconfig.json'
-    const workspaces = Array.isArray(pkg?.workspaces) ? pkg.workspaces : pkg?.workspaces?.packages
-    if (workspaces?.length) facts.Workspaces = workspaces.join(', ')
-    if (await ctx.exists('pnpm-workspace.yaml')) facts.Workspaces = 'pnpm-workspace.yaml'
-    const framework = detectFramework(pkg)
-    if (framework) facts.Framework = framework
+    const pkg = await readPackage(ctx);
+    const pm = await detectPackageManager(ctx, pkg);
+    const facts: Record<string, string> = { 'templates.fields.packageManager': pkg?.packageManager ?? pm };
+    if (pkg?.type) {
+      facts['templates.facts.moduleSystem'] = pkg.type;
+    }
+    if (pkg?.engines?.node) {
+      facts.Node = pkg.engines.node;
+    }
+    if (await ctx.exists('tsconfig.json')) {
+      facts.TypeScript = 'tsconfig.json';
+    }
+    const workspaces = Array.isArray(pkg?.workspaces) ? pkg.workspaces : pkg?.workspaces?.packages;
+    if (workspaces?.length) {
+      facts.Workspaces = workspaces.join(', ');
+    }
+    if (await ctx.exists('pnpm-workspace.yaml')) {
+      facts.Workspaces = 'pnpm-workspace.yaml';
+    }
+    const framework = detectFramework(pkg);
+    if (framework) {
+      facts.Framework = framework;
+    }
     const dependencies = [
       ...Object.entries(pkg?.dependencies ?? {}).map(([name, version]) => ({ name, version, scope: 'dependency' })),
       ...Object.entries(pkg?.devDependencies ?? {}).map(([name, version]) => ({ name, version, scope: 'dev' })),
       ...Object.entries(pkg?.peerDependencies ?? {}).map(([name, version]) => ({ name, version, scope: 'peer' })),
-    ]
+    ];
     return {
       name: pkg?.name,
       version: pkg?.version,
@@ -142,18 +188,18 @@ export const npmKind: ProjectKind = {
       dependencies,
       sourceRoots: ['src'],
       buildFile: 'package.json',
-    }
+    };
   },
-}
+};
 
 function detectFramework(pkg: PackageJson | null): string | undefined {
-  const all = { ...(pkg?.dependencies ?? {}), ...(pkg?.devDependencies ?? {}) }
+  const all = { ...(pkg?.dependencies ?? {}), ...(pkg?.devDependencies ?? {}) };
   const known: [string, string][] = [
     ['@angular/core', 'Angular'], ['astro', 'Astro'], ['next', 'Next.js'], ['nuxt', 'Nuxt'],
     ['@sveltejs/kit', 'SvelteKit'], ['vue', 'Vue'], ['react', 'React'], ['svelte', 'Svelte'],
     ['vite', 'Vite'], ['express', 'Express'], ['fastify', 'Fastify'], ['electron', 'Electron'],
-  ]
-  return known.find(([dep]) => dep in all)?.[1]
+  ];
+  return known.find(([dep]) => dep in all)?.[1];
 }
 
 export const denoKind: ProjectKind = {
@@ -178,9 +224,9 @@ export const denoKind: ProjectKind = {
     }),
   },
   async tasks(ctx) {
-    const raw = (await ctx.readFile('deno.json')) ?? (await ctx.readFile('deno.jsonc'))
-    let config: { tasks?: Record<string, string | { command: string }> } = {}
-    try { config = raw ? JSON.parse(raw.replace(/^\s*\/\/.*$/gm, '')) : {} } catch { config = {} }
+    const raw = (await ctx.readFile('deno.json')) ?? (await ctx.readFile('deno.jsonc'));
+    let config: { tasks?: Record<string, string | { command: string; }>; } = {};
+    try { config = raw ? JSON.parse(raw.replace(/^\s*\/\/.*$/gm, '')) : {}; } catch { config = {}; }
     const tasks: ProjectTask[] = Object.entries(config.tasks ?? {}).map(([name, cmd]) => ({
       id: `deno:${name}`,
       label: `deno task ${name}`,
@@ -188,7 +234,7 @@ export const denoKind: ProjectKind = {
       args: ['task', name],
       group: scriptGroup(name),
       detail: typeof cmd === 'string' ? cmd : cmd.command,
-    }))
+    }));
     tasks.push(
       { id: 'deno:install', label: 'templates.tasks.fetchDeps', command: 'deno', args: ['install'], group: 'build' },
       { id: 'deno:check', label: 'templates.tasks.typecheck', command: 'deno', args: ['check', '.'], group: 'test' },
@@ -196,22 +242,22 @@ export const denoKind: ProjectKind = {
       { id: 'deno:lint', label: 'Lint', command: 'deno', args: ['lint'], group: 'test' },
       { id: 'deno:fmt', label: 'templates.tasks.format', command: 'deno', args: ['fmt'], group: 'other' },
       { id: 'deno:outdated', label: 'templates.tasks.outdated', command: 'deno', args: ['outdated'], group: 'other' },
-    )
-    return tasks
+    );
+    return tasks;
   },
   async inspect(ctx) {
-    const raw = (await ctx.readFile('deno.json')) ?? (await ctx.readFile('deno.jsonc'))
-    let config: { name?: string; version?: string; imports?: Record<string, string> } = {}
-    try { config = raw ? JSON.parse(raw.replace(/^\s*\/\/.*$/gm, '')) : {} } catch { config = {} }
+    const raw = (await ctx.readFile('deno.json')) ?? (await ctx.readFile('deno.jsonc'));
+    let config: { name?: string; version?: string; imports?: Record<string, string>; } = {};
+    try { config = raw ? JSON.parse(raw.replace(/^\s*\/\/.*$/gm, '')) : {}; } catch { config = {}; }
     return {
       name: config.name,
       version: config.version,
       buildFile: 'deno.json',
       facts: { 'templates.fields.runtime': 'Deno' },
       dependencies: Object.entries(config.imports ?? {}).map(([name, spec]) => ({ name, version: spec, scope: 'import' })),
-    }
+    };
   },
-}
+};
 
 /* ------------------------------------------------------------------ *
  * Building blocks for the templates
@@ -228,16 +274,16 @@ export function packageJson(values: FormValues, extra: Record<string, unknown>):
     private: true,
     type: 'module',
     ...extra,
-  }))
+  }));
 }
 
 /** The install task once the project has been created. */
 export function installSetup(values: FormValues): ProjectTask[] {
-  const pm = (values.pm || 'npm') as NodePm
-  return [{ id: 'setup:install', label: 'templates.tasks.installDeps', command: pm, args: ['install'] }]
+  const pm = (values.pm || 'npm') as NodePm;
+  return [{ id: 'setup:install', label: 'templates.tasks.installDeps', command: pm, args: ['install'] }];
 }
 
-export const nodeFields = [...commonFields, nodePackageManagerField]
+export const nodeFields = [...commonFields, nodePackageManagerField];
 
 const tsconfig = (extra: Record<string, unknown> = {}) => json({
   compilerOptions: {
@@ -253,12 +299,12 @@ const tsconfig = (extra: Record<string, unknown> = {}) => json({
     ...extra,
   },
   include: ['src'],
-})
+});
 
-const run = (values: FormValues, script: string) => `${values.pm || 'npm'} run ${script}`
+const run = (values: FormValues, script: string) => `${values.pm || 'npm'} run ${script}`;
 
 function nodeReadme(values: FormValues, scripts: string[]) {
-  return `# ${values.name}\n\n${values.description ? `${values.description}\n\n` : ''}\`\`\`bash\n${values.pm || 'npm'} install\n${scripts.map((s) => run(values, s)).join('\n')}\n\`\`\`\n`
+  return `# ${values.name}\n\n${values.description ? `${values.description}\n\n` : ''}\`\`\`bash\n${values.pm || 'npm'} install\n${scripts.map((s) => run(values, s)).join('\n')}\n\`\`\`\n`;
 }
 
 /* ------------------------------------------------------------------ *
@@ -278,8 +324,8 @@ export const tsNodeTemplate: ProjectTemplate = {
   setup: ({ values }) => installSetup(values),
   next: 'templates.node.nextDev',
   files({ values }) {
-    const eslint = values.eslint === 'true'
-    const bun = values.pm === 'bun'
+    const eslint = values.eslint === 'true';
+    const bun = values.pm === 'bun';
     const files: Record<string, string> = {
       'package.json': packageJson(values, {
         scripts: compact({
@@ -307,13 +353,13 @@ export const tsNodeTemplate: ProjectTemplate = {
         : `import { test } from 'node:test'\nimport assert from 'node:assert/strict'\nimport { greet } from './index.ts'\n\ntest('greet', () => {\n  assert.equal(greet('x'), 'Hallo aus x!')\n})\n`,
       '.gitignore': GITIGNORE.node,
       'README.md': nodeReadme(values, ['dev', 'test', 'build']),
-    }
+    };
     if (eslint) {
-      files['eslint.config.js'] = `import js from '@eslint/js'\nimport tseslint from 'typescript-eslint'\n\nexport default tseslint.config(\n  { ignores: ['dist'] },\n  js.configs.recommended,\n  ...tseslint.configs.recommended,\n)\n`
+      files['eslint.config.js'] = `import js from '@eslint/js'\nimport tseslint from 'typescript-eslint'\n\nexport default tseslint.config(\n  { ignores: ['dist'] },\n  js.configs.recommended,\n  ...tseslint.configs.recommended,\n)\n`;
     }
-    return files
+    return files;
   },
-}
+};
 
 export const tsLibraryTemplate: ProjectTemplate = {
   id: 'ts-library',
@@ -351,9 +397,9 @@ export const tsLibraryTemplate: ProjectTemplate = {
       '.gitignore': GITIGNORE.node,
       '.npmignore': 'src/\n*.test.ts\ntsconfig*.json\n',
       'README.md': nodeReadme(values, ['build', 'test']),
-    }
+    };
   },
-}
+};
 
 export const tsViteTemplate: ProjectTemplate = {
   id: 'ts-vite',
@@ -379,9 +425,9 @@ export const tsViteTemplate: ProjectTemplate = {
       'src/style.css': BASE_CSS,
       '.gitignore': GITIGNORE.node,
       'README.md': nodeReadme(values, ['dev', 'build']),
-    }
+    };
   },
-}
+};
 
 export const jsNodeTemplate: ProjectTemplate = {
   id: 'js-node',
@@ -405,9 +451,9 @@ export const jsNodeTemplate: ProjectTemplate = {
       'src/index.test.js': `import { test } from 'node:test'\nimport assert from 'node:assert/strict'\nimport { greet } from './index.js'\n\ntest('greet', () => {\n  assert.equal(greet('x'), 'Hallo aus x!')\n})\n`,
       '.gitignore': GITIGNORE.node,
       'README.md': nodeReadme(values, ['dev', 'test']),
-    }
+    };
   },
-}
+};
 
 export const jsBrowserTemplate: ProjectTemplate = {
   id: 'js-browser',
@@ -424,9 +470,9 @@ export const jsBrowserTemplate: ProjectTemplate = {
       'main.js': "let klicks = 0\nconst button = document.querySelector('#zaehler')\nbutton.addEventListener('click', () => {\n  klicks++\n  button.textContent = `Klicks: ${klicks}`\n})\n",
       'style.css': BASE_CSS,
       '.gitignore': '.DS_Store\n',
-    }
+    };
   },
-}
+};
 
 export const denoTemplate: ProjectTemplate = {
   id: 'deno-app',
@@ -450,12 +496,12 @@ export const denoTemplate: ProjectTemplate = {
       'main.ts': `export function add(a: number, b: number): number {\n  return a + b\n}\n\nif (import.meta.main) {\n  console.log('Hallo aus ${values.name}! 2 + 3 =', add(2, 3))\n}\n`,
       'main_test.ts': "import { assertEquals } from '@std/assert'\nimport { add } from './main.ts'\n\nDeno.test('add', () => {\n  assertEquals(add(2, 3), 5)\n})\n",
       '.gitignore': '.deno/\nnode_modules/\n',
-    }
+    };
   },
-}
+};
 
 function descriptionOnly() {
-  return { ...commonFields[1] }
+  return { ...commonFields[1] };
 }
 
 /** The skeleton of an HTML page. */
@@ -471,7 +517,7 @@ export function htmlShell(title: string, body: string, script?: string, styleshe
     ${body}${script ? `\n    <script type="module" src="${script}"></script>` : ''}
   </body>
 </html>
-`
+`;
 }
 
-export const BASE_CSS = ':root {\n  font-family: system-ui, sans-serif;\n  color-scheme: light dark;\n}\n\nbody {\n  margin: 0;\n  display: grid;\n  place-items: center;\n  min-height: 100vh;\n}\n'
+export const BASE_CSS = ':root {\n  font-family: system-ui, sans-serif;\n  color-scheme: light dark;\n}\n\nbody {\n  margin: 0;\n  display: grid;\n  place-items: center;\n  min-height: 100vh;\n}\n';

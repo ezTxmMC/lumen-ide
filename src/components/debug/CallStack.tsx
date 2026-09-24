@@ -1,20 +1,30 @@
-import { ChevronRight, Pause, Play, Square } from 'lucide-react'
-import { useT } from '@/i18n'
-import { debug } from '@/core/debug/manager'
-import type { DebugSession, ThreadState } from '@/core/debug/session'
-import { baseName } from '@/core/debug/paths'
-import { DebugSection, IconButton } from './shared'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
 
-function Frames({ session, thread }: { session: DebugSession; thread: ThreadState }) {
-  const t = useT()
-  const focus = debug.focus
-  const more = thread.totalFrames === undefined || thread.totalFrames > thread.frames.length
+import { ChevronRight, Pause, Play, Square } from 'lucide-react';
+import { useT } from '@/i18n';
+import { debug } from '@/core/debug/manager';
+import type { DebugSession, ThreadState } from '@/core/debug/session';
+import { baseName } from '@/core/debug/paths';
+import { DebugSection, IconButton } from './shared';
+
+function Frames({ session, thread }: { session: DebugSession; thread: ThreadState; }) {
+  const t = useT();
+  const focus = debug.focus;
+  const more = thread.totalFrames === undefined || thread.totalFrames > thread.frames.length;
   return (
     <>
       {thread.frames.map((frame) => {
-        const active = focus?.sessionId === session.id && focus.threadId === thread.id && focus.frameId === frame.id
-        const source = frame.source?.name ?? (frame.source?.path ? baseName(frame.source.path) : '')
-        const subtle = frame.presentationHint === 'subtle' || frame.source?.presentationHint === 'deemphasize' || !source
+        const active = focus?.sessionId === session.id && focus.threadId === thread.id && focus.frameId === frame.id;
+        const source = frame.source?.name ?? (frame.source?.path ? baseName(frame.source.path) : '');
+        const subtle = frame.presentationHint === 'subtle' || frame.source?.presentationHint === 'deemphasize' || !source;
         return (
           <div
             key={frame.id}
@@ -30,7 +40,7 @@ function Frames({ session, thread }: { session: DebugSession; thread: ThreadStat
             <span className="min-w-0 flex-1 truncate font-mono text-[11.5px]">{frame.name}</span>
             {source && <span className="shrink-0 truncate text-[11px] text-subtle">{source}:{frame.line}</span>}
           </div>
-        )
+        );
       })}
       {thread.stopped && thread.frames.length > 0 && more && (
         <button
@@ -41,23 +51,27 @@ function Frames({ session, thread }: { session: DebugSession; thread: ThreadStat
         </button>
       )}
     </>
-  )
+  );
 }
 
-const REASONS = new Set(['step', 'breakpoint', 'exception', 'pause', 'entry'])
+const REASONS = new Set(['step', 'breakpoint', 'exception', 'pause', 'entry']);
 
 /** Translate the stop reason; unknown reasons from the adapter stay as they are. */
 function reasonLabel(t: (key: string) => string, reason?: string) {
-  if (!reason) return t('debug.thread.paused')
-  if (REASONS.has(reason)) return t(`debug.reason.${reason}`)
-  return reason
+  if (!reason) {
+    return t('debug.thread.paused');
+  }
+  if (REASONS.has(reason)) {
+    return t(`debug.reason.${reason}`);
+  }
+  return reason;
 }
 
-function ThreadRow({ session, thread, showHeader }: { session: DebugSession; thread: ThreadState; showHeader: boolean }) {
-  const t = useT()
-  const focus = debug.focus
-  const focused = focus?.sessionId === session.id && focus.threadId === thread.id
-  const state = thread.stopped ? reasonLabel(t, thread.reason) : t('debug.thread.running')
+function ThreadRow({ session, thread, showHeader }: { session: DebugSession; thread: ThreadState; showHeader: boolean; }) {
+  const t = useT();
+  const focus = debug.focus;
+  const focused = focus?.sessionId === session.id && focus.threadId === thread.id;
+  const state = thread.stopped ? reasonLabel(t, thread.reason) : t('debug.thread.running');
   return (
     <>
       {showHeader && (
@@ -74,23 +88,23 @@ function ThreadRow({ session, thread, showHeader }: { session: DebugSession; thr
       )}
       {thread.stopped && <Frames session={session} thread={thread} />}
     </>
-  )
+  );
 }
 
 /** Sessions, threads and the call stack. */
 export function CallStack() {
-  const t = useT()
-  const sessions = debug.sessions
-  const threadCount = sessions.reduce((sum, s) => sum + s.threads.size, 0)
-  const showSessions = sessions.length > 1
-  const showThreads = showSessions || threadCount > 1
+  const t = useT();
+  const sessions = debug.sessions;
+  const threadCount = sessions.reduce((sum, s) => sum + s.threads.size, 0);
+  const showSessions = sessions.length > 1;
+  const showThreads = showSessions || threadCount > 1;
 
   return (
     <DebugSection id="stack" title={t('debug.section.callStack')} grow>
       {!sessions.length && <p className="px-3 py-1.5 text-[11.5px] text-subtle">{t('debug.stack.empty')}</p>}
       {sessions.map((session) => {
-        const threads = [...session.threads.values()]
-        const stopped = threads.some((th) => th.stopped)
+        const threads = [...session.threads.values()];
+        const stopped = threads.some((th) => th.stopped);
         return (
           <div key={session.id}>
             {showSessions && (
@@ -113,8 +127,8 @@ export function CallStack() {
             )}
             {threads.map((thread) => <ThreadRow key={thread.id} session={session} thread={thread} showHeader={showThreads} />)}
           </div>
-        )
+        );
       })}
     </DebugSection>
-  )
+  );
 }

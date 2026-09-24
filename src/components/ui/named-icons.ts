@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Icons by name — for data that cannot carry a component: extension views,
  * status-bar items, declared panels.
@@ -16,8 +26,8 @@ import {
   GitPullRequestDraft, Inbox, Info, ListFilter, Loader, LogIn, LogOut, MessageSquarePlus, MessagesSquare,
   Milestone, Minus, Pause, Pencil, Play, Plus, Redo2, RefreshCw, RotateCcw, Search, ShieldAlert, Square,
   TriangleAlert, Trash2, Undo2, LockOpen, User, X, type LucideIcon,
-} from 'lucide-react'
-import { ICON_SHAPES } from '@/components/icons/shapes'
+} from 'lucide-react';
+import { ICON_SHAPES } from '@/components/icons/shapes';
 
 const ACTION_ICONS: Record<string, LucideIcon> = {
   'alert-triangle': TriangleAlert, 'triangle-alert': TriangleAlert,
@@ -37,16 +47,18 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'refresh-cw': RefreshCw, refresh: RefreshCw, 'rotate-ccw': RotateCcw, search: Search,
   'shield-alert': ShieldAlert, stop: Square, 'trash-2': Trash2, undo: Undo2, unlock: LockOpen, user: User,
   x: X, close: X,
-}
+};
 
 /** The icon component for a name; unknown names get a small dot. */
 export function namedIcon(name: string | undefined): LucideIcon {
-  if (!name) return Circle
-  const shapes = ICON_SHAPES as Record<string, LucideIcon>
-  return shapes[name] ?? ACTION_ICONS[name] ?? Circle
+  if (!name) {
+    return Circle;
+  }
+  const shapes = ICON_SHAPES as Record<string, LucideIcon>;
+  return shapes[name] ?? ACTION_ICONS[name] ?? Circle;
 }
 
 /** Every name `namedIcon` knows — for checks and documentation. */
 export function knownIconNames(): string[] {
-  return [...new Set([...Object.keys(ICON_SHAPES), ...Object.keys(ACTION_ICONS)])].sort()
+  return [...new Set([...Object.keys(ICON_SHAPES), ...Object.keys(ACTION_ICONS)])].sort();
 }

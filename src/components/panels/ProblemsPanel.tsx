@@ -1,29 +1,39 @@
-import { useMemo, useState } from 'react'
-import { CircleAlert, TriangleAlert, Info, Lightbulb, Filter } from 'lucide-react'
-import { useStore, relativeToWorkspace } from '@/state/store'
-import { lsp } from '@/core/lsp/manager'
-import { fileGlyph } from '@/lib/file-icon'
-import { IconGlyph } from '../icons/FileIcon'
-import { useT } from '@/i18n'
-import { Empty } from '../ui'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import { useMemo, useState } from 'react';
+import { CircleAlert, TriangleAlert, Info, Lightbulb, Filter } from 'lucide-react';
+import { useStore, relativeToWorkspace } from '@/state/store';
+import { lsp } from '@/core/lsp/manager';
+import { fileGlyph } from '@/lib/file-icon';
+import { IconGlyph } from '../icons/FileIcon';
+import { useT } from '@/i18n';
+import { Empty } from '../ui';
 
 const SEVERITY = {
   1: { icon: CircleAlert, tone: 'text-bad', label: 'panels.problems.error' },
   2: { icon: TriangleAlert, tone: 'text-warn', label: 'panels.problems.warning' },
   3: { icon: Info, tone: 'text-accent', label: 'panels.problems.info' },
   4: { icon: Lightbulb, tone: 'text-subtle', label: 'panels.problems.hint' },
-} as const
+} as const;
 
 export function ProblemsPanel() {
-  const t = useT()
-  const lspVersion = useStore((s) => s.lspVersion)
-  const workspace = useStore((s) => s.workspace)
-  const activePath = useStore((s) => s.tabs.find((t) => t.id === s.activeTabId)?.path ?? null)
-  const openAt = useStore((s) => s.openAt)
-  const [onlyActive, setOnlyActive] = useState(false)
-  const [hideHints, setHideHints] = useState(true)
+  const t = useT();
+  const lspVersion = useStore((s) => s.lspVersion);
+  const workspace = useStore((s) => s.workspace);
+  const activePath = useStore((s) => s.tabs.find((t) => t.id === s.activeTabId)?.path ?? null);
+  const openAt = useStore((s) => s.openAt);
+  const [onlyActive, setOnlyActive] = useState(false);
+  const [hideHints, setHideHints] = useState(true);
 
-  const files = useMemo(() => lsp.allDiagnostics(), [lspVersion])
+  const files = useMemo(() => lsp.allDiagnostics(), [lspVersion]);
   const visible = useMemo(
     () => files
       .filter((f) => !onlyActive || f.path === activePath)
@@ -35,8 +45,8 @@ export function ProblemsPanel() {
       }))
       .filter((f) => f.diagnostics.length > 0),
     [files, onlyActive, hideHints, activePath],
-  )
-  const total = visible.reduce((n, f) => n + f.diagnostics.length, 0)
+  );
+  const total = visible.reduce((n, f) => n + f.diagnostics.length, 0);
 
   return (
     <div className="flex h-full flex-col">
@@ -61,7 +71,7 @@ export function ProblemsPanel() {
           />
         )}
         {visible.map((file) => {
-          const glyph = fileGlyph(file.path.split(/[\\/]/).pop() ?? file.path)
+          const glyph = fileGlyph(file.path.split(/[\\/]/).pop() ?? file.path);
           return (
             <div key={file.path} className="mb-1">
               <div className="flex items-center gap-1.5 px-3 pt-1.5 pb-0.5 text-[11px] font-medium text-muted" title={file.path}>
@@ -70,8 +80,8 @@ export function ProblemsPanel() {
                 <span className="text-subtle">{file.diagnostics.length}</span>
               </div>
               {file.diagnostics.map((d, i) => {
-                const sev = SEVERITY[(d.severity ?? 1) as 1 | 2 | 3 | 4]
-                const Icon = sev.icon
+                const sev = SEVERITY[(d.severity ?? 1) as 1 | 2 | 3 | 4];
+                const Icon = sev.icon;
                 return (
                   <button
                     key={`${d.range.start.line}-${d.range.start.character}-${i}`}
@@ -91,12 +101,12 @@ export function ProblemsPanel() {
                       {d.range.start.line + 1}:{d.range.start.character + 1}
                     </span>
                   </button>
-                )
+                );
               })}
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }

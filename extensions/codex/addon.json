@@ -19,15 +19,15 @@
       "tasks": [
         {
           "id": "session",
-          "label": "Codex starten",
+          "label": "Start Codex",
           "command": "codex",
           "args": [],
           "group": "run",
-          "detail": "Neue Sitzung im Projektordner"
+          "detail": "New session in the project folder"
         },
         {
           "id": "resume",
-          "label": "Letzte Sitzung fortsetzen",
+          "label": "Resume last session",
           "command": "codex",
           "args": [
             "resume",
@@ -37,17 +37,17 @@
         },
         {
           "id": "login",
-          "label": "Anmelden",
+          "label": "Sign in",
           "command": "codex",
           "args": [
             "login"
           ],
           "group": "other",
-          "detail": "Mit ChatGPT-Konto oder API-Schlüssel"
+          "detail": "With a ChatGPT account or API key"
         },
         {
           "id": "mcp",
-          "label": "MCP-Server anzeigen",
+          "label": "Show MCP servers",
           "command": "codex",
           "args": [
             "mcp",
@@ -57,7 +57,7 @@
         },
         {
           "id": "install",
-          "label": "Codex installieren",
+          "label": "Install Codex",
           "command": "npm",
           "args": [
             "install",
@@ -65,12 +65,12 @@
             "@openai/codex"
           ],
           "group": "build",
-          "detail": "Benötigt Node.js"
+          "detail": "Requires Node.js"
         }
       ],
       "facts": [
         {
-          "label": "Anweisungen",
+          "label": "Instructions",
           "file": "AGENTS.md",
           "pattern": "^#\\s+(.+)$"
         }
@@ -81,23 +81,23 @@
     {
       "id": "codex-project",
       "name": "Codex Projekt",
-      "description": "AGENTS.md mit Befehlen und Konventionen für Codex.",
+      "description": "AGENTS.md with commands and conventions for Codex.",
       "kindId": "codex",
       "icon": "Cx",
       "color": "#10a37f",
       "open": "AGENTS.md",
-      "next": "Starte Codex über die Aufgabenliste.",
+      "next": "Start Codex from the task list.",
       "fields": [
         {
           "id": "description",
-          "label": "Beschreibung",
+          "label": "Description",
           "section": "Projekt",
-          "placeholder": "Was macht das Projekt?",
+          "placeholder": "What does the project do?",
           "required": false
         },
         {
           "id": "commands",
-          "label": "Bau- und Testbefehle",
+          "label": "Build and test commands",
           "section": "Projekt",
           "placeholder": "npm test",
           "required": false,
@@ -107,7 +107,7 @@
       "files": [
         {
           "path": "AGENTS.md",
-          "content": "# {{name}}\n\n{{description}}\n\n## Befehle\n\n```sh\n{{commands}}\n```\n\n## Konventionen\n\n- Kleine, überprüfbare Änderungen\n- Tests vor dem Abschluss ausführen\n"
+          "content": "# {{name}}\n\n{{description}}\n\n## Commands\n\n```sh\n{{commands}}\n```\n\n## Conventions\n\n- Small, reviewable changes\n- Run the tests before finishing\n"
         }
       ]
     }

@@ -1,13 +1,23 @@
-import { useState } from 'react'
-import { ChevronRight, Plus, Trash2, X } from 'lucide-react'
-import { useT } from '@/i18n'
-import { debug } from '@/core/debug/manager'
-import { VariableChildren } from './VariableTree'
-import { DebugSection, IconButton, valueTone } from './shared'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
 
-function WatchInput({ initial, onDone }: { initial: string; onDone: (value: string | null) => void }) {
-  const t = useT()
-  const [value, setValue] = useState(initial)
+import { useState } from 'react';
+import { ChevronRight, Plus, Trash2, X } from 'lucide-react';
+import { useT } from '@/i18n';
+import { debug } from '@/core/debug/manager';
+import { VariableChildren } from './VariableTree';
+import { DebugSection, IconButton, valueTone } from './shared';
+
+function WatchInput({ initial, onDone }: { initial: string; onDone: (value: string | null) => void; }) {
+  const t = useT();
+  const [value, setValue] = useState(initial);
   return (
     <input
       autoFocus
@@ -16,43 +26,55 @@ function WatchInput({ initial, onDone }: { initial: string; onDone: (value: stri
       onChange={(e) => setValue(e.target.value)}
       onBlur={() => onDone(value.trim() ? value : null)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') onDone(value)
-        if (e.key === 'Escape') onDone(null)
-        e.stopPropagation()
+        if (e.key === 'Enter') {
+          onDone(value);
+        }
+        if (e.key === 'Escape') {
+          onDone(null);
+        }
+        e.stopPropagation();
       }}
       className="mx-2 my-0.5 w-[calc(100%-16px)] rounded-lumen-sm border border-accent bg-input px-1.5 py-0.5 font-mono text-[11.5px] text-fg outline-none"
     />
-  )
+  );
 }
 
-const openWatches = new Set<string>()
+const openWatches = new Set<string>();
 
-function WatchRow({ expression, index, generation }: { expression: string; index: number; generation: number }) {
-  const t = useT()
-  const [editing, setEditing] = useState(false)
-  const [open, setOpen] = useState(openWatches.has(expression))
-  const result = debug.watchResults.get(expression)
-  const session = debug.focusedSession()
-  const expandable = Boolean(result && result.variablesReference > 0 && session)
+function WatchRow({ expression, index, generation }: { expression: string; index: number; generation: number; }) {
+  const t = useT();
+  const [editing, setEditing] = useState(false);
+  const [open, setOpen] = useState(openWatches.has(expression));
+  const result = debug.watchResults.get(expression);
+  const session = debug.focusedSession();
+  const expandable = Boolean(result && result.variablesReference > 0 && session);
 
   if (editing) {
     return (
       <WatchInput
         initial={expression}
         onDone={(value) => {
-          setEditing(false)
-          if (value !== null) debug.editWatch(index, value)
+          setEditing(false);
+          if (value !== null) {
+            debug.editWatch(index, value);
+          }
         }}
       />
-    )
+    );
   }
 
   const toggle = () => {
-    if (!expandable) return
-    if (open) openWatches.delete(expression)
-    if (!open) openWatches.add(expression)
-    setOpen(!open)
-  }
+    if (!expandable) {
+      return;
+    }
+    if (open) {
+      openWatches.delete(expression);
+    }
+    if (!open) {
+      openWatches.add(expression);
+    }
+    setOpen(!open);
+  };
 
   return (
     <>
@@ -77,13 +99,13 @@ function WatchRow({ expression, index, generation }: { expression: string; index
         <VariableChildren sessionId={session.id} reference={result.variablesReference} depth={1} path={`watch:${expression}`} generation={generation} />
       )}
     </>
-  )
+  );
 }
 
 export function WatchList() {
-  const t = useT()
-  const [adding, setAdding] = useState(false)
-  const watches = debug.watches
+  const t = useT();
+  const [adding, setAdding] = useState(false);
+  const watches = debug.watches;
   return (
     <DebugSection
       id="watch"
@@ -103,8 +125,10 @@ export function WatchList() {
         <WatchInput
           initial=""
           onDone={(value) => {
-            setAdding(false)
-            if (value) debug.addWatch(value)
+            setAdding(false);
+            if (value) {
+              debug.addWatch(value);
+            }
           }}
         />
       )}
@@ -114,5 +138,5 @@ export function WatchList() {
         </button>
       )}
     </DebugSection>
-  )
+  );
 }

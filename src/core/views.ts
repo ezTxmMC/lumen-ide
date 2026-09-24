@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Views: everything that can sit in a dock of the window.
  *
@@ -13,56 +23,58 @@
  * `useSyncExternalStore`.
  */
 
-import type { ReactNode } from 'react'
-import type { LucideIcon } from 'lucide-react'
+import type { ReactNode } from 'react';
+import type { LucideIcon } from 'lucide-react';
 
-export type Dock = 'left' | 'right' | 'bottom'
+export type Dock = 'left' | 'right' | 'bottom';
 
-export const DOCKS: readonly Dock[] = ['left', 'right', 'bottom']
+export const DOCKS: readonly Dock[] = ['left', 'right', 'bottom'];
 
 /** A small counter or dot on a view's icon or tab. */
 export interface ViewBadge {
-  text: string
+  text: string;
   /** A Tailwind text colour class (`text-bad`, `text-ok` …). */
-  tone?: string
+  tone?: string;
 }
 
 export interface ViewDef {
   /** Unique: `explorer`, `terminal`, `ext:<extension>:<page>`, `agent:<key>`, `view:<extension>/<view>`. */
-  id: string
+  id: string;
   /** Shown in tooltips, tab bars and dock headers — already translated. */
-  title: () => string
+  title: () => string;
   /** An icon component (lucide, or one of the icon-pack shapes). */
-  icon: LucideIcon
+  icon: LucideIcon;
   /** Where the view goes as long as the user has not moved it. */
-  defaultDock: Dock
+  defaultDock: Dock;
   /** Order within the default dock; lower comes first. */
-  order: number
+  order: number;
   /** The body. Rendered only while the view is visible. */
-  render: () => ReactNode
+  render: () => ReactNode;
   /** Buttons in the dock header while the view is active. */
-  toolbar?: () => ReactNode
+  toolbar?: () => ReactNode;
   /** Recomputed on every render of the dock. */
-  badge?: () => ViewBadge | null
+  badge?: () => ViewBadge | null;
   /** The command that opens the view — its shortcut appears in the tooltip. */
-  command?: string
+  command?: string;
   /** Where the view comes from, when that is not Lumen itself (an extension's name). */
-  source?: () => string | undefined
+  source?: () => string | undefined;
 }
 
-const views = new Map<string, ViewDef>()
-const listeners = new Set<() => void>()
-let version = 0
+const views = new Map<string, ViewDef>();
+const listeners = new Set<() => void>();
+let version = 0;
 
 function emit() {
-  version++
-  for (const fn of listeners) fn()
+  version++;
+  for (const fn of listeners) {
+    fn();
+  }
 }
 
 export const viewRegistry = {
   subscribe(fn: () => void) {
-    listeners.add(fn)
-    return () => { listeners.delete(fn) }
+    listeners.add(fn);
+    return () => { listeners.delete(fn); };
   },
   getVersion: () => version,
 
@@ -72,13 +84,15 @@ export const viewRegistry = {
 
   /** Register or replace a view; returns a function that removes it again. */
   register(def: ViewDef): () => void {
-    views.set(def.id, def)
-    emit()
+    views.set(def.id, def);
+    emit();
     return () => {
-      if (views.get(def.id) !== def) return
-      views.delete(def.id)
-      emit()
-    }
+      if (views.get(def.id) !== def) {
+        return;
+      }
+      views.delete(def.id);
+      emit();
+    };
   },
 
   /**
@@ -86,18 +100,24 @@ export const viewRegistry = {
    * that know their whole list at once (an extension's pages, the agents).
    */
   sync(prefix: string, defs: ViewDef[]) {
-    const wanted = new Set(defs.map((def) => def.id))
-    let changed = false
+    const wanted = new Set(defs.map((def) => def.id));
+    let changed = false;
     for (const id of [...views.keys()]) {
-      if (!id.startsWith(prefix) || wanted.has(id)) continue
-      views.delete(id)
-      changed = true
+      if (!id.startsWith(prefix) || wanted.has(id)) {
+        continue;
+      }
+      views.delete(id);
+      changed = true;
     }
     for (const def of defs) {
-      if (views.get(def.id) === def) continue
-      views.set(def.id, def)
-      changed = true
+      if (views.get(def.id) === def) {
+        continue;
+      }
+      views.set(def.id, def);
+      changed = true;
     }
-    if (changed) emit()
+    if (changed) {
+      emit();
+    }
   },
-}
+};

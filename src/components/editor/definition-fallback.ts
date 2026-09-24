@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Finding a definition when the language server finds none.
  *
@@ -14,7 +24,7 @@
  * list when there is more than one.
  */
 
-import { pathToUri, type Location, type WorkspaceSymbol } from '@/core/lsp/protocol'
+import { pathToUri, type Location, type WorkspaceSymbol } from '@/core/lsp/protocol';
 
 /** LSP SymbolKind values, most wanted first for a jump to a definition. */
 const KIND_RANK: Record<number, number> = {
@@ -30,9 +40,9 @@ const KIND_RANK: Record<number, number> = {
   8: 4, // Field
   7: 4, // Property
   13: 5, // Variable
-}
+};
 
-const rankOf = (kind: number) => KIND_RANK[kind] ?? 9
+const rankOf = (kind: number) => KIND_RANK[kind] ?? 9;
 
 /**
  * The workspace symbols that are the name itself — exact matches of the best
@@ -40,34 +50,38 @@ const rankOf = (kind: number) => KIND_RANK[kind] ?? 9
  * range stay out: there is nowhere to jump to.
  */
 export function definitionSymbols(symbols: WorkspaceSymbol[], name: string): Location[] {
-  const exact = symbols.filter((symbol) => symbol.name === name || symbol.name.replace(/\(.*$/, '') === name)
-  const located = exact.filter((symbol): symbol is WorkspaceSymbol & { location: Location } => 'range' in symbol.location)
-  if (!located.length) return []
-  const best = Math.min(...located.map((symbol) => rankOf(symbol.kind)))
-  const seen = new Set<string>()
+  const exact = symbols.filter((symbol) => symbol.name === name || symbol.name.replace(/\(.*$/, '') === name);
+  const located = exact.filter((symbol): symbol is WorkspaceSymbol & { location: Location; } => 'range' in symbol.location);
+  if (!located.length) {
+    return [];
+  }
+  const best = Math.min(...located.map((symbol) => rankOf(symbol.kind)));
+  const seen = new Set<string>();
   return located
     .filter((symbol) => rankOf(symbol.kind) === best)
     .map((symbol) => symbol.location)
     .filter((location) => {
-      const key = `${location.uri}:${location.range.start.line}`
-      if (seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
+      const key = `${location.uri}:${location.range.start.line}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
 }
 
-const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** Words that introduce a declaration, across the languages Lumen knows. */
 const DECLARATION_WORDS = [
   'class', 'interface', 'enum', 'record', '@interface', 'object', 'struct', 'trait', 'typealias', 'type',
   'fun', 'def', 'func', 'fn', 'function', 'module', 'namespace', 'protocol', 'union',
-]
+];
 
 /** A line that declares `name` — `public final class Name`, `data class Name(`, `fun name(`. */
 export function declarationPattern(name: string): RegExp {
-  const words = DECLARATION_WORDS.map(escape).join('|')
-  return new RegExp(`(?:^|[\\s(])(?:${words})\\s+${escape(name)}\\b`)
+  const words = DECLARATION_WORDS.map(escape).join('|');
+  return new RegExp(`(?:^|[\\s(])(?:${words})\\s+${escape(name)}\\b`);
 }
 
 /** Languages whose files may declare what another's code uses — Java and Kotlin share a classpath. */
@@ -79,31 +93,31 @@ const SIBLING_EXTENSIONS: Record<string, string[]> = {
   '.js': ['.mjs', '.cjs', '.jsx', '.ts'],
   '.c': ['.h'],
   '.cpp': ['.h', '.hpp', '.hh', '.hxx', '.cc', '.cxx'],
-}
+};
 
 /** The extensions a declaration may come from, given the languages' own. */
 export function searchExtensions(extensions: string[]): Set<string> {
-  return new Set([...extensions, ...extensions.flatMap((ext) => SIBLING_EXTENSIONS[ext] ?? [])])
+  return new Set([...extensions, ...extensions.flatMap((ext) => SIBLING_EXTENSIONS[ext] ?? [])]);
 }
 
 export interface TextHit {
-  path: string
+  path: string;
   /** 1-based, as the search reports it. */
-  line: number
-  text: string
+  line: number;
+  text: string;
 }
 
 /** The search hits that declare `name` in files of the wanted extensions, as locations. */
 export function declarationHits(hits: TextHit[], name: string, extensions: Set<string>): Location[] {
-  const pattern = declarationPattern(name)
+  const pattern = declarationPattern(name);
   return hits
     .filter((hit) => [...extensions].some((ext) => hit.path.endsWith(ext)))
     .filter((hit) => pattern.test(hit.text))
     .map((hit) => {
-      const column = Math.max(0, hit.text.indexOf(name))
-      const start = { line: hit.line - 1, character: column }
-      return { uri: pathToUri(hit.path), range: { start, end: { line: start.line, character: column + name.length } } }
-    })
+      const column = Math.max(0, hit.text.indexOf(name));
+      const start = { line: hit.line - 1, character: column };
+      return { uri: pathToUri(hit.path), range: { start, end: { line: start.line, character: column + name.length } } };
+    });
 }
 
 /**
@@ -111,10 +125,14 @@ export function declarationHits(hits: TextHit[], name: string, extensions: Set<s
  * `?=` (`…/Foo.java?=neoforge/%5C/home/…`); `null` for any other location.
  */
 export function jdtModule(uri: string): string | null {
-  if (!uri.startsWith('jdt://')) return null
-  const query = uri.split('?=')[1]
-  if (!query) return null
-  return decodeURIComponent(query.split('/')[0]) || null
+  if (!uri.startsWith('jdt://')) {
+    return null;
+  }
+  const query = uri.split('?=')[1];
+  if (!query) {
+    return null;
+  }
+  return decodeURIComponent(query.split('/')[0]) || null;
 }
 
 /**
@@ -123,11 +141,13 @@ export function jdtModule(uri: string): string | null {
  * request came from is wanted; when no location fits, all stay.
  */
 export function preferCurrentModule(locations: Location[], currentFile: string): Location[] {
-  if (locations.length < 2) return locations
-  const segments = new Set(currentFile.split(/[\\/]/))
+  if (locations.length < 2) {
+    return locations;
+  }
+  const segments = new Set(currentFile.split(/[\\/]/));
   const own = locations.filter((location) => {
-    const module = jdtModule(location.uri)
-    return module !== null && segments.has(module)
-  })
-  return own.length ? own : locations
+    const module = jdtModule(location.uri);
+    return module !== null && segments.has(module);
+  });
+  return own.length ? own : locations;
 }

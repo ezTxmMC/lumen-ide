@@ -1,13 +1,23 @@
-import { memo, useState } from 'react'
-import { Check, CopyPlus, Download, Pencil, Trash2 } from 'lucide-react'
-import { useT } from '@/i18n'
-import { syntaxColor } from '@/core/theme-colors'
-import type { Theme } from '@/core/types'
-import { CodeLines } from './preview/IdePreview'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import { memo, useState } from 'react';
+import { Check, CopyPlus, Download, Pencil, Trash2 } from 'lucide-react';
+import { useT } from '@/i18n';
+import { syntaxColor } from '@/core/theme-colors';
+import type { Theme } from '@/core/types';
+import { CodeLines } from './preview/IdePreview';
 
 /** A shrunken IDE as the preview image on a theme card. */
-export function MiniIde({ theme }: { theme: Theme }) {
-  const ui = theme.ui
+export function MiniIde({ theme }: { theme: Theme; }) {
+  const ui = theme.ui;
   return (
     <div className="pointer-events-none flex h-full flex-col overflow-hidden" style={{ background: ui.bg, color: ui.text }}>
       <div className="flex h-4 shrink-0 items-center gap-1 border-b px-1.5" style={{ background: ui.bgElevated, borderColor: ui.border }}>
@@ -44,31 +54,15 @@ export function MiniIde({ theme }: { theme: Theme }) {
         <span className="h-full w-8" style={{ background: ui.accent }} />
       </div>
     </div>
-  )
+  );
 }
 
-function ThemeCardView({
-  theme, active, custom, index, onSelect, onEdit, onDuplicate, onExport, onDelete,
-}: {
-  theme: Theme
-  active: boolean
-  custom: boolean
-  index: number
-  onSelect: () => void
-  onEdit: () => void
-  onDuplicate: () => void
-  onExport: () => void
-  onDelete: () => void
-}) {
-  const t = useT()
-  const [confirming, setConfirming] = useState(false)
-  const swatches = (['keyword', 'string', 'function', 'type', 'number', 'comment'] as const).map((kind) => syntaxColor(theme, kind))
-
-  const action = (title: string, icon: React.ReactNode, run: () => void, danger = false) => (
+function CardAction({ title, icon, run, danger = false }: { title: string; icon: React.ReactNode; run(): void; danger?: boolean; }) {
+  return (
     <button
       title={title}
       aria-label={title}
-      onClick={(e) => { e.stopPropagation(); run() }}
+      onClick={(e) => { e.stopPropagation(); run(); }}
       className={[
         'lm-transition flex size-7 items-center justify-center rounded-lumen-sm border border-edge lm-glass',
         danger ? 'text-bad hover:bg-bad/15' : 'text-muted hover:bg-hover hover:text-fg',
@@ -76,7 +70,86 @@ function ThemeCardView({
     >
       {icon}
     </button>
-  )
+  );
+}
+
+/** Actions on hover. */
+function CardActions({ custom, onEdit, onDuplicate, onExport, onAskDelete }: {
+  custom: boolean;
+  onEdit(): void;
+  onDuplicate(): void;
+  onExport(): void;
+  onAskDelete(): void;
+}) {
+  const t = useT();
+  return (
+    <div className="lm-transition absolute top-2 right-2 flex gap-1 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100">
+      <CardAction title={custom ? t('common.edit') : t('themeStudio.dialog.editCopy')} icon={<Pencil size={13} />} run={onEdit} />
+      <CardAction title={t('common.duplicate')} icon={<CopyPlus size={13} />} run={onDuplicate} />
+      <CardAction title={t('common.export')} icon={<Download size={13} />} run={onExport} />
+      {custom && <CardAction title={t('common.delete')} icon={<Trash2 size={13} />} run={onAskDelete} danger />}
+    </div>
+  );
+}
+
+function DeleteConfirm({ name, onCancel, onDelete }: { name: string; onCancel(): void; onDelete(): void; }) {
+  const t = useT();
+  return (
+    <div
+      className="lm-anim-fade absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/55 p-3 text-center"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <span className="text-[12.5px] font-medium text-white">{t('common.confirmDelete', { name: name })}</span>
+      <div className="flex gap-1.5">
+        <button onClick={onCancel} className="lm-transition h-7 rounded-lumen-sm bg-white/15 px-3 text-[12px] text-white hover:bg-white/25">
+          {t('common.cancel')}
+        </button>
+        <button onClick={onDelete} className="lm-transition h-7 rounded-lumen-sm bg-bad px-3 text-[12px] font-medium text-white hover:opacity-90">
+          {t('common.delete')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CardFooter({ theme, custom }: { theme: Theme; custom: boolean; }) {
+  const t = useT();
+  const swatches = (['keyword', 'string', 'function', 'type', 'number', 'comment'] as const).map((kind) => syntaxColor(theme, kind));
+  return (
+    <div className="flex items-center gap-2 border-t border-edge bg-surface px-3 py-2">
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[13px] font-medium text-fg" title={theme.name}>{theme.name}</div>
+        <div className="truncate text-[11px] text-subtle">
+          {t(`common.${theme.type}`)}
+          {theme.author ? ` · ${theme.author}` : ''}
+          {custom ? ` · ${t('common.custom')}` : ''}
+        </div>
+      </div>
+      <div className="flex shrink-0 -space-x-1">
+        <span className="size-3.5 rounded-full border-2" style={{ background: theme.ui.accent, borderColor: theme.ui.bgElevated }} />
+        {swatches.map((color, i) => (
+          <span key={i} className="size-3.5 rounded-full border-2" style={{ background: color, borderColor: theme.ui.bgElevated }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ThemeCardView({
+  theme, active, custom, index, onSelect, onEdit, onDuplicate, onExport, onDelete,
+}: {
+  theme: Theme;
+  active: boolean;
+  custom: boolean;
+  index: number;
+  onSelect: () => void;
+  onEdit: () => void;
+  onDuplicate: () => void;
+  onExport: () => void;
+  onDelete: () => void;
+}) {
+  const t = useT();
+  const [confirming, setConfirming] = useState(false);
 
   return (
     // Fade in on the outer element, so hovering's lift is not overridden by the animation.
@@ -87,10 +160,14 @@ function ThemeCardView({
         aria-pressed={active}
         onClick={onSelect}
         onKeyDown={(e) => {
-          if (e.target !== e.currentTarget) return
-          if (e.key !== 'Enter' && e.key !== ' ') return
-          e.preventDefault()
-          onSelect()
+          if (e.target !== e.currentTarget) {
+            return;
+          }
+          if (e.key !== 'Enter' && e.key !== ' ') {
+            return;
+          }
+          e.preventDefault();
+          onSelect();
         }}
         className={[
           'lm-ts-card lm-transition group relative flex cursor-pointer flex-col overflow-hidden rounded-lumen border text-left',
@@ -105,53 +182,19 @@ function ThemeCardView({
             </span>
           )}
 
-          {/* Aktionen beim Überfahren */}
-          <div className="lm-transition absolute top-2 right-2 flex gap-1 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100">
-            {action(custom ? t('common.edit') : t('themeStudio.dialog.editCopy'), <Pencil size={13} />, onEdit)}
-            {action(t('common.duplicate'), <CopyPlus size={13} />, onDuplicate)}
-            {action(t('common.export'), <Download size={13} />, onExport)}
-            {custom && action(t('common.delete'), <Trash2 size={13} />, () => setConfirming(true), true)}
-          </div>
+          <CardActions custom={custom} onEdit={onEdit} onDuplicate={onDuplicate} onExport={onExport} onAskDelete={() => setConfirming(true)} />
 
           {confirming && (
-            <div
-              className="lm-anim-fade absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/55 p-3 text-center"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span className="text-[12.5px] font-medium text-white">{t('common.confirmDelete', { name: theme.name })}</span>
-              <div className="flex gap-1.5">
-                <button onClick={() => setConfirming(false)} className="lm-transition h-7 rounded-lumen-sm bg-white/15 px-3 text-[12px] text-white hover:bg-white/25">
-                  {t('common.cancel')}
-                </button>
-                <button onClick={() => { setConfirming(false); onDelete() }} className="lm-transition h-7 rounded-lumen-sm bg-bad px-3 text-[12px] font-medium text-white hover:opacity-90">
-                  {t('common.delete')}
-                </button>
-              </div>
-            </div>
+            <DeleteConfirm name={theme.name} onCancel={() => setConfirming(false)} onDelete={() => { setConfirming(false); onDelete(); }} />
           )}
         </div>
 
-        <div className="flex items-center gap-2 border-t border-edge bg-surface px-3 py-2">
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[13px] font-medium text-fg" title={theme.name}>{theme.name}</div>
-            <div className="truncate text-[11px] text-subtle">
-              {t(`common.${theme.type}`)}
-              {theme.author ? ` · ${theme.author}` : ''}
-              {custom ? ` · ${t('common.custom')}` : ''}
-            </div>
-          </div>
-          <div className="flex shrink-0 -space-x-1">
-            <span className="size-3.5 rounded-full border-2" style={{ background: theme.ui.accent, borderColor: theme.ui.bgElevated }} />
-            {swatches.map((color, i) => (
-              <span key={i} className="size-3.5 rounded-full border-2" style={{ background: color, borderColor: theme.ui.bgElevated }} />
-            ))}
-          </div>
-        </div>
+        <CardFooter theme={theme} custom={custom} />
       </div>
     </div>
-  )
+  );
 }
 
 /** Redraw only when the theme itself changes — editing in the Studio changes one card. */
 export const ThemeCard = memo(ThemeCardView, (a, b) =>
-  a.theme === b.theme && a.active === b.active && a.custom === b.custom && a.index === b.index)
+  a.theme === b.theme && a.active === b.active && a.custom === b.custom && a.index === b.index);

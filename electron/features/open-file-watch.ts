@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Watches the files open in editor tabs that the workspace watcher does not
  * see: files in folders it skips on purpose (build/, .claude/, a dot folder)
@@ -8,29 +18,29 @@
  * files' names — a handful of watchers, never a tree.
  */
 
-import { ipcMain, type WebContents } from 'electron'
-import fs from 'node:fs'
-import fsp from 'node:fs/promises'
-import path from 'node:path'
+import { ipcMain, type WebContents } from 'electron';
+import fs from 'node:fs';
+import fsp from 'node:fs/promises';
+import path from 'node:path';
 
 interface FsChange {
-  path: string
-  type: 1 | 2 | 3
+  path: string;
+  type: 1 | 2 | 3;
 }
 
 interface FolderWatch {
-  watcher: fs.FSWatcher
-  names: Set<string>
+  watcher: fs.FSWatcher;
+  names: Set<string>;
 }
 
-const QUIET_MS = 150
-const MAX_OPEN_FILES = 500
+const QUIET_MS = 150;
+const MAX_OPEN_FILES = 500;
 
 /** The watches of one window: its open files, reported back to it alone. */
 class OpenFileWatch {
-  private folders = new Map<string, FolderWatch>()
-  private pending = new Set<string>()
-  private timer: NodeJS.Timeout | null = null
+  private folders = new Map<string, FolderWatch>();
+  private pending = new Set<string>();
+  private timer: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly owner: WebContents,
@@ -38,73 +48,91 @@ class OpenFileWatch {
   ) {}
 
   update(files: string[]) {
-    const wanted = new Map<string, Set<string>>()
+    const wanted = new Map<string, Set<string>>();
     for (const file of files.slice(0, MAX_OPEN_FILES)) {
-      const dir = path.dirname(file)
-      const names = wanted.get(dir) ?? new Set<string>()
-      names.add(path.basename(file))
-      wanted.set(dir, names)
+      const dir = path.dirname(file);
+      const names = wanted.get(dir) ?? new Set<string>();
+      names.add(path.basename(file));
+      wanted.set(dir, names);
     }
     for (const [dir, watch] of this.folders) {
-      if (wanted.has(dir)) continue
-      watch.watcher.close()
-      this.folders.delete(dir)
+      if (wanted.has(dir)) {
+        continue;
+      }
+      watch.watcher.close();
+      this.folders.delete(dir);
     }
     for (const [dir, names] of wanted) {
-      const existing = this.folders.get(dir)
+      const existing = this.folders.get(dir);
       if (!existing) {
-        this.watchFolder(dir, names)
-        continue
+        this.watchFolder(dir, names);
+        continue;
       }
-      existing.names.clear()
-      for (const name of names) existing.names.add(name)
+      existing.names.clear();
+      for (const name of names) {
+        existing.names.add(name);
+      }
     }
   }
 
   close() {
-    if (this.timer) clearTimeout(this.timer)
-    for (const watch of this.folders.values()) watch.watcher.close()
-    this.folders.clear()
+    if (this.timer) {
+      clearTimeout(this.timer);
+    }
+    for (const watch of this.folders.values()) {
+      watch.watcher.close();
+    }
+    this.folders.clear();
   }
 
   private watchFolder(dir: string, names: Set<string>) {
     try {
       const watcher = fs.watch(dir, (_event, filename) => {
-        const name = filename?.toString() ?? ''
-        if (!names.has(name)) return
-        this.record(path.join(dir, name))
-      })
+        const name = filename?.toString() ?? '';
+        if (!names.has(name)) {
+          return;
+        }
+        this.record(path.join(dir, name));
+      });
       // A folder that went away: dropped; the next tab update adds it back.
       watcher.on('error', () => {
-        watcher.close()
-        this.folders.delete(dir)
-      })
-      this.folders.set(dir, { watcher, names })
+        watcher.close();
+        this.folders.delete(dir);
+      });
+      this.folders.set(dir, { watcher, names });
     } catch {
       // A folder that does not exist (yet): nothing to watch.
     }
   }
 
   private record(file: string) {
-    this.pending.add(file)
-    if (this.timer) return
-    this.timer = setTimeout(() => void this.flush(), QUIET_MS)
+    this.pending.add(file);
+    if (this.timer) {
+      return;
+    }
+    this.timer = setTimeout(() => void this.flush(), QUIET_MS);
   }
 
   private async flush() {
-    this.timer = null
-    const files = [...this.pending]
-    this.pending.clear()
-    const changes: FsChange[] = []
+    this.timer = null;
+    const files = [...this.pending];
+    this.pending.clear();
+    const changes: FsChange[] = [];
     for (const file of files) {
       // Asked at report time: the workspace watcher may have taken the folder on since.
-      if (this.covered(this.owner, file)) continue
-      const stat = await fsp.stat(file).catch(() => null)
-      if (stat?.isDirectory()) continue
-      changes.push({ path: file, type: stat ? 2 : 3 })
+      if (this.covered(this.owner, file)) {
+        continue;
+      }
+      const stat = await fsp.stat(file).catch(() => null);
+      if (stat?.isDirectory()) {
+        continue;
+      }
+      changes.push({ path: file, type: stat ? 2 : 3 });
     }
-    if (!changes.length || this.owner.isDestroyed()) return
-    this.owner.send('fs:changed', changes)
+    if (!changes.length || this.owner.isDestroyed()) {
+      return;
+    }
+    this.owner.send('fs:changed', changes);
   }
 }
 
@@ -112,22 +140,22 @@ export function registerOpenFileWatchIpc(
   /** Is the file already reported to this window by its workspace watcher? */
   covered: (owner: WebContents, file: string) => boolean,
 ) {
-  const watches = new Map<number, OpenFileWatch>()
+  const watches = new Map<number, OpenFileWatch>();
 
   ipcMain.handle('fs:watchOpenFiles', (event, files: unknown) => {
-    const owner = event.sender
-    const list = Array.isArray(files) ? files.filter((f): f is string => typeof f === 'string' && path.isAbsolute(f)) : []
-    let watch = watches.get(owner.id)
+    const owner = event.sender;
+    const list = Array.isArray(files) ? files.filter((f): f is string => typeof f === 'string' && path.isAbsolute(f)) : [];
+    let watch = watches.get(owner.id);
     if (!watch) {
-      const id = owner.id
-      watch = new OpenFileWatch(owner, covered)
-      watches.set(id, watch)
+      const id = owner.id;
+      watch = new OpenFileWatch(owner, covered);
+      watches.set(id, watch);
       owner.once('destroyed', () => {
-        watches.get(id)?.close()
-        watches.delete(id)
-      })
+        watches.get(id)?.close();
+        watches.delete(id);
+      });
     }
-    watch.update(list)
-    return true
-  })
+    watch.update(list);
+    return true;
+  });
 }

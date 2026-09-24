@@ -1,259 +1,26 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
- * The extension's texts. German and English lead; every language carries the
+ * The extension's texts. English leads; every language carries the
  * same keys (the tests check it). `lumen.i18n` takes flat tables, so the tree
  * is flattened to `section.key` once.
  */
 
-import type { MessageTables } from '../../../src/core/extensions/renderer-api'
+import type { MessageTables } from '../../../src/core/extensions/renderer-api';
 
 interface Tree {
-  [key: string]: string | Tree
+  [key: string]: string | Tree;
 }
 
 export const TREES: Record<string, Tree> = {
-  de: {
-    addon: {
-      description: 'Neue Plugins (Spigot, Paper, Folia, Purpur, Leaf, Velocity, BungeeCord) und Mods (Fabric, NeoForge, Forge, Quilt, Architectury) für jede Minecraft-Version ab 1.7.10, mit live geladenen Versionslisten, Build- und Run-Aufgaben sowie Snippets.',
-    },
-    command: {
-      updateVersions: 'Minecraft: Versionen aktualisieren',
-      insertSnippet: 'Minecraft: Snippet einfügen…',
-      clearVersions: 'Minecraft: Versions-Cache leeren',
-    },
-    toast: {
-      updating: 'Lade aktuelle Minecraft-Versionen …',
-      updated: 'Minecraft-Versionen aktualisiert',
-      partial: 'Versionen aktualisiert, {count} Quellen nicht erreichbar (z. B. {first})',
-      failed: 'Versionen konnten nicht geladen werden: {message} — die zwischengespeicherten Listen bleiben aktiv',
-      noEditor: 'Kein Editor geöffnet',
-      cleared: 'Versions-Cache geleert — die Listen werden neu geladen',
-    },
-    snippet: {
-      description: 'Fügt das Snippet an der Cursorposition ein. Imports ergänzt der Language-Server.',
-      label: 'Snippet',
-      submit: 'Einfügen',
-      missing: 'Snippet nicht gefunden',
-    },
-    template: {
-      spigot: {
-        name: 'Spigot-Plugin',
-        description: 'Bukkit/Spigot-Plugin mit plugin.yml, Befehl, Listener und optionaler config.yml.',
-      },
-      paper: {
-        name: 'Paper-Plugin',
-        description: 'Paper-Plugin mit paper-plugin.yml, Brigadier-Befehl, Adventure und run-paper.',
-      },
-      leaf: {
-        name: 'Leaf-Plugin',
-        description: 'Plugin gegen die Leaf-API (Paper-Fork) mit Brigadier-Befehl und run-paper.',
-      },
-      velocity: {
-        name: 'Velocity-Plugin',
-        description: 'Proxy-Plugin mit @Plugin-Annotation, Annotation-Processor und run-velocity.',
-      },
-      bungeecord: {
-        name: 'BungeeCord-Plugin',
-        description: 'Proxy-Plugin mit bungee.yml, Befehl und Listener (Waterfall-kompatibel).',
-      },
-      fabric: {
-        name: 'Fabric-Mod',
-        description: 'Fabric Loom mit fabric.mod.json, Fabric API, Mojang- oder Yarn-Mappings, Mixins, Access Widener und Datengenerierung.',
-      },
-      quilt: {
-        name: 'Quilt-Mod',
-        description: 'Quilt Loom mit quilt.mod.json, Quilted Fabric API oder Fabric API und Mixins.',
-      },
-      neoforge: {
-        name: 'NeoForge-Mod',
-        description: 'ModDevGradle (Legacy für 1.20.1) mit mods.toml, DeferredRegister, Befehl, Parchment und Datengenerierung.',
-      },
-      forge: {
-        name: 'Forge-Mod',
-        description: 'Gebaut wie das offizielle MDK der gewählten Version: ForgeGradle 6 oder 7, RetroFuturaGradle für 1.7.10 und 1.12.2.',
-      },
-      architectury: {
-        name: 'Architectury-Mod',
-        description: 'Multiloader-Projekt: common plus Fabric, NeoForge und/oder Forge, mit Architectury API — für jede Version, die der Architectury-Generator kennt.',
-      },
-      folia: {
-        name: 'Folia-Plugin',
-        description: 'Plugin für Folia (regionalisiertes Paper) mit folia-supported, Brigadier-Befehl und Adventure.',
-      },
-      purpur: {
-        name: 'Purpur-Plugin',
-        description: 'Plugin gegen die Purpur-API (Paper-Fork) mit Befehl, Listener und run-paper.',
-      },
-    },
-    section: {
-      project: 'Projekt',
-      coordinates: 'Koordinaten',
-      minecraft: 'Minecraft',
-      build: 'Build',
-      options: 'Optionen',
-    },
-    field: {
-      mc: 'Minecraft-Version',
-      java: 'Java-Version',
-      build: 'Build-Werkzeug',
-      groupId: 'Group-ID',
-      artifactId: 'Artifact-ID',
-      modId: 'Mod-ID',
-      pluginName: 'Plugin-Name',
-      pluginId: 'Plugin-ID',
-      version: 'Version',
-      package: 'Paket',
-      mainClass: 'Hauptklasse',
-      description: 'Beschreibung',
-      authors: 'Autoren',
-      website: 'Website',
-      license: 'Lizenz',
-      manifest: 'Plugin-Manifest',
-      apiDependency: 'Version von {api}',
-      apiVersion: '{api}-Version',
-      loaderVersion: '{loader}-Version',
-      pluginVersion: '{plugin}-Version',
-      gradle: 'Gradle-Version',
-      snapshots: 'Snapshots anzeigen',
-      mappings: 'Mappings',
-      yarnVersion: 'Yarn-Version',
-      parchmentVersion: 'Parchment-Version',
-    },
-    hint: {
-      java: 'Aus der Minecraft-Version abgeleitet',
-      modId: 'Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben, 2–64 Zeichen',
-      pluginName: 'Buchstaben, Ziffern, _ . -',
-      pluginId: 'Kleinbuchstaben, Ziffern, _ und -, beginnt mit einem Buchstaben',
-      package: 'Kleinbuchstaben und Punkte, z. B. de.firma',
-      artifactId: 'Kleinbuchstaben, Ziffern, - _ .',
-      version: 'z. B. 1.0.0',
-      mainClass: 'Großgeschriebener Klassenname',
-      website: 'Mit http:// oder https://',
-      paperPlugin: 'Neues Paper-Format mit Bootstrap-Möglichkeiten',
-      bukkitPlugin: 'Klassisch, auch auf Spigot lauffähig',
-      runServer: 'Gradle-Aufgabe, die einen Testserver herunterlädt und startet',
-      runWaterfall: 'Startet einen Waterfall-Proxy (Waterfall wird nicht mehr weiterentwickelt)',
-      groovyOnly: 'Wie beim offiziellen Generator nur Groovy-DSL',
-      snapshots: 'Listet auch Snapshots, Pre-Releases und Release-Kandidaten, die neuer als das letzte Release sind',
-      gradle: 'Empfohlen: die Version der offiziellen Vorlage; neuere Releases derselben Hauptversion funktionieren ebenfalls',
-      mappings: 'Namen für den Minecraft-Code — die offiziellen von Mojang oder Fabrics Yarn',
-      loom: 'Ab 26.1 das Plugin ohne Remapping (net.fabricmc.fabric-loom)',
-      forgeVersion: 'Empfohlen und neueste laut Forge; für 1.7.10 und 1.12.2 legt RetroFuturaGradle den Build fest',
-      neoVersion: 'Für 1.20.1 die Builds von net.neoforged:forge',
-      parchment: 'Parameternamen und Javadoc zusätzlich zu Mojangs Mappings — nicht für jede Version veröffentlicht',
-      mixinsLegacy: 'Für 1.20.1 nicht angeboten: ModDevGradle Legacy braucht den Mixin-Annotation-Processor von Hand eingerichtet',
-      quiltApi: 'Quilted Fabric API, wo es sie für diese Version gibt, sonst die Fabric API (Quilt führt Fabric-Mods aus)',
-      apiVersion: 'Ab 26.1 heißen die Builds von Paper und seinen Forks z. B. 26.2.build.128-stable; die erste Auswahl nimmt immer den neuesten Build dieser Version',
-      velocity: 'Die Java-Version folgt der API: 3.4 → 17, 3.5 → 21, 4.x → 25',
-      commandSince: 'Das Beispiel braucht Minecraft {mc} oder neuer',
-      mc: {
-        fabric: 'Jede Version ab 1.14.4, die Fabric unterstützt; ältere haben keine Mojang-Mappings',
-        quilt: '1.18.2 bis 1.21.11 — Quilt Loom kann das unverschleierte 26.x nicht bauen',
-        neoforge: '1.20.1 (ModDevGradle Legacy) und ab 1.20.4; 1.20.2 und 1.20.3 gab es nur mit NeoGradle',
-        forge: 'Versionen, deren offizielles MDK mit ForgeGradle 6 oder 7 baut, 1.17.1–1.19.3 über ModDevGradle Legacy, 1.7.10 und 1.12.2 über RetroFuturaGradle; die übrigen brauchen ein Gradle, das kein aktuelles JDK mehr ausführt',
-        architectury: 'Jede Version, die der Architectury-Vorlagengenerator unterstützt',
-        spigot: 'Jede Version mit einem spigot-api-Build (ab 1.8)',
-        paper: 'Jede Version mit veröffentlichter Paper-API (ab 1.16.5)',
-        folia: 'Jede Version mit veröffentlichter Folia-API',
-        purpur: 'Jede Version mit veröffentlichter Purpur-API (ab 1.16.5)',
-        leaf: 'Jede Version mit veröffentlichter Leaf-API',
-      },
-      mdgLegacy: 'Das Plugin von NeoForged für Forge 1.17 bis 1.20.1 — Forges eigenes MDK dieser Version braucht Gradle 7',
-    },
-    license: {
-      arr: 'Alle Rechte vorbehalten',
-    },
-    option: {
-      command: 'Beispielbefehl /hello',
-      brigadierCommand: 'Beispielbefehl /hello (Brigadier)',
-      listener: 'Event-Listener',
-      config: 'config.yml',
-      runServer: 'Testserver-Aufgabe (run-paper/run-velocity)',
-      runWaterfall: 'Testproxy-Aufgabe (run-waterfall)',
-      fabricApi: 'Fabric API einbinden',
-      splitSources: 'Client- und Server-Quellen trennen',
-      mixins: 'Mixins',
-      accessWidener: 'Access Widener',
-      datagen: 'Datengenerierung',
-      deferredRegister: 'Beispiel-Item (DeferredRegister)',
-      platformNeoForge: 'NeoForge-Modul',
-      platformForge: 'Forge-Modul',
-      architecturyApi: 'Architectury API einbinden',
-      quiltApi: 'API einbinden (QFAPI oder Fabric API)',
-      parchment: 'Parchment-Mappings',
-    },
-    setup: {
-      wrapper: 'Gradle-Wrapper erzeugen',
-      maven: 'Abhängigkeiten laden',
-    },
-    next: {
-      gradle: 'Aufgabe „Bauen“ im Projekt-Panel; ohne lokales Gradle zuerst den Wrapper erzeugen.',
-      maven: 'Aufgabe „Paket bauen“ im Projekt-Panel — das Jar liegt danach in target/.',
-      mod: 'Nach dem Wrapper „runClient“ oder „runServer“ starten; der erste Lauf lädt Minecraft herunter.',
-      architectury: 'Nach dem Wrapper „:fabric:runClient“ oder „:neoforge:runClient“ starten.',
-    },
-    readme: {
-      testServer: 'Testserver starten',
-      latestBuild: 'Die API-Version {range} nimmt immer den neuesten Build dieser Minecraft-Version (in Gradle: {gradle}).',
-      rfg: 'Gebaut mit RetroFuturaGradle (GTNewHorizons): Das ursprüngliche ForgeGradle dieser Version braucht Gradle 2–5, das kein aktuelles JDK mehr ausführt.',
-    },
-    task: {
-      build: 'Bauen',
-      clean: 'Aufräumen',
-      runClient: 'Client starten',
-      runServer: 'Server starten',
-      runProxy: 'Proxy starten',
-      runData: 'Daten generieren',
-      genSources: 'Minecraft-Quellen erzeugen',
-      jars: 'Gebaute Jars anzeigen',
-    },
-    fact: {
-      platform: 'Plattform',
-      manifest: 'Manifest',
-    },
-    code: {
-      enabled: 'aktiviert',
-      disabled: 'deaktiviert',
-      hello: 'Hallo!',
-      helloName: 'Hallo, %name%!',
-      helloDescription: 'Sagt Hallo',
-      helloPermission: 'Erlaubt /hello',
-      welcome: 'Willkommen, %player%!',
-      configComment: 'Einstellungen des Plugins',
-      modLoaded: '{name} geladen',
-      serverStarted: 'Server gestartet',
-      clientComment: 'Code, der nur auf dem Client läuft',
-      mixinComment: 'Läuft vor dem Laden der Welt',
-      commonInit: 'Gemeinsamer Einstieg für alle Loader',
-      datagenComment: 'Hier Daten-Provider hinzufügen',
-      missingCommand: 'hello fehlt in plugin.yml',
-    },
-    mappings: {
-      mojang: 'Mojang (offiziell)',
-      yarn: 'Yarn',
-    },
-    badge: {
-      latest: 'neueste',
-      recommended: 'empfohlen',
-      beta: 'Beta',
-      alpha: 'Alpha',
-      snapshot: 'Snapshot',
-      experimental: 'experimentell',
-      range: 'Bereich',
-      pinned: 'festgelegt',
-    },
-    group: {
-      line: 'Minecraft {line}',
-      snapshots: 'Snapshots',
-    },
-    choice: {
-      latestBuild: 'Neuester {mc}-Build',
-    },
-    error: {
-      noVersions: 'Keine Versionen für Minecraft {mc} gefunden',
-      noGames: 'Keine Minecraft-Versionen gefunden',
-      unsupported: '{platform} unterstützt Minecraft {mc} nicht',
-    },
-  },
   en: {
     addon: {
       description: 'New plugins (Spigot, Paper, Folia, Purpur, Leaf, Velocity, BungeeCord) and mods (Fabric, NeoForge, Forge, Quilt, Architectury) for every Minecraft version from 1.7.10, with live version lists, build and run tasks and snippets.',
@@ -1955,17 +1722,17 @@ export const TREES: Record<string, Tree> = {
       unsupported: '{platform} ondersteunt Minecraft {mc} niet',
     },
   },
-}
+};
 
 function flatten(tree: Tree, prefix = '', out: Record<string, string> = {}): Record<string, string> {
   for (const [key, value] of Object.entries(tree)) {
     if (typeof value === 'string') {
-      out[prefix + key] = value
-      continue
+      out[prefix + key] = value;
+      continue;
     }
-    flatten(value, `${prefix}${key}.`, out)
+    flatten(value, `${prefix}${key}.`, out);
   }
-  return out
+  return out;
 }
 
-export const MESSAGES: MessageTables = Object.fromEntries(Object.entries(TREES).map(([language, tree]) => [language, flatten(tree)]))
+export const MESSAGES: MessageTables = Object.fromEntries(Object.entries(TREES).map(([language, tree]) => [language, flatten(tree)]));

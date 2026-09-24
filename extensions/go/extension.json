@@ -2,7 +2,7 @@
   "id": "ext.go",
   "name": "Go",
   "version": "1.0.3",
-  "description": "Go mit Backtick-Strings, Kanal-Operatoren und go-run/test-Runner.",
+  "description": "Go with backtick strings, channel operators and a go run/test runner.",
   "author": "Lumen",
   "icon": "Go",
   "color": "#00add8",

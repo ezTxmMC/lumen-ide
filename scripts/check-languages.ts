@@ -1,19 +1,29 @@
-import { StringStream } from '@codemirror/language'
-import { buildStreamParser } from '@/core/tokenizer'
-import { matchLanguage } from '@/core/language'
-import { ALL_ADDONS } from '@/addons'
-import { markdownToText } from '@/lib/markdown'
-import { extensionAddons, extensionsBuilt } from './lib/extension-addons'
-import type { LanguageSpec } from '@/core/types'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import { StringStream } from '@codemirror/language';
+import { buildStreamParser } from '@/core/tokenizer';
+import { matchLanguage } from '@/core/language';
+import { ALL_ADDONS } from '@/addons';
+import { markdownToText } from '@/lib/markdown';
+import { extensionAddons, extensionsBuilt } from './lib/extension-addons';
+import type { LanguageSpec } from '@/core/types';
 
 if (!extensionsBuilt()) {
-  console.log('extensions/dist is missing — run `npm run build:ext` first.')
-  process.exit(1)
+  console.log('extensions/dist is missing — run `npm run build:ext` first.');
+  process.exit(1);
 }
 
 // Built in and from an extension alike: for the tokenizer and for matching a
 // file name it makes no difference where a language came from.
-const specs: LanguageSpec[] = [...ALL_ADDONS, ...extensionAddons()].flatMap((a) => a.languages ?? [])
+const specs: LanguageSpec[] = [...ALL_ADDONS, ...extensionAddons()].flatMap((a) => a.languages ?? []);
 
 const SAMPLES: Record<string, string> = {
   // Excerpts from test/syntax.nv of the Novus repository.
@@ -101,55 +111,61 @@ const SAMPLES: Record<string, string> = {
     'Text mit **fett**, *kursiv*, `code` und [Link](https://x.de).\n\n' +
     '<Hinweis typ="info">\n  Inhalt {wert}\n</Hinweis>\n\n' +
     '- Punkt eins\n- Punkt zwei\n\n```ts\nconst a = 1\n```',
-}
+};
 
-let failures = 0
-let checked = 0
+let failures = 0;
+let checked = 0;
 
 for (const spec of specs) {
-  const sample = SAMPLES[spec.id]
-  if (!sample) { console.log(`  ?  ${spec.id}: no sample`); continue }
+  const sample = SAMPLES[spec.id];
+  if (!sample) { console.log(`  ?  ${spec.id}: no sample`); continue; }
 
-  const parser = buildStreamParser(spec)
-  let state = parser.startState!(2)
-  const kinds = new Set<string>()
+  const parser = buildStreamParser(spec);
+  let state = parser.startState!(2);
+  const kinds = new Set<string>();
 
   try {
     for (const line of sample.split('\n')) {
-      const stream = new StringStream(line, 4, 2)
-      if (line === '') { parser.blankLine?.(state, 2); continue }
-      let guard = 0
+      const stream = new StringStream(line, 4, 2);
+      if (line === '') { parser.blankLine?.(state, 2); continue; }
+      let guard = 0;
       while (!stream.eol()) {
-        stream.start = stream.pos
-        const token = parser.token(stream, state)
+        stream.start = stream.pos;
+        const token = parser.token(stream, state);
         if (stream.pos === stream.start) {
-          throw new Error(`The tokenizer does not move at "${line.slice(stream.pos, stream.pos + 12)}"`)
+          throw new Error(`The tokenizer does not move at "${line.slice(stream.pos, stream.pos + 12)}"`);
         }
-        if (token) kinds.add(token)
-        if (++guard > 5000) throw new Error('Endless loop')
+        if (token) {
+          kinds.add(token);
+        }
+        if (++guard > 5000) {
+          throw new Error('Endless loop');
+        }
       }
-      state = parser.copyState ? parser.copyState(state) : state
+      state = parser.copyState ? parser.copyState(state) : state;
     }
   } catch (err) {
-    failures++
-    console.log(`  ✗  ${spec.id}: ${(err as Error).message}`)
-    continue
+    failures++;
+    console.log(`  ✗  ${spec.id}: ${(err as Error).message}`);
+    continue;
   }
 
-  checked++
+  checked++;
   // The names must take the internal prefixed form, otherwise CodeMirror's
   // legacy table applies rather than the parser's tokenTable.
   for (const kind of kinds) {
     if (!kind.startsWith('lm_')) {
-      failures++
-      console.log(`  !  ${spec.id}: unprefixed token name "${kind}"`)
+      failures++;
+      console.log(`  !  ${spec.id}: unprefixed token name "${kind}"`);
     }
   }
 
-  const expected = spec.id === 'json' || spec.id === 'toml' ? 2 : 3
-  const ok = kinds.size >= expected
-  if (!ok) failures++
-  console.log(`  ${ok ? '✓' : '✗'}  ${spec.id.padEnd(12)} ${[...kinds].sort().join(' ')}`)
+  const expected = spec.id === 'json' || spec.id === 'toml' ? 2 : 3;
+  const ok = kinds.size >= expected;
+  if (!ok) {
+    failures++;
+  }
+  console.log(`  ${ok ? '✓' : '✗'}  ${spec.id.padEnd(12)} ${[...kinds].sort().join(' ')}`);
 }
 
 // Assigning files
@@ -167,13 +183,15 @@ const MAPPING: [string, string][] = [
   ['CMakeLists.txt', 'cmake'], ['Makefile', 'makefile'], ['pom.xml', 'xml'],
   ['build.gradle', 'groovy'], ['build.gradle.kts', 'kotlin'], ['gradle.properties', 'properties'],
   ['Dockerfile', 'dockerfile'], ['.env', 'properties'], ['icon.svg', 'xml'],
-]
-console.log('\nAssigning files:')
+];
+console.log('\nAssigning files:');
 for (const [name, want] of MAPPING) {
-  const got = matchLanguage(name, specs)?.id ?? ''
-  const ok = got === want
-  if (!ok) failures++
-  console.log(`  ${ok ? '✓' : '✗'}  ${name.padEnd(14)} → ${got || '—'}${ok ? '' : `  (expected ${want || '—'})`}`)
+  const got = matchLanguage(name, specs)?.id ?? '';
+  const ok = got === want;
+  if (!ok) {
+    failures++;
+  }
+  console.log(`  ${ok ? '✓' : '✗'}  ${name.padEnd(14)} → ${got || '—'}${ok ? '' : `  (expected ${want || '—'})`}`);
 }
 
 /* -------------------------------------------------------------- *
@@ -185,14 +203,16 @@ const HOVER_CASES: [string, string][] = [
   ['[`fmt.Sprintf` on pkg.go.dev](https://pkg.go.dev/fmt)', 'fmt.Sprintf on pkg.go.dev'],
   ['Ein **wichtiger** Hinweis', 'Ein wichtiger Hinweis'],
   ['Nutze `map[string]int` dafür', 'Nutze map[string]int dafür'],
-]
-console.log('\nPreparing hovers:')
+];
+console.log('\nPreparing hovers:');
 for (const [input, want] of HOVER_CASES) {
-  const got = markdownToText(input)
-  const ok = got === want
-  if (!ok) failures++
-  console.log(`  ${ok ? '✓' : '✗'}  ${JSON.stringify(input).slice(0, 46).padEnd(48)} → ${JSON.stringify(got)}`)
+  const got = markdownToText(input);
+  const ok = got === want;
+  if (!ok) {
+    failures++;
+  }
+  console.log(`  ${ok ? '✓' : '✗'}  ${JSON.stringify(input).slice(0, 46).padEnd(48)} → ${JSON.stringify(got)}`);
 }
 
-console.log(`\n${checked} languages tokenised, ${failures} error(s)`)
-process.exit(failures ? 1 : 0)
+console.log(`\n${checked} languages tokenised, ${failures} error(s)`);
+process.exit(failures ? 1 : 0);

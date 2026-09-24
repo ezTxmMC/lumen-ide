@@ -1,8 +1,20 @@
-import type { Addon, LanguageSpec } from '@/core/types'
-import { gradleKind, javaPlainTemplate, javaProjectTemplate, mavenKind } from '../lib/jvm-project'
-import { bazelKind } from '../lib/native-project'
-import { javaDebug } from '@/core/debug/adapters'
-import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import type { Addon, LanguageSpec } from '@/core/types';
+import { gradleKind, javaPlainTemplate, javaProjectTemplate, mavenKind } from '../lib/jvm-project';
+import { bazelKind } from '../lib/native-project';
+import { javaDebug } from '@/core/debug/adapters';
+import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages';
+import { localizeSnippets } from '../lib/localize';
+import { t } from '@/i18n';
 
 /** The settings for jdtls — sent at `initialize` and as configuration. */
 const JAVA_SETTINGS = {
@@ -61,7 +73,7 @@ const JAVA_SETTINGS = {
   codeGeneration: { useBlocks: true },
   errors: { incompleteClasspath: { severity: 'warning' } },
   trace: { server: 'off' },
-}
+};
 
 /** JVM options for jdtls — memory, the collector, and no metadata files in the project. */
 const JDTLS_JVM_OPTIONS = [
@@ -71,7 +83,7 @@ const JDTLS_JVM_OPTIONS = [
   '-XX:AdaptiveSizePolicyWeight=90',
   '-Dsun.zip.disableMemoryMapping=true',
   '-Djava.import.generatesMetadataFilesAtProjectRoot=false',
-]
+];
 
 export const javaSpec: LanguageSpec = {
   id: 'java',
@@ -112,34 +124,34 @@ export const javaSpec: LanguageSpec = {
     'Map', 'Set', 'Optional', 'Stream', 'String', 'Integer', 'Long', 'Thread',
     'Executors', 'Collectors', 'Comparator', 'Pattern', 'Scanner',
   ],
-  snippets: [
+  snippets: localizeSnippets([
     {
       label: 'main',
-      detail: 'main-Methode',
+      detail: 'addons.snippets.java.main',
       body: 'public static void main(String[] args) {\n  $0\n}',
     },
     {
       label: 'class',
-      detail: 'Klasse',
+      detail: 'addons.snippets.java.class',
       body: 'public class ${Name} {\n  $0\n}',
     },
     { label: 'sout', detail: 'println', body: 'System.out.println($0);' },
-    { label: 'fori', detail: 'for-Schleife', body: 'for (int i = 0; i < ${n}; i++) {\n  $0\n}' },
+    { label: 'fori', detail: 'addons.snippets.java.fori', body: 'for (int i = 0; i < ${n}; i++) {\n  $0\n}' },
     { label: 'foreach', detail: 'for-each', body: 'for (${String} ${element} : ${liste}) {\n  $0\n}' },
     { label: 'record', detail: 'Record', body: 'public record ${Name}(${String} ${feld}) {}' },
     { label: 'iface', detail: 'Interface', body: 'public interface ${Name} {\n  $0\n}' },
     { label: 'enum', detail: 'Enum', body: 'public enum ${Name} {\n  ${EINS}, ${ZWEI};$0\n}' },
-    { label: 'ctor', detail: 'Konstruktor', body: 'public ${Name}(${String} ${feld}) {\n  this.${feld} = ${feld};\n}$0' },
+    { label: 'ctor', detail: 'addons.snippets.java.ctor', body: 'public ${Name}(${String} ${feld}) {\n  this.${feld} = ${feld};\n}$0' },
     { label: 'try', detail: 'try/catch', body: 'try {\n  $0\n} catch (${Exception} e) {\n  e.printStackTrace();\n}' },
     { label: 'trywr', detail: 'try-with-resources', body: 'try (${var} ${res} = ${quelle}) {\n  $0\n} catch (${Exception} e) {\n  throw new RuntimeException(e);\n}' },
-    { label: 'switch', detail: 'switch-Ausdruck', body: 'return switch (${wert}) {\n  case ${A} -> $0;\n  default -> throw new IllegalStateException();\n};' },
+    { label: 'switch', detail: 'addons.snippets.java.switch', body: 'return switch (${wert}) {\n  case ${A} -> $0;\n  default -> throw new IllegalStateException();\n};' },
     { label: 'stream', detail: 'Stream', body: '${liste}.stream()\n  .filter(${e} -> $0)\n  .toList();' },
-    { label: 'test', detail: 'JUnit-Test', body: '@Test\nvoid ${sollteEtwasTun}() {\n  $0\n}' },
+    { label: 'test', detail: 'addons.snippets.java.test', body: '@Test\nvoid ${sollteEtwasTun}() {\n  $0\n}' },
     { label: 'sealed', detail: 'Sealed Interface', body: 'public sealed interface ${Name} permits ${A}, ${B} {}$0' },
-  ],
+  ]),
   run: [
     // Java 11+ runs a single source file directly.
-    { label: 'Java (Einzeldatei)', command: 'java', args: ['${file}'] },
+    { get label() { return t('addons.javaSingleFile'); }, command: 'java', args: ['${file}'] },
     {
       label: 'javac + java',
       command: 'javac',
@@ -200,7 +212,9 @@ export const javaSpec: LanguageSpec = {
         settings: { java: JAVA_SETTINGS },
       },
       settings: { java: JAVA_SETTINGS },
-      install: 'Arch: pacman -S jdtls · macOS: brew install jdtls · sonst https://github.com/eclipse-jdtls/eclipse.jdt.ls (Skript „jdtls“ in den PATH)',
+      get install() {
+        return t('addons.jdtlsInstall');
+      },
       package: LSP_PACKAGES.jdtls,
       systemPackages: SYSTEM_PACKAGES.jdtls,
       docs: 'https://github.com/eclipse-jdtls/eclipse.jdt.ls',
@@ -245,19 +259,19 @@ export const javaSpec: LanguageSpec = {
       docs: 'https://github.com/georgewfraser/java-language-server',
     },
   ],
-}
+};
 
 export const javaAddon: Addon = {
   id: 'lang.java',
   name: 'Java',
   version: '1.0.0',
-  description:
-    'Java inkl. Records, sealed Klassen und Annotationen. Maven- und Gradle-Projekte ' +
-    'mit Aufgaben, Vorlagen für neue Projekte, jdtls als Language-Server.',
+  get description() {
+    return t('addons.javaDescription');
+  },
   icon: 'J',
   builtin: true,
   category: 'language',
   languages: [javaSpec],
   projectKinds: [mavenKind, gradleKind, bazelKind],
   projectTemplates: [javaProjectTemplate, javaPlainTemplate],
-}
+};

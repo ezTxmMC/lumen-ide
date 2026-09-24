@@ -26,7 +26,7 @@ somebody starts briefly to try things out should never be open to strangers.
 | `--port <n>` | `LUMEN_EXT_PORT` | `8730` | The port |
 | `--host <address>` | `LUMEN_EXT_HOST` | `0.0.0.0` | The address listened on |
 | `--data <folder>` | `LUMEN_EXT_DATA` | `./data` | The data folder |
-| `--name <text>` | `LUMEN_EXT_NAME` | `Lumen-Erweiterungen` | The name shown on the project pages |
+| `--name <text>` | `LUMEN_EXT_NAME` | `Lumen Extensions` | The name shown on the project pages |
 | `--url <address>` | `LUMEN_EXT_URL` | `http://localhost:<port>` | The public address at which Lumen reaches the server |
 | `--token <secret>` | `LUMEN_EXT_TOKENS` | — | A token for publishing, allowed more than once |
 | `--allow-overwrite` | `LUMEN_EXT_ALLOW_OVERWRITE=1` | off | Published versions may be replaced |

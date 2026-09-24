@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Collapsed folder chains in the explorer.
  *
@@ -15,17 +25,17 @@
  *     package is written in the source anyway.
  */
 
-import type { DirEntry } from '../../../electron/preload'
+import type { DirEntry } from '../../../electron/preload';
 
 /** Folders that packages begin under — they end a chain and switch on dot notation. */
-const SOURCE_ROOTS = new Set(['java', 'kotlin', 'scala', 'groovy', 'kotlin-js', 'aidl'])
+const SOURCE_ROOTS = new Set(['java', 'kotlin', 'scala', 'groovy', 'kotlin-js', 'aidl']);
 
 /** A name segment that passes as a package name. */
-const PACKAGE_SEGMENT = /^[a-z_$][a-z0-9_$]*$/i
+const PACKAGE_SEGMENT = /^[a-z_$][a-z0-9_$]*$/i;
 
 /** Does a package tree start below this folder? */
 export function isSourceRoot(name: string): boolean {
-  return SOURCE_ROOTS.has(name.toLowerCase())
+  return SOURCE_ROOTS.has(name.toLowerCase());
 }
 
 /**
@@ -36,9 +46,13 @@ export function isSourceRoot(name: string): boolean {
  * or a space does not masquerade as a package.
  */
 export function chainLabel(names: readonly string[]): string {
-  if (names.length === 1) return names[0]
-  if (names.every((name) => PACKAGE_SEGMENT.test(name))) return names.join('.')
-  return names.join('/')
+  if (names.length === 1) {
+    return names[0];
+  }
+  if (names.every((name) => PACKAGE_SEGMENT.test(name))) {
+    return names.join('.');
+  }
+  return names.join('/');
 }
 
 /**
@@ -49,9 +63,15 @@ export function chainLabel(names: readonly string[]): string {
  * layout and packages would blur.
  */
 export function onlyChildFolder(children: readonly DirEntry[] | null): DirEntry | null {
-  if (!children || children.length !== 1) return null
-  const only = children[0]
-  if (!only.isDirectory) return null
-  if (isSourceRoot(only.name)) return null
-  return only
+  if (!children || children.length !== 1) {
+    return null;
+  }
+  const only = children[0];
+  if (!only.isDirectory) {
+    return null;
+  }
+  if (isSourceRoot(only.name)) {
+    return null;
+  }
+  return only;
 }

@@ -1,24 +1,36 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /** The debugger's commands, for the palette and the shortcuts. */
 
-import { useStore } from '@/state/store'
-import { editorBridge } from '@/lib/editor-bridge'
-import { t } from '@/i18n'
-import type { Command } from '@/core/types'
-import { breakpoints } from './breakpoints'
-import { debug } from './manager'
-import { openLaunchConfigFile } from './config'
-import { cursorLine } from './editor'
-import { editBreakpoint } from './actions'
+import { useStore } from '@/state/store';
+import { editorBridge } from '@/lib/editor-bridge';
+import { t } from '@/i18n';
+import type { Command } from '@/core/types';
+import { breakpoints } from './breakpoints';
+import { debug } from './manager';
+import { openLaunchConfigFile } from './config';
+import { cursorLine } from './editor';
+import { editBreakpoint } from './actions';
 
 export function debugCommands(): Command[] {
-  const category = t('debug.category')
-  const hasEditor = () => Boolean(editorBridge.view && cursorLine())
-  const active = () => debug.hasSessions
-  const stopped = () => debug.hasSessions && debug.isStopped
+  const category = t('debug.category');
+  const hasEditor = () => Boolean(editorBridge.view && cursorLine());
+  const active = () => debug.hasSessions;
+  const stopped = () => debug.hasSessions && debug.isStopped;
   const withLine = (fn: (path: string, line: number) => unknown) => () => {
-    const target = cursorLine()
-    if (target) void fn(target.path, target.line)
-  }
+    const target = cursorLine();
+    if (target) {
+      void fn(target.path, target.line);
+    }
+  };
 
   return [
     {
@@ -85,5 +97,5 @@ export function debugCommands(): Command[] {
       id: 'debug.showConsole', title: t('debug.cmd.showConsole'), category,
       run: () => useStore.getState().showPanel('debug'),
     },
-  ]
+  ];
 }

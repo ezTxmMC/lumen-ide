@@ -118,17 +118,17 @@
       "snippets": [
         {
           "label": "main",
-          "detail": "main-Paket",
+          "detail": "main package",
           "body": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"$0\")\n}"
         },
         {
           "label": "func",
-          "detail": "Funktion",
+          "detail": "Function",
           "body": "func ${name}(${arg} ${T}) ${R} {\n\t$0\n}"
         },
         {
           "label": "iferr",
-          "detail": "Fehlerprüfung",
+          "detail": "Error check",
           "body": "if err != nil {\n\treturn err\n}$0"
         },
         {
@@ -143,7 +143,7 @@
         },
         {
           "label": "meth",
-          "detail": "Methode",
+          "detail": "Method",
           "body": "func (${r} *${Typ}) ${Name}() ${error} {\n\t$0\n}"
         },
         {
@@ -153,12 +153,12 @@
         },
         {
           "label": "errf",
-          "detail": "Fehler mit Kontext",
+          "detail": "Error with context",
           "body": "if err != nil {\n\treturn fmt.Errorf(\"${kontext}: %w\", err)\n}$0"
         },
         {
           "label": "go",
-          "detail": "Goroutine mit WaitGroup",
+          "detail": "Goroutine with WaitGroup",
           "body": "var wg sync.WaitGroup\nwg.Add(1)\ngo func() {\n\tdefer wg.Done()\n\t$0\n}()\nwg.Wait()"
         },
         {
@@ -168,7 +168,7 @@
         },
         {
           "label": "ctx",
-          "detail": "Kontext mit Zeitlimit",
+          "detail": "Context with timeout",
           "body": "ctx, cancel := context.WithTimeout(context.Background(), ${5}*time.Second)\ndefer cancel()$0"
         },
         {
@@ -178,7 +178,7 @@
         },
         {
           "label": "table",
-          "detail": "Tabellengetriebener Test",
+          "detail": "Table-driven test",
           "body": "func Test${Name}(t *testing.T) {\n\ttests := []struct {\n\t\tname string\n\t\twant ${int}\n\t}{\n\t\t{\"${fall}\", ${1}},\n\t}\n\tfor _, tt := range tests {\n\t\tt.Run(tt.name, func(t *testing.T) {\n\t\t\t$0\n\t\t})\n\t}\n}"
         }
       ],
@@ -369,7 +369,7 @@
             "field": "type",
             "notEquals": "lib"
           },
-          "content": "package greet\n\n// Hello liefert eine Begrüßung.\nfunc Hello(who string) string {\n\treturn \"Hallo aus \" + who + \"!\"\n}\n"
+          "content": "package greet\n\n// Hello returns a greeting.\nfunc Hello(who string) string {\n\treturn \"Hello from \" + who + \"!\"\n}\n"
         },
         {
           "path": "internal/greet/greet_test.go",
@@ -377,7 +377,7 @@
             "field": "type",
             "notEquals": "lib"
           },
-          "content": "package greet\n\nimport \"testing\"\n\nfunc TestHello(t *testing.T) {\n\tif got := Hello(\"x\"); got != \"Hallo aus x!\" {\n\t\tt.Fatalf(\"unerwartet: %q\", got)\n\t}\n}\n"
+          "content": "package greet\n\nimport \"testing\"\n\nfunc TestHello(t *testing.T) {\n\tif got := Hello(\"x\"); got != \"Hello from x!\" {\n\t\tt.Fatalf(\"unexpected: %q\", got)\n\t}\n}\n"
         },
         {
           "path": "README.md",
@@ -504,7 +504,7 @@
       ],
       "facts": [
         {
-          "label": "Modul",
+          "label": "Module",
           "file": "go.mod",
           "pattern": "^module\\s+(\\S+)",
           "role": "name"

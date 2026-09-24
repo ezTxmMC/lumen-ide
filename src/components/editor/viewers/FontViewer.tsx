@@ -1,50 +1,64 @@
-import { useEffect, useState } from 'react'
-import type { Tab } from '@/state/store'
-import { mediaUrl } from '@/lib/media-kind'
-import { useT } from '@/i18n'
-import { InfoBar, InfoItem, useFileInfo, ViewerFallback } from './chrome'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
 
-const SIZES = [12, 16, 20, 28, 36, 48, 64]
+import { useEffect, useState } from 'react';
+import type { Tab } from '@/state/store';
+import { mediaUrl } from '@/lib/media-kind';
+import { useT } from '@/i18n';
+import { InfoBar, InfoItem, useFileInfo, ViewerFallback } from './chrome';
+
+const SIZES = [12, 16, 20, 28, 36, 48, 64];
 const CHARSETS = [
   'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
   'abcdefghijklmnopqrstuvwxyz',
   '0123456789 ÄÖÜäöüß ÀÉÈÇÑ',
   '!?.,;:\'"()[]{}<>/\\|@#$%&*+-=_~^`',
-]
+];
 
-let fontCounter = 0
+let fontCounter = 0;
 
 /** Loads a font file under a family name of its own for as long as the viewer shows it. */
-function useFontFace(url: string): { family: string | null; failed: boolean } {
-  const [state, setState] = useState<{ family: string | null; failed: boolean }>({ family: null, failed: false })
+function useFontFace(url: string): { family: string | null; failed: boolean; } {
+  const [state, setState] = useState<{ family: string | null; failed: boolean; }>({ family: null, failed: false });
   useEffect(() => {
-    const family = `lumen-font-preview-${++fontCounter}`
-    const face = new FontFace(family, `url("${url}")`)
-    let alive = true
+    const family = `lumen-font-preview-${++fontCounter}`;
+    const face = new FontFace(family, `url("${url}")`);
+    let alive = true;
     face.load()
       .then((loaded) => {
-        if (!alive) return
-        document.fonts.add(loaded)
-        setState({ family, failed: false })
+        if (!alive) {
+          return;
+        }
+        document.fonts.add(loaded);
+        setState({ family, failed: false });
       })
-      .catch(() => { if (alive) setState({ family: null, failed: true }) })
+      .catch(() => { if (alive) {
+        setState({ family: null, failed: true });
+      } });
     return () => {
-      alive = false
-      document.fonts.delete(face)
-    }
-  }, [url])
-  return state
+      alive = false;
+      document.fonts.delete(face);
+    };
+  }, [url]);
+  return state;
 }
 
 /** Fonts: an editable sample line in several sizes and the common characters. */
-export function FontViewer({ tab }: { tab: Tab }) {
-  const t = useT()
-  const path = tab.path ?? ''
-  const revision = tab.revision ?? 0
-  const info = useFileInfo(path, revision)
-  const { family, failed } = useFontFace(mediaUrl(path, revision))
-  const [sample, setSample] = useState(() => t('media.fontSample'))
-  const style = family ? { fontFamily: `"${family}", var(--font-mono)` } : undefined
+export function FontViewer({ tab }: { tab: Tab; }) {
+  const t = useT();
+  const path = tab.path ?? '';
+  const revision = tab.revision ?? 0;
+  const info = useFileInfo(path, revision);
+  const { family, failed } = useFontFace(mediaUrl(path, revision));
+  const [sample, setSample] = useState(() => t('media.fontSample'));
+  const style = family ? { fontFamily: `"${family}", var(--font-mono)` } : undefined;
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-bg" data-viewer="font" data-font-ready={family ? 'true' : 'false'}>
@@ -79,5 +93,5 @@ export function FontViewer({ tab }: { tab: Tab }) {
         {family && <InfoItem label={t('media.format')} value={(path.split('.').pop() ?? '').toUpperCase()} />}
       </InfoBar>
     </div>
-  )
+  );
 }

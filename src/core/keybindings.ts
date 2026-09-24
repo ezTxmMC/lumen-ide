@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Keyboard shortcuts: presets, custom bindings, and recognising key sequences.
  *
@@ -8,23 +18,23 @@
  * so shortcuts work on German keyboards too.
  */
 
-import { getLanguage } from '@/i18n'
+import { getLanguage } from '@/i18n';
 
-export type PresetId = 'lumen' | 'jetbrains' | 'vscode' | 'visualstudio' | 'eclipse'
+export type PresetId = 'lumen' | 'jetbrains' | 'vscode' | 'visualstudio' | 'eclipse';
 
-export const PRESETS: { id: PresetId; name: string }[] = [
+export const PRESETS: { id: PresetId; name: string; }[] = [
   { id: 'lumen', name: 'Lumen IDE' },
   { id: 'jetbrains', name: 'JetBrains (IntelliJ IDEA)' },
   { id: 'vscode', name: 'Visual Studio Code' },
   { id: 'visualstudio', name: 'Visual Studio' },
   { id: 'eclipse', name: 'Eclipse' },
-]
+];
 
 /** Command id → bindings. */
-export type BindingMap = Record<string, string[]>
+export type BindingMap = Record<string, string[]>;
 
 /** A modifier key struck twice (IntelliJ's “Search Everywhere”). */
-export const DOUBLE_SHIFT = 'Shift Shift'
+export const DOUBLE_SHIFT = 'Shift Shift';
 
 /* ------------------------------------------------------------------ *
  * Presets
@@ -128,7 +138,7 @@ const LUMEN: BindingMap = {
   'nav.back': ['Ctrl+Alt+-'],
   'nav.forward': ['Ctrl+Shift+-'],
   'editor.shrinkSelection': ['Shift+Alt+Left'],
-}
+};
 
 const JETBRAINS: BindingMap = {
   'search.everywhere': [DOUBLE_SHIFT],
@@ -201,7 +211,7 @@ const JETBRAINS: BindingMap = {
   'nav.back': ['Ctrl+Alt+Left'],
   'nav.forward': ['Ctrl+Alt+Right'],
   'editor.shrinkSelection': ['Ctrl+Shift+W'],
-}
+};
 
 const VSCODE: BindingMap = {
   'view.commandPalette': ['Ctrl+Shift+P', 'F1'],
@@ -288,7 +298,7 @@ const VSCODE: BindingMap = {
   'nav.forward': ['Ctrl+Shift+-'],
   'editor.shrinkSelection': ['Shift+Alt+Left'],
   'window.new': ['Ctrl+Shift+N'],
-}
+};
 
 const VISUALSTUDIO: BindingMap = {
   'search.everywhere': ['Ctrl+T'],
@@ -356,7 +366,7 @@ const VISUALSTUDIO: BindingMap = {
   'debug.runToCursor': ['Ctrl+F10'],
   'nav.back': ['Ctrl+Alt+-'],
   'nav.forward': ['Ctrl+Shift+-'],
-}
+};
 
 const ECLIPSE: BindingMap = {
   'search.actions': ['Ctrl+3'],
@@ -418,7 +428,7 @@ const ECLIPSE: BindingMap = {
   'debug.runToCursor': ['Ctrl+R'],
   'nav.back': ['Alt+Left'],
   'nav.forward': ['Alt+Right'],
-}
+};
 
 const PRESET_MAPS: Record<PresetId, BindingMap> = {
   lumen: LUMEN,
@@ -426,10 +436,10 @@ const PRESET_MAPS: Record<PresetId, BindingMap> = {
   vscode: VSCODE,
   visualstudio: VISUALSTUDIO,
   eclipse: ECLIPSE,
-}
+};
 
 export function presetBindings(preset: PresetId): BindingMap {
-  return PRESET_MAPS[preset] ?? LUMEN
+  return PRESET_MAPS[preset] ?? LUMEN;
 }
 
 /* ------------------------------------------------------------------ *
@@ -437,14 +447,14 @@ export function presetBindings(preset: PresetId): BindingMap {
  * ------------------------------------------------------------------ */
 
 export interface Chord {
-  ctrl: boolean
-  alt: boolean
-  shift: boolean
+  ctrl: boolean;
+  alt: boolean;
+  shift: boolean;
   /** Normalised key name (`A`, `F12`, `/`, `Up`, `NumpadAdd`). */
-  key: string
+  key: string;
 }
 
-const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'OS', 'CapsLock', 'Fn'])
+const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'OS', 'CapsLock', 'Fn']);
 
 const CODE_NAMES: Record<string, string> = {
   Backquote: '`', Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']',
@@ -454,108 +464,140 @@ const CODE_NAMES: Record<string, string> = {
   PageUp: 'PageUp', PageDown: 'PageDown', ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left',
   ArrowRight: 'Right', NumpadAdd: 'NumpadAdd', NumpadSubtract: 'NumpadSubtract',
   NumpadMultiply: 'NumpadMultiply', NumpadDivide: 'NumpadDivide', NumpadDecimal: 'NumpadDecimal',
-}
+};
 
 const KEY_NAMES: Record<string, string> = {
   ' ': 'Space', ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right',
   Esc: 'Escape', Del: 'Delete',
-}
+};
 
 const NAMED_KEYS = new Set([
   'Space', 'Enter', 'Escape', 'Tab', 'Backspace', 'Delete', 'Insert', 'Home', 'End', 'PageUp',
   'PageDown', 'Up', 'Down', 'Left', 'Right', 'NumpadAdd', 'NumpadSubtract', 'NumpadMultiply',
   'NumpadDivide', 'NumpadDecimal',
-])
+]);
 
 function nameFromCode(code: string): string | null {
-  if (/^Key[A-Z]$/.test(code)) return code.slice(3)
-  if (/^Digit\d$/.test(code)) return code.slice(5)
-  if (/^Numpad\d$/.test(code)) return `NumpadNumber${code.slice(6)}`
-  if (/^F\d{1,2}$/.test(code)) return code
-  return CODE_NAMES[code] ?? null
+  if (/^Key[A-Z]$/.test(code)) {
+    return code.slice(3);
+  }
+  if (/^Digit\d$/.test(code)) {
+    return code.slice(5);
+  }
+  if (/^Numpad\d$/.test(code)) {
+    return `NumpadNumber${code.slice(6)}`;
+  }
+  if (/^F\d{1,2}$/.test(code)) {
+    return code;
+  }
+  return CODE_NAMES[code] ?? null;
 }
 
 function nameFromKey(key: string): string | null {
-  if (KEY_NAMES[key]) return KEY_NAMES[key]
-  if (key.length === 1) return key.toUpperCase()
-  if (/^F\d{1,2}$/.test(key)) return key
-  if (NAMED_KEYS.has(key)) return key
-  return null
+  if (KEY_NAMES[key]) {
+    return KEY_NAMES[key];
+  }
+  if (key.length === 1) {
+    return key.toUpperCase();
+  }
+  if (/^F\d{1,2}$/.test(key)) {
+    return key;
+  }
+  if (NAMED_KEYS.has(key)) {
+    return key;
+  }
+  return null;
 }
 
 /** The key of an event — both readings, by position and by character. */
-export function eventKeys(event: KeyboardEvent): { code: string | null; key: string | null } {
-  return { code: nameFromCode(event.code), key: nameFromKey(event.key) }
+export function eventKeys(event: KeyboardEvent): { code: string | null; key: string | null; } {
+  return { code: nameFromCode(event.code), key: nameFromKey(event.key) };
 }
 
 export function isModifierOnly(event: KeyboardEvent) {
-  return MODIFIER_KEYS.has(event.key)
+  return MODIFIER_KEYS.has(event.key);
 }
 
 /** A chord from one keypress — for recording new bindings. */
 export function chordFromEvent(event: KeyboardEvent): Chord | null {
-  if (isModifierOnly(event)) return null
-  const { code, key } = eventKeys(event)
+  if (isModifierOnly(event)) {
+    return null;
+  }
+  const { code, key } = eventKeys(event);
   // Letters and digits by position, punctuation by the character produced (Ö, ß, +).
-  const byCode = code && (/^[A-Z0-9]$/.test(code) || code.startsWith('F') || NAMED_KEYS.has(code) || code.startsWith('Numpad'))
-  const name = byCode ? code : (key ?? code)
-  if (!name) return null
-  return { ctrl: event.ctrlKey || event.metaKey, alt: event.altKey, shift: event.shiftKey, key: name }
+  const byCode = code && (/^[A-Z0-9]$/.test(code) || code.startsWith('F') || NAMED_KEYS.has(code) || code.startsWith('Numpad'));
+  const name = byCode ? code : (key ?? code);
+  if (!name) {
+    return null;
+  }
+  return { ctrl: event.ctrlKey || event.metaKey, alt: event.altKey, shift: event.shiftKey, key: name };
 }
 
 /** `Ctrl+Shift+p` → a chord. */
 export function parseChord(text: string): Chord | null {
-  const parts = text.split('+')
+  const parts = text.split('+');
   // `Ctrl++` → the “+” key.
-  const merged: string[] = []
+  const merged: string[] = [];
   for (let i = 0; i < parts.length; i++) {
     if (parts[i] === '' && i === parts.length - 1 && merged.length) {
-      merged.push('+')
-      continue
+      merged.push('+');
+      continue;
     }
-    if (parts[i] === '') continue
-    merged.push(parts[i])
+    if (parts[i] === '') {
+      continue;
+    }
+    merged.push(parts[i]);
   }
-  const chord: Chord = { ctrl: false, alt: false, shift: false, key: '' }
+  const chord: Chord = { ctrl: false, alt: false, shift: false, key: '' };
   for (const raw of merged) {
-    const part = raw.trim()
-    const lower = part.toLowerCase()
-    if (lower === 'ctrl' || lower === 'cmd' || lower === 'mod' || lower === 'meta') { chord.ctrl = true; continue }
-    if (lower === 'alt' || lower === 'option') { chord.alt = true; continue }
-    if (lower === 'shift') { chord.shift = true; continue }
-    chord.key = part.length === 1 ? part.toUpperCase() : part
+    const part = raw.trim();
+    const lower = part.toLowerCase();
+    if (lower === 'ctrl' || lower === 'cmd' || lower === 'mod' || lower === 'meta') { chord.ctrl = true; continue; }
+    if (lower === 'alt' || lower === 'option') { chord.alt = true; continue; }
+    if (lower === 'shift') { chord.shift = true; continue; }
+    chord.key = part.length === 1 ? part.toUpperCase() : part;
   }
-  return chord.key ? chord : null
+  return chord.key ? chord : null;
 }
 
 export function chordToString(chord: Chord): string {
-  return [chord.ctrl && 'Ctrl', chord.alt && 'Alt', chord.shift && 'Shift', chord.key].filter(Boolean).join('+')
+  return [chord.ctrl && 'Ctrl', chord.alt && 'Alt', chord.shift && 'Shift', chord.key].filter(Boolean).join('+');
 }
 
 /** Normalises a binding: modifier order and letter case. */
 export function normalizeBinding(binding: string): string {
-  if (binding.trim() === DOUBLE_SHIFT) return DOUBLE_SHIFT
+  if (binding.trim() === DOUBLE_SHIFT) {
+    return DOUBLE_SHIFT;
+  }
   return binding
     .trim()
     .split(/\s+/)
     .map((part) => parseChord(part))
     .filter((c): c is Chord => c !== null)
     .map(chordToString)
-    .join(' ')
+    .join(' ');
 }
 
-const isSymbol = (key: string) => key.length === 1 && !/[A-Z0-9]/.test(key)
+const isSymbol = (key: string) => key.length === 1 && !/[A-Z0-9]/.test(key);
 
 /** Does a keypress fit a chord? */
 export function eventMatches(event: KeyboardEvent, chord: Chord): boolean {
-  const ctrl = event.ctrlKey || event.metaKey
-  if (ctrl !== chord.ctrl || event.altKey !== chord.alt) return false
-  const { code, key } = eventKeys(event)
-  if (code === chord.key && event.shiftKey === chord.shift) return true
-  if (key !== chord.key) return false
-  if (event.shiftKey === chord.shift) return true
+  const ctrl = event.ctrlKey || event.metaKey;
+  if (ctrl !== chord.ctrl || event.altKey !== chord.alt) {
+    return false;
+  }
+  const { code, key } = eventKeys(event);
+  if (code === chord.key && event.shiftKey === chord.shift) {
+    return true;
+  }
+  if (key !== chord.key) {
+    return false;
+  }
+  if (event.shiftKey === chord.shift) {
+    return true;
+  }
   // Punctuation only reachable with Shift (`+`, `/` on German keyboards).
-  return isSymbol(chord.key) && !chord.shift
+  return isSymbol(chord.key) && !chord.shift;
 }
 
 /* ------------------------------------------------------------------ *
@@ -563,59 +605,65 @@ export function eventMatches(event: KeyboardEvent, chord: Chord): boolean {
  * ------------------------------------------------------------------ */
 
 interface Compiled {
-  id: string
-  binding: string
-  chords: Chord[]
+  id: string;
+  binding: string;
+  chords: Chord[];
 }
 
-let effective: BindingMap = { ...LUMEN }
-let compiled: Compiled[] = []
-let version = 0
-const listeners = new Set<() => void>()
+let effective: BindingMap = { ...LUMEN };
+let compiled: Compiled[] = [];
+let version = 0;
+const listeners = new Set<() => void>();
 
 function compile() {
-  compiled = []
+  compiled = [];
   for (const [id, bindings] of Object.entries(effective)) {
     for (const binding of bindings) {
       if (binding === DOUBLE_SHIFT) {
-        compiled.push({ id, binding, chords: [] })
-        continue
+        compiled.push({ id, binding, chords: [] });
+        continue;
       }
-      const chords = binding.split(/\s+/).map(parseChord).filter((c): c is Chord => c !== null)
-      if (chords.length) compiled.push({ id, binding: normalizeBinding(binding), chords })
+      const chords = binding.split(/\s+/).map(parseChord).filter((c): c is Chord => c !== null);
+      if (chords.length) {
+        compiled.push({ id, binding: normalizeBinding(binding), chords });
+      }
     }
   }
 }
-compile()
+compile();
 
 export const keybindings = {
   /** Preset plus custom bindings; an empty array means a command with no shortcut. */
   configure(preset: PresetId, overrides: BindingMap, defaults: BindingMap = {}) {
-    effective = { ...defaults, ...presetBindings(preset) }
-    for (const [id, bindings] of Object.entries(overrides)) effective[id] = bindings.map(normalizeBinding)
-    compile()
-    version++
-    for (const fn of listeners) fn()
+    effective = { ...defaults, ...presetBindings(preset) };
+    for (const [id, bindings] of Object.entries(overrides)) {
+      effective[id] = bindings.map(normalizeBinding);
+    }
+    compile();
+    version++;
+    for (const fn of listeners) {
+      fn();
+    }
   },
 
   bindingsFor(id: string): string[] {
-    return effective[id] ?? []
+    return effective[id] ?? [];
   },
 
   all(): BindingMap {
-    return effective
+    return effective;
   },
 
   /** Commands whose first chord matches and that consist of one chord only. */
   match(event: KeyboardEvent): string[] {
     return compiled
       .filter((c) => c.chords.length === 1 && eventMatches(event, c.chords[0]))
-      .map((c) => c.id)
+      .map((c) => c.id);
   },
 
   /** Are there bindings that start with this chord and run longer? */
   isPrefix(event: KeyboardEvent): boolean {
-    return compiled.some((c) => c.chords.length > 1 && eventMatches(event, c.chords[0]))
+    return compiled.some((c) => c.chords.length > 1 && eventMatches(event, c.chords[0]));
   },
 
   /** Second chord of a sequence whose first chord was `first`. */
@@ -623,33 +671,37 @@ export const keybindings = {
     return compiled
       .filter((c) => c.chords.length === 2 && sameChord(c.chords[0], first))
       .filter((c) => eventMatches(event, c.chords[1]))
-      .map((c) => c.id)
+      .map((c) => c.id);
   },
 
   doubleShift(): string[] {
-    return compiled.filter((c) => c.binding === DOUBLE_SHIFT).map((c) => c.id)
+    return compiled.filter((c) => c.binding === DOUBLE_SHIFT).map((c) => c.id);
   },
 
   /** Other commands carrying the same binding. */
   conflicts(binding: string, exceptId?: string): string[] {
-    const normalized = normalizeBinding(binding)
+    const normalized = normalizeBinding(binding);
     return Object.entries(effective)
       .filter(([id, list]) => id !== exceptId && list.some((b) => normalizeBinding(b) === normalized))
-      .map(([id]) => id)
+      .map(([id]) => id);
   },
 
   subscribe(fn: () => void) {
-    listeners.add(fn)
-    return () => { listeners.delete(fn) }
+    listeners.add(fn);
+    return () => { listeners.delete(fn); };
   },
 
   getVersion: () => version,
-}
+};
 
 function sameChord(a: Chord, b: Chord) {
-  if (a.ctrl !== b.ctrl || a.alt !== b.alt) return false
-  if (a.key === b.key && a.shift === b.shift) return true
-  return a.key === b.key && isSymbol(a.key) && !a.shift
+  if (a.ctrl !== b.ctrl || a.alt !== b.alt) {
+    return false;
+  }
+  if (a.key === b.key && a.shift === b.shift) {
+    return true;
+  }
+  return a.key === b.key && isSymbol(a.key) && !a.shift;
 }
 
 /* ------------------------------------------------------------------ *
@@ -660,59 +712,71 @@ const LABELS_DE: Record<string, string> = {
   Ctrl: 'Strg', Shift: 'Umschalt', Alt: 'Alt', Space: 'Leertaste', Enter: 'Eingabe', Escape: 'Esc',
   Delete: 'Entf', Insert: 'Einfg', Home: 'Pos1', End: 'Ende', PageUp: 'Bild↑', PageDown: 'Bild↓',
   Backspace: 'Rücktaste', Up: '↑', Down: '↓', Left: '←', Right: '→', Tab: 'Tab',
-}
+};
 
 const LABELS_EN: Record<string, string> = {
   Ctrl: 'Ctrl', Shift: 'Shift', Alt: 'Alt', Space: 'Space', Enter: 'Enter', Escape: 'Esc',
   Delete: 'Del', Insert: 'Ins', Home: 'Home', End: 'End', PageUp: 'PgUp', PageDown: 'PgDn',
   Backspace: 'Backspace', Up: '↑', Down: '↓', Left: '←', Right: '→', Tab: 'Tab',
-}
+};
 
 const LABELS_MAC: Record<string, string> = {
   ...LABELS_EN, Ctrl: '⌘', Shift: '⇧', Alt: '⌥', Enter: '↩', Backspace: '⌫', Delete: '⌦', Escape: '⎋', Tab: '⇥',
-}
+};
 
 const NUMPAD_LABELS: Record<string, string> = {
   NumpadAdd: 'Num +', NumpadSubtract: 'Num −', NumpadMultiply: 'Num ×', NumpadDivide: 'Num ÷', NumpadDecimal: 'Num ,',
-}
+};
 
-let platform = 'linux'
+let platform = 'linux';
 
 export function setKeybindingPlatform(value: string) {
-  platform = value
+  platform = value;
 }
 
 function labels() {
-  if (platform === 'darwin') return LABELS_MAC
-  return getLanguage() === 'de' ? LABELS_DE : LABELS_EN
+  if (platform === 'darwin') {
+    return LABELS_MAC;
+  }
+  return getLanguage() === 'de' ? LABELS_DE : LABELS_EN;
 }
 
 function label(part: string) {
-  if (NUMPAD_LABELS[part]) return NUMPAD_LABELS[part]
-  if (part.startsWith('NumpadNumber')) return `Num ${part.slice(12)}`
-  return labels()[part] ?? part
+  if (NUMPAD_LABELS[part]) {
+    return NUMPAD_LABELS[part];
+  }
+  if (part.startsWith('NumpadNumber')) {
+    return `Num ${part.slice(12)}`;
+  }
+  return labels()[part] ?? part;
 }
 
 /** Readable form: `Ctrl+Shift+P` → “Strg+Umschalt+P” in German. */
 export function formatBinding(binding: string): string {
-  if (binding === DOUBLE_SHIFT) return `${label('Shift')} ${label('Shift')}`
-  const joiner = platform === 'darwin' ? '' : '+'
+  if (binding === DOUBLE_SHIFT) {
+    return `${label('Shift')} ${label('Shift')}`;
+  }
+  const joiner = platform === 'darwin' ? '' : '+';
   return binding
     .split(/\s+/)
     .map((chord) => {
-      const parsed = parseChord(chord)
-      if (!parsed) return chord
+      const parsed = parseChord(chord);
+      if (!parsed) {
+        return chord;
+      }
       return [parsed.ctrl && 'Ctrl', parsed.alt && 'Alt', parsed.shift && 'Shift', parsed.key]
         .filter((p): p is string => Boolean(p))
         .map(label)
-        .join(joiner)
+        .join(joiner);
     })
-    .join(' ')
+    .join(' ');
 }
 
 /** Every binding of a command, readable and joined with “·”. */
 export function formatBindingsFor(id: string): string | undefined {
-  const list = keybindings.bindingsFor(id)
-  if (!list.length) return undefined
-  return list.map(formatBinding).join(' · ')
+  const list = keybindings.bindingsFor(id);
+  if (!list.length) {
+    return undefined;
+  }
+  return list.map(formatBinding).join(' · ');
 }

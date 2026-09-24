@@ -2,7 +2,7 @@
   "id": "ext.python",
   "name": "Python",
   "version": "1.0.3",
-  "description": "Python 3 mit Docstrings, Dekoratoren, Match-Statement und python/uv-Runner.",
+  "description": "Python 3 with docstrings, decorators, match statement and a python/uv runner.",
   "author": "Lumen",
   "icon": "Py",
   "color": "#3572a5",

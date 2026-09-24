@@ -1,13 +1,23 @@
-import { useMemo, useState } from 'react'
-import { Check, Copy, Eraser, FilePlus2 } from 'lucide-react'
-import { useStore } from '@/state/store'
-import { useT } from '@/i18n'
-import { registry } from '@/core/registry'
-import { TOKEN_KINDS, UI_COLOR_KEYS } from '@/core/types'
-import { Button } from '../ui'
-import { CodeView } from './CodeView'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
 
-const kebab = (s: string) => s.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
+import { useMemo, useState } from 'react';
+import { Check, Copy, Eraser, FilePlus2 } from 'lucide-react';
+import { useStore } from '@/state/store';
+import { useT } from '@/i18n';
+import { registry } from '@/core/registry';
+import { TOKEN_KINDS, UI_COLOR_KEYS } from '@/core/types';
+import { Button } from '../ui';
+import { CodeView } from './CodeView';
+
+const kebab = (s: string) => s.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
 
 const EXAMPLE = `:root {
   --c-accent: #ff7ab6;
@@ -17,41 +27,41 @@ const EXAMPLE = `:root {
 }
 
 .cm-line { letter-spacing: 0.02em; }
-`
+`;
 
-const LAYOUT_VARS = ['--radius', '--radius-sm', '--radius-lg', '--duration', '--duration-slow', '--blur', '--panel-alpha', '--font-mono', '--font-size', '--line-height', '--row-height', '--pad']
+const LAYOUT_VARS = ['--radius', '--radius-sm', '--radius-lg', '--duration', '--duration-slow', '--blur', '--panel-alpha', '--font-mono', '--font-size', '--line-height', '--row-height', '--pad'];
 
 /** The “Custom CSS” section: CodeMirror with CSS highlighting and a list of the variables. */
 export function CssSection() {
-  const t = useT()
-  const effects = useStore((s) => s.effects)
-  const setEffects = useStore((s) => s.setEffects)
-  const themeId = useStore((s) => s.themeId)
-  const registryVersion = useStore((s) => s.registryVersion)
-  const [copied, setCopied] = useState<string | null>(null)
+  const t = useT();
+  const effects = useStore((s) => s.effects);
+  const setEffects = useStore((s) => s.setEffects);
+  const themeId = useStore((s) => s.themeId);
+  const registryVersion = useStore((s) => s.registryVersion);
+  const [copied, setCopied] = useState<string | null>(null);
 
   const theme = useMemo(
     () => registry.themes().find((entry) => entry.id === themeId) ?? registry.themes()[0],
     [themeId, registryVersion],
-  )
-  const hasCss = useMemo(() => registry.languages().some((l) => l.id === 'css'), [registryVersion])
+  );
+  const hasCss = useMemo(() => registry.languages().some((l) => l.id === 'css'), [registryVersion]);
 
   const variables = useMemo(() => [
     ...UI_COLOR_KEYS.map((key) => ({ name: `--c-${kebab(key)}`, value: theme.ui[key] })),
     ...TOKEN_KINDS.filter((kind) => theme.syntax[kind]).map((kind) => {
-      const raw = theme.syntax[kind]!
-      return { name: `--s-${kind}`, value: typeof raw === 'string' ? raw : raw.color }
+      const raw = theme.syntax[kind]!;
+      return { name: `--s-${kind}`, value: typeof raw === 'string' ? raw : raw.color };
     }),
     ...LAYOUT_VARS.map((name) => ({ name, value: getComputedStyle(document.documentElement).getPropertyValue(name).trim() })),
-  ], [theme, effects])
+  ], [theme, effects]);
 
   const copy = (text: string) => {
-    void navigator.clipboard?.writeText(text)
-    setCopied(text)
-    window.setTimeout(() => setCopied((current) => (current === text ? null : current)), 1200)
-  }
+    void navigator.clipboard?.writeText(text);
+    setCopied(text);
+    window.setTimeout(() => setCopied((current) => (current === text ? null : current)), 1200);
+  };
 
-  const lines = effects.customCss ? effects.customCss.split('\n').length : 0
+  const lines = effects.customCss ? effects.customCss.split('\n').length : 0;
 
   return (
     <div className="flex h-full min-h-0 gap-3 p-4 max-[900px]:flex-col">
@@ -105,5 +115,5 @@ export function CssSection() {
         </div>
       </aside>
     </div>
-  )
+  );
 }

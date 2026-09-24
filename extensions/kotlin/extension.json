@@ -2,7 +2,7 @@
   "id": "ext.kotlin",
   "name": "Kotlin",
   "version": "1.0.4",
-  "description": "Kotlin mit Coroutinen, Raw-Strings und kotlinc-Runner. Gradle-Projekte mit Aufgaben, Vorlagen, kotlin-language-server oder JetBrains kotlin-lsp.",
+  "description": "Kotlin with coroutines, raw strings and a kotlinc runner. Gradle projects with tasks, templates, kotlin-language-server or JetBrains kotlin-lsp.",
   "author": "Lumen",
   "icon": "Kt",
   "color": "#a97bff",

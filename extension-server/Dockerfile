@@ -1,4 +1,4 @@
-# Ohne Abhängigkeiten: Der Quelltext reicht, es gibt nichts zu installieren.
+# No dependencies: the source is enough, there is nothing to install.
 FROM node:22-alpine
 
 WORKDIR /app
@@ -11,7 +11,7 @@ ENV LUMEN_EXT_DATA=/data \
 VOLUME /data
 EXPOSE 8730
 
-# Nicht als root laufen — der Server braucht nur den Datenordner.
+# Do not run as root — the server only needs the data folder.
 RUN mkdir -p /data && chown node:node /data
 USER node
 

@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Shapes for icon packs: a name from `ICON_SHAPE_NAMES` → an icon component.
  *
@@ -32,9 +42,9 @@ import {
   Thermometer, Timer, Trash2, TreePine, Trees, Triangle, Trophy, Truck, Turtle, Type, Umbrella, Upload,
   UserCog, Users, Variable, Video, Wallet, WandSparkles, Waves, Webhook, Wifi, Wind, Workflow, Wrench, Zap,
   type LucideIcon,
-} from 'lucide-react'
-import type { IconShapeName } from '@/core/icon-pack'
-import { MARKS, ROLE_FOLDERS } from './custom-shapes'
+} from 'lucide-react';
+import type { IconShapeName } from '@/core/icon-pack';
+import { MARKS, ROLE_FOLDERS } from './custom-shapes';
 
 const LUCIDE_SHAPES = {
   file: File, 'file-code': FileCode, 'file-text': FileText, 'file-json': FileJson, 'file-cog': FileCog,
@@ -91,6 +101,6 @@ const LUCIDE_SHAPES = {
   cookie: Cookie, pizza: Pizza, beer: Beer, 'chef-hat': ChefHat, crown: Crown, trophy: Trophy,
   sparkle: Sparkle, plane: Plane, sailboat: Sailboat, dices: Dices, joystick: Joystick, swords: Swords,
   house: House, building: Building2, landmark: Landmark, castle: Castle, wallet: Wallet, coins: Coins,
-} as const
+} as const;
 
-export const ICON_SHAPES: Record<IconShapeName, LucideIcon> = { ...LUCIDE_SHAPES, ...ROLE_FOLDERS, ...MARKS }
+export const ICON_SHAPES: Record<IconShapeName, LucideIcon> = { ...LUCIDE_SHAPES, ...ROLE_FOLDERS, ...MARKS };

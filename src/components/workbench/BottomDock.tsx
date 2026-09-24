@@ -1,57 +1,75 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The bottom dock: views as tabs — output, terminal, problems … and whatever
  * was dragged here. Tabs reorder by dragging and can be dragged out into a
  * side dock; views from the side docks can be dropped onto the tab bar.
  */
 
-import { useRef, useState } from 'react'
-import { Maximize2, Minimize2, X } from 'lucide-react'
-import { useStore } from '@/state/store'
-import { isViewPopped } from '@/state/popout'
-import { useT } from '@/i18n'
-import { formatBindingsFor } from '@/core/keybindings'
-import type { ViewDef } from '@/core/views'
-import { ContextMenu, type MenuItem } from '../ui/ContextMenu'
-import { Button } from '../ui'
-import { carriesView, dropIndex, takeDroppedView, useDraggedView, viewDragSource } from './drag'
-import { useBadgeTick, useDock } from './useDock'
-import { PoppedMark, PopOutButton, ResizeHandle, TabBadge, viewMenu, viewTooltip } from './parts'
-import { ViewBody } from './ViewBody'
+import { useRef, useState } from 'react';
+import { Maximize2, Minimize2, X } from 'lucide-react';
+import { useStore } from '@/state/store';
+import { isViewPopped } from '@/state/popout';
+import { useT } from '@/i18n';
+import { formatBindingsFor } from '@/core/keybindings';
+import type { ViewDef } from '@/core/views';
+import { ContextMenu, type MenuItem } from '../ui/ContextMenu';
+import { Button } from '../ui';
+import { carriesView, dropIndex, takeDroppedView, useDraggedView, viewDragSource } from './drag';
+import { useBadgeTick, useDock } from './useDock';
+import { PoppedMark, PopOutButton, ResizeHandle, TabBadge, viewMenu, viewTooltip } from './parts';
+import { ViewBody } from './ViewBody';
 
 function withKeys(label: string, command: string) {
-  const keys = formatBindingsFor(command)
-  return keys ? `${label} (${keys})` : label
+  const keys = formatBindingsFor(command);
+  return keys ? `${label} (${keys})` : label;
 }
 
-export function BottomDock({ maximized, onToggleMaximized }: { maximized: boolean; onToggleMaximized: () => void }) {
-  const t = useT()
-  const { views, active, open, size } = useDock('bottom')
-  const dragging = useDraggedView()
-  useBadgeTick()
-  const tabs = useRef(new Map<string, HTMLElement>())
-  const [dropAt, setDropAt] = useState<number | null>(null)
-  const [menu, setMenu] = useState<{ x: number; y: number; items: MenuItem[] } | null>(null)
-  const popped = useStore((s) => Boolean(active && isViewPopped(s.popouts, active.id)))
+export function BottomDock({ maximized, onToggleMaximized }: { maximized: boolean; onToggleMaximized: () => void; }) {
+  const t = useT();
+  const { views, active, open, size } = useDock('bottom');
+  const dragging = useDraggedView();
+  useBadgeTick();
+  const tabs = useRef(new Map<string, HTMLElement>());
+  const [dropAt, setDropAt] = useState<number | null>(null);
+  const [menu, setMenu] = useState<{ x: number; y: number; items: MenuItem[]; } | null>(null);
+  const popped = useStore((s) => Boolean(active && isViewPopped(s.popouts, active.id)));
 
-  if (!open || !active) return null
+  if (!open || !active) {
+    return null;
+  }
 
-  const tabElements = () => views.map((view) => tabs.current.get(view.id)).filter((el): el is HTMLElement => Boolean(el))
+  const tabElements = () => views.map((view) => tabs.current.get(view.id)).filter((el): el is HTMLElement => Boolean(el));
 
   const onDragOver = (event: React.DragEvent) => {
-    if (!carriesView(event)) return
-    event.preventDefault()
-    event.dataTransfer.dropEffect = 'move'
-    setDropAt(dropIndex(tabElements(), event.clientX, 'x'))
-  }
+    if (!carriesView(event)) {
+      return;
+    }
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    setDropAt(dropIndex(tabElements(), event.clientX, 'x'));
+  };
 
   const onDrop = (event: React.DragEvent) => {
-    if (!carriesView(event)) return
-    event.preventDefault()
-    const id = takeDroppedView(event)
-    const index = dropAt ?? views.length
-    setDropAt(null)
-    if (id) useStore.getState().moveView(id, 'bottom', index)
-  }
+    if (!carriesView(event)) {
+      return;
+    }
+    event.preventDefault();
+    const id = takeDroppedView(event);
+    const index = dropAt ?? views.length;
+    setDropAt(null);
+    if (id) {
+      useStore.getState().moveView(id, 'bottom', index);
+    }
+  };
 
   return (
     <div
@@ -74,10 +92,12 @@ export function BottomDock({ maximized, onToggleMaximized }: { maximized: boolea
               view={view}
               active={view.id === active.id}
               dropBefore={dropAt === index}
-              register={(el) => { if (el) tabs.current.set(view.id, el) }}
+              register={(el) => { if (el) {
+                tabs.current.set(view.id, el);
+              } }}
               onContextMenu={(event) => {
-                event.preventDefault()
-                setMenu({ x: event.clientX, y: event.clientY, items: viewMenu(view, 'bottom') })
+                event.preventDefault();
+                setMenu({ x: event.clientX, y: event.clientY, items: viewMenu(view, 'bottom') });
               }}
             />
           ))}
@@ -101,17 +121,17 @@ export function BottomDock({ maximized, onToggleMaximized }: { maximized: boolea
       </div>
       {menu && <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => setMenu(null)} />}
     </div>
-  )
+  );
 }
 
 function Tab({ view, active, dropBefore, register, onContextMenu }: {
-  view: ViewDef
-  active: boolean
-  dropBefore: boolean
-  register: (el: HTMLElement | null) => void
-  onContextMenu: (event: React.MouseEvent) => void
+  view: ViewDef;
+  active: boolean;
+  dropBefore: boolean;
+  register: (el: HTMLElement | null) => void;
+  onContextMenu: (event: React.MouseEvent) => void;
 }) {
-  const Icon = view.icon
+  const Icon = view.icon;
   return (
     <>
       {dropBefore && <span className="h-4 w-[2px] shrink-0 rounded-full bg-accent" />}
@@ -132,5 +152,5 @@ function Tab({ view, active, dropBefore, register, onContextMenu }: {
         <TabBadge badge={view.badge?.() ?? null} />
       </button>
     </>
-  )
+  );
 }

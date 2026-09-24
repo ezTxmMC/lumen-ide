@@ -2,7 +2,7 @@
   "id": "ext.php",
   "name": "PHP",
   "version": "1.0.2",
-  "description": "PHP 8 mit Attributen, Heredoc, Enums und php-CLI/Dev-Server-Runner.",
+  "description": "PHP 8 with attributes, heredoc, enums and a php CLI/dev server runner.",
   "author": "Lumen",
   "icon": "Ph",
   "color": "#777bb4",

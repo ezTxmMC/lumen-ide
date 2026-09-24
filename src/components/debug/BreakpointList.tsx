@@ -1,26 +1,36 @@
-import { CircleSlash, Trash2, X } from 'lucide-react'
-import { useStore } from '@/state/store'
-import { useT } from '@/i18n'
-import { breakpoints, type BreakpointEntry } from '@/core/debug/breakpoints'
-import { debug } from '@/core/debug/manager'
-import { editBreakpoint } from '@/core/debug/actions'
-import { baseName, toRelative } from '@/core/debug/paths'
-import { DebugSection, IconButton } from './shared'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
 
-function Dot({ bp }: { bp: BreakpointEntry }) {
-  const status = breakpoints.statusOf(bp.id)
-  const unverified = bp.enabled && debug.hasSessions && status && !status.verified
-  const shape = bp.logMessage ? 'rotate-45 rounded-[1px]' : 'rounded-full'
-  const fill = bp.enabled ? 'bg-bad' : 'border-[1.5px] border-subtle bg-transparent'
-  return <span className={`inline-block size-[9px] shrink-0 ${shape} ${fill} ${unverified ? 'opacity-45' : ''}`} />
+import { CircleSlash, Trash2, X } from 'lucide-react';
+import { useStore } from '@/state/store';
+import { useT } from '@/i18n';
+import { breakpoints, type BreakpointEntry } from '@/core/debug/breakpoints';
+import { debug } from '@/core/debug/manager';
+import { editBreakpoint } from '@/core/debug/actions';
+import { baseName, toRelative } from '@/core/debug/paths';
+import { DebugSection, IconButton } from './shared';
+
+function Dot({ bp }: { bp: BreakpointEntry; }) {
+  const status = breakpoints.statusOf(bp.id);
+  const unverified = bp.enabled && debug.hasSessions && status && !status.verified;
+  const shape = bp.logMessage ? 'rotate-45 rounded-[1px]' : 'rounded-full';
+  const fill = bp.enabled ? 'bg-bad' : 'border-[1.5px] border-subtle bg-transparent';
+  return <span className={`inline-block size-[9px] shrink-0 ${shape} ${fill} ${unverified ? 'opacity-45' : ''}`} />;
 }
 
 export function BreakpointList() {
-  const t = useT()
-  const workspace = useStore((s) => s.workspace)
-  const list = [...breakpoints.all()].sort((a, b) => a.path.localeCompare(b.path) || a.line - b.line)
-  const groups = debug.exceptionFilterGroups()
-  const anyEnabled = list.some((bp) => bp.enabled)
+  const t = useT();
+  const workspace = useStore((s) => s.workspace);
+  const list = [...breakpoints.all()].sort((a, b) => a.path.localeCompare(b.path) || a.line - b.line);
+  const groups = debug.exceptionFilterGroups();
+  const anyEnabled = list.some((bp) => bp.enabled);
 
   return (
     <DebugSection
@@ -58,9 +68,9 @@ export function BreakpointList() {
       {!list.length && <p className="px-3 py-1.5 text-[11.5px] leading-relaxed text-subtle">{t('debug.breakpoints.empty')}</p>}
 
       {list.map((bp) => {
-        const status = breakpoints.statusOf(bp.id)
-        const detail = [bp.condition, bp.hitCondition && `#${bp.hitCondition}`, bp.logMessage && `“${bp.logMessage}”`].filter(Boolean).join(' · ')
-        const relative = workspace ? toRelative(workspace, bp.path) : bp.path
+        const status = breakpoints.statusOf(bp.id);
+        const detail = [bp.condition, bp.hitCondition && `#${bp.hitCondition}`, bp.logMessage && `“${bp.logMessage}”`].filter(Boolean).join(' · ');
+        const relative = workspace ? toRelative(workspace, bp.path) : bp.path;
         return (
           <div
             key={bp.id}
@@ -87,8 +97,8 @@ export function BreakpointList() {
               </IconButton>
             </span>
           </div>
-        )
+        );
       })}
     </DebugSection>
-  )
+  );
 }

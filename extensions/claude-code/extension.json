@@ -2,7 +2,7 @@
   "id": "ext.claude-code",
   "name": "Claude Code",
   "version": "2.1.2",
-  "description": "Claude Code als Chat-Agent: Modelle direkt aus der Claude-Code-CLI, Aufwand je Modell, Streaming, Modi, Sitzungen fortsetzen, Bilder, Plan und Kosten — mit Erlauben/Ablehnen für jede Aktion. Bringt Programmcode mit.",
+  "description": "Claude Code as a chat agent: models straight from the Claude Code CLI, effort per model, streaming, modes, resumable sessions, images, plan and cost — with allow/deny for every action. Ships executable code.",
   "author": "Lumen",
   "icon": "Cc",
   "color": "#d97757",
@@ -20,124 +20,124 @@
   "settings": [
     {
       "key": "claudePath",
-      "label": "Pfad zu claude",
+      "label": "Path to claude",
       "type": "path",
       "pathKind": "file",
-      "section": "Programm",
+      "section": "Program",
       "default": "",
-      "placeholder": "automatisch suchen",
-      "hint": "Leer lassen, um claude im PATH und in den üblichen Ordnern (~/.local/bin, ~/.claude/local …) zu finden."
+      "placeholder": "search automatically",
+      "hint": "Leave empty to find claude on the PATH and in the usual folders (~/.local/bin, ~/.claude/local …)."
     },
     {
       "key": "model",
-      "label": "Standardmodell",
+      "label": "Default model",
       "type": "text",
-      "section": "Modell",
+      "section": "Model",
       "default": "",
-      "placeholder": "wie in Claude Code eingestellt",
-      "hint": "Gilt, solange im Chat „Standard“ gewählt ist — z. B. opus, sonnet oder claude-opus-5-5. Die Auswahl im Chat lädt Claude Code selbst."
+      "placeholder": "as set in Claude Code",
+      "hint": "Applies while \"Default\" is chosen in the chat — e.g. opus, sonnet or claude-opus-5-5. The chat picker is loaded by Claude Code itself."
     },
     {
       "key": "fallbackModel",
-      "label": "Ersatzmodell",
+      "label": "Fallback model",
       "type": "text",
-      "section": "Modell",
+      "section": "Model",
       "default": "",
-      "placeholder": "z. B. sonnet",
-      "hint": "Wird verwendet, wenn das gewählte Modell überlastet ist."
+      "placeholder": "e.g. sonnet",
+      "hint": "Used when the selected model is overloaded."
     },
     {
       "key": "showLegacyModels",
-      "label": "Ältere Modelle anbieten",
+      "label": "Offer older models",
       "type": "toggle",
-      "section": "Modell",
+      "section": "Model",
       "default": "false",
-      "hint": "Fügt der Modellwahl ältere Modelle hinzu, die Claude Code selbst nicht mehr listet (Opus 4.5, Sonnet 4.5, Opus 4.1 …). Ob ein Modell für dein Konto noch antwortet, entscheidet Anthropic."
+      "hint": "Adds older models to the model picker that Claude Code itself no longer lists (Opus 4.5, Sonnet 4.5, Opus 4.1 …). Whether a model still answers for your account is up to Anthropic."
     },
     {
       "key": "extraModels",
-      "label": "Weitere Modelle",
+      "label": "More models",
       "type": "textarea",
-      "section": "Modell",
+      "section": "Model",
       "rows": 2,
       "default": "",
-      "placeholder": "claude-opus-5-5 | Opus 5.5 (fest)",
-      "hint": "Zusätzlich zur Liste von Claude Code — eine Modell-ID pro Zeile, optional mit „| Anzeigename“."
+      "placeholder": "claude-opus-5-5 | Opus 5.5 (pinned)",
+      "hint": "In addition to the Claude Code list — one model ID per line, optionally with \"| Display name\"."
     },
     {
       "key": "modelCacheMinutes",
-      "label": "Modellliste zwischenspeichern (Minuten)",
+      "label": "Cache model list (minutes)",
       "type": "number",
-      "section": "Modell",
+      "section": "Model",
       "default": "60",
       "min": 0,
       "max": 10080,
-      "hint": "So lange wird die Liste von Claude Code wiederverwendet. Der Knopf neben der Modellwahl lädt sie sofort neu."
+      "hint": "How long the Claude Code list is reused. The button next to the model picker reloads it immediately."
     },
     {
       "key": "effort",
-      "label": "Standard-Aufwand",
+      "label": "Default effort",
       "type": "select",
-      "section": "Modell",
+      "section": "Model",
       "default": "auto",
-      "hint": "Gilt, solange im Chat kein Aufwand gewählt ist. Im Chat lässt er sich je Modell einstellen — angeboten werden nur die Stufen, die das Modell kann.",
+      "hint": "Applies while no effort is chosen in the chat. In the chat it can be set per model — only the levels the model supports are offered.",
       "choices": [
         {
           "value": "auto",
-          "label": "Standard"
+          "label": "Default"
         },
         {
           "value": "low",
-          "label": "Niedrig"
+          "label": "Low"
         },
         {
           "value": "medium",
-          "label": "Mittel"
+          "label": "Medium"
         },
         {
           "value": "high",
-          "label": "Hoch"
+          "label": "High"
         },
         {
           "value": "xhigh",
-          "label": "Sehr hoch"
+          "label": "Very high"
         },
         {
           "value": "max",
-          "label": "Maximal"
+          "label": "Maximum"
         }
       ]
     },
     {
       "key": "thinking",
-      "label": "Erweitertes Nachdenken",
+      "label": "Extended thinking",
       "type": "select",
-      "section": "Modell",
+      "section": "Model",
       "default": "auto",
       "choices": [
         {
           "value": "auto",
-          "label": "Standard des Modells"
+          "label": "Model default"
         },
         {
           "value": "adaptive",
-          "label": "Adaptiv (das Modell entscheidet)"
+          "label": "Adaptive (the model decides)"
         },
         {
           "value": "budget",
-          "label": "Festes Budget"
+          "label": "Fixed budget"
         },
         {
           "value": "disabled",
-          "label": "Aus"
+          "label": "Off"
         }
       ]
     },
     {
       "key": "thinkingBudget",
-      "label": "Denk-Budget (Tokens)",
+      "label": "Thinking budget (tokens)",
       "type": "number",
-      "section": "Modell",
+      "section": "Model",
       "default": "8000",
       "min": 1024,
       "max": 128000,
@@ -146,200 +146,200 @@
     },
     {
       "key": "fastMode",
-      "label": "Schnellmodus",
+      "label": "Fast mode",
       "type": "select",
-      "section": "Modell",
+      "section": "Model",
       "default": "auto",
-      "hint": "Schnellere Ausgabe bei Modellen, die ihn unterstützen (kostet mehr).",
+      "hint": "Faster output on models that support it (costs more).",
       "choices": [
         {
           "value": "auto",
-          "label": "Wie in Claude Code eingestellt"
+          "label": "As set in Claude Code"
         },
         {
           "value": "true",
-          "label": "An"
+          "label": "On"
         },
         {
           "value": "false",
-          "label": "Aus"
+          "label": "Off"
         }
       ]
     },
     {
       "key": "streaming",
-      "label": "Antworten live mitschreiben",
+      "label": "Stream answers live",
       "type": "toggle",
       "section": "Chat",
       "default": "true",
-      "hint": "Zeigt Text und Gedankengang, während Claude schreibt."
+      "hint": "Shows text and reasoning while Claude writes."
     },
     {
       "key": "maxTurns",
-      "label": "Höchstzahl an Schritten",
+      "label": "Maximum steps",
       "type": "number",
       "section": "Chat",
       "default": "",
       "min": 1,
       "max": 500,
-      "placeholder": "unbegrenzt",
-      "hint": "Bricht eine Antwort nach so vielen Werkzeug-Runden ab."
+      "placeholder": "unlimited",
+      "hint": "Aborts an answer after this many tool rounds."
     },
     {
       "key": "maxBudget",
-      "label": "Kostengrenze je Nachricht (USD)",
+      "label": "Cost limit per message (USD)",
       "type": "number",
       "section": "Chat",
       "default": "",
       "min": 0,
       "step": 0.5,
-      "placeholder": "keine"
+      "placeholder": "none"
     },
     {
       "key": "appendSystemPrompt",
-      "label": "Zusätzliche Anweisungen",
+      "label": "Additional instructions",
       "type": "textarea",
       "section": "Chat",
       "rows": 4,
       "default": "",
-      "placeholder": "Antworte auf Deutsch. Bevorzuge kleine Änderungen …",
-      "hint": "Wird an den System-Prompt von Claude Code angehängt — zusätzlich zu CLAUDE.md."
+      "placeholder": "Answer in English. Prefer small changes …",
+      "hint": "Appended to the Claude Code system prompt — in addition to CLAUDE.md."
     },
     {
       "key": "outputStyle",
-      "label": "Ausgabestil",
+      "label": "Output style",
       "type": "text",
       "section": "Chat",
       "default": "",
-      "placeholder": "wie in Claude Code eingestellt",
-      "hint": "Name eines Ausgabestils, z. B. Explanatory oder Learning."
+      "placeholder": "as set in Claude Code",
+      "hint": "Name of an output style, e.g. Explanatory or Learning."
     },
     {
       "key": "persistSessions",
-      "label": "Sitzungen speichern",
+      "label": "Save sessions",
       "type": "toggle",
       "section": "Chat",
       "default": "true",
-      "hint": "Aus: Gespräche landen nicht in ~/.claude und lassen sich später nicht fortsetzen."
+      "hint": "Off: conversations are not stored in ~/.claude and cannot be resumed later."
     },
     {
       "key": "allowedTools",
-      "label": "Ohne Rückfrage erlaubte Werkzeuge",
+      "label": "Tools allowed without asking",
       "type": "textarea",
-      "section": "Berechtigungen",
+      "section": "Permissions",
       "rows": 3,
       "default": "",
       "placeholder": "Read\nGrep\nBash(npm test:*)",
-      "hint": "Eine Regel pro Zeile, wie in den Claude-Code-Einstellungen."
+      "hint": "One rule per line, as in the Claude Code settings."
     },
     {
       "key": "disallowedTools",
-      "label": "Gesperrte Werkzeuge",
+      "label": "Denied tools",
       "type": "textarea",
-      "section": "Berechtigungen",
+      "section": "Permissions",
       "rows": 3,
       "default": "",
       "placeholder": "WebFetch\nBash(rm:*)",
-      "hint": "Eine Regel pro Zeile. Gesperrte Werkzeuge stehen Claude gar nicht erst zur Verfügung."
+      "hint": "One rule per line. Denied tools are not available to Claude at all."
     },
     {
       "key": "additionalDirectories",
-      "label": "Weitere Ordner",
+      "label": "More folders",
       "type": "textarea",
-      "section": "Berechtigungen",
+      "section": "Permissions",
       "rows": 2,
       "default": "",
       "placeholder": "~/shared-lib",
-      "hint": "Ordner außerhalb des Projekts, auf die Claude zugreifen darf — einer pro Zeile."
+      "hint": "Folders outside the project that Claude may access — one per line."
     },
     {
       "key": "allowBypass",
-      "label": "Modus „Ohne Rückfrage“ zulassen",
+      "label": "Allow \"No prompts\" mode",
       "type": "toggle",
-      "section": "Berechtigungen",
+      "section": "Permissions",
       "default": "false",
-      "hint": "Achtung: In diesem Modus führt Claude jeden Befehl und jede Änderung ohne Rückfrage aus. Nur in isolierten Umgebungen verwenden."
+      "hint": "Warning: in this mode Claude runs every command and change without asking. Use only in isolated environments."
     },
     {
       "key": "userSettings",
-      "label": "Benutzer-Einstellungen laden (~/.claude/settings.json)",
+      "label": "Load user settings (~/.claude/settings.json)",
       "type": "toggle",
-      "section": "Einstellungsquellen",
+      "section": "Settings sources",
       "default": "true"
     },
     {
       "key": "projectSettings",
-      "label": "Projekt-Einstellungen und CLAUDE.md laden",
+      "label": "Load project settings and CLAUDE.md",
       "type": "toggle",
-      "section": "Einstellungsquellen",
+      "section": "Settings sources",
       "default": "true"
     },
     {
       "key": "localSettings",
-      "label": "Lokale Einstellungen laden (.claude/settings.local.json)",
+      "label": "Load local settings (.claude/settings.local.json)",
       "type": "toggle",
-      "section": "Einstellungsquellen",
+      "section": "Settings sources",
       "default": "true"
     },
     {
       "key": "mcpServers",
-      "label": "Zusätzliche MCP-Server (JSON)",
+      "label": "Additional MCP servers (JSON)",
       "type": "textarea",
-      "section": "Erweitert",
+      "section": "Advanced",
       "rows": 5,
       "default": "",
       "placeholder": "{\n  \"docs\": { \"command\": \"npx\", \"args\": [\"-y\", \"@acme/docs-mcp\"] }\n}",
-      "hint": "Wie „mcpServers“ in .mcp.json. Die Server aus den Claude-Code-Einstellungen gelten ohnehin."
+      "hint": "Like \"mcpServers\" in .mcp.json. The servers from the Claude Code settings apply anyway."
     },
     {
       "key": "env",
-      "label": "Umgebungsvariablen",
+      "label": "Environment variables",
       "type": "textarea",
-      "section": "Erweitert",
+      "section": "Advanced",
       "rows": 3,
       "default": "",
       "placeholder": "ANTHROPIC_BASE_URL=https://…\nHTTPS_PROXY=http://proxy:3128",
-      "hint": "KEY=WERT, eine pro Zeile."
+      "hint": "KEY=VALUE, one per line."
     }
   ],
   "agents": [
     {
       "id": "claude",
       "name": "Claude Code",
-      "description": "Frag Claude nach deinem Projekt: Code erklären, Fehler suchen, Änderungen vornehmen. Jede Aktion fragt vorher nach deiner Erlaubnis.",
+      "description": "Ask Claude about your project: explain code, find bugs, make changes. Every action asks for your permission first.",
       "icon": "Cc",
       "location": "right",
       "images": true,
-      "placeholder": "Nachricht an Claude …  (Enter senden, Umschalt+Enter Zeilenumbruch, / Befehle, @ Dateien)",
+      "placeholder": "Message Claude …  (Enter to send, Shift+Enter for a new line, / commands, @ files)",
       "modelSetting": "model",
       "models": [],
       "modes": [
         {
           "id": "default",
-          "label": "Nachfragen",
-          "description": "Fragt vor jeder Änderung und jedem Befehl"
+          "label": "Ask",
+          "description": "Asks before every change and command"
         },
         {
           "id": "acceptEdits",
-          "label": "Edits automatisch",
-          "description": "Dateiänderungen ohne Rückfrage, Befehle weiter mit Rückfrage"
+          "label": "Auto-accept edits",
+          "description": "File changes without asking, commands still ask first"
         },
         {
           "id": "plan",
           "label": "Plan",
-          "description": "Nur planen, nichts ändern"
+          "description": "Plan only, change nothing"
         },
         {
           "id": "bypassPermissions",
-          "label": "Ohne Rückfrage",
-          "description": "Führt alles ohne Rückfrage aus — muss in den Einstellungen freigeschaltet sein"
+          "label": "No prompts",
+          "description": "Runs everything without asking — must be enabled in the settings"
         }
       ],
       "suggestions": [
-        "Erkläre mir den Aufbau dieses Projekts.",
-        "Finde mögliche Fehler in der geöffneten Datei.",
-        "Schreibe Tests für die aktuelle Auswahl.",
-        "Prüfe meine uncommitteten Änderungen."
+        "Explain the structure of this project.",
+        "Find possible bugs in the open file.",
+        "Write tests for the current selection.",
+        "Review my uncommitted changes."
       ]
     }
   ]

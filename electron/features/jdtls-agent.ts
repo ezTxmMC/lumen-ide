@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * A load-time repair for jdtls' javac backend.
  *
@@ -14,13 +24,13 @@
  * afterwards. Without a compiled agent Lumen does not switch the backend on.
  */
 
-import { execFile } from 'node:child_process'
-import { createHash } from 'node:crypto'
-import fs from 'node:fs/promises'
-import path from 'node:path'
-import { promisify } from 'node:util'
+import { execFile } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { promisify } from 'node:util';
 
-const run = promisify(execFile)
+const run = promisify(execFile);
 
 const AGENT_SOURCE = `import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
@@ -119,37 +129,41 @@ public final class LumenJdtlsAgent {
     mv.visitEnd();
   }
 }
-`
+`;
 
-const exe = (name: string) => (process.platform === 'win32' ? `${name}.exe` : name)
+const exe = (name: string) => (process.platform === 'win32' ? `${name}.exe` : name);
 
 async function exists(file: string): Promise<boolean> {
-  return fs.access(file).then(() => true, () => false)
+  return fs.access(file).then(() => true, () => false);
 }
 
-const building = new Map<string, Promise<string | null>>()
+const building = new Map<string, Promise<string | null>>();
 
 async function build(dir: string, javaHome: string, asmJar: string): Promise<string | null> {
-  const agent = path.join(dir, 'lumen-jdtls-agent.jar')
-  if (await exists(agent)) return agent
-  const javac = path.join(javaHome, 'bin', exe('javac'))
-  const jar = path.join(javaHome, 'bin', exe('jar'))
-  if (!(await exists(javac)) || !(await exists(jar))) return null
-  const work = path.join(dir, 'build')
-  await fs.rm(work, { recursive: true, force: true })
-  await fs.mkdir(path.join(work, 'classes'), { recursive: true })
-  const source = path.join(work, 'LumenJdtlsAgent.java')
-  await fs.writeFile(source, AGENT_SOURCE, 'utf8')
+  const agent = path.join(dir, 'lumen-jdtls-agent.jar');
+  if (await exists(agent)) {
+    return agent;
+  }
+  const javac = path.join(javaHome, 'bin', exe('javac'));
+  const jar = path.join(javaHome, 'bin', exe('jar'));
+  if (!(await exists(javac)) || !(await exists(jar))) {
+    return null;
+  }
+  const work = path.join(dir, 'build');
+  await fs.rm(work, { recursive: true, force: true });
+  await fs.mkdir(path.join(work, 'classes'), { recursive: true });
+  const source = path.join(work, 'LumenJdtlsAgent.java');
+  await fs.writeFile(source, AGENT_SOURCE, 'utf8');
   // Next to the agent, so the manifest's relative Class-Path finds it.
-  await fs.copyFile(asmJar, path.join(dir, 'asm.jar'))
-  await run(javac, ['--release', '21', '-cp', path.join(dir, 'asm.jar'), '-d', path.join(work, 'classes'), source], { timeout: 120_000 })
-  const manifest = path.join(work, 'manifest.txt')
-  await fs.writeFile(manifest, 'Premain-Class: LumenJdtlsAgent\nClass-Path: asm.jar\n', 'utf8')
-  const partial = `${agent}.part`
-  await run(jar, ['--create', '--file', partial, '--manifest', manifest, '-C', path.join(work, 'classes'), '.'], { timeout: 120_000 })
-  await fs.rename(partial, agent)
-  await fs.rm(work, { recursive: true, force: true })
-  return agent
+  await fs.copyFile(asmJar, path.join(dir, 'asm.jar'));
+  await run(javac, ['--release', '21', '-cp', path.join(dir, 'asm.jar'), '-d', path.join(work, 'classes'), source], { timeout: 120_000 });
+  const manifest = path.join(work, 'manifest.txt');
+  await fs.writeFile(manifest, 'Premain-Class: LumenJdtlsAgent\nClass-Path: asm.jar\n', 'utf8');
+  const partial = `${agent}.part`;
+  await run(jar, ['--create', '--file', partial, '--manifest', manifest, '-C', path.join(work, 'classes'), '.'], { timeout: 120_000 });
+  await fs.rename(partial, agent);
+  await fs.rm(work, { recursive: true, force: true });
+  return agent;
 }
 
 /**
@@ -158,17 +172,19 @@ async function build(dir: string, javaHome: string, asmJar: string): Promise<str
  * build fails.
  */
 export function ensureJdtlsAgent(baseDir: string, javaHome: string, asmJar: string): Promise<string | null> {
-  const key = createHash('sha256').update(AGENT_SOURCE).update(path.basename(asmJar)).digest('hex').slice(0, 16)
-  const dir = path.join(baseDir, key)
-  const pending = building.get(dir)
-  if (pending) return pending
+  const key = createHash('sha256').update(AGENT_SOURCE).update(path.basename(asmJar)).digest('hex').slice(0, 16);
+  const dir = path.join(baseDir, key);
+  const pending = building.get(dir);
+  if (pending) {
+    return pending;
+  }
   const task = fs.mkdir(dir, { recursive: true })
     .then(() => build(dir, javaHome, asmJar))
     .catch((error: unknown) => {
-      console.error('[lumen] jdtls agent:', error)
-      return null
+      console.error('[lumen] jdtls agent:', error);
+      return null;
     })
-    .finally(() => building.delete(dir))
-  building.set(dir, task)
-  return task
+    .finally(() => building.delete(dir));
+  building.set(dir, task);
+  return task;
 }

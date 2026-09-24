@@ -1,39 +1,51 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Binary } from 'lucide-react'
-import type { Tab } from '@/state/store'
-import { extensionOf, formatBytes, hexRows } from '@/lib/media-kind'
-import { useT } from '@/i18n'
-import { InfoBar, InfoItem, ViewerFallback } from './chrome'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import { useEffect, useMemo, useState } from 'react';
+import { Binary } from 'lucide-react';
+import type { Tab } from '@/state/store';
+import { extensionOf, formatBytes, hexRows } from '@/lib/media-kind';
+import { useT } from '@/i18n';
+import { InfoBar, InfoItem, ViewerFallback } from './chrome';
 
 /** How much of a binary file the hex view shows. */
-const HEX_BYTES = 64 * 1024
+const HEX_BYTES = 64 * 1024;
 
 interface Loaded {
-  size: number
-  mtime: number
-  head: Uint8Array
+  size: number;
+  mtime: number;
+  head: Uint8Array;
 }
 
 /** Everything else binary: the first bytes as offset | hex | ASCII, plus the facts. */
-export function HexViewer({ tab }: { tab: Tab }) {
-  const t = useT()
-  const path = tab.path ?? ''
-  const revision = tab.revision ?? 0
-  const [loaded, setLoaded] = useState<Loaded | null>(null)
-  const [failed, setFailed] = useState(false)
+export function HexViewer({ tab }: { tab: Tab; }) {
+  const t = useT();
+  const path = tab.path ?? '';
+  const revision = tab.revision ?? 0;
+  const [loaded, setLoaded] = useState<Loaded | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    let alive = true
+    let alive = true;
     window.lumen.media.inspect(path, HEX_BYTES)
-      .then((result) => { if (alive) { setLoaded(result); setFailed(false) } })
-      .catch(() => { if (alive) setFailed(true) })
-    return () => { alive = false }
-  }, [path, revision])
+      .then((result) => { if (alive) { setLoaded(result); setFailed(false); } })
+      .catch(() => { if (alive) {
+        setFailed(true);
+      } });
+    return () => { alive = false; };
+  }, [path, revision]);
 
-  const rows = useMemo(() => (loaded ? hexRows(loaded.head) : []), [loaded])
-  const extension = extensionOf(path)
-  const type = extension ? t('media.binaryType', { ext: extension.toUpperCase() }) : t('media.binaryFile')
-  const info = loaded ? { size: loaded.size, mtime: loaded.mtime } : null
+  const rows = useMemo(() => (loaded ? hexRows(loaded.head) : []), [loaded]);
+  const extension = extensionOf(path);
+  const type = extension ? t('media.binaryType', { ext: extension.toUpperCase() }) : t('media.binaryFile');
+  const info = loaded ? { size: loaded.size, mtime: loaded.mtime } : null;
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-bg" data-viewer="binary">
@@ -73,5 +85,5 @@ export function HexViewer({ tab }: { tab: Tab }) {
         <InfoItem label={t('media.type')} value={type} />
       </InfoBar>
     </div>
-  )
+  );
 }

@@ -1,41 +1,53 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   ArrowDownToDot, ArrowUpFromDot, GripVertical, Pause, Play, RedoDot, RotateCcw, Square,
-} from 'lucide-react'
-import { useStore } from '@/state/store'
-import { useT } from '@/i18n'
-import { debug } from '@/core/debug/manager'
-import { formatBindingsFor } from '@/core/keybindings'
-import { useDebugVersion } from './shared'
+} from 'lucide-react';
+import { useStore } from '@/state/store';
+import { useT } from '@/i18n';
+import { debug } from '@/core/debug/manager';
+import { formatBindingsFor } from '@/core/keybindings';
+import { useDebugVersion } from './shared';
 
-const POSITION_KEY = 'lumen.debug.toolbar'
+const POSITION_KEY = 'lumen.debug.toolbar';
 
 interface Position {
   /** Centre relative to the window width (0 – 1). */
-  x: number
-  y: number
+  x: number;
+  y: number;
 }
 
 function loadPosition(): Position {
   try {
-    const parsed = JSON.parse(localStorage.getItem(POSITION_KEY) ?? 'null') as Position | null
-    if (parsed && typeof parsed.x === 'number' && typeof parsed.y === 'number') return parsed
+    const parsed = JSON.parse(localStorage.getItem(POSITION_KEY) ?? 'null') as Position | null;
+    if (parsed && typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+      return parsed;
+    }
   } catch {
     // The default position.
   }
-  return { x: 0.5, y: 46 }
+  return { x: 0.5, y: 46 };
 }
 
 function ToolButton({ title, command, onClick, disabled, children, tone = 'text-muted hover:text-fg' }: {
-  title: string
-  command: string
-  onClick: () => void
-  disabled?: boolean
-  children: ReactNode
-  tone?: string
+  title: string;
+  command: string;
+  onClick: () => void;
+  disabled?: boolean;
+  children: ReactNode;
+  tone?: string;
 }) {
-  const keys = formatBindingsFor(command)
-  const label = keys ? `${title} (${keys})` : title
+  const keys = formatBindingsFor(command);
+  const label = keys ? `${title} (${keys})` : title;
   return (
     <button
       title={label}
@@ -46,50 +58,54 @@ function ToolButton({ title, command, onClick, disabled, children, tone = 'text-
     >
       {children}
     </button>
-  )
+  );
 }
 
 /** A floating control bar during a debug session — top centre, draggable. */
 export function DebugToolbar() {
-  const t = useT()
-  const active = useStore((s) => s.debugActive)
-  useDebugVersion()
-  const [position, setPosition] = useState<Position>(loadPosition)
-  const bar = useRef<HTMLDivElement>(null)
+  const t = useT();
+  const active = useStore((s) => s.debugActive);
+  useDebugVersion();
+  const [position, setPosition] = useState<Position>(loadPosition);
+  const bar = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     try {
-      localStorage.setItem(POSITION_KEY, JSON.stringify(position))
+      localStorage.setItem(POSITION_KEY, JSON.stringify(position));
     } catch {
       // The position then only lasts until a restart.
     }
-  }, [position])
+  }, [position]);
 
-  if (!active) return null
+  if (!active) {
+    return null;
+  }
 
-  const stopped = debug.isStopped
+  const stopped = debug.isStopped;
 
   const startDrag = (event: React.PointerEvent) => {
-    event.preventDefault()
-    const rect = bar.current?.getBoundingClientRect()
-    if (!rect) return
-    const offsetX = event.clientX - (rect.left + rect.width / 2)
-    const offsetY = event.clientY - rect.top
+    event.preventDefault();
+    const rect = bar.current?.getBoundingClientRect();
+    if (!rect) {
+      return;
+    }
+    const offsetX = event.clientX - (rect.left + rect.width / 2);
+    const offsetY = event.clientY - rect.top;
     const move = (e: PointerEvent) => {
-      const half = rect.width / 2
-      const centerX = Math.min(Math.max(e.clientX - offsetX, half + 4), window.innerWidth - half - 4)
-      const top = Math.min(Math.max(e.clientY - offsetY, 4), window.innerHeight - rect.height - 4)
-      setPosition({ x: centerX / window.innerWidth, y: top })
-    }
+      const half = rect.width / 2;
+      const centerX = Math.min(Math.max(e.clientX - offsetX, half + 4), window.innerWidth - half - 4);
+      const top = Math.min(Math.max(e.clientY - offsetY, 4), window.innerHeight - rect.height - 4);
+      setPosition({ x: centerX / window.innerWidth, y: top });
+    };
     const up = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      document.body.style.userSelect = ''
-    }
-    document.body.style.userSelect = 'none'
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-  }
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      document.body.style.userSelect = '';
+    };
+    document.body.style.userSelect = 'none';
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
 
   return (
     <div
@@ -134,5 +150,5 @@ export function DebugToolbar() {
         <Square size={13} />
       </ToolButton>
     </div>
-  )
+  );
 }

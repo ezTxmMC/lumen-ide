@@ -1,32 +1,31 @@
 # GitHub
 
-GitHub direkt in Lumen — für das Repository im geöffneten Ordner.
+GitHub right inside Lumen, for the repository of the open folder.
 
-## Inhalt
+## Contents
 
-- **Pull Requests** (rechte Seitenleiste): offene Pull Requests, gefiltert nach
-  allen, eigenen oder denen mit angefragtem Review; Status der Checks, Labels
-  und Entwürfe. Details mit Beschreibung, Reviews und geänderten Dateien,
-  lokal auschecken, genehmigen, Änderungen anfordern, kommentieren, mergen
-  (Merge, Squash, Rebase) und neue Pull Requests aus dem aktuellen Branch
-  erstellen — auf Wunsch wird der Branch vorher gepusht.
-- **Issues** (rechte Seitenleiste): offene Issues (alle, mir zugewiesen, von
-  mir erstellt), Details mit Kommentaren, kommentieren, schließen, neue Issues
-  mit Labels.
-- **GitHub Actions** (unteres Panel): die letzten Workflow-Läufe des aktuellen
-  Branches oder aller Branches — erneut ausführen (auch nur fehlgeschlagene
-  Jobs), abbrechen, im Browser öffnen.
-- **Statusleiste**: CI-Status des letzten Laufs auf dem aktuellen Branch.
-- **Befehle**: Repository oder aktive Datei im Browser öffnen, Pull Request
-  bzw. Issue erstellen, an- und abmelden.
+- **Pull Requests** (right sidebar): open pull requests, filtered by all, your
+  own or those with a requested review; check status, labels and drafts.
+  Details with description, reviews and changed files, check out locally,
+  approve, request changes, comment, merge (merge, squash, rebase) and create
+  new pull requests from the current branch, optionally pushing the branch
+  first.
+- **Issues** (right sidebar): open issues (all, assigned to me, created by me),
+  details with comments, commenting, closing, new issues with labels.
+- **GitHub Actions** (bottom panel): the latest workflow runs of the current
+  branch or all branches: re-run (also only failed jobs), cancel, open in the
+  browser.
+- **Status bar**: CI status of the latest run on the current branch.
+- **Commands**: open the repository or active file in the browser, create a
+  pull request or issue, sign in and out.
 
-## Anmeldung
+## Signing in
 
-Entweder ein Personal Access Token (*GitHub: Anmelden…* oder *Einstellungen →
-Erweiterungen → GitHub*) — er wird verschlüsselt im Schlüsselbund des Systems
-gespeichert — oder die Anmeldung der [GitHub CLI](https://cli.github.com)
-(`gh auth login`). GitHub Enterprise funktioniert mit eingetragener API-Adresse.
+Either a personal access token (*GitHub: Sign In…* or *Settings → Extensions →
+GitHub*), which is stored encrypted in the system keychain, or the sign-in of
+the [GitHub CLI](https://cli.github.com) (`gh auth login`). GitHub Enterprise
+works with the API address filled in.
 
-Die Erweiterung bringt Programmcode mit, der beim Installieren bestätigt werden
-muss. Sie spricht direkt mit der GitHub-API und ruft `git` bzw. `gh` nur für
-das Auschecken und Pushen auf.
+The extension ships program code, which must be confirmed on install. It talks
+to the GitHub API directly and only calls `git` or `gh` for checking out and
+pushing.

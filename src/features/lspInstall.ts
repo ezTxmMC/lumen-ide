@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * A missing language server: ask once, and install on request.
  *
@@ -18,50 +28,68 @@
  * then only what needs none of them counts.
  */
 
-import { useStore } from '@/state/store'
-import { lsp } from '@/core/lsp/manager'
-import { registry } from '@/core/registry'
-import { openLspInstall, lspInstall } from '@/lib/lsp-install'
-import { overlayOpen } from '@/hooks/useEditorRefocus'
+import { useStore } from '@/state/store';
+import { lsp } from '@/core/lsp/manager';
+import { registry } from '@/core/registry';
+import { openLspInstall, lspInstall } from '@/lib/lsp-install';
+import { overlayOpen } from '@/hooks/useEditorRefocus';
 
-let started = false
+let started = false;
 /** Already asked in this session — whatever the answer was. */
-const asked = new Set<string>()
+const asked = new Set<string>();
 
 /** The first language among the open tabs that lacks a server one could install. */
-function candidate(): { languageId: string; server: string } | null {
-  const state = useStore.getState()
+function candidate(): { languageId: string; server: string; } | null {
+  const state = useStore.getState();
   const open = new Set(
     state.tabs.map((tab) => state.languageFor(tab)?.id).filter((id): id is string => Boolean(id)),
-  )
+  );
   for (const { languageId, config } of lsp.missingServers()) {
-    if (!open.has(languageId)) continue
-    if (asked.has(languageId)) continue
-    if (state.lspInstallDeclined.includes(languageId)) continue
-    const servers = registry.languages().find((language) => language.id === languageId)?.lsp ?? [config]
-    const installable = servers.find((server) => lsp.canInstall(server))
-    if (!installable) continue
-    return { languageId, server: installable.label }
+    if (!open.has(languageId)) {
+      continue;
+    }
+    if (asked.has(languageId)) {
+      continue;
+    }
+    if (state.lspInstallDeclined.includes(languageId)) {
+      continue;
+    }
+    const servers = registry.languages().find((language) => language.id === languageId)?.lsp ?? [config];
+    const installable = servers.find((server) => lsp.canInstall(server));
+    if (!installable) {
+      continue;
+    }
+    return { languageId, server: installable.label };
   }
-  return null
+  return null;
 }
 
 function check() {
-  if (lspInstall.isOpen()) return
-  const state = useStore.getState()
-  if (!state.ready || !state.effects.lsp) return
+  if (lspInstall.isOpen()) {
+    return;
+  }
+  const state = useStore.getState();
+  if (!state.ready || !state.effects.lsp) {
+    return;
+  }
   // Do not put a prompt on top of an open dialog.
-  if (overlayOpen(state)) return
-  const found = candidate()
-  if (!found) return
-  asked.add(found.languageId)
-  openLspInstall(found.languageId, { server: found.server, prompt: true })
+  if (overlayOpen(state)) {
+    return;
+  }
+  const found = candidate();
+  if (!found) {
+    return;
+  }
+  asked.add(found.languageId);
+  openLspInstall(found.languageId, { server: found.server, prompt: true });
 }
 
 export function init() {
-  if (started) return
-  started = true
-  void window.lumen.privileged.system().then((info) => lsp.setSystemInfo(info)).catch(() => {})
-  lsp.subscribe(check)
-  useStore.subscribe(check)
+  if (started) {
+    return;
+  }
+  started = true;
+  void window.lumen.privileged.system().then((info) => lsp.setSystemInfo(info)).catch(() => {});
+  lsp.subscribe(check);
+  useStore.subscribe(check);
 }

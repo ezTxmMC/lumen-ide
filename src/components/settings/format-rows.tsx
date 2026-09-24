@@ -1,37 +1,47 @@
-import type { ReactNode } from 'react'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import type { ReactNode } from 'react';
 import {
   formatFor, supportsBracketSpacing, supportsQuotes, supportsSemicolons, supportsTrailingComma,
   type FormatSettings, type LanguageFormat,
-} from '@/core/format-settings'
-import { Button, Select, Slider, Toggle } from '../ui'
+} from '@/core/format-settings';
+import { Button, Select, Slider, Toggle } from '../ui';
 
 interface FormatRowsArgs {
-  t: (key: string, params?: Record<string, string | number>) => string
-  languages: { id: string; name: string; indentUnit?: number }[]
-  languageId: string
-  onLanguage: (id: string) => void
-  settings: FormatSettings
-  onChange: (patch: Partial<LanguageFormat>) => void
-  onReset: () => void
+  t: (key: string, params?: Record<string, string | number>) => string;
+  languages: { id: string; name: string; indentUnit?: number; }[];
+  languageId: string;
+  onLanguage: (id: string) => void;
+  settings: FormatSettings;
+  onChange: (patch: Partial<LanguageFormat>) => void;
+  onReset: () => void;
 }
 
 interface FormatRow {
-  section: 'formatting'
-  text: string
-  node: ReactNode
+  section: 'formatting';
+  text: string;
+  node: ReactNode;
 }
 
 /** The rows of the “Formatting” page: one language at a time, only the settings that make sense for it. */
 export function formatRows({ t, languages, languageId, onLanguage, settings, onChange, onReset }: FormatRowsArgs): FormatRow[] {
-  const language = languages.find((l) => l.id === languageId)
-  const format = formatFor(settings, languageId, language?.indentUnit)
-  const label = (key: string) => t(`settings.formatting.${key}`)
+  const language = languages.find((l) => l.id === languageId);
+  const format = formatFor(settings, languageId, language?.indentUnit);
+  const label = (key: string) => t(`settings.formatting.${key}`);
 
   const toggle = (key: 'useTabs' | 'singleQuote' | 'semicolons' | 'bracketSpacing' | 'trimTrailingWhitespace' | 'insertFinalNewline', hint = false): FormatRow => ({
     section: 'formatting',
     text: `${label(key)} ${hint ? label(`${key}Hint`) : ''}`,
     node: <Toggle label={label(key)} hint={hint ? label(`${key}Hint`) : undefined} checked={format[key]} onChange={(v) => onChange({ [key]: v })} />,
-  })
+  });
 
   const rows: FormatRow[] = [
     {
@@ -60,10 +70,14 @@ export function formatRows({ t, languages, languageId, onLanguage, settings, onC
         </div>
       ),
     },
-  ]
+  ];
 
-  if (supportsQuotes(languageId)) rows.push(toggle('singleQuote'))
-  if (supportsSemicolons(languageId)) rows.push(toggle('semicolons'))
+  if (supportsQuotes(languageId)) {
+    rows.push(toggle('singleQuote'));
+  }
+  if (supportsSemicolons(languageId)) {
+    rows.push(toggle('semicolons'));
+  }
   if (supportsTrailingComma(languageId)) {
     rows.push({
       section: 'formatting',
@@ -80,9 +94,11 @@ export function formatRows({ t, languages, languageId, onLanguage, settings, onC
           onChange={(v) => onChange({ trailingComma: v })}
         />
       ),
-    })
+    });
   }
-  if (supportsBracketSpacing(languageId)) rows.push(toggle('bracketSpacing'))
+  if (supportsBracketSpacing(languageId)) {
+    rows.push(toggle('bracketSpacing'));
+  }
 
   rows.push(
     {
@@ -113,6 +129,6 @@ export function formatRows({ t, languages, languageId, onLanguage, settings, onC
         </div>
       ),
     },
-  )
-  return rows
+  );
+  return rows;
 }

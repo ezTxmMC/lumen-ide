@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Syntax highlighting with no lag behind.
  *
@@ -14,26 +24,28 @@
  * does CodeMirror's background parser take over again.
  */
 
-import { forceParsing } from '@codemirror/language'
-import { ViewPlugin, type EditorView, type ViewUpdate } from '@codemirror/view'
+import { forceParsing } from '@codemirror/language';
+import { ViewPlugin, type EditorView, type ViewUpdate } from '@codemirror/view';
 
 /** Cap per catch-up — beyond it, briefly uncoloured beats a stutter. */
-const BUDGET_MS = 40
+const BUDGET_MS = 40;
 
 export const syntaxCatchUp = ViewPlugin.fromClass(class {
-  private queued = false
-  private destroyed = false
+  private queued = false;
+  private destroyed = false;
 
   constructor(private readonly view: EditorView) {
-    this.schedule()
+    this.schedule();
   }
 
   update(update: ViewUpdate) {
-    if (update.viewportChanged || update.docChanged) this.schedule()
+    if (update.viewportChanged || update.docChanged) {
+      this.schedule();
+    }
   }
 
   destroy() {
-    this.destroyed = true
+    this.destroyed = true;
   }
 
   /**
@@ -42,12 +54,16 @@ export const syntaxCatchUp = ViewPlugin.fromClass(class {
    * an update is not allowed.
    */
   private schedule() {
-    if (this.queued) return
-    this.queued = true
+    if (this.queued) {
+      return;
+    }
+    this.queued = true;
     queueMicrotask(() => {
-      this.queued = false
-      if (this.destroyed) return
-      forceParsing(this.view, this.view.viewport.to, BUDGET_MS)
-    })
+      this.queued = false;
+      if (this.destroyed) {
+        return;
+      }
+      forceParsing(this.view, this.view.viewport.to, BUDGET_MS);
+    });
   }
-})
+});

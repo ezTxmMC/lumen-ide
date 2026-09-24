@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The Bazel project kind, which Java shares with the native languages.
  *
@@ -6,10 +16,10 @@
  * (`extensions/c`, `extensions/cpp`, `extensions/buildtools`).
  */
 
-import type { DependencySupport, ProjectKind } from '@/core/types'
-import { t } from '@/i18n'
+import type { DependencySupport, ProjectKind } from '@/core/types';
+import { t } from '@/i18n';
 
-const C_LANGS = ['c', 'cpp']
+const C_LANGS = ['c', 'cpp'];
 
 /* ------------------------------------------------------------------ *
  * Bazel (Bzlmod)
@@ -21,12 +31,14 @@ const bazelDependencies: DependencySupport = {
   hint: 'templates.native.bazelHint',
   versionRequired: true,
   async add(ctx, dep) {
-    const text = await ctx.readFile('MODULE.bazel')
-    if (text === null) throw new Error('MODULE.bazel fehlt — Bzlmod wird vorausgesetzt')
-    const line = `bazel_dep(name = "${dep.name}", version = "${dep.version}")`
-    return { type: 'edit', file: 'MODULE.bazel', content: `${text.replace(/\s*$/, '')}\n${line}\n` }
+    const text = await ctx.readFile('MODULE.bazel');
+    if (text === null) {
+      throw new Error(t('addons.bazelMissing'));
+    }
+    const line = `bazel_dep(name = "${dep.name}", version = "${dep.version}")`;
+    return { type: 'edit', file: 'MODULE.bazel', content: `${text.replace(/\s*$/, '')}\n${line}\n` };
   },
-}
+};
 
 export const bazelKind: ProjectKind = {
   id: 'bazel',
@@ -46,14 +58,14 @@ export const bazelKind: ProjectKind = {
     { id: 'bazel:mod', label: 'templates.native.moduleGraph', command: 'bazel', args: ['mod', 'graph'], group: 'other' },
   ],
   async inspect(ctx) {
-    const text = (await ctx.readFile('MODULE.bazel')) ?? ''
-    const module = /module\(\s*name\s*=\s*"([^"]+)"(?:\s*,\s*version\s*=\s*"([^"]+)")?/.exec(text)
+    const text = (await ctx.readFile('MODULE.bazel')) ?? '';
+    const module = /module\(\s*name\s*=\s*"([^"]+)"(?:\s*,\s*version\s*=\s*"([^"]+)")?/.exec(text);
     return {
       name: module?.[1],
       version: module?.[2],
       dependencies: Array.from(text.matchAll(/bazel_dep\(\s*name\s*=\s*"([^"]+)"\s*,\s*version\s*=\s*"([^"]+)"/g))
         .map((m) => ({ name: m[1], version: m[2], scope: 'bazel_dep' })),
       buildFile: text ? 'MODULE.bazel' : 'WORKSPACE',
-    }
+    };
   },
-}
+};

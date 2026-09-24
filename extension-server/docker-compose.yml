@@ -10,7 +10,7 @@ services:
       LUMEN_EXT_DATA: /data
       LUMEN_EXT_HOST: 0.0.0.0
       LUMEN_EXT_PORT: 8730
-      LUMEN_EXT_NAME: ${LUMEN_EXT_NAME:-Lumen-Erweiterungen}
+      LUMEN_EXT_NAME: ${LUMEN_EXT_NAME:-Lumen Extensions}
       LUMEN_EXT_URL: ${LUMEN_EXT_URL:-http://localhost:8730}
       LUMEN_EXT_TOKENS: ${LUMEN_EXT_TOKENS:-}
       LUMEN_EXT_ALLOW_OVERWRITE: ${LUMEN_EXT_ALLOW_OVERWRITE:-0}

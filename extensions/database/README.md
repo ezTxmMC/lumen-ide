@@ -1,47 +1,47 @@
-# Datenbanken
+# Databases
 
-Datenbanken direkt in Lumen durchsuchen und bearbeiten — Dateien und Server:
+Browse and edit databases directly in Lumen — files and servers:
 
 | | |
 | --- | --- |
-| **SQLite** | `.db`, `.sqlite`, `.sqlite3`, `.db3` — direkt auf der Datei, ohne Kopie |
-| **H2** | `.mv.db` — braucht Java 11+; der H2-Treiber wird beim ersten Öffnen von Maven Central geladen |
-| **MariaDB / MySQL** | alle Datenbanken des Servers als Schemas |
-| **PostgreSQL** | Schemas, Tabellen, Views |
-| **SQL Server** | auch mit ADO.NET-Verbindungszeichenfolge |
-| **Redis** | Schlüssel suchen, Werte je Typ bearbeiten (String, Hash, List, Set, Sorted Set, Stream), TTL |
-| **MongoDB** | Datenbanken, Collections, Dokumente als Extended JSON mit Filter und Sortierung |
+| **SQLite** | `.db`, `.sqlite`, `.sqlite3`, `.db3` — works on the file itself, no copy |
+| **H2** | `.mv.db` — needs Java 11+; the H2 driver is downloaded from Maven Central on first open |
+| **MariaDB / MySQL** | all databases of the server as schemas |
+| **PostgreSQL** | schemas, tables, views |
+| **SQL Server** | also with an ADO.NET connection string |
+| **Redis** | search keys, edit values per type (string, hash, list, set, sorted set, stream), TTL |
+| **MongoDB** | databases, collections, documents as Extended JSON with filter and sort |
 
-## So arbeitest du damit
+## How to use it
 
-- Links die Ansicht **Datenbanken**: Verbindungen hinzufügen (`+`), eine Datei öffnen, verbinden.
-  Eine Datenbankdatei im Explorer lässt sich auch direkt öffnen — Lumen fragt, ob sie in die
-  Datenbank-Ansicht soll.
-- Ein Klick auf eine Tabelle öffnet ihre Daten als **Tab im Editorbereich**: seitenweise,
-  sortierbar per Klick auf die Spaltenköpfe, filterbar mit einer SQL-Bedingung.
-- **Bearbeiten**: Doppelklick auf eine Zelle, neue Zeilen, Zeilen löschen — alles bleibt als
-  ausstehende Änderung markiert, bis du **Übernehmen** klickst. Dann läuft alles in einer
-  Transaktion; schlägt eine Anweisung fehl, wird nichts geschrieben. *SQL anzeigen* zeigt die
-  Anweisungen vorher.
-- **SQL-Konsole**: Strg+Enter führt das Skript aus (oder nur die Markierung), Anweisung für
-  Anweisung; die Ergebnisse erscheinen darunter.
-- **Export** der Tabelle oder eines Ergebnisses als CSV oder JSON.
+- The **Databases** view on the left: add connections (`+`), open a file, connect.
+  A database file in the explorer can also be opened directly — Lumen asks whether it should go
+  into the database view.
+- Clicking a table opens its data as a **tab in the editor area**: paged,
+  sortable by clicking the column headers, filterable with a SQL condition.
+- **Editing**: double-click a cell, add rows, delete rows — everything stays marked as a
+  pending change until you click **Commit**. Then everything runs in one
+  transaction; if a statement fails, nothing is written. *Show SQL* shows the
+  statements beforehand.
+- **SQL console**: Ctrl+Enter runs the script (or only the selection), statement by
+  statement; the results appear below.
+- **Export** a table or a result as CSV or JSON.
 
-Passwörter liegen verschlüsselt im Schlüsselbund des Systems, nie in den Einstellungen. Wer sein
-Passwort nicht speichern möchte, wird beim Verbinden gefragt.
+Passwords are stored encrypted in the system keychain, never in the settings. If you prefer not
+to save a password, you are asked for it when connecting.
 
-## Einstellungen
+## Settings
 
-Zeilen pro Seite, Nachfrage vor dem Übernehmen, CSV-Trennzeichen, höchstens gezeigte Zeilen einer
-Abfrage, Zeitlimit für Abfragen, Schlüssel je Redis-Suche, Pfad zu Java und die H2-Version.
+Rows per page, confirmation before committing, CSV separator, maximum rows shown for a
+query, query timeout, keys per Redis search, path to Java and the H2 version.
 
-## Hinweise
+## Notes
 
-- Tabellen ohne Primärschlüssel sind nur lesbar — außer bei SQLite (`rowid`) und PostgreSQL
-  (`ctid`), die jede Zeile auch so adressieren können.
-- SQLite läuft in einem kleinen Hilfsprozess: eine lange Abfrage blockiert Lumen nicht und lässt
-  sich über das Zeitlimit abbrechen.
-- H2 sperrt die Datei, solange die Verbindung offen ist; *Trennen* gibt sie frei.
+- Tables without a primary key are read-only — except in SQLite (`rowid`) and PostgreSQL
+  (`ctid`), which can address every row that way.
+- SQLite runs in a small helper process: a long query does not block Lumen and can
+  be cancelled through the timeout.
+- H2 locks the file while the connection is open; *Disconnect* releases it.
 
-Diese Erweiterung bringt Programmcode mit (die Treiber sind darin gebündelt) und wird vor der
-Installation zur Freigabe angezeigt.
+This extension ships executable code (the drivers are bundled in it) and is shown for approval
+before installation.

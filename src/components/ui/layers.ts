@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The stacking order of everything that floats, in one place.
  *
@@ -14,4 +24,4 @@ export const LAYER = {
   menuBackdrop: 'z-[9000]',
   /** Context menus and dropdowns — above dialogs, so a dialog can open one. */
   menu: 'z-[9001]',
-} as const
+} as const;

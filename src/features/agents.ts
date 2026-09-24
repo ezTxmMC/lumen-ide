@@ -1,21 +1,31 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Agents from extensions: listen for their events from startup, give each one
  * a view (a chat, docked on the right unless the extension says otherwise) and
  * a command that opens it.
  */
 
-import { createElement } from 'react'
-import { Sparkles } from 'lucide-react'
-import { useStore } from '@/state/store'
-import { registerCommandProvider } from '@/core/commands'
-import { agentChat } from '@/core/agent/chat'
-import { extensions } from '@/core/extensions/manager'
-import { viewRegistry, type ViewDef } from '@/core/views'
-import { namedIcon } from '@/components/ui/named-icons'
-import { AgentPanel } from '@/components/panels/AgentPanel'
-import type { Command } from '@/core/types'
+import { createElement } from 'react';
+import { Sparkles } from 'lucide-react';
+import { useStore } from '@/state/store';
+import { registerCommandProvider } from '@/core/commands';
+import { agentChat } from '@/core/agent/chat';
+import { extensions } from '@/core/extensions/manager';
+import { viewRegistry, type ViewDef } from '@/core/views';
+import { namedIcon } from '@/components/ui/named-icons';
+import { AgentPanel } from '@/components/panels/AgentPanel';
+import type { Command } from '@/core/types';
 
-let started = false
+let started = false;
 
 function commands(): Command[] {
   return agentChat.agents().map(({ key, agent }) => ({
@@ -23,7 +33,7 @@ function commands(): Command[] {
     title: agent.name,
     category: agent.name,
     run: () => useStore.getState().showView(`agent:${key}`),
-  }))
+  }));
 }
 
 function syncViews() {
@@ -36,15 +46,17 @@ function syncViews() {
     command: `agent.${key}`,
     source: () => extensions.get(extensionId)?.manifest.name,
     render: () => createElement(AgentPanel, { key, agentKey: key }),
-  }))
-  viewRegistry.sync('agent:', views)
+  }));
+  viewRegistry.sync('agent:', views);
 }
 
 export function init() {
-  if (started) return
-  started = true
-  agentChat.init()
-  registerCommandProvider(commands)
-  syncViews()
-  extensions.subscribe(syncViews)
+  if (started) {
+    return;
+  }
+  started = true;
+  agentChat.init();
+  registerCommandProvider(commands);
+  syncViews();
+  extensions.subscribe(syncViews);
 }

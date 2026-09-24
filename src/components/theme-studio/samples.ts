@@ -1,15 +1,25 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /** Sample code for the Theme Studio's editor preview, one file per language. */
 
-import type { Ranges } from './CodeView'
+import type { Ranges } from './CodeView';
 
 export interface CodeSample {
   /** Id of the language in the registry. */
-  languageId: string
-  label: string
-  file: string
-  code: string
+  languageId: string;
+  label: string;
+  file: string;
+  code: string;
   /** Word whose first occurrence is selected and whose others get extra cursors. */
-  select: string
+  select: string;
 }
 
 export const SAMPLES: CodeSample[] = [
@@ -18,7 +28,7 @@ export const SAMPLES: CodeSample[] = [
     label: 'TypeScript',
     file: 'session.ts',
     select: 'user',
-    code: `// Sitzungen verwalten — Vorschau für Lumen
+    code: `// Manage sessions — preview for Lumen
 import { createHash } from 'node:crypto'
 
 type Role = 'admin' | 'member'
@@ -305,7 +315,7 @@ final class Router
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <!-- Karte mit Überschrift -->
+    <!-- Card with heading -->
     <article class="card" data-id="42">
       <h1 class="card-title">Hallo Welt</h1>
       <p>Ein <strong>kurzer</strong> Absatz.</p>
@@ -370,11 +380,11 @@ final class Router
     select: 'Theme',
     code: `# Lumen Theme
 
-Ein **flaches** Theme mit _ruhigen_ Farben und \`CodeMirror\`-Unterstützung.
+A **flat** theme with _calm_ colours and \`CodeMirror\` support.
 
 ## Installation
 
-1. Theme-Studio öffnen
+1. Open the Theme Studio
 2. JSON importieren
 3. [Dokumentation](https://example.com/themes) lesen
 
@@ -408,17 +418,17 @@ fi
 exit 0
 `,
   },
-]
+];
 
 /** Selection plus extra cursors from a sample's `select` word. */
 export function sampleSelection(sample: CodeSample): Ranges {
-  const ranges: Ranges = []
-  let from = sample.code.indexOf(sample.select)
+  const ranges: Ranges = [];
+  let from = sample.code.indexOf(sample.select);
   while (from >= 0 && ranges.length < 4) {
-    const to = from + sample.select.length
+    const to = from + sample.select.length;
     // First occurrence selected, the rest only as cursors at the end of the word.
-    ranges.push(ranges.length === 0 ? [from, to] : [to, to])
-    from = sample.code.indexOf(sample.select, to)
+    ranges.push(ranges.length === 0 ? [from, to] : [to, to]);
+    from = sample.code.indexOf(sample.select, to);
   }
-  return ranges
+  return ranges;
 }

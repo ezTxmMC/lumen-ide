@@ -7394,12 +7394,12 @@
         },
         {
           "label": "darkvariant",
-          "detail": "Dark-Mode über Klasse",
+          "detail": "Dark mode via class",
           "body": "@custom-variant dark (&:where(.dark, .dark *));$0"
         },
         {
           "label": "source",
-          "detail": "Zusätzliche Quelle scannen",
+          "detail": "Scan additional source",
           "body": "@source \"${../components}\";$0"
         },
         {
@@ -7628,7 +7628,7 @@
             "field": "lang",
             "equals": "ts"
           },
-          "content": "<!doctype html>\n<html lang=\"de\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <main class=\"grid min-h-screen place-items-center bg-surface\">\n      <div class=\"rounded-2xl bg-white/5 p-8 text-center shadow-xl\">\n        <h1 class=\"text-4xl font-bold text-brand\">{{name}}</h1>\n        <p class=\"mt-2 text-slate-400\">Tailwind CSS 4 läuft.</p>\n      </div>\n    </main>\n    <script type=\"module\" src=\"/src/main.ts\"></script>\n  </body>\n</html>\n"
+          "content": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <main class=\"grid min-h-screen place-items-center bg-surface\">\n      <div class=\"rounded-2xl bg-white/5 p-8 text-center shadow-xl\">\n        <h1 class=\"text-4xl font-bold text-brand\">{{name}}</h1>\n        <p class=\"mt-2 text-slate-400\">Tailwind CSS 4 is running.</p>\n      </div>\n    </main>\n    <script type=\"module\" src=\"/src/main.ts\"></script>\n  </body>\n</html>\n"
         },
         {
           "path": "index.html",
@@ -7636,7 +7636,7 @@
             "field": "lang",
             "equals": "js"
           },
-          "content": "<!doctype html>\n<html lang=\"de\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <main class=\"grid min-h-screen place-items-center bg-surface\">\n      <div class=\"rounded-2xl bg-white/5 p-8 text-center shadow-xl\">\n        <h1 class=\"text-4xl font-bold text-brand\">{{name}}</h1>\n        <p class=\"mt-2 text-slate-400\">Tailwind CSS 4 läuft.</p>\n      </div>\n    </main>\n    <script type=\"module\" src=\"/src/main.js\"></script>\n  </body>\n</html>\n"
+          "content": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <main class=\"grid min-h-screen place-items-center bg-surface\">\n      <div class=\"rounded-2xl bg-white/5 p-8 text-center shadow-xl\">\n        <h1 class=\"text-4xl font-bold text-brand\">{{name}}</h1>\n        <p class=\"mt-2 text-slate-400\">Tailwind CSS 4 is running.</p>\n      </div>\n    </main>\n    <script type=\"module\" src=\"/src/main.js\"></script>\n  </body>\n</html>\n"
         },
         {
           "path": "src/style.css",

@@ -1,34 +1,46 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /** The Studio's “commands” and “events” areas — a list each, plus the node editor. */
 
-import { useEffect, useState } from 'react'
-import { Keyboard, Trash2, Workflow, Zap } from 'lucide-react'
-import { t as translate, useT } from '@/i18n'
-import { chordFromEvent, chordToString, formatBinding } from '@/core/keybindings'
-import type { NodeDef } from '@/core/user-addons/catalog'
-import { emptyGraph, newId, type Graph, type UserAddonModel, type UserCommand, type UserEventGraph } from '@/core/user-addons/schema'
-import type { ValidationIssue } from '@/core/user-addons/validate'
-import { Button, Empty } from '../ui'
-import { ItemList, TextField, inputClass } from './fields'
-import { GraphWorkspace } from './GraphWorkspace'
+import { useEffect, useState } from 'react';
+import { Keyboard, Trash2, Workflow, Zap } from 'lucide-react';
+import { t as translate, useT } from '@/i18n';
+import { chordFromEvent, chordToString, formatBinding } from '@/core/keybindings';
+import type { NodeDef } from '@/core/user-addons/catalog';
+import { emptyGraph, newId, type Graph, type UserAddonModel, type UserCommand, type UserEventGraph } from '@/core/user-addons/schema';
+import type { ValidationIssue } from '@/core/user-addons/validate';
+import { Button, Empty } from '../ui';
+import { ItemList, TextField, inputClass } from './fields';
+import { GraphWorkspace } from './GraphWorkspace';
 
-const allowInCommand = (def: NodeDef) => !def.event || def.event === 'command'
-const allowInEvents = (def: NodeDef) => def.event !== 'command'
+const allowInCommand = (def: NodeDef) => !def.event || def.event === 'command';
+const allowInEvents = (def: NodeDef) => def.event !== 'command';
 
 /** A graph with one starting node. */
 function starterGraph(type: string): Graph {
-  const graph = emptyGraph()
-  graph.nodes.push({ id: newId('n'), type, x: 80, y: 120 })
-  return graph
+  const graph = emptyGraph();
+  graph.nodes.push({ id: newId('n'), type, x: 80, y: 120 });
+  return graph;
 }
 
 export function newCommand(existing: UserCommand[]): UserCommand {
-  let n = existing.length + 1
-  while (existing.some((c) => c.id === `befehl${n}`)) n++
+  let n = existing.length + 1;
+  while (existing.some((c) => c.id === `befehl${n}`)) {
+    n++;
+  }
   return {
     id: `befehl${n}`,
     title: translate('addonStudio.commands.defaultTitle', { n }),
     graph: starterGraph('event.command'),
-  }
+  };
 }
 
 export function newEvent(existing: UserEventGraph[]): UserEventGraph {
@@ -36,43 +48,45 @@ export function newEvent(existing: UserEventGraph[]): UserEventGraph {
     id: newId('ev'),
     name: translate('addonStudio.events.defaultName', { n: existing.length + 1 }),
     graph: starterGraph('event.fileSaved'),
-  }
+  };
 }
 
-function useFocus(focus: { index: number; token: number } | null | undefined, setSelected: (index: number) => void) {
+function useFocus(focus: { index: number; token: number; } | null | undefined, setSelected: (index: number) => void) {
   useEffect(() => {
-    if (focus) setSelected(focus.index)
-  }, [focus, setSelected])
+    if (focus) {
+      setSelected(focus.index);
+    }
+  }, [focus, setSelected]);
 }
 
 export function CommandsPage({
   model, onChange, issues, focus,
 }: {
-  model: UserAddonModel
-  onChange: (commands: UserCommand[]) => void
-  issues: ValidationIssue[]
-  focus?: { index: number; token: number } | null
+  model: UserAddonModel;
+  onChange: (commands: UserCommand[]) => void;
+  issues: ValidationIssue[];
+  focus?: { index: number; token: number; } | null;
 }) {
-  const t = useT()
-  const [selected, setSelected] = useState(0)
-  useFocus(focus, setSelected)
-  const commands = model.commands
-  const index = Math.min(selected, commands.length - 1)
-  const command = commands[index]
-  const errorIndexes = new Set(issues.filter((i) => !i.warning && i.index !== undefined).map((i) => i.index as number))
+  const t = useT();
+  const [selected, setSelected] = useState(0);
+  useFocus(focus, setSelected);
+  const commands = model.commands;
+  const index = Math.min(selected, commands.length - 1);
+  const command = commands[index];
+  const errorIndexes = new Set(issues.filter((i) => !i.warning && i.index !== undefined).map((i) => i.index as number));
 
   if (!command) {
     return (
       <div className="flex h-full flex-col items-center justify-center">
         <Empty icon={<Zap size={28} strokeWidth={1.4} />} title={t('addonStudio.commands.empty')} hint={t('addonStudio.commands.emptyHint')} />
-        <Button variant="solid" onClick={() => { onChange([newCommand(commands)]); setSelected(0) }}>{t('addonStudio.commands.add')}</Button>
+        <Button variant="solid" onClick={() => { onChange([newCommand(commands)]); setSelected(0); }}>{t('addonStudio.commands.add')}</Button>
       </div>
-    )
+    );
   }
 
-  const patch = (next: Partial<UserCommand>) => onChange(commands.map((c, i) => (i === index ? { ...c, ...next } : c)))
-  const fieldError = (field: string) => issues.find((i) => i.index === index && i.field === field)?.message ?? null
-  const messages = issues.filter((i) => i.index === index && !i.field)
+  const patch = (next: Partial<UserCommand>) => onChange(commands.map((c, i) => (i === index ? { ...c, ...next } : c)));
+  const fieldError = (field: string) => issues.find((i) => i.index === index && i.field === field)?.message ?? null;
+  const messages = issues.filter((i) => i.index === index && !i.field);
 
   return (
     <div className="flex h-full min-h-0">
@@ -81,7 +95,7 @@ export function CommandsPage({
         selected={index}
         onSelect={setSelected}
         render={(c) => ({ title: c.title || c.id, subtitle: c.keybinding ? formatBinding(c.keybinding) : c.id, color: model.color })}
-        onAdd={() => { onChange([...commands, newCommand(commands)]); setSelected(commands.length) }}
+        onAdd={() => { onChange([...commands, newCommand(commands)]); setSelected(commands.length); }}
         addLabel={t('addonStudio.commands.add')}
         errorIndexes={errorIndexes}
       />
@@ -92,9 +106,11 @@ export function CommandsPage({
           <TextField label={t('addonStudio.commands.category')} value={command.category} placeholder={model.name} onChange={(category) => patch({ category: category || undefined })} />
           <KeybindingField value={command.keybinding} error={fieldError('keybinding')} onChange={(keybinding) => patch({ keybinding })} />
           <Button size="sm" variant="danger" title={t('common.delete')} onClick={() => {
-            if (!confirm(t('common.confirmDelete', { name: command.title || command.id }))) return
-            onChange(commands.filter((_, i) => i !== index))
-            setSelected(Math.max(0, index - 1))
+            if (!confirm(t('common.confirmDelete', { name: command.title || command.id }))) {
+              return;
+            }
+            onChange(commands.filter((_, i) => i !== index));
+            setSelected(Math.max(0, index - 1));
           }}>
             <Trash2 size={12} />
           </Button>
@@ -116,18 +132,20 @@ export function CommandsPage({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function bindingText(recording: boolean, value: string | undefined) {
-  if (recording) return translate('addonStudio.commands.pressKeys')
-  return value ? formatBinding(value) : ''
+  if (recording) {
+    return translate('addonStudio.commands.pressKeys');
+  }
+  return value ? formatBinding(value) : '';
 }
 
 /** Record a shortcut — the field is invisible to the global dispatcher. */
-function KeybindingField({ value, onChange, error }: { value?: string; onChange: (value: string | undefined) => void; error?: string | null }) {
-  const t = useT()
-  const [recording, setRecording] = useState(false)
+function KeybindingField({ value, onChange, error }: { value?: string; onChange: (value: string | undefined) => void; error?: string | null; }) {
+  const t = useT();
+  const [recording, setRecording] = useState(false);
   return (
     <div className="min-w-0">
       <span className="mb-1 block text-[11.5px] text-muted">{t('addonStudio.commands.keybinding')}</span>
@@ -140,21 +158,23 @@ function KeybindingField({ value, onChange, error }: { value?: string; onChange:
           onFocus={() => setRecording(true)}
           onBlur={() => setRecording(false)}
           onKeyDown={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
+            e.preventDefault();
+            e.stopPropagation();
             if (e.key === 'Escape' || e.key === 'Tab') {
-              setRecording(false)
-              e.currentTarget.blur()
-              return
+              setRecording(false);
+              e.currentTarget.blur();
+              return;
             }
             if (e.key === 'Backspace' || e.key === 'Delete') {
-              onChange(undefined)
-              return
+              onChange(undefined);
+              return;
             }
-            const chord = chordFromEvent(e.nativeEvent)
-            if (!chord) return
-            onChange(chordToString(chord))
-            e.currentTarget.blur()
+            const chord = chordFromEvent(e.nativeEvent);
+            if (!chord) {
+              return;
+            }
+            onChange(chordToString(chord));
+            e.currentTarget.blur();
           }}
           className={`${inputClass} ${error ? 'border-bad' : 'border-edge'} cursor-pointer font-mono text-[12px]`}
         />
@@ -162,35 +182,35 @@ function KeybindingField({ value, onChange, error }: { value?: string; onChange:
       </div>
       {error && <span className="mt-1 block text-[11px] text-bad">{error}</span>}
     </div>
-  )
+  );
 }
 
 export function EventsPage({
   model, onChange, issues, focus,
 }: {
-  model: UserAddonModel
-  onChange: (events: UserEventGraph[]) => void
-  issues: ValidationIssue[]
-  focus?: { index: number; token: number } | null
+  model: UserAddonModel;
+  onChange: (events: UserEventGraph[]) => void;
+  issues: ValidationIssue[];
+  focus?: { index: number; token: number; } | null;
 }) {
-  const t = useT()
-  const [selected, setSelected] = useState(0)
-  useFocus(focus, setSelected)
-  const events = model.events
-  const index = Math.min(selected, events.length - 1)
-  const event = events[index]
+  const t = useT();
+  const [selected, setSelected] = useState(0);
+  useFocus(focus, setSelected);
+  const events = model.events;
+  const index = Math.min(selected, events.length - 1);
+  const event = events[index];
 
   if (!event) {
     return (
       <div className="flex h-full flex-col items-center justify-center">
         <Empty icon={<Workflow size={28} strokeWidth={1.4} />} title={t('addonStudio.events.empty')} hint={t('addonStudio.events.emptyHint')} />
-        <Button variant="solid" onClick={() => { onChange([newEvent(events)]); setSelected(0) }}>{t('addonStudio.events.add')}</Button>
+        <Button variant="solid" onClick={() => { onChange([newEvent(events)]); setSelected(0); }}>{t('addonStudio.events.add')}</Button>
       </div>
-    )
+    );
   }
 
-  const patch = (next: Partial<UserEventGraph>) => onChange(events.map((e, i) => (i === index ? { ...e, ...next } : e)))
-  const messages = issues.filter((i) => i.index === index)
+  const patch = (next: Partial<UserEventGraph>) => onChange(events.map((e, i) => (i === index ? { ...e, ...next } : e)));
+  const messages = issues.filter((i) => i.index === index);
 
   return (
     <div className="flex h-full min-h-0">
@@ -199,7 +219,7 @@ export function EventsPage({
         selected={index}
         onSelect={setSelected}
         render={(e) => ({ title: e.name || e.id, subtitle: t('addonStudio.events.nodeCount', { count: e.graph.nodes.length }), color: model.color })}
-        onAdd={() => { onChange([...events, newEvent(events)]); setSelected(events.length) }}
+        onAdd={() => { onChange([...events, newEvent(events)]); setSelected(events.length); }}
         addLabel={t('addonStudio.events.add')}
         errorIndexes={new Set(issues.filter((i) => !i.warning && i.index !== undefined).map((i) => i.index as number))}
       />
@@ -208,9 +228,11 @@ export function EventsPage({
           <TextField className="max-w-[320px] flex-1" label={t('common.name')} value={event.name} onChange={(name) => patch({ name })} />
           <p className="flex-1 pb-1 text-[11.5px] leading-snug text-subtle">{t('addonStudio.events.hint')}</p>
           <Button size="sm" variant="danger" title={t('common.delete')} onClick={() => {
-            if (!confirm(t('common.confirmDelete', { name: event.name || event.id }))) return
-            onChange(events.filter((_, i) => i !== index))
-            setSelected(Math.max(0, index - 1))
+            if (!confirm(t('common.confirmDelete', { name: event.name || event.id }))) {
+              return;
+            }
+            onChange(events.filter((_, i) => i !== index));
+            setSelected(Math.max(0, index - 1));
           }}>
             <Trash2 size={12} />
           </Button>
@@ -232,5 +254,5 @@ export function EventsPage({
         </div>
       </div>
     </div>
-  )
+  );
 }

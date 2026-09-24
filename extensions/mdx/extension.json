@@ -2,7 +2,7 @@
   "id": "ext.mdx",
   "name": "MDX",
   "version": "1.0.4",
-  "description": "Markdown mit JSX: Überschriften, Listen und Tabellen wie in Markdown, dazu import/export-Zeilen, { … }-Ausdrücke und Komponenten-Tags.",
+  "description": "Markdown with JSX: headings, lists and tables as in Markdown, plus import/export lines, { … } expressions and component tags.",
   "author": "Lumen",
   "icon": "M+",
   "color": "#fcb32c",

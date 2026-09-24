@@ -1,32 +1,42 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /** The icon pack gallery in the themes dialog: choose, customise, import, export. */
 
-import { useMemo } from 'react'
-import { Check, Copy, Download, Pencil, Plus, Shapes, Trash2, Upload } from 'lucide-react'
-import { useStore } from '@/state/store'
-import { tr, useT } from '@/i18n'
-import { registry } from '@/core/registry'
-import { iconPackSize, resolveFileIcon, resolveFolderIcon } from '@/core/icon-pack'
-import type { IconPack } from '@/core/types'
-import { Button, Empty } from '../ui'
-import { IconGlyph } from '../icons/FileIcon'
+import { useMemo } from 'react';
+import { Check, Copy, Download, Pencil, Plus, Shapes, Trash2, Upload } from 'lucide-react';
+import { useStore } from '@/state/store';
+import { tr, useT } from '@/i18n';
+import { registry } from '@/core/registry';
+import { iconPackSize, resolveFileIcon, resolveFolderIcon } from '@/core/icon-pack';
+import type { IconPack } from '@/core/types';
+import { Button, Empty } from '../ui';
+import { IconGlyph } from '../icons/FileIcon';
 
 /** Files and folders of the card preview — languages, common files, build tools. */
 export const PREVIEW_FILES = [
   'Main.java', 'App.tsx', 'main.ts', 'index.js', 'main.py', 'main.rs', 'main.go', 'main.cpp',
   'package.json', 'pom.xml', 'build.gradle.kts', 'CMakeLists.txt', 'Cargo.toml', 'Dockerfile',
   '.gitignore', 'README.md', 'LICENSE', '.env', 'logo.png', 'config.yaml',
-]
-export const PREVIEW_FOLDERS = ['src', 'test', 'docs', 'node_modules', '.github', 'build']
+];
+export const PREVIEW_FOLDERS = ['src', 'test', 'docs', 'node_modules', '.github', 'build'];
 
-function PackPreview({ pack }: { pack: IconPack }) {
-  const languages = useMemo(() => registry.languages(), [])
+function PackPreview({ pack }: { pack: IconPack; }) {
+  const languages = useMemo(() => registry.languages(), []);
   return (
     <div className="flex flex-col gap-2 rounded-lumen-sm bg-bg/60 px-2.5 py-2.5">
       <div className="flex flex-wrap gap-x-2.5 gap-y-2">
         {PREVIEW_FOLDERS.map((name) => {
-          const icon = resolveFolderIcon(pack, name)
-          const drawn = icon.shape || icon.path || icon.glyph ? icon : { ...icon, shape: 'folder' }
-          return <span key={name} className="flex w-[18px] justify-center" title={`${name}/`}><IconGlyph icon={drawn} size={15} /></span>
+          const icon = resolveFolderIcon(pack, name);
+          const drawn = icon.shape || icon.path || icon.glyph ? icon : { ...icon, shape: 'folder' };
+          return <span key={name} className="flex w-[18px] justify-center" title={`${name}/`}><IconGlyph icon={drawn} size={15} /></span>;
         })}
       </div>
       <div className="flex flex-wrap gap-x-2.5 gap-y-2">
@@ -37,25 +47,25 @@ function PackPreview({ pack }: { pack: IconPack }) {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
-export function IconPacksSection({ query }: { query: string }) {
-  const t = useT()
-  const iconPackId = useStore((s) => s.iconPackId)
-  const registryVersion = useStore((s) => s.registryVersion)
-  const customIconPacks = useStore((s) => s.customIconPacks)
-  const setIconPack = useStore((s) => s.setIconPack)
-  const openStudio = useStore((s) => s.openIconStudio)
-  const duplicate = useStore((s) => s.duplicateIconPack)
-  const remove = useStore((s) => s.deleteCustomIconPack)
-  const importPack = useStore((s) => s.importIconPack)
-  const exportPack = useStore((s) => s.exportIconPack)
+export function IconPacksSection({ query }: { query: string; }) {
+  const t = useT();
+  const iconPackId = useStore((s) => s.iconPackId);
+  const registryVersion = useStore((s) => s.registryVersion);
+  const customIconPacks = useStore((s) => s.customIconPacks);
+  const setIconPack = useStore((s) => s.setIconPack);
+  const openStudio = useStore((s) => s.openIconStudio);
+  const duplicate = useStore((s) => s.duplicateIconPack);
+  const remove = useStore((s) => s.deleteCustomIconPack);
+  const importPack = useStore((s) => s.importIconPack);
+  const exportPack = useStore((s) => s.exportIconPack);
 
-  const packs = useMemo(() => registry.iconPacks(), [registryVersion, customIconPacks])
-  const customIds = useMemo(() => new Set(customIconPacks.map((pack) => pack.id)), [customIconPacks])
-  const needle = query.trim().toLowerCase()
-  const visible = packs.filter((pack) => !needle || `${pack.name} ${pack.author ?? ''} ${pack.id}`.toLowerCase().includes(needle))
+  const packs = useMemo(() => registry.iconPacks(), [registryVersion, customIconPacks]);
+  const customIds = useMemo(() => new Set(customIconPacks.map((pack) => pack.id)), [customIconPacks]);
+  const needle = query.trim().toLowerCase();
+  const visible = packs.filter((pack) => !needle || `${pack.name} ${pack.author ?? ''} ${pack.id}`.toLowerCase().includes(needle));
 
   return (
     <div className="px-4 py-3">
@@ -73,15 +83,17 @@ export function IconPacksSection({ query }: { query: string }) {
 
       <div className="lm-stagger grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]">
         {visible.map((pack) => {
-          const active = pack.id === iconPackId
-          const custom = customIds.has(pack.id)
+          const active = pack.id === iconPackId;
+          const custom = customIds.has(pack.id);
           return (
             <div
               key={pack.id}
               role="button"
               tabIndex={0}
               onClick={() => setIconPack(pack.id)}
-              onKeyDown={(e) => { if (e.key === 'Enter') setIconPack(pack.id) }}
+              onKeyDown={(e) => { if (e.key === 'Enter') {
+                setIconPack(pack.id);
+              } }}
               className={[
                 'lm-transition lm-lift group flex cursor-pointer flex-col gap-2.5 rounded-lumen border p-3',
                 active ? 'border-accent bg-active/60' : 'border-edge hover:border-edge-strong',
@@ -122,7 +134,7 @@ export function IconPacksSection({ query }: { query: string }) {
               {pack.description && <p className="line-clamp-2 text-[11.5px] leading-snug text-muted">{tr(pack.description)}</p>}
               <PackPreview pack={pack} />
             </div>
-          )
+          );
         })}
 
         <button
@@ -135,5 +147,5 @@ export function IconPacksSection({ query }: { query: string }) {
         </button>
       </div>
     </div>
-  )
+  );
 }

@@ -1,7 +1,19 @@
-import type { Addon, LanguageSpec } from '@/core/types'
-import { cssLibraryTemplate } from '../lib/web-project'
-import { cssTokenizer } from '../lib/css-tokenizer'
-import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import type { Addon, LanguageSpec } from '@/core/types';
+import { cssLibraryTemplate } from '../lib/web-project';
+import { cssTokenizer } from '../lib/css-tokenizer';
+import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages';
+import { localizeSnippets } from '../lib/localize';
+import { t } from '@/i18n';
 
 const PROPERTIES = [
   'display', 'position', 'top', 'right', 'bottom', 'left', 'inset', 'width',
@@ -16,7 +28,7 @@ const PROPERTIES = [
   'transform', 'animation', 'box-shadow', 'filter', 'backdrop-filter', 'cursor',
   'pointer-events', 'user-select', 'visibility', 'content', 'aspect-ratio',
   'object-fit', 'will-change', 'container-type', 'accent-color', 'color-scheme',
-]
+];
 
 const VALUES = [
   'flex', 'grid', 'block', 'inline', 'inline-block', 'inline-flex', 'none',
@@ -26,12 +38,12 @@ const VALUES = [
   'currentColor', 'inherit', 'initial', 'unset', 'revert', 'bold', 'normal',
   'italic', 'uppercase', 'lowercase', 'capitalize', 'ease', 'ease-in', 'ease-out',
   'ease-in-out', 'linear', 'infinite', 'forwards', 'both',
-]
+];
 
 const AT_RULES = [
   '@media', '@supports', '@container', '@layer', '@keyframes', '@font-face',
   '@import', '@charset', '@property', '@scope', '@starting-style',
-]
+];
 
 export const cssSpec: LanguageSpec = {
   id: 'css',
@@ -42,26 +54,26 @@ export const cssSpec: LanguageSpec = {
   comments: { line: '//', block: ['/*', '*/'] },
   tokenizer: cssTokenizer as never,
   completions: [...PROPERTIES, ...VALUES, ...AT_RULES],
-  snippets: [
+  snippets: localizeSnippets([
     { label: 'media', detail: 'Media Query', body: '@media (min-width: ${768px}) {\n  $0\n}' },
     { label: 'kf', detail: 'Keyframes', body: '@keyframes ${name} {\n  from { $0 }\n  to { }\n}' },
-    { label: 'grid', detail: 'Grid-Layout', body: 'display: grid;\ngrid-template-columns: ${repeat(3, 1fr)};\ngap: ${1rem};' },
-    { label: 'center', detail: 'Flex zentrieren', body: 'display: flex;\nalign-items: center;\njustify-content: center;$0' },
-    { label: 'stack', detail: 'Vertikaler Stapel', body: 'display: flex;\nflex-direction: column;\ngap: ${0.5rem};$0' },
+    { label: 'grid', detail: 'addons.snippets.css.grid', body: 'display: grid;\ngrid-template-columns: ${repeat(3, 1fr)};\ngap: ${1rem};' },
+    { label: 'center', detail: 'addons.snippets.css.center', body: 'display: flex;\nalign-items: center;\njustify-content: center;$0' },
+    { label: 'stack', detail: 'addons.snippets.css.stack', body: 'display: flex;\nflex-direction: column;\ngap: ${0.5rem};$0' },
     { label: 'container', detail: 'Container-Query', body: '@container (min-width: ${30rem}) {\n  $0\n}' },
-    { label: 'dark', detail: 'Dunkles Farbschema', body: '@media (prefers-color-scheme: dark) {\n  :root {\n    $0\n  }\n}' },
-    { label: 'supports', detail: 'Feature-Abfrage', body: '@supports (${backdrop-filter: blur(1px)}) {\n  $0\n}' },
+    { label: 'dark', detail: 'addons.snippets.css.dark', body: '@media (prefers-color-scheme: dark) {\n  :root {\n    $0\n  }\n}' },
+    { label: 'supports', detail: 'addons.snippets.css.supports', body: '@supports (${backdrop-filter: blur(1px)}) {\n  $0\n}' },
     { label: 'layer', detail: 'Cascade Layer', body: '@layer ${components} {\n  $0\n}' },
     { label: 'font', detail: '@font-face', body: "@font-face {\n  font-family: '${Name}';\n  src: url('${schrift.woff2}') format('woff2');\n  font-display: swap;\n}$0" },
     { label: 'var', detail: 'Custom Property', body: '--${name}: ${wert};$0' },
     { label: 'prop', detail: '@property', body: '@property --${name} {\n  syntax: \'${<color>}\';\n  inherits: false;\n  initial-value: ${#000};\n}$0' },
-    { label: 'trans', detail: 'Übergang', body: 'transition: ${all} ${0.2s} ${ease};$0' },
+    { label: 'trans', detail: 'addons.snippets.css.trans', body: 'transition: ${all} ${0.2s} ${ease};$0' },
     { label: 'anim', detail: 'Animation', body: 'animation: ${name} ${0.4s} ${ease-out} both;$0' },
-    { label: 'shadow', detail: 'Schatten', body: 'box-shadow: 0 ${1px} ${2px} rgb(0 0 0 / ${20%});$0' },
-    { label: 'grad', detail: 'Verlauf', body: 'background: linear-gradient(${135deg}, ${#7c8cff}, ${#22d3ee});$0' },
-    { label: 'truncate', detail: 'Text abschneiden', body: 'overflow: hidden;\ntext-overflow: ellipsis;\nwhite-space: nowrap;$0' },
-    { label: 'reduce', detail: 'Bewegung reduzieren', body: '@media (prefers-reduced-motion: reduce) {\n  *, *::before, *::after {\n    animation-duration: 0.01ms !important;\n    transition-duration: 0.01ms !important;\n  }\n}$0' },
-  ],
+    { label: 'shadow', detail: 'addons.snippets.css.shadow', body: 'box-shadow: 0 ${1px} ${2px} rgb(0 0 0 / ${20%});$0' },
+    { label: 'grad', detail: 'addons.snippets.css.grad', body: 'background: linear-gradient(${135deg}, ${#7c8cff}, ${#22d3ee});$0' },
+    { label: 'truncate', detail: 'addons.snippets.css.truncate', body: 'overflow: hidden;\ntext-overflow: ellipsis;\nwhite-space: nowrap;$0' },
+    { label: 'reduce', detail: 'addons.snippets.css.reduce', body: '@media (prefers-reduced-motion: reduce) {\n  *, *::before, *::after {\n    animation-duration: 0.01ms !important;\n    transition-duration: 0.01ms !important;\n  }\n}$0' },
+  ]),
   lsp: [
     {
       label: 'vscode-css-language-server',
@@ -87,16 +99,18 @@ export const cssSpec: LanguageSpec = {
       package: LSP_PACKAGES.someSass,
     },
   ],
-}
+};
 
 export const cssAddon: Addon = {
   id: 'lang.css',
   name: 'CSS',
   version: '1.0.0',
-  description: 'CSS, SCSS und Less mit getrennter Einfärbung von Selektor, Eigenschaft und Wert.',
+  get description() {
+    return t('addons.cssDescription');
+  },
   icon: '#',
   builtin: true,
   category: 'language',
   languages: [cssSpec],
   projectTemplates: [cssLibraryTemplate],
-}
+};

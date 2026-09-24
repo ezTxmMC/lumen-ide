@@ -1,6 +1,16 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /* Theme-Studio und Themes-Dialog: Stile, die sich nicht gut als Utility schreiben lassen. */
 
-/* Vorschau: anklickbare Elemente und Hervorhebung der gerade überfahrenen Farbe. */
+/* Preview: clickable elements and highlight of the hovered colour. */
 .lm-ts-stage [data-c] { cursor: pointer; }
 
 @keyframes lm-ts-flash {
@@ -17,7 +27,7 @@
   z-index: 1;
 }
 
-/* Karo-Hintergrund für Alpha und den Kontext „transparent“. */
+/* Checkerboard background for alpha and the "transparent" context. */
 .lm-ts-checker {
   background-color: #fff;
   background-image: conic-gradient(#0000001a 0 25%, transparent 0 50%, #0000001a 0 75%, transparent 0);
@@ -29,11 +39,11 @@
   background-size: 8px 8px;
 }
 
-/* CodeMirror-Vorschau: Cursor auch ohne Fokus zeigen, keine riesige Leerfläche unten. */
+/* CodeMirror preview: show the cursor without focus, avoid a huge empty area at the bottom. */
 .lm-ts-code .cm-cursorLayer .cm-cursor { display: block; }
 .lm-ts-code .cm-content { padding-bottom: 12px !important; }
 
-/* Farbfeld kurz aufleuchten lassen, wenn es aus der Vorschau gewählt wurde. */
+/* Flash the colour field briefly when picked from the preview. */
 @keyframes lm-ts-picked {
   0% { background-color: rgb(var(--c-accent-rgb) / 35%); }
   100% { background-color: transparent; }
@@ -53,20 +63,20 @@
   background: transparent;
 }
 
-/* Sanfte Überblendung beim Theme-Wechsel (View Transitions). */
+/* Soft cross-fade on theme change (View Transitions). */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: calc(var(--duration-slow) * 1.4);
   animation-timing-function: ease;
 }
 
-/* Theme-Karten: Anheben beim Überfahren, Aktionen einblenden. */
+/* Theme cards: lift on hover, reveal actions. */
 .lm-ts-card:hover { transform: translateY(-2px); }
 :root[data-motion='reduced'] .lm-ts-card:hover,
 :root[data-motion='none'] .lm-ts-card:hover { transform: none; }
 
 /* ------------------------------------------------------------------ *
- * Animations-Demo: zeigt die gewählte Stufe unabhängig von der globalen.
+ * Animation demo: shows the chosen level independent of the global one.
  * ------------------------------------------------------------------ */
 
 @keyframes lm-ts-spring {

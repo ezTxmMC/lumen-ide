@@ -1,4 +1,14 @@
-import type { NamespaceMessages } from '@/i18n'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import type { NamespaceMessages } from '@/i18n';
 
 /** Discord rich presence moved from a bundled add-on into an extension — the one-time hint. */
 export default {
@@ -26,4 +36,4 @@ export default {
   nl: {
     moved: 'Discord Rich Presence is nu een extensie — installeer „Discord Rich Presence” uit de extensiecatalogus om het te blijven gebruiken.',
   },
-} satisfies NamespaceMessages
+} satisfies NamespaceMessages;

@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Language help for Minecraft code: snippets (Java and Kotlin) and the common
  * API classes as completion words.
@@ -7,16 +17,16 @@
  * snippet…” with a choice of platform as well.
  */
 
-import type { Snippet } from '../../../src/core/types'
+import type { Snippet } from '../../../src/core/types';
 
 export interface McSnippet extends Snippet {
-  language: 'java' | 'kotlin'
+  language: 'java' | 'kotlin';
   /** The platform for the list of choices. */
-  platform: string
+  platform: string;
 }
 
-const java = (platform: string, label: string, detail: string, body: string): McSnippet => ({ language: 'java', platform, label, detail, body })
-const kotlin = (platform: string, label: string, detail: string, body: string): McSnippet => ({ language: 'kotlin', platform, label, detail, body })
+const java = (platform: string, label: string, detail: string, body: string): McSnippet => ({ language: 'java', platform, label, detail, body });
+const kotlin = (platform: string, label: string, detail: string, body: string): McSnippet => ({ language: 'kotlin', platform, label, detail, body });
 
 export const MINECRAFT_SNIPPETS: McSnippet[] = [
   /* Bukkit / Paper */
@@ -146,7 +156,7 @@ server.getCommandManager().register(server.getCommandManager().metaBuilder(\${co
 );`),
 
   /* Mixin */
-  java('Mixin', 'mc-mixin', 'Mixin-Klasse mit @Inject', `@Mixin(\${MinecraftServer}.class)
+  java('Mixin', 'mc-mixin', 'Mixin class with @Inject', `@Mixin(\${MinecraftServer}.class)
 public abstract class \${Name}Mixin {
     @Inject(method = "\${methodName}", at = @At("\${HEAD}"))
     private void \${onMethod}(CallbackInfo info) {
@@ -158,7 +168,7 @@ public interface \${Target}Accessor {
     @Accessor("\${field}")
     \${Type} \${getField}();$0
 }`),
-  java('Mixin', 'mc-inject-return', 'Mixin @Inject mit Rückgabewert', `@Inject(method = "\${methodName}", at = @At("RETURN"), cancellable = true)
+  java('Mixin', 'mc-inject-return', 'Mixin @Inject with return value', `@Inject(method = "\${methodName}", at = @At("RETURN"), cancellable = true)
 private void \${onReturn}(CallbackInfoReturnable<\${Boolean}> cir) {
     $0
 }`),
@@ -184,7 +194,7 @@ public final class \${Events} {
         $0
     }
 }`),
-  java('NeoForge', 'mc-neoforge-deferred', 'NeoForge DeferredRegister (Items/Blöcke)', `public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MOD_ID);
+  java('NeoForge', 'mc-neoforge-deferred', 'NeoForge DeferredRegister (items/blocks)', `public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MOD_ID);
 public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MOD_ID);
 
 public static final DeferredItem<Item> \${EXAMPLE_ITEM} = ITEMS.registerSimpleItem("\${example_item}");
@@ -260,7 +270,7 @@ class \${Name}(modEventBus: IEventBus) {
         $0
     }
 }`),
-]
+];
 
 /** The common API classes and methods for the completion. */
 export const MINECRAFT_COMPLETIONS = [
@@ -292,4 +302,4 @@ export const MINECRAFT_COMPLETIONS = [
   'DeferredBlock', 'DeferredHolder', 'NeoForge', 'FMLCommonSetupEvent', 'FMLClientSetupEvent', 'RegisterCommandsEvent',
   'ServerStartingEvent', 'GatherDataEvent', 'BuildCreativeModeTabContentsEvent', 'ModConfigSpec', 'Dist',
   'FMLJavaModLoadingContext', 'ForgeRegistries', 'RegistryObject', 'ForgeConfigSpec',
-]
+];

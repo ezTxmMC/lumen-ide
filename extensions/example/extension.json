@@ -1,39 +1,39 @@
 {
   "id": "ext.example",
-  "name": "Beispiel",
+  "name": "Example",
   "version": "1.0.1",
-  "description": "Zeigt, was eine Erweiterung mitbringen kann: Sprache, Einstellungen und Seiten.",
+  "description": "Shows what an extension can ship: a language, settings and pages.",
   "author": "Lumen",
   "icon": "Bs",
   "color": "#4f5bd5",
   "category": "tool",
   "license": "MIT",
-  "keywords": ["beispiel", "vorlage", "dokumentation"],
+  "keywords": ["example", "template", "documentation"],
   "minAppVersion": "0.5.0",
   "settings": [
     {
       "key": "greeting",
-      "label": "Begrüßung",
+      "label": "Greeting",
       "type": "text",
-      "default": "Hallo",
-      "placeholder": "Hallo",
-      "hint": "Steht in den Einstellungen unter „Erweiterungen“."
+      "default": "Hello",
+      "placeholder": "Hello",
+      "hint": "Appears in the settings under “Extensions”."
     },
     {
       "key": "verbose",
-      "label": "Ausführliche Ausgabe",
+      "label": "Verbose output",
       "type": "toggle",
       "default": "false"
     },
     {
       "key": "mode",
-      "label": "Betriebsart",
+      "label": "Mode",
       "type": "select",
       "default": "balanced",
       "choices": [
-        { "value": "fast", "label": "Schnell" },
-        { "value": "balanced", "label": "Ausgewogen" },
-        { "value": "thorough", "label": "Gründlich" }
+        { "value": "fast", "label": "Fast" },
+        { "value": "balanced", "label": "Balanced" },
+        { "value": "thorough", "label": "Thorough" }
       ]
     }
   ]

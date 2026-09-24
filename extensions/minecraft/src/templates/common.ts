@@ -1,44 +1,54 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The building blocks of the Minecraft templates: text helpers, the fields
  * every template shares, the Gradle files and the README.
  */
 
-import type { FieldChoice, FormField, FormValues, ProjectTask, ProjectTemplate, TemplateContext } from '../../../../src/core/types'
-import { foojayFor } from '../eras'
-import { lumen, t } from '../lumen'
+import type { FieldChoice, FormField, FormValues, ProjectTask, ProjectTemplate, TemplateContext } from '../../../../src/core/types';
+import { foojayFor } from '../eras';
+import { lumen, t } from '../lumen';
 
 /* ------------------------------------------------------------------ *
  * Small helpers
  * ------------------------------------------------------------------ */
 
-export const isOn = (values: FormValues, id: string) => values[id] === 'true'
+export const isOn = (values: FormValues, id: string) => values[id] === 'true';
 
 /** `de.firma.app` → `de/firma/app` */
-export const packagePath = (pkg: string) => pkg.replace(/\./g, '/')
+export const packagePath = (pkg: string) => pkg.replace(/\./g, '/');
 
 /** JSON with two spaces and a line break at the end. */
-export const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`
+export const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 
 /** A double-quoted string — valid in JSON, YAML, TOML and Java. */
-export const quoted = (text: string) => JSON.stringify(text)
+export const quoted = (text: string) => JSON.stringify(text);
 
 /** The contents of a Java string without the quotes. */
-export const javaText = (text: string) => JSON.stringify(text).slice(1, -1)
+export const javaText = (text: string) => JSON.stringify(text).slice(1, -1);
 
 export function escapeXml(text: string) {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 /** A list of authors from “A, B”. */
 export function authorsOf(values: FormValues): string[] {
-  return (values.authors ?? '').split(',').map((a) => a.trim()).filter(Boolean)
+  return (values.authors ?? '').split(',').map((a) => a.trim()).filter(Boolean);
 }
 
 /** The header with the package and the imports, sorted and unique. */
 export function javaHeader(pkg: string, imports: string[]): string {
-  const unique = [...new Set(imports)].sort()
-  if (!unique.length) return `package ${pkg};\n\n`
-  return `package ${pkg};\n\n${unique.map((i) => `import ${i};`).join('\n')}\n\n`
+  const unique = [...new Set(imports)].sort();
+  if (!unique.length) { return `package ${pkg};\n\n`; }
+  return `package ${pkg};\n\n${unique.map((i) => `import ${i};`).join('\n')}\n\n`;
 }
 
 /* ------------------------------------------------------------------ *
@@ -51,27 +61,27 @@ export const section = {
   minecraft: () => t('section.minecraft'),
   build: () => t('section.build'),
   options: () => t('section.options'),
-}
+};
 
 /* ------------------------------------------------------------------ *
  * Identity fields
  * ------------------------------------------------------------------ */
 
-export type BuildTool = 'gradle-kts' | 'gradle-groovy' | 'maven'
+export type BuildTool = 'gradle-kts' | 'gradle-groovy' | 'maven';
 
-const JAVA_PACKAGE = String.raw`[a-z_][a-z0-9_]*(\.[a-z_][a-z0-9_]*)*`
+const JAVA_PACKAGE = String.raw`[a-z_][a-z0-9_]*(\.[a-z_][a-z0-9_]*)*`;
 
 /** The mod id from the project name: lower case, digits, underscores, 2–64 characters. */
 export function modIdFrom(slug: string | undefined): string {
-  const base = lumen().project.snakeCase(slug || 'mod').replace(/^[^a-z]+/, '')
-  const id = base || 'mod'
-  const padded = id.length < 2 ? `${id}_mod` : id
-  return padded.slice(0, 64)
+  const base = lumen().project.snakeCase(slug || 'mod').replace(/^[^a-z]+/, '');
+  const id = base || 'mod';
+  const padded = id.length < 2 ? `${id}_mod` : id;
+  return padded.slice(0, 64);
 }
 
-/** The shared fields: the coordinates, the id, the main class, the metadata. */
-export function identityFields(kind: 'mod' | 'plugin' | 'velocity'): FormField[] {
-  const { pascalCase, identifier } = lumen().project
+/** The one field that differs by project kind: the mod id, plugin name or plugin id. */
+function idFieldFor(kind: 'mod' | 'plugin' | 'velocity'): FormField {
+  const { pascalCase } = lumen().project;
   const idField: Record<typeof kind, FormField> = {
     mod: {
       id: 'modId',
@@ -100,12 +110,17 @@ export function identityFields(kind: 'mod' | 'plugin' | 'velocity'): FormField[]
       mono: true,
       section: section.coordinates(),
     },
-  }
-  const idOf = (v: FormValues) => v.modId || v.pluginId || v.pluginName || v.slug || 'app'
-  const suffix = kind === 'mod' ? '' : 'Plugin'
+  };
+  return idField[kind];
+}
 
-  return [
-    {
+/** The coordinate fields: group, artifact, version, package and main class. */
+function coordinateFields(kind: 'mod' | 'plugin' | 'velocity'): { group: FormField; artifact: FormField; version: FormField; pkg: FormField; mainClass: FormField } {
+  const { pascalCase, identifier } = lumen().project;
+  const idOf = (v: FormValues) => v.modId || v.pluginId || v.pluginName || v.slug || 'app';
+  const suffix = kind === 'mod' ? '' : 'Plugin';
+  return {
+    group: {
       id: 'groupId',
       label: t('field.groupId'),
       default: 'com.example',
@@ -114,8 +129,7 @@ export function identityFields(kind: 'mod' | 'plugin' | 'velocity'): FormField[]
       mono: true,
       section: section.coordinates(),
     },
-    idField[kind],
-    {
+    artifact: {
       id: 'artifactId',
       label: t('field.artifactId'),
       default: (v) => (v.slug ?? 'app'),
@@ -124,7 +138,7 @@ export function identityFields(kind: 'mod' | 'plugin' | 'velocity'): FormField[]
       mono: true,
       section: section.coordinates(),
     },
-    {
+    version: {
       id: 'version',
       label: t('field.version'),
       default: '1.0.0',
@@ -133,7 +147,7 @@ export function identityFields(kind: 'mod' | 'plugin' | 'velocity'): FormField[]
       mono: true,
       section: section.coordinates(),
     },
-    {
+    pkg: {
       id: 'package',
       label: t('field.package'),
       default: (v) => `${v.groupId || 'com.example'}.${identifier(idOf(v))}`,
@@ -142,7 +156,7 @@ export function identityFields(kind: 'mod' | 'plugin' | 'velocity'): FormField[]
       mono: true,
       section: section.coordinates(),
     },
-    {
+    mainClass: {
       id: 'mainClass',
       label: t('field.mainClass'),
       default: (v) => `${pascalCase(v.slug ?? 'app')}${suffix}`,
@@ -151,6 +165,12 @@ export function identityFields(kind: 'mod' | 'plugin' | 'velocity'): FormField[]
       mono: true,
       section: section.coordinates(),
     },
+  };
+}
+
+/** The descriptive fields: description, authors, website and license. */
+function projectFields(): FormField[] {
+  return [
     {
       id: 'description',
       label: t('field.description'),
@@ -190,14 +210,20 @@ export function identityFields(kind: 'mod' | 'plugin' | 'velocity'): FormField[]
       ],
       section: section.project(),
     },
-  ]
+  ];
+}
+
+/** The shared fields: the coordinates, the id, the main class, the metadata. */
+export function identityFields(kind: 'mod' | 'plugin' | 'velocity'): FormField[] {
+  const { group, artifact, version, pkg, mainClass } = coordinateFields(kind);
+  return [group, idFieldFor(kind), artifact, version, pkg, mainClass, ...projectFields()];
 }
 
 /* ------------------------------------------------------------------ *
  * Build fields
  * ------------------------------------------------------------------ */
 
-const JAVA_RELEASES = [25, 21, 17, 16, 11, 8]
+const JAVA_RELEASES = [25, 21, 17, 16, 11, 8];
 
 export function javaField(fallback: (values: FormValues) => number): FormField {
   return {
@@ -208,7 +234,7 @@ export function javaField(fallback: (values: FormValues) => number): FormField {
     choices: JAVA_RELEASES.map((release) => ({ value: String(release), label: `Java ${release}` })),
     hint: t('hint.java'),
     section: section.minecraft(),
-  }
+  };
 }
 
 export function buildToolField(tools: BuildTool[] | ((values: FormValues) => BuildTool[]), hint?: string): FormField {
@@ -216,9 +242,9 @@ export function buildToolField(tools: BuildTool[] | ((values: FormValues) => Bui
     'gradle-kts': 'Gradle (Kotlin DSL)',
     'gradle-groovy': 'Gradle (Groovy DSL)',
     maven: 'Maven',
-  }
-  const list = (v: FormValues) => (typeof tools === 'function' ? tools(v) : tools)
-  const toChoices = (v: FormValues): FieldChoice[] => list(v).map((value) => ({ value, label: labels[value] }))
+  };
+  const list = (v: FormValues) => (typeof tools === 'function' ? tools(v) : tools);
+  const toChoices = (v: FormValues): FieldChoice[] => list(v).map((value) => ({ value, label: labels[value] }));
   return {
     id: 'build',
     label: t('field.build'),
@@ -228,23 +254,23 @@ export function buildToolField(tools: BuildTool[] | ((values: FormValues) => Bui
     choicesFor: toChoices,
     hint,
     section: section.build(),
-  }
+  };
 }
 
 export const toggle = (id: string, label: string, fallback: boolean, when?: (v: FormValues) => boolean, hint?: string): FormField => ({
   id, label, type: 'toggle', default: String(fallback), section: section.options(), when, hint,
-})
+});
 
 /* ------------------------------------------------------------------ *
  * Templates with translated fields
  * ------------------------------------------------------------------ */
 
 export interface TemplateSpec extends Omit<ProjectTemplate, 'name' | 'description' | 'fields' | 'next' | 'category' | 'keywords'> {
-  nameKey: string
-  descriptionKey: string
-  keywords: string[]
-  buildFields(): FormField[]
-  next?: (ctx: TemplateContext) => string
+  nameKey: string;
+  descriptionKey: string;
+  keywords: string[];
+  buildFields(): FormField[];
+  next?: (ctx: TemplateContext) => string;
 }
 
 /**
@@ -253,31 +279,31 @@ export interface TemplateSpec extends Omit<ProjectTemplate, 'name' | 'descriptio
  * references; the version lists inside load on their own.
  */
 export function defineTemplate(spec: TemplateSpec): ProjectTemplate {
-  let cacheKey = ''
-  let cached: FormField[] = []
-  const { nameKey, descriptionKey, buildFields, keywords, ...rest } = spec
+  let cacheKey = '';
+  let cached: FormField[] = [];
+  const { nameKey, descriptionKey, buildFields, keywords, ...rest } = spec;
   return {
     ...rest,
     category: 'Minecraft',
     keywords: ['minecraft', ...keywords],
-    get name() { return t(nameKey) },
-    get description() { return t(descriptionKey) },
+    get name() { return t(nameKey); },
+    get description() { return t(descriptionKey); },
     get fields() {
-      const key = lumen().language()
-      if (key === cacheKey) return cached
-      cached = buildFields()
-      cacheKey = key
-      return cached
+      const key = lumen().language();
+      if (key === cacheKey) { return cached; }
+      cached = buildFields();
+      cacheKey = key;
+      return cached;
     },
-  }
+  };
 }
 
 /* ------------------------------------------------------------------ *
  * Gradle
  * ------------------------------------------------------------------ */
 
-export const isKts = (values: FormValues) => values.build !== 'gradle-groovy' && values.build !== 'maven'
-export const isMaven = (values: FormValues) => values.build === 'maven'
+export const isKts = (values: FormValues) => values.build !== 'gradle-groovy' && values.build !== 'maven';
+export const isMaven = (values: FormValues) => values.build === 'maven';
 
 /**
  * The Gradle wrapper and the JDK Gradle itself runs on.
@@ -319,7 +345,7 @@ tasks.matching { it.name == 'updateDaemonJvm' }.configureEach {
     jvmVersion = JavaLanguageVersion.of(${daemonJava})
 }
 `,
-  }
+  };
 }
 
 export function wrapperProperties(gradle: string) {
@@ -332,29 +358,29 @@ export function wrapperProperties(gradle: string) {
     'zipStoreBase=GRADLE_USER_HOME',
     'zipStorePath=wrapper/dists',
     '',
-  ].join('\n')
+  ].join('\n');
 }
 
 /** A Gradle string in the right DSL. */
-export const gstr = (values: FormValues, text: string) => (isKts(values) ? `"${text.replace(/[\\"$]/g, '\\$&')}"` : `'${text.replace(/[\\']/g, '\\$&')}'`)
+export const gstr = (values: FormValues, text: string) => (isKts(values) ? `"${text.replace(/[\\"$]/g, '\\$&')}"` : `'${text.replace(/[\\']/g, '\\$&')}'`);
 
 /** Resolving the toolchain (loads the right JDK where needed); the resolver version follows Gradle's major. */
 export function foojay(values: FormValues, gradle: string): string {
-  const version = foojayFor(gradle)
-  if (isKts(values)) return `plugins {\n    id("org.gradle.toolchains.foojay-resolver-convention") version "${version}"\n}\n\n`
-  return `plugins {\n    id 'org.gradle.toolchains.foojay-resolver-convention' version '${version}'\n}\n\n`
+  const version = foojayFor(gradle);
+  if (isKts(values)) { return `plugins {\n    id("org.gradle.toolchains.foojay-resolver-convention") version "${version}"\n}\n\n`; }
+  return `plugins {\n    id 'org.gradle.toolchains.foojay-resolver-convention' version '${version}'\n}\n\n`;
 }
 
-export interface PluginRepository { name: string; url: string; groups?: string[] }
+export interface PluginRepository { name: string; url: string; groups?: string[]; }
 
 export function settingsFile(values: FormValues, name: string, gradle: string, pluginRepos: PluginRepository[] = []): Record<string, string> {
-  const kts = isKts(values)
+  const kts = isKts(values);
   const repos = pluginRepos.map((repo) => (kts
     ? `        maven("${repo.url}") {\n            name = "${repo.name}"\n        }`
-    : `        maven {\n            name = '${repo.name}'\n            url = '${repo.url}'\n        }`))
-  const management = `pluginManagement {\n    repositories {\n${[...repos, '        gradlePluginPortal()', '        mavenCentral()'].join('\n')}\n    }\n}\n\n`
-  const root = kts ? `rootProject.name = "${name}"` : `rootProject.name = '${name}'`
-  return { [kts ? 'settings.gradle.kts' : 'settings.gradle']: `${management}${foojay(values, gradle)}${root}\n` }
+    : `        maven {\n            name = '${repo.name}'\n            url = '${repo.url}'\n        }`));
+  const management = `pluginManagement {\n    repositories {\n${[...repos, '        gradlePluginPortal()', '        mavenCentral()'].join('\n')}\n    }\n}\n\n`;
+  const root = kts ? `rootProject.name = "${name}"` : `rootProject.name = '${name}'`;
+  return { [kts ? 'settings.gradle.kts' : 'settings.gradle']: `${management}${foojay(values, gradle)}${root}\n` };
 }
 
 export function gradleProperties(entries: Record<string, string>, extra: string[] = []): string {
@@ -367,27 +393,27 @@ export function gradleProperties(entries: Record<string, string>, extra: string[
     '',
     ...Object.entries(entries).map(([k, v]) => `${k}=${v}`),
     '',
-  ]
-  return lines.join('\n')
+  ];
+  return lines.join('\n');
 }
 
 export function gradleSetup(ctx: TemplateContext): ProjectTask[] {
   if (isMaven(ctx.values)) {
-    return [{ id: 'setup:mvn', label: t('setup.maven'), command: 'mvn', args: ['-q', 'dependency:resolve'] }]
+    return [{ id: 'setup:mvn', label: t('setup.maven'), command: 'mvn', args: ['-q', 'dependency:resolve'] }];
   }
   return [{
     id: 'setup:gradle',
     label: t('setup.wrapper'),
     command: 'gradle',
     args: ['--console=plain', '-p', 'gradle/wrapper-setup', 'wrapper', 'updateDaemonJvm'],
-  }]
+  }];
 }
 
-export const gitignore = () => `${lumen().project.gitignore.java ?? ''}run/\nrun-data/\nruns/\nsrc/generated/resources/.cache/\n.architectury-transformer/\n`
+export const gitignore = () => `${lumen().project.gitignore.java ?? ''}run/\nrun-data/\nruns/\nsrc/generated/resources/.cache/\n.architectury-transformer/\n`;
 
 export function readme(ctx: TemplateContext, platform: string, commands: string[], notes: string[] = []): string {
-  const { values } = ctx
-  const facts = [platform, ...(values.mc ? [`Minecraft ${values.mc}`] : []), `Java ${values.java}`, ...(values.gradleVersion && !isMaven(values) ? [`Gradle ${values.gradleVersion}`] : [])]
+  const { values } = ctx;
+  const facts = [platform, ...(values.mc ? [`Minecraft ${values.mc}`] : []), `Java ${values.java}`, ...(values.gradleVersion && !isMaven(values) ? [`Gradle ${values.gradleVersion}`] : [])];
   const lines = [
     `# ${ctx.name}`,
     '',
@@ -399,11 +425,11 @@ export function readme(ctx: TemplateContext, platform: string, commands: string[
     '```',
     '',
     ...notes.flatMap((note) => [note, '']),
-  ]
-  return lines.join('\n')
+  ];
+  return lines.join('\n');
 }
 
 export const gradleCommands = (runs: string[]) => [
   './gradlew build        # build/libs/*.jar',
   ...runs.map((r) => `./gradlew ${r}`),
-]
+];

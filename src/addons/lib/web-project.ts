@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The templates for web projects that ship with Lumen: a static page and a CSS
  * package. The project kind is `npm` — the tasks and the dependencies come from
@@ -7,14 +17,15 @@
  * extensions now (`extensions/react`, `extensions/vue`, …).
  */
 
-import type { FormValues, ProjectTemplate } from '@/core/types'
-import { GITIGNORE } from '@/core/project/scaffold'
-import { commonFields, json, toggle } from './fields'
-import { htmlShell, installSetup, nodeFields, packageJson } from './node-project'
+import type { FormValues, ProjectTemplate } from '@/core/types';
+import { GITIGNORE } from '@/core/project/scaffold';
+import { commonFields, json, toggle } from './fields';
+import { htmlShell, installSetup, nodeFields, packageJson } from './node-project';
+import { t } from '@/i18n';
 
 function readme(values: FormValues, scripts: string[]) {
-  const pm = values.pm || 'npm'
-  return `# ${values.name}\n\n${values.description ? `${values.description}\n\n` : ''}\`\`\`bash\n${pm} install\n${scripts.map((s) => `${pm} run ${s}`).join('\n')}\n\`\`\`\n`
+  const pm = values.pm || 'npm';
+  return `# ${values.name}\n\n${values.description ? `${values.description}\n\n` : ''}\`\`\`bash\n${pm} install\n${scripts.map((s) => `${pm} run ${s}`).join('\n')}\n\`\`\`\n`;
 }
 
 /* ------------------------------------------------------------------ *
@@ -37,7 +48,8 @@ export const htmlSiteTemplate: ProjectTemplate = {
   kindId: (v) => (v.server === 'true' ? 'npm' : undefined),
   open: 'index.html',
   files({ name, values, slug }) {
-    const nav = `<nav>\n        <a href="index.html">Start</a>${values.about === 'true' ? '\n        <a href="about.html">Über uns</a>' : ''}\n      </nav>`
+    const aboutLink = values.about === 'true' ? `\n        <a href="about.html">${t('addons.webAbout')}</a>` : '';
+    const nav = `<nav>\n        <a href="index.html">${t('addons.webStart')}</a>${aboutLink}\n      </nav>`;
     const page = (title: string, content: string) => `<!doctype html>
 <html lang="${values.lang}">
   <head>
@@ -59,21 +71,23 @@ ${content}
     <footer>© ${new Date().getFullYear()} ${name}</footer>
   </body>
 </html>
-`
+`;
     const files: Record<string, string> = {
-      'index.html': page('Start', `      <h1>Willkommen</h1>\n      <p>${values.description || 'Hier entsteht etwas Neues.'}</p>`),
+      'index.html': page(t('addons.webStart'), `      <h1>${t('addons.webWelcome')}</h1>\n      <p>${values.description || t('addons.webPlaceholder')}</p>`),
       'css/style.css': `:root {\n  --accent: #7c8cff;\n  font-family: system-ui, sans-serif;\n  color-scheme: light dark;\n}\n\nbody {\n  margin: 0 auto;\n  max-width: 60rem;\n  padding: 1.5rem;\n}\n\nheader {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n}\n\nnav a {\n  margin-left: 1rem;\n  color: var(--accent);\n}\n`,
       'js/main.js': "document.documentElement.classList.add('js')\n",
       'images/.gitkeep': '',
       '.gitignore': 'node_modules/\n',
+    };
+    if (values.about === 'true') {
+      files['about.html'] = page(t('addons.webAbout'), `      <h1>${t('addons.webAbout')}</h1>\n      <p>…</p>`);
     }
-    if (values.about === 'true') files['about.html'] = page('Über uns', '      <h1>Über uns</h1>\n      <p>…</p>')
     if (values.server === 'true') {
-      files['package.json'] = json({ name: slug, private: true, scripts: { dev: 'serve .', build: 'echo "Kein Build nötig"' }, devDependencies: { serve: '^14.2.4' } })
+      files['package.json'] = json({ name: slug, private: true, scripts: { dev: 'serve .', build: `echo "${t('addons.webNoBuild')}"` }, devDependencies: { serve: '^14.2.4' } });
     }
-    return files
+    return files;
   },
-}
+};
 
 export const cssLibraryTemplate: ProjectTemplate = {
   id: 'css-library',
@@ -106,6 +120,6 @@ export const cssLibraryTemplate: ProjectTemplate = {
       'demo.html': htmlShell(values.name, '<button class="btn">Knopf</button>', undefined, 'dist/index.css'),
       '.gitignore': GITIGNORE.node,
       'README.md': readme(values, ['build']),
-    }
+    };
   },
-}
+};

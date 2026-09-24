@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * What the approval hash of an extension's program code is taken over.
  *
@@ -10,11 +20,13 @@
  */
 
 export interface CodeParts {
-  main?: string
-  renderer?: string
+  main?: string;
+  renderer?: string;
 }
 
 export function codeHashInput(code: CodeParts): string {
-  if (!code.renderer) return code.main ?? ''
-  return JSON.stringify({ main: code.main ?? '', renderer: code.renderer })
+  if (!code.renderer) {
+    return code.main ?? '';
+  }
+  return JSON.stringify({ main: code.main ?? '', renderer: code.renderer });
 }

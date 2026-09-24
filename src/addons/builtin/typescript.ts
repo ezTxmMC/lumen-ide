@@ -1,8 +1,20 @@
-import type { Addon, LanguageSpec } from '@/core/types'
-import { denoKind, denoTemplate, npmKind, tsLibraryTemplate, tsNodeTemplate, tsViteTemplate } from '../lib/node-project'
-import { javascriptSpec, TS_INLAY_HINTS, TS_PREFERENCES, VTSLS_PREFERENCES, VTSLS_SUGGEST } from './javascript'
-import { jsDebugTypeScript } from '@/core/debug/adapters'
-import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import type { Addon, LanguageSpec } from '@/core/types';
+import { denoKind, denoTemplate, npmKind, tsLibraryTemplate, tsNodeTemplate, tsViteTemplate } from '../lib/node-project';
+import { javascriptSpec, TS_INLAY_HINTS, TS_PREFERENCES, VTSLS_PREFERENCES, VTSLS_SUGGEST } from './javascript';
+import { jsDebugTypeScript } from '@/core/debug/adapters';
+import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages';
+import { localizeSnippets } from '../lib/localize';
+import { t } from '@/i18n';
 
 export const typescriptSpec: LanguageSpec = {
   ...javascriptSpec,
@@ -25,18 +37,18 @@ export const typescriptSpec: LanguageSpec = {
     'Required', 'Pick', 'Omit', 'Record', 'Exclude', 'Extract', 'ReturnType',
     'Parameters', 'Awaited', 'NonNullable', 'Promise', 'Map', 'Set',
   ],
-  snippets: [
+  snippets: localizeSnippets([
     ...(javascriptSpec.snippets ?? []),
     { label: 'iface', detail: 'Interface', body: 'interface ${Name} {\n  $0\n}' },
     { label: 'tp', detail: 'Type-Alias', body: 'type ${Name} = $0' },
     { label: 'enum', detail: 'Enum', body: "enum ${Name} {\n  ${A} = '${a}',\n  $0\n}" },
-    { label: 'genfn', detail: 'Generische Funktion', body: 'function ${name}<${T}>(${arg}: ${T}): ${T} {\n  $0\n}' },
+    { label: 'genfn', detail: 'addons.snippets.typescript.genfn', body: 'function ${name}<${T}>(${arg}: ${T}): ${T} {\n  $0\n}' },
     { label: 'guard', detail: 'Type Guard', body: 'function is${Name}(value: unknown): value is ${Name} {\n  return $0\n}' },
     { label: 'asconst', detail: 'as const', body: 'const ${NAME} = [$0] as const' },
-    { label: 'record', detail: 'Record-Typ', body: 'type ${Name} = Record<${string}, ${unknown}>' },
-    { label: 'partial', detail: 'Optionaler Parameter', body: '${name}?: ${string}' },
-    { label: 'generic', detail: 'Generisches Interface', body: 'interface ${Name}<${T}> {\n  ${wert}: ${T}\n}' },
-  ],
+    { label: 'record', detail: 'addons.snippets.typescript.record', body: 'type ${Name} = Record<${string}, ${unknown}>' },
+    { label: 'partial', detail: 'addons.snippets.typescript.partial', body: '${name}?: ${string}' },
+    { label: 'generic', detail: 'addons.snippets.typescript.generic', body: 'interface ${Name}<${T}> {\n  ${wert}: ${T}\n}' },
+  ]),
   run: [
     { label: 'tsx', command: 'npx', args: ['tsx', '${file}'] },
     { label: 'Bun', command: 'bun', args: ['run', '${file}'] },
@@ -129,19 +141,19 @@ export const typescriptSpec: LanguageSpec = {
       docs: 'https://docs.deno.com/runtime/reference/lsp_integration/',
     },
   ],
-}
+};
 
 export const typescriptAddon: Addon = {
   id: 'lang.typescript',
   name: 'TypeScript',
   version: '1.0.0',
-  description:
-    'TypeScript und TSX inklusive Utility-Typen und tsx/Bun/Deno-Runner. Projekte ' +
-    'mit npm/pnpm/yarn/bun oder Deno, Vorlagen für Node und Vite, tsserver-LSP.',
+  get description() {
+    return t('addons.typescriptDescription');
+  },
   icon: 'TS',
   builtin: true,
   category: 'language',
   languages: [typescriptSpec],
   projectKinds: [npmKind, denoKind],
   projectTemplates: [tsNodeTemplate, tsLibraryTemplate, tsViteTemplate, denoTemplate],
-}
+};

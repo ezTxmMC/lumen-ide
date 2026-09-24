@@ -36,7 +36,7 @@
       "snippets": [
         {
           "label": "pkg",
-          "detail": "package.json-Grundgerüst",
+          "detail": "package.json skeleton",
           "body": "{\n  \"name\": \"${name}\",\n  \"version\": \"0.1.0\",\n  \"type\": \"module\",\n  \"scripts\": {\n    \"dev\": \"$0\"\n  }\n}"
         },
         {
@@ -47,12 +47,12 @@
         {
           "label": "obj",
           "detail": "Objekt",
-          "body": "\"${schlüssel}\": {\n  $0\n}"
+          "body": "\"${key}\": {\n  $0\n}"
         },
         {
           "label": "arr",
           "detail": "Array",
-          "body": "\"${schlüssel}\": [\n  $0\n]"
+          "body": "\"${key}\": [\n  $0\n]"
         }
       ],
       "lsp": [
@@ -124,11 +124,11 @@
         {
           "label": "list",
           "detail": "Liste",
-          "body": "${schlüssel}:\n  - ${eins}\n  - ${zwei}$0"
+          "body": "${key}:\n  - ${one}\n  - ${two}$0"
         },
         {
           "label": "anchor",
-          "detail": "Anker und Referenz",
+          "detail": "Anchor and reference",
           "body": "${basis}: &${anker}\n  ${feld}: ${wert}\n\n${abgeleitet}:\n  <<: *${anker}$0"
         }
       ],
@@ -214,7 +214,7 @@
         {
           "label": "table",
           "detail": "Tabelle",
-          "body": "[${abschnitt}]\n${schlüssel} = ${\"wert\"}$0"
+          "body": "[${section}]\n${key} = ${\"value\"}$0"
         }
       ],
       "lsp": [
@@ -456,7 +456,7 @@
         },
         {
           "label": "ifd",
-          "detail": "Datei prüfen",
+          "detail": "Check file",
           "body": "if [[ -f \"${datei}\" ]]; then\n  $0\nfi"
         },
         {
@@ -471,7 +471,7 @@
         },
         {
           "label": "trap",
-          "detail": "Aufräumen bei Abbruch",
+          "detail": "Clean up on abort",
           "body": "cleanup() {\n  $0\n}\ntrap cleanup EXIT INT TERM"
         }
       ],
@@ -788,7 +788,7 @@
       "files": [
         {
           "path": "bin/main.sh",
-          "content": "#!/usr/bin/env bash\n# {{name}} — {{description}}\nset -euo pipefail\n\nSCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"\n# shellcheck source=../lib/common.sh\nsource \"$SCRIPT_DIR/../lib/common.sh\"\n\nmain() {\n  info \"Hallo aus {{name}}!\"\n}\n\nmain \"$@\"\n"
+          "content": "#!/usr/bin/env bash\n# {{name}} — {{description}}\nset -euo pipefail\n\nSCRIPT_DIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"\n# shellcheck source=../lib/common.sh\nsource \"$SCRIPT_DIR/../lib/common.sh\"\n\nmain() {\n  info \"Hello from {{name}}!\"\n}\n\nmain \"$@\"\n"
         },
         {
           "path": "lib/common.sh",

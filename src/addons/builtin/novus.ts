@@ -1,5 +1,17 @@
-import type { Addon, LanguageSpec } from '@/core/types'
-import { novusKind, novusTemplate } from '../lib/lang-projects'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import type { Addon, LanguageSpec } from '@/core/types';
+import { novusKind, novusTemplate } from '../lib/lang-projects';
+import { localizeSnippets } from '../lib/localize';
+import { t } from '@/i18n';
 
 /**
  * Novus (`.nv`) — ezTxmMC's self-hosting language, which compiles to portable
@@ -78,25 +90,25 @@ export const novusSpec: LanguageSpec = {
     'sleep', 'cpus',
   ],
 
-  snippets: [
+  snippets: localizeSnippets([
     {
       label: 'main',
-      detail: 'Einstiegspunkt',
+      detail: 'addons.snippets.novus.main',
       body: 'package main\n\nmethod main {\n    println "$0"\n}',
     },
     {
       label: 'mainargs',
-      detail: 'main mit Argumenten',
+      detail: 'addons.snippets.novus.mainargs',
       body: 'method main(array<string> args) {\n    $0\n}',
     },
     {
       label: 'method',
-      detail: 'Methode',
+      detail: 'addons.snippets.novus.method',
       body: 'method ${name}(${integer n}): ${integer} {\n    $0\n}',
     },
     {
       label: 'class',
-      detail: 'Klasse mit Konstruktor',
+      detail: 'addons.snippets.novus.class',
       body:
         'define class ${Name} {\n' +
         '    private final ${string} ${feld}: get, set\n\n' +
@@ -110,7 +122,7 @@ export const novusSpec: LanguageSpec = {
     },
     {
       label: 'enum',
-      detail: 'Enum mit Konstruktor',
+      detail: 'addons.snippets.novus.enum',
       body:
         'define enum ${Name} {\n    ${EINS}("${text}"),\n    ${ZWEI}("${text}");\n\n' +
         '    private final str text: get\n\n' +
@@ -118,18 +130,18 @@ export const novusSpec: LanguageSpec = {
     },
     {
       label: 'abstract',
-      detail: 'Abstrakte Klasse',
+      detail: 'addons.snippets.novus.abstract',
       body: 'define abstract ${Name} {\n    abstract method ${buy}(): ${bool}$0\n}',
     },
     { label: 'for', detail: 'for..in', body: 'for (${element} in ${liste}) {\n    $0\n}' },
     { label: 'while', detail: 'while', body: 'while (${bedingung}) {\n    $0\n}' },
     {
       label: 'async',
-      detail: 'async-Methode',
+      detail: 'addons.snippets.novus.async',
       body: 'async method ${name}(${string arg}): ${string} {\n    return $0\n}',
     },
-    { label: 'sync', detail: 'sync-Block', body: 'sync {\n    $0\n}' },
-  ],
+    { label: 'sync', detail: 'addons.snippets.novus.sync', body: 'sync {\n    $0\n}' },
+  ]),
 
   indentUnit: 4,
 
@@ -147,12 +159,14 @@ export const novusSpec: LanguageSpec = {
       args: ['--stdio'],
       languageId: 'novus',
       rootMarkers: ['project.nv', '.git'],
-      install: 'Noch kein Language-Server im Novus-Repo — Wortlisten greifen weiterhin.',
+      get install() {
+        return t('addons.novusInstall');
+      },
     },
   ],
   run: [
     { label: 'novusc run', command: 'novusc', args: ['run', '${file}'] },
-    { label: 'novusc run (Projekt)', command: 'novusc', args: ['run'] },
+    { get label() { return t('addons.novusRunProject'); }, command: 'novusc', args: ['run'] },
     {
       label: 'novusc build',
       command: 'novusc',
@@ -162,19 +176,19 @@ export const novusSpec: LanguageSpec = {
     { label: 'novusc check', command: 'novusc', args: ['check', '${file}'] },
     { label: 'novusc emit (C)', command: 'novusc', args: ['emit', '${file}'] },
   ],
-}
+};
 
 export const novusAddon: Addon = {
   id: 'lang.novus',
   name: 'Novus',
   version: '1.0.0',
-  description:
-    'Novus (.nv): Klassen, Interfaces, Enums, Annotationen, Nebenläufigkeit ' +
-    'und String-Interpolation — mit novusc-Runner für run/build/check/emit.',
+  get description() {
+    return t('addons.novusDescription');
+  },
   icon: 'Nv',
   builtin: true,
   category: 'language',
   languages: [novusSpec],
   projectKinds: [novusKind],
   projectTemplates: [novusTemplate],
-}
+};

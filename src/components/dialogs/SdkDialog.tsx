@@ -1,44 +1,56 @@
-import { useEffect, useState } from 'react'
-import { Coffee, Download, HardDrive, RefreshCw } from 'lucide-react'
-import { useStore } from '@/state/store'
-import { useT } from '@/i18n'
-import { detectInstalled, isFinished, loadCatalog, useSdk } from '@/core/sdk'
-import { Button } from '../ui'
-import { InstalledList } from '../sdk/InstalledList'
-import { DownloadCatalog } from '../sdk/DownloadCatalog'
-import { DialogShell } from './DialogShell'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
 
-const SECTIONS = ['installed', 'download'] as const
-type SectionId = (typeof SECTIONS)[number]
+import { useEffect, useState } from 'react';
+import { Coffee, Download, HardDrive, RefreshCw } from 'lucide-react';
+import { useStore } from '@/state/store';
+import { useT } from '@/i18n';
+import { detectInstalled, isFinished, loadCatalog, useSdk } from '@/core/sdk';
+import { Button } from '../ui';
+import { InstalledList } from '../sdk/InstalledList';
+import { DownloadCatalog } from '../sdk/DownloadCatalog';
+import { DialogShell } from './DialogShell';
+
+const SECTIONS = ['installed', 'download'] as const;
+type SectionId = (typeof SECTIONS)[number];
 
 const asSection = (value: string | null | undefined): SectionId =>
-  SECTIONS.includes(value as SectionId) ? value as SectionId : 'installed'
+  SECTIONS.includes(value as SectionId) ? value as SectionId : 'installed';
 
 /** SDKs & JDKs: installierte verwalten, neue herunterladen. */
 export function SdkDialog() {
-  const t = useT()
-  const open = useStore((s) => s.dialog === 'sdks')
-  const requested = useStore((s) => s.dialogSection)
-  const [section, setSection] = useState<SectionId>('installed')
-  const [search, setSearch] = useState('')
-  const installedCount = useSdk((s) => s.installed.java?.length ?? 0)
-  const running = useSdk((s) => Object.values(s.jobs).filter((job) => !isFinished(job.progress.phase)).length)
-  const busy = useSdk((s) => (section === 'installed' ? s.detecting : s.catalogLoading))
+  const t = useT();
+  const open = useStore((s) => s.dialog === 'sdks');
+  const requested = useStore((s) => s.dialogSection);
+  const [section, setSection] = useState<SectionId>('installed');
+  const [search, setSearch] = useState('');
+  const installedCount = useSdk((s) => s.installed.java?.length ?? 0);
+  const running = useSdk((s) => Object.values(s.jobs).filter((job) => !isFinished(job.progress.phase)).length);
+  const busy = useSdk((s) => (section === 'installed' ? s.detecting : s.catalogLoading));
 
   useEffect(() => {
-    if (!open) return
-    setSection(asSection(requested))
-    setSearch('')
-    void detectInstalled('java')
-  }, [open, requested])
+    if (!open) {
+      return;
+    }
+    setSection(asSection(requested));
+    setSearch('');
+    void detectInstalled('java');
+  }, [open, requested]);
 
   const refresh = () => {
     if (section === 'installed') {
-      void detectInstalled('java')
-      return
+      void detectInstalled('java');
+      return;
     }
-    void loadCatalog('java', true)
-  }
+    void loadCatalog('java', true);
+  };
 
   return (
     <DialogShell
@@ -65,5 +77,5 @@ export function SdkDialog() {
       {section === 'installed' && <InstalledList search={search} onDownload={() => setSection('download')} />}
       {section === 'download' && <DownloadCatalog search={search} />}
     </DialogShell>
-  )
+  );
 }

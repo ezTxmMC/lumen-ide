@@ -1,4 +1,14 @@
-import { useId, type ReactNode } from 'react'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import { useId, type ReactNode } from 'react';
 
 /* ------------------------------------------------------------------ *
  * Kleine, wiederverwendbare Bausteine im flachen Lumen-Stil.
@@ -11,13 +21,13 @@ export function Toggle({
   hint,
   disabled,
 }: {
-  checked: boolean
-  onChange: (value: boolean) => void
-  label: string
-  hint?: string
-  disabled?: boolean
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  label: string;
+  hint?: string;
+  disabled?: boolean;
 }) {
-  const id = useId()
+  const id = useId();
   return (
     <div className="flex items-start justify-between gap-4 py-2">
       <label htmlFor={id} className="min-w-0 flex-1 select-none">
@@ -43,7 +53,7 @@ export function Toggle({
         />
       </button>
     </div>
-  )
+  );
 }
 
 export function Slider({
@@ -55,15 +65,15 @@ export function Slider({
   label,
   format,
 }: {
-  value: number
-  min: number
-  max: number
-  step?: number
-  onChange: (value: number) => void
-  label: string
-  format?: (value: number) => string
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  onChange: (value: number) => void;
+  label: string;
+  format?: (value: number) => string;
 }) {
-  const id = useId()
+  const id = useId();
   return (
     <div className="py-2">
       <div className="mb-1.5 flex items-baseline justify-between gap-3">
@@ -83,7 +93,7 @@ export function Slider({
         className="lm-range w-full"
       />
     </div>
-  )
+  );
 }
 
 export function Select<T extends string>({
@@ -92,12 +102,12 @@ export function Select<T extends string>({
   onChange,
   label,
 }: {
-  value: T
-  options: { value: T; label: string }[]
-  onChange: (value: T) => void
-  label: string
+  value: T;
+  options: { value: T; label: string; }[];
+  onChange: (value: T) => void;
+  label: string;
 }) {
-  const id = useId()
+  const id = useId();
   return (
     <div className="flex items-center justify-between gap-4 py-2">
       <label htmlFor={id} className="text-[13px] text-fg">{label}</label>
@@ -112,7 +122,7 @@ export function Select<T extends string>({
         ))}
       </select>
     </div>
-  )
+  );
 }
 
 export function Button({
@@ -124,20 +134,20 @@ export function Button({
   disabled,
   className = '',
 }: {
-  children: ReactNode
-  onClick?: () => void
-  variant?: 'ghost' | 'solid' | 'outline' | 'danger'
-  size?: 'sm' | 'md'
-  title?: string
-  disabled?: boolean
-  className?: string
+  children: ReactNode;
+  onClick?: () => void;
+  variant?: 'ghost' | 'solid' | 'outline' | 'danger';
+  size?: 'sm' | 'md';
+  title?: string;
+  disabled?: boolean;
+  className?: string;
 }) {
   const variants = {
     ghost: 'text-muted hover:bg-hover hover:text-fg',
     solid: 'bg-accent text-accent-fg hover:opacity-90',
     outline: 'border border-edge text-fg hover:border-edge-strong hover:bg-hover',
     danger: 'text-bad hover:bg-bad/12',
-  }
+  };
   return (
     <button
       onClick={onClick}
@@ -153,7 +163,7 @@ export function Button({
     >
       {children}
     </button>
-  )
+  );
 }
 
 export function Section({
@@ -161,9 +171,9 @@ export function Section({
   children,
   action,
 }: {
-  title: string
-  children: ReactNode
-  action?: ReactNode
+  title: string;
+  children: ReactNode;
+  action?: ReactNode;
 }) {
   return (
     <section className="border-b border-edge px-3 py-3 last:border-b-0">
@@ -175,11 +185,11 @@ export function Section({
       </div>
       {children}
     </section>
-  )
+  );
 }
 
 export function Empty(
-  { icon, title, hint, action }: { icon?: ReactNode; title: string; hint?: string; action?: ReactNode },
+  { icon, title, hint, action }: { icon?: ReactNode; title: string; hint?: string; action?: ReactNode; },
 ) {
   return (
     <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
@@ -188,13 +198,13 @@ export function Empty(
       {hint && <div className="text-[11.5px] leading-relaxed text-subtle">{hint}</div>}
       {action && <div className="mt-1.5">{action}</div>}
     </div>
-  )
+  );
 }
 
-export function Kbd({ children }: { children: ReactNode }) {
+export function Kbd({ children }: { children: ReactNode; }) {
   return (
     <kbd className="rounded border border-edge bg-input px-1.5 py-px font-mono text-[10.5px] text-muted">
       {children}
     </kbd>
-  )
+  );
 }

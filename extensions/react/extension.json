@@ -2,7 +2,7 @@
   "id": "ext.react",
   "name": "React",
   "version": "1.0.3",
-  "description": "JSX- und TSX-Hervorhebung mit Komponenten- statt Element-Farbe, alle Hooks als Vervollständigung und 16 Snippets von useState bis Context.",
+  "description": "JSX and TSX highlighting with component color instead of element color, all hooks as completions and 16 snippets from useState to Context.",
   "author": "Lumen",
   "icon": "⚛",
   "color": "#61dafb",

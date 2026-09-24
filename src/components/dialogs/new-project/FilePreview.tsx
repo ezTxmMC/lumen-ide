@@ -1,24 +1,34 @@
-import { useMemo, useState } from 'react'
-import { AlertCircle, ChevronRight, Folder, FolderTree, Loader2 } from 'lucide-react'
-import { fileTree, type FileTreeNode } from '@/core/project/catalog'
-import { useT } from '@/i18n'
-import { FileIcon, FolderIcon } from '../../icons/FileIcon'
-import type { Preview } from './usePreview'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import { useMemo, useState } from 'react';
+import { AlertCircle, ChevronRight, Folder, FolderTree, Loader2 } from 'lucide-react';
+import { fileTree, type FileTreeNode } from '@/core/project/catalog';
+import { useT } from '@/i18n';
+import { FileIcon, FolderIcon } from '../../icons/FileIcon';
+import type { Preview } from './usePreview';
 
 /** The files a template will generate, as a collapsible tree under the target folder. */
-export function FilePreview({ preview, rootName }: { preview: Preview; rootName: string }) {
-  const t = useT()
-  const tree = useMemo(() => fileTree(preview.files ?? []), [preview.files])
-  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
+export function FilePreview({ preview, rootName }: { preview: Preview; rootName: string; }) {
+  const t = useT();
+  const tree = useMemo(() => fileTree(preview.files ?? []), [preview.files]);
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const toggle = (path: string) => setCollapsed((current) => {
-    const next = new Set(current)
+    const next = new Set(current);
     if (next.has(path)) {
-      next.delete(path)
-      return next
+      next.delete(path);
+      return next;
     }
-    next.add(path)
-    return next
-  })
+    next.add(path);
+    return next;
+  });
 
   return (
     <section className="flex min-h-0 flex-1 flex-col rounded-lumen border border-edge bg-surface/60">
@@ -52,19 +62,19 @@ export function FilePreview({ preview, rootName }: { preview: Preview; rootName:
         )}
       </div>
     </section>
-  )
+  );
 }
 
 function TreeLevel({ nodes, depth, collapsed, onToggle }: {
-  nodes: FileTreeNode[]
-  depth: number
-  collapsed: Set<string>
-  onToggle: (path: string) => void
+  nodes: FileTreeNode[];
+  depth: number;
+  collapsed: Set<string>;
+  onToggle: (path: string) => void;
 }) {
   return (
     <>
       {nodes.map((node) => {
-        const pad = { paddingLeft: depth * 12 + 6 }
+        const pad = { paddingLeft: depth * 12 + 6 };
         if (!node.children) {
           return (
             <div key={node.path} className="flex items-center gap-1.5 rounded py-0.5 pr-1.5 text-muted hover:bg-hover hover:text-fg" style={pad} title={node.path}>
@@ -72,9 +82,9 @@ function TreeLevel({ nodes, depth, collapsed, onToggle }: {
               <FileIcon name={node.name} size={12} />
               <span className="truncate">{node.name}</span>
             </div>
-          )
+          );
         }
-        const open = !collapsed.has(node.path)
+        const open = !collapsed.has(node.path);
         return (
           <div key={node.path}>
             <button
@@ -94,8 +104,8 @@ function TreeLevel({ nodes, depth, collapsed, onToggle }: {
               </div>
             )}
           </div>
-        )
+        );
       })}
     </>
-  )
+  );
 }

@@ -147,28 +147,28 @@
       "snippets": [
         {
           "label": "project",
-          "detail": "Grundgerüst",
+          "detail": "Skeleton",
           "body": "cmake_minimum_required(VERSION 3.20)\nproject(${name} VERSION 0.1.0 LANGUAGES CXX)\n\nset(CMAKE_CXX_STANDARD 20)\nset(CMAKE_EXPORT_COMPILE_COMMANDS ON)\n\nadd_executable(${name} src/main.cpp)$0"
         },
         {
           "label": "exe",
           "detail": "add_executable",
-          "body": "add_executable(${ziel} ${quellen})$0"
+          "body": "add_executable(${target} ${quellen})$0"
         },
         {
           "label": "lib",
           "detail": "add_library",
-          "body": "add_library(${ziel} STATIC ${quellen})$0"
+          "body": "add_library(${target} STATIC ${quellen})$0"
         },
         {
           "label": "link",
           "detail": "target_link_libraries",
-          "body": "target_link_libraries(${ziel} PRIVATE ${bibliothek})$0"
+          "body": "target_link_libraries(${target} PRIVATE ${bibliothek})$0"
         },
         {
           "label": "inc",
           "detail": "target_include_directories",
-          "body": "target_include_directories(${ziel} PUBLIC include)$0"
+          "body": "target_include_directories(${target} PUBLIC include)$0"
         },
         {
           "label": "find",
@@ -188,7 +188,7 @@
         {
           "label": "test",
           "detail": "add_test",
-          "body": "enable_testing()\nadd_test(NAME ${name} COMMAND ${ziel})$0"
+          "body": "enable_testing()\nadd_test(NAME ${name} COMMAND ${target})$0"
         }
       ],
       "run": [
@@ -255,7 +255,7 @@
           "initializationOptions": {
             "buildDirectory": "build"
           },
-          "install": "pipx install --python python3.13 cmake-language-server, dann pipx inject cmake-language-server \"pygls<2\" (läuft nicht mit Python 3.14 und pygls 2)",
+          "install": "pipx install --python python3.13 cmake-language-server, then pipx inject cmake-language-server \"pygls<2\" (does not work with Python 3.14 and pygls 2)",
           "package": {
             "type": "pypi",
             "package": "cmake-language-server",
@@ -379,7 +379,7 @@
         {
           "label": "rule",
           "detail": "Regel",
-          "body": "${ziel}: ${abhängigkeiten}\n\t$0"
+          "body": "${target}: ${dependencies}\n\t$0"
         },
         {
           "label": "phony",
@@ -393,7 +393,7 @@
         },
         {
           "label": "cproj",
-          "detail": "C-Grundgerüst",
+          "detail": "C skeleton",
           "body": "CC ?= cc\nCFLAGS ?= -std=c17 -Wall -Wextra -g\nSRC := $(wildcard src/*.c)\nOBJ := $(SRC:.c=.o)\n\nall: ${app}\n\n${app}: $(OBJ)\n\t$(CC) -o $@ $^\n\nclean:\n\trm -f $(OBJ) ${app}\n\n.PHONY: all clean$0"
         }
       ],
@@ -472,12 +472,12 @@
       "snippets": [
         {
           "label": "pom",
-          "detail": "Maven-POM-Gerüst",
+          "detail": "Maven POM skeleton",
           "body": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project xmlns=\"http://maven.apache.org/POM/4.0.0\"\n         xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n         xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd\">\n  <modelVersion>4.0.0</modelVersion>\n  <groupId>${de.beispiel}</groupId>\n  <artifactId>${projekt}</artifactId>\n  <version>0.1.0-SNAPSHOT</version>\n  <properties>\n    <maven.compiler.release>21</maven.compiler.release>\n    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>\n  </properties>\n  $0\n</project>"
         },
         {
           "label": "dep",
-          "detail": "Maven-Abhängigkeit",
+          "detail": "Maven dependency",
           "body": "<dependency>\n  <groupId>${gruppe}</groupId>\n  <artifactId>${artefakt}</artifactId>\n  <version>${version}</version>$0\n</dependency>"
         },
         {

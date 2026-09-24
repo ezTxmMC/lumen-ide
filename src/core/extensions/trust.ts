@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Trusting an extension server.
  *
@@ -14,36 +24,38 @@
  * not happen either way.
  */
 
-import { OFFICIAL_HOST, type ExtensionServer } from './types'
+import { OFFICIAL_HOST, type ExtensionServer } from './types';
 
 /** Host of an address in lower case, or `null` when it is unusable. */
 export function hostOf(url: string): string | null {
   try {
-    return new URL(url).hostname.toLowerCase()
+    return new URL(url).hostname.toLowerCase();
   } catch {
-    return null
+    return null;
   }
 }
 
 /** Reduce an address to its root — comparing and storing need one shape. */
 export function normalizeServerUrl(raw: string): string {
-  const trimmed = String(raw ?? '').trim()
-  if (!trimmed) throw new Error('Adresse fehlt')
-  const withScheme = /^[a-z]+:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
-  const url = new URL(withScheme)
-  const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1'
-  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && local)) {
-    throw new Error('Extension servers have to be reachable over https')
+  const trimmed = String(raw ?? '').trim();
+  if (!trimmed) {
+    throw new Error('Adresse fehlt');
   }
-  url.hash = ''
-  url.search = ''
-  url.pathname = url.pathname.replace(/\/+$/, '')
-  return `${url.origin}${url.pathname}`
+  const withScheme = /^[a-z]+:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  const url = new URL(withScheme);
+  const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && local)) {
+    throw new Error('Extension servers have to be reachable over https');
+  }
+  url.hash = '';
+  url.search = '';
+  url.pathname = url.pathname.replace(/\/+$/, '');
+  return `${url.origin}${url.pathname}`;
 }
 
 /** The official server — never switched off, never removed. */
 export function isOfficial(url: string): boolean {
-  return hostOf(url) === OFFICIAL_HOST
+  return hostOf(url) === OFFICIAL_HOST;
 }
 
 /**
@@ -53,8 +65,12 @@ export function isOfficial(url: string): boolean {
  * the settings.
  */
 export function isTrusted(url: string, servers: readonly ExtensionServer[]): boolean {
-  if (isOfficial(url)) return true
-  const host = hostOf(url)
-  if (!host) return false
-  return servers.some((server) => hostOf(server.url) === host && server.trusted === true)
+  if (isOfficial(url)) {
+    return true;
+  }
+  const host = hostOf(url);
+  if (!host) {
+    return false;
+  }
+  return servers.some((server) => hostOf(server.url) === host && server.trusted === true);
 }

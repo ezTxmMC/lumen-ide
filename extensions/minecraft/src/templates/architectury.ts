@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The Architectury template: a multi-loader project with `common`, `fabric`
  * and `neoforge` and/or `forge`, built with architectury-plugin, Architectury
@@ -7,30 +17,30 @@
  * NeoForge from 1.20.4; 26.x without remapping).
  */
 
-import type { FormField, FormValues, ProjectTemplate, TemplateContext } from '../../../../src/core/types'
-import { architecturyApiGroup, architecturyGame } from '../architectury'
-import { ARCHITECTURY_GRADLE, DAEMON_JAVA, ARCHITECTURY_SHADOW, fabricFeatures, isUnobfuscated, javaFor, mixinLevel, neoFeatures } from '../eras'
-import { t, versions } from '../lumen'
-import { architecturyApiFor, forgeFor, neoforgeFor } from '../sources'
+import type { FormField, FormValues, ProjectTemplate, TemplateContext } from '../../../../src/core/types';
+import { architecturyApiGroup, architecturyGame } from '../architectury';
+import { ARCHITECTURY_GRADLE, DAEMON_JAVA, ARCHITECTURY_SHADOW, fabricFeatures, isUnobfuscated, javaFor, mixinLevel, neoFeatures } from '../eras';
+import { t, versions } from '../lumen';
+import { architecturyApiFor, forgeFor, neoforgeFor } from '../sources';
 import {
   authorsOf, buildToolField, defineTemplate, foojay, gitignore, gradleSetup, identityFields, isOn, javaField, javaHeader,
   javaText, json, packagePath, quoted, readme, toggle, wrapperFiles,
-} from './common'
-import { exampleMixin, loggerField } from './java'
-import { gradleField, mcField, versionField } from './versions'
+} from './common';
+import { exampleMixin, loggerField } from './java';
+import { gradleField, mcField, versionField } from './versions';
 
-const game = (v: FormValues) => architecturyGame(v.mc)
-const hasNeoForge = (v: FormValues) => Boolean(game(v)?.neoforge)
-const hasForge = (v: FormValues) => Boolean(game(v)?.forge)
-const neoforgeOn = (v: FormValues) => hasNeoForge(v) && isOn(v, 'neoforge')
-const forgeOn = (v: FormValues) => hasForge(v) && isOn(v, 'forge')
-const apiOn = (v: FormValues) => isOn(v, 'architecturyApi') && Boolean(game(v)?.architectury.api_version)
-const unobfuscated = (v: FormValues) => Boolean(game(v)?.unobfuscated) || isUnobfuscated(v.mc ?? '')
-const loomPlugin = (v: FormValues) => (unobfuscated(v) ? 'dev.architectury.loom-no-remap' : 'dev.architectury.loom')
-const javaOf = (v: FormValues) => game(v)?.java_version ?? javaFor(v.mc ?? '')
+const game = (v: FormValues) => architecturyGame(v.mc);
+const hasNeoForge = (v: FormValues) => Boolean(game(v)?.neoforge);
+const hasForge = (v: FormValues) => Boolean(game(v)?.forge);
+const neoforgeOn = (v: FormValues) => hasNeoForge(v) && isOn(v, 'neoforge');
+const forgeOn = (v: FormValues) => hasForge(v) && isOn(v, 'forge');
+const apiOn = (v: FormValues) => isOn(v, 'architecturyApi') && Boolean(game(v)?.architectury.api_version);
+const unobfuscated = (v: FormValues) => Boolean(game(v)?.unobfuscated) || isUnobfuscated(v.mc ?? '');
+const loomPlugin = (v: FormValues) => (unobfuscated(v) ? 'dev.architectury.loom-no-remap' : 'dev.architectury.loom');
+const javaOf = (v: FormValues) => game(v)?.java_version ?? javaFor(v.mc ?? '');
 
 function fields(): FormField[] {
-  const scope = 'architectury'
+  const scope = 'architectury';
   return [
     ...identityFields('mod'),
     mcField('architectury'),
@@ -56,8 +66,8 @@ function fields(): FormField[] {
       dependsOn: ['mc'],
       when: neoforgeOn,
       async load(v) {
-        const { all, legacy } = await versions().neoforgeLists()
-        return neoforgeFor(all, legacy, v.mc)
+        const { all, legacy } = await versions().neoforgeLists();
+        return neoforgeFor(all, legacy, v.mc);
       },
     }),
     { ...toggle('forge', t('option.platformForge'), false, hasForge), default: (v) => String(hasForge(v) && !hasNeoForge(v)) },
@@ -68,8 +78,8 @@ function fields(): FormField[] {
       dependsOn: ['mc'],
       when: forgeOn,
       async load(v) {
-        const { all, promos } = await versions().forgeLists()
-        return forgeFor(all, promos, v.mc)
+        const { all, promos } = await versions().forgeLists();
+        return forgeFor(all, promos, v.mc);
       },
     }),
     toggle('architecturyApi', t('option.architecturyApi'), true, (v) => Boolean(game(v)?.architectury.api_version)),
@@ -80,10 +90,10 @@ function fields(): FormField[] {
       dependsOn: ['mc'],
       when: apiOn,
       async load(v) {
-        const entry = game(v)
-        if (!entry) return []
-        const all = await versions().architecturyApi(architecturyApiGroup(entry).group === 'me.shedaniel')
-        return architecturyApiFor(all, entry)
+        const entry = game(v);
+        if (!entry) { return []; }
+        const all = await versions().architecturyApi(architecturyApiGroup(entry).group === 'me.shedaniel');
+        return architecturyApiFor(all, entry);
       },
     }),
     versionField({
@@ -102,11 +112,11 @@ function fields(): FormField[] {
     gradleField(scope, () => ARCHITECTURY_GRADLE, []),
     buildToolField(['gradle-groovy'], t('hint.groovyOnly')),
     toggle('mixins', t('option.mixins'), true),
-  ]
+  ];
 }
 
 function platforms(values: FormValues): string[] {
-  return ['fabric', ...(neoforgeOn(values) ? ['neoforge'] : []), ...(forgeOn(values) ? ['forge'] : [])]
+  return ['fabric', ...(neoforgeOn(values) ? ['neoforge'] : []), ...(forgeOn(values) ? ['forge'] : [])];
 }
 
 /* ------------------------------------------------------------------ *
@@ -114,13 +124,13 @@ function platforms(values: FormValues): string[] {
  * ------------------------------------------------------------------ */
 
 /** Compile with a JDK of at least 21 (what Loom needs) and target the game's Java release. */
-const toolchainFor = (java: string) => String(Math.max(Number(java) || 21, 21))
+const toolchainFor = (java: string) => String(Math.max(Number(java) || 21, 21));
 
 function rootBuild(values: FormValues): string {
-  const unobf = unobfuscated(values)
-  const plugin = loomPlugin(values)
-  const mappings = unobf ? '' : '\n    loom {\n        silentMojangMappingsLicense()\n    }\n'
-  const mappingDependency = unobf ? '' : '\n        mappings loom.officialMojangMappings()'
+  const unobf = unobfuscated(values);
+  const plugin = loomPlugin(values);
+  const mappings = unobf ? '' : '\n    loom {\n        silentMojangMappingsLicense()\n    }\n';
+  const mappingDependency = unobf ? '' : '\n        mappings loom.officialMojangMappings()';
   return `plugins {
     id '${plugin}' version '${values.loomVersion}' apply false
     id 'architectury-plugin' version '${values.pluginVersion}'
@@ -173,15 +183,15 @@ ${mappings}
         }
     }
 }
-`
+`;
 }
 
 function commonBuild(values: FormValues): string {
-  const configuration = unobfuscated(values) ? 'implementation' : 'modImplementation'
-  const { group } = architecturyApiGroup(game(values))
+  const configuration = unobfuscated(values) ? 'implementation' : 'modImplementation';
+  const { group } = architecturyApiGroup(game(values));
   const api = apiOn(values)
     ? `\n    ${configuration} "${group}:architectury:$rootProject.architectury_api_version"`
-    : ''
+    : '';
   return `architectury {
     common rootProject.enabled_platforms.split(',')
 }
@@ -190,20 +200,20 @@ dependencies {
     // For the @Environment annotations alone — use no further Fabric loader classes.
     ${configuration} "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"${api}
 }
-`
+`;
 }
 
-type Platform = 'fabric' | 'neoforge' | 'forge'
+type Platform = 'fabric' | 'neoforge' | 'forge';
 
 /** Building a platform: Shadow bundles `common` into the mod jar. */
 function platformBuild(values: FormValues, platform: Platform): string {
-  const unobf = unobfuscated(values)
-  const configuration = unobf ? 'implementation' : 'modImplementation'
-  const { group } = architecturyApiGroup(game(values))
-  const setup: Record<Platform, string> = { fabric: 'fabric()', neoforge: 'neoForge()', forge: 'forge()' }
-  const development: Record<Platform, string> = { fabric: 'developmentFabric', neoforge: 'developmentNeoForge', forge: 'developmentForge' }
-  const transform: Record<Platform, string> = { fabric: 'transformProductionFabric', neoforge: 'transformProductionNeoForge', forge: 'transformProductionForge' }
-  const metadata: Record<Platform, string> = { fabric: 'fabric.mod.json', neoforge: `META-INF/${neoFeatures(values.mc).metadataFile}`, forge: 'META-INF/mods.toml' }
+  const unobf = unobfuscated(values);
+  const configuration = unobf ? 'implementation' : 'modImplementation';
+  const { group } = architecturyApiGroup(game(values));
+  const setup: Record<Platform, string> = { fabric: 'fabric()', neoforge: 'neoForge()', forge: 'forge()' };
+  const development: Record<Platform, string> = { fabric: 'developmentFabric', neoforge: 'developmentNeoForge', forge: 'developmentForge' };
+  const transform: Record<Platform, string> = { fabric: 'transformProductionFabric', neoforge: 'transformProductionNeoForge', forge: 'transformProductionForge' };
+  const metadata: Record<Platform, string> = { fabric: 'fabric.mod.json', neoforge: `META-INF/${neoFeatures(values.mc).metadataFile}`, forge: 'META-INF/mods.toml' };
 
   const deps: Record<Platform, string[]> = {
     fabric: [
@@ -212,22 +222,22 @@ function platformBuild(values: FormValues, platform: Platform): string {
     ],
     neoforge: ['neoForge "net.neoforged:neoforge:$rootProject.neoforge_version"'],
     forge: ['forge "net.minecraftforge:forge:$rootProject.minecraft_version-$rootProject.forge_version"'],
-  }
-  const lines = [...deps[platform]]
-  if (apiOn(values)) lines.push(`${configuration} "${group}:architectury-${platform}:$rootProject.architectury_api_version"`)
+  };
+  const lines = [...deps[platform]];
+  if (apiOn(values)) { lines.push(`${configuration} "${group}:architectury-${platform}:$rootProject.architectury_api_version"`); }
   lines.push(
     unobf
       ? "common(project(path: ':common')) { transitive = false }"
       : "common(project(path: ':common', configuration: 'namedElements')) { transitive = false }",
     `shadowBundle project(path: ':common', configuration: '${transform[platform]}')`,
-  )
+  );
 
   const repositories = platform === 'neoforge'
     ? "\nrepositories {\n    maven {\n        name = 'NeoForged'\n        url = 'https://maven.neoforged.net/releases'\n    }\n}\n"
-    : ''
+    : '';
   const forgeLoom = platform === 'forge' && isOn(values, 'mixins')
     ? `\nloom {\n    forge {\n        mixinConfig "${values.modId}.mixins.json"\n    }\n}\n`
-    : ''
+    : '';
   const jar = unobf
     ? `jar {
     archiveClassifier = 'dev'
@@ -246,7 +256,7 @@ assemble.dependsOn shadowJar`
 
 remapJar {
     inputFile.set shadowJar.archiveFile
-}`
+}`;
 
   return `plugins {
     id 'com.gradleup.shadow'
@@ -286,11 +296,11 @@ processResources {
 }
 
 ${jar}
-`
+`;
 }
 
 function settings(values: FormValues): string {
-  const includes = ['common', ...platforms(values)].map((p) => `include '${p}'`)
+  const includes = ['common', ...platforms(values)].map((p) => `include '${p}'`);
   return `pluginManagement {
     repositories {
         maven { url = 'https://maven.fabricmc.net/' }
@@ -304,7 +314,7 @@ function settings(values: FormValues): string {
 ${foojay({ ...values, build: 'gradle-groovy' }, values.gradleVersion)}rootProject.name = '${values.modId}'
 
 ${includes.join('\n')}
-`
+`;
 }
 
 function properties(values: FormValues): string {
@@ -324,8 +334,8 @@ function properties(values: FormValues): string {
     ...(neoforgeOn(values) ? [`neoforge_version=${values.neoVersion}`] : []),
     ...(forgeOn(values) ? [`forge_version=${values.forgeVersion}`] : []),
     '',
-  ]
-  return lines.join('\n')
+  ];
+  return lines.join('\n');
 }
 
 /* ------------------------------------------------------------------ *
@@ -333,14 +343,14 @@ function properties(values: FormValues): string {
  * ------------------------------------------------------------------ */
 
 function fabricModJson(values: FormValues): string {
-  const apiModId = game(values)?.fabric?.fabric_api_mod_id ?? 'fabric-api'
+  const apiModId = game(values)?.fabric?.fabric_api_mod_id ?? 'fabric-api';
   const depends: Record<string, string> = {
     fabricloader: `>=${values.loaderVersion}`,
     minecraft: `~${values.mc}`,
     java: `>=${values.java}`,
     [apiModId]: '*',
-  }
-  if (apiOn(values)) depends.architectury = `>=${values.architecturyApiVersion}`
+  };
+  if (apiOn(values)) { depends.architectury = `>=${values.architecturyApiVersion}`; }
   return json({
     schemaVersion: 1,
     id: values.modId,
@@ -357,15 +367,15 @@ function fabricModJson(values: FormValues): string {
     },
     ...(isOn(values, 'mixins') ? { mixins: [`${values.modId}.mixins.json`] } : {}),
     depends,
-  })
+  });
 }
 
 function modsToml(values: FormValues, platform: 'neoforge' | 'forge'): string {
-  const authors = authorsOf(values)
-  const neo = platform === 'neoforge'
-  const entry = game(values)
-  const loaderMajor = neo ? entry?.neoforge?.loader_major_version ?? '1' : String(entry?.forge?.major_version ?? values.forgeVersion.split('.')[0])
-  const required = neo ? 'type = "required"' : 'mandatory = true'
+  const authors = authorsOf(values);
+  const neo = platform === 'neoforge';
+  const entry = game(values);
+  const loaderMajor = neo ? entry?.neoforge?.loader_major_version ?? '1' : String(entry?.forge?.major_version ?? values.forgeVersion.split('.')[0]);
+  const required = neo ? 'type = "required"' : 'mandatory = true';
   const dependency = (modId: string, range: string, ordering = 'NONE') => [
     '',
     `[[dependencies.${values.modId}]]`,
@@ -374,7 +384,7 @@ function modsToml(values: FormValues, platform: 'neoforge' | 'forge'): string {
     `versionRange = "${range}"`,
     `ordering = "${ordering}"`,
     'side = "BOTH"',
-  ]
+  ];
   const lines = [
     'modLoader = "javafml"',
     `loaderVersion = "[${loaderMajor},)"`,
@@ -389,13 +399,13 @@ function modsToml(values: FormValues, platform: 'neoforge' | 'forge'): string {
     ...dependency(neo ? 'neoforge' : 'forge', neo ? `[${values.neoVersion},)` : `[${loaderMajor},)`),
     ...dependency('minecraft', `[${values.mc},)`),
     ...(apiOn(values) ? dependency('architectury', `[${values.architecturyApiVersion},)`, 'AFTER') : []),
-  ]
-  if (neo && isOn(values, 'mixins')) lines.push('', '[[mixins]]', `config = "${values.modId}.mixins.json"`)
-  return `${lines.join('\n')}\n`
+  ];
+  if (neo && isOn(values, 'mixins')) { lines.push('', '[[mixins]]', `config = "${values.modId}.mixins.json"`); }
+  return `${lines.join('\n')}\n`;
 }
 
 function commonMain(values: FormValues): string {
-  const logger = loggerField(fabricFeatures(values.mc).slf4j)
+  const logger = loggerField(fabricFeatures(values.mc).slf4j);
   return `${javaHeader(values.package, logger.imports)}public final class ${values.mainClass} {
     public static final String MOD_ID = "${values.modId}";
 ${logger.line}
@@ -408,7 +418,7 @@ ${logger.line}
         LOGGER.info("${javaText(t('code.modLoaded', { name: values.name ?? values.modId }))}");
     }
 }
-`
+`;
 }
 
 function commonMixinConfig(values: FormValues): string {
@@ -420,7 +430,7 @@ function commonMixinConfig(values: FormValues): string {
     client: [],
     mixins: ['ExampleMixin'],
     injectors: { defaultRequire: 1 },
-  })
+  });
 }
 
 function fabricEntry(values: FormValues): string {
@@ -430,7 +440,7 @@ function fabricEntry(values: FormValues): string {
         ${values.mainClass}.init();
     }
 }
-`
+`;
 }
 
 function fabricClientEntry(values: FormValues): string {
@@ -440,7 +450,7 @@ function fabricClientEntry(values: FormValues): string {
         // ${t('code.clientComment')}
     }
 }
-`
+`;
 }
 
 function neoforgeEntry(values: FormValues): string {
@@ -450,31 +460,31 @@ public final class ${values.mainClass}NeoForge {
         ${values.mainClass}.init();
     }
 }
-`
+`;
 }
 
 function forgeEntry(values: FormValues): string {
-  const api = apiOn(values)
-  const { pkg } = architecturyApiGroup(game(values))
-  const imports = [`${values.package}.${values.mainClass}`, 'net.minecraftforge.fml.common.Mod']
-  if (api) imports.push(`${pkg}.platform.forge.EventBuses`, 'net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext')
+  const api = apiOn(values);
+  const { pkg } = architecturyApiGroup(game(values));
+  const imports = [`${values.package}.${values.mainClass}`, 'net.minecraftforge.fml.common.Mod'];
+  if (api) { imports.push(`${pkg}.platform.forge.EventBuses`, 'net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext'); }
   const register = api
     ? `        EventBuses.registerModEventBus(${values.mainClass}.MOD_ID, FMLJavaModLoadingContext.get().getModEventBus());\n`
-    : ''
+    : '';
   return `${javaHeader(`${values.package}.forge`, imports)}@Mod(${values.mainClass}.MOD_ID)
 public final class ${values.mainClass}Forge {
     public ${values.mainClass}Forge() {
 ${register}        ${values.mainClass}.init();
     }
 }
-`
+`;
 }
 
 function forgePackMeta(values: FormValues): string {
-  const entry = game(values)?.forge
-  const pack: Record<string, unknown> = { description: `${values.modId} resources`, pack_format: entry?.pack_version ?? 15 }
-  if (entry?.server_pack_version) pack[entry.server_pack_version[0]] = Number(entry.server_pack_version[1])
-  return json({ pack })
+  const entry = game(values)?.forge;
+  const pack: Record<string, unknown> = { description: `${values.modId} resources`, pack_format: entry?.pack_version ?? 15 };
+  if (entry?.server_pack_version) { pack[entry.server_pack_version[0]] = Number(entry.server_pack_version[1]); }
+  return json({ pack });
 }
 
 export const architecturyTemplate: ProjectTemplate = defineTemplate({
@@ -491,10 +501,10 @@ export const architecturyTemplate: ProjectTemplate = defineTemplate({
   setup: gradleSetup,
   next: () => t('next.architectury'),
   files(ctx) {
-    const { values } = ctx
-    if (!game(values)) throw new Error(t('error.unsupported', { platform: 'Architectury', mc: values.mc }))
-    const pkg = packagePath(values.package)
-    const runs = platforms(values).flatMap((p) => [`:${p}:runClient`, `:${p}:runServer`])
+    const { values } = ctx;
+    if (!game(values)) { throw new Error(t('error.unsupported', { platform: 'Architectury', mc: values.mc })); }
+    const pkg = packagePath(values.package);
+    const runs = platforms(values).flatMap((p) => [`:${p}:runClient`, `:${p}:runServer`]);
     const files: Record<string, string> = {
       'settings.gradle': settings(values),
       'build.gradle': rootBuild(values),
@@ -508,25 +518,25 @@ export const architecturyTemplate: ProjectTemplate = defineTemplate({
       [`fabric/src/main/java/${pkg}/fabric/client/${values.mainClass}FabricClient.java`]: fabricClientEntry(values),
       '.gitignore': gitignore(),
       'README.md': readme(ctx, `Architectury (${platforms(values).join(', ')})`, ['./gradlew build        # */build/libs/*.jar', ...runs.map((r) => `./gradlew ${r}`)]),
-    }
+    };
     if (isOn(values, 'mixins')) {
-      files[`common/src/main/java/${pkg}/mixin/ExampleMixin.java`] = exampleMixin(values.package)
-      files[`common/src/main/resources/${values.modId}.mixins.json`] = commonMixinConfig(values)
+      files[`common/src/main/java/${pkg}/mixin/ExampleMixin.java`] = exampleMixin(values.package);
+      files[`common/src/main/resources/${values.modId}.mixins.json`] = commonMixinConfig(values);
     }
     if (neoforgeOn(values)) {
-      const metadataFile = neoFeatures(values.mc).metadataFile
-      files['neoforge/build.gradle'] = platformBuild(values, 'neoforge')
-      files['neoforge/gradle.properties'] = 'loom.platform=neoforge\n'
-      files[`neoforge/src/main/resources/META-INF/${metadataFile}`] = modsToml(values, 'neoforge')
-      files[`neoforge/src/main/java/${pkg}/neoforge/${values.mainClass}NeoForge.java`] = neoforgeEntry(values)
+      const metadataFile = neoFeatures(values.mc).metadataFile;
+      files['neoforge/build.gradle'] = platformBuild(values, 'neoforge');
+      files['neoforge/gradle.properties'] = 'loom.platform=neoforge\n';
+      files[`neoforge/src/main/resources/META-INF/${metadataFile}`] = modsToml(values, 'neoforge');
+      files[`neoforge/src/main/java/${pkg}/neoforge/${values.mainClass}NeoForge.java`] = neoforgeEntry(values);
     }
     if (forgeOn(values)) {
-      files['forge/build.gradle'] = platformBuild(values, 'forge')
-      files['forge/gradle.properties'] = 'loom.platform=forge\n'
-      files['forge/src/main/resources/META-INF/mods.toml'] = modsToml(values, 'forge')
-      files['forge/src/main/resources/pack.mcmeta'] = forgePackMeta(values)
-      files[`forge/src/main/java/${pkg}/forge/${values.mainClass}Forge.java`] = forgeEntry(values)
+      files['forge/build.gradle'] = platformBuild(values, 'forge');
+      files['forge/gradle.properties'] = 'loom.platform=forge\n';
+      files['forge/src/main/resources/META-INF/mods.toml'] = modsToml(values, 'forge');
+      files['forge/src/main/resources/pack.mcmeta'] = forgePackMeta(values);
+      files[`forge/src/main/java/${pkg}/forge/${values.mainClass}Forge.java`] = forgeEntry(values);
     }
-    return files
+    return files;
   },
-})
+});

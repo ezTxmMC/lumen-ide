@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Highlighting the cursor line — only for cursors without a selection.
  *
@@ -7,41 +17,47 @@
  * as something on the line is selected.
  */
 
-import { RangeSetBuilder, type EditorState } from '@codemirror/state'
-import { Decoration, ViewPlugin, type DecorationSet, type EditorView, type ViewUpdate } from '@codemirror/view'
+import { RangeSetBuilder, type EditorState } from '@codemirror/state';
+import { Decoration, ViewPlugin, type DecorationSet, type EditorView, type ViewUpdate } from '@codemirror/view';
 
-const lineDeco = Decoration.line({ class: 'cm-activeLine' })
+const lineDeco = Decoration.line({ class: 'cm-activeLine' });
 
 function build(state: EditorState): DecorationSet {
-  const selected = new Set<number>()
-  const cursors = new Set<number>()
+  const selected = new Set<number>();
+  const cursors = new Set<number>();
   for (const range of state.selection.ranges) {
     if (range.empty) {
-      cursors.add(state.doc.lineAt(range.head).from)
-      continue
+      cursors.add(state.doc.lineAt(range.head).from);
+      continue;
     }
-    const first = state.doc.lineAt(range.from).number
-    const last = state.doc.lineAt(range.to).number
-    for (let n = first; n <= last; n++) selected.add(state.doc.line(n).from)
+    const first = state.doc.lineAt(range.from).number;
+    const last = state.doc.lineAt(range.to).number;
+    for (let n = first; n <= last; n++) {
+      selected.add(state.doc.line(n).from);
+    }
   }
-  const builder = new RangeSetBuilder<Decoration>()
+  const builder = new RangeSetBuilder<Decoration>();
   for (const from of [...cursors].sort((a, b) => a - b)) {
-    if (selected.has(from)) continue
-    builder.add(from, from, lineDeco)
+    if (selected.has(from)) {
+      continue;
+    }
+    builder.add(from, from, lineDeco);
   }
-  return builder.finish()
+  return builder.finish();
 }
 
 export const activeLineHighlight = ViewPlugin.fromClass(
   class {
-    decorations: DecorationSet
+    decorations: DecorationSet;
     constructor(view: EditorView) {
-      this.decorations = build(view.state)
+      this.decorations = build(view.state);
     }
     update(update: ViewUpdate) {
-      if (!update.docChanged && !update.selectionSet) return
-      this.decorations = build(update.state)
+      if (!update.docChanged && !update.selectionSet) {
+        return;
+      }
+      this.decorations = build(update.state);
     }
   },
   { decorations: (plugin) => plugin.decorations },
-)
+);

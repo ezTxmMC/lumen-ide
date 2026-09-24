@@ -1,30 +1,30 @@
-# Beispiel
+# Example
 
-Eine vollständige Erweiterung als Vorlage. Sie bringt alles mit, was das
-Manifest kennt, und ist bewusst klein genug, um sie am Stück zu lesen.
+A complete extension as a template. It ships everything the manifest knows and
+is deliberately small enough to read in one sitting.
 
-## Was darin steckt
+## What is inside
 
-- eine **Sprache** (`.lumenlog`) mit Schlüsselwörtern, Zeichenketten und Snippets
-- drei **Einstellungen** — Text, Schalter und Auswahl —, die in Lumen unter
-  *Einstellungen → Erweiterungen* erscheinen
-- zwei **Seiten**: eine für die Seitenleiste, eine für den Editorbereich
+- a **language** (`.lumenlog`) with keywords, strings and snippets
+- three **settings** (text, toggle and choice) that appear in Lumen under
+  *Settings → Extensions*
+- two **pages**: one for the sidebar, one for the editor area
 
-## Selbst bauen
+## Building it yourself
 
 ```sh
 npm run build:ext -- example
 npm run publish:ext -- --server http://localhost:8730 --token "$LUMEN_EXT_TOKEN"
 ```
 
-## Aufbau des Ordners
+## Folder layout
 
-| Datei | Bedeutung |
+| File | Meaning |
 | --- | --- |
-| `extension.json` | Steckbrief, Einstellungen |
-| `addon.json` | Sprachen, Vorlagen, Projektarten, Befehle |
-| `README.md` | diese Seite, auf dem Server |
-| `pages/*.md` | Seiten, die Lumen selbst anzeigt |
+| `extension.json` | Profile, settings |
+| `addon.json` | Languages, templates, project kinds, commands |
+| `README.md` | this page, on the server |
+| `pages/*.md` | pages that Lumen displays itself |
 
-> Erweiterungen bringen keinen Programmcode mit. Logik entsteht über
-> Knotengraphen, die derselbe Interpreter ausführt wie bei eigenen Add-ons.
+> Extensions like this one ship no program code. Logic comes from node graphs,
+> which the same interpreter runs as for custom add-ons.

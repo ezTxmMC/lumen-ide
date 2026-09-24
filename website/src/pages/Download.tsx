@@ -1,34 +1,46 @@
-import { useMemo } from 'react'
-import { CopyButton } from '@/components/CopyButton'
-import { OsIcon } from '@/components/OsIcon'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import { useMemo } from 'react';
+import { CopyButton } from '@/components/CopyButton';
+import { OsIcon } from '@/components/OsIcon';
 import {
   archiveUrl, detectOs, fileKind, fileUrl, formatDate, formatSize, OS_NAME, PLATFORMS, RELEASE_URL, useRelease,
   type Os, type PlatformInfo, type PlatformRelease, type Release, type ReleaseSource,
-} from '@/lib/release'
+} from '@/lib/release';
 
-const OS_ORDER: Os[] = ['linux', 'windows', 'mac']
+const OS_ORDER: Os[] = ['linux', 'windows', 'mac'];
 
 const OS_HINT: Record<Os, string> = {
   linux: 'Mark the AppImage executable and run it — no installer.',
   windows: 'The installer runs quietly and updates itself; the ZIP is portable.',
   mac: 'Unzip into Applications, then open it from the context menu the first time — the build is ad-hoc signed.',
-}
+};
 
 const SOURCE_LABEL: Record<ReleaseSource, string> = {
   live: 'live from latest.json',
   snapshot: 'as of the last site build',
   none: 'release data unavailable',
-}
+};
 
 /** The visitor's system first, the others after — nothing hidden. */
 function orderedSystems(os: Os | null) {
-  if (!os) return OS_ORDER
-  return [os, ...OS_ORDER.filter((candidate) => candidate !== os)]
+  if (!os) {
+    return OS_ORDER;
+  }
+  return [os, ...OS_ORDER.filter((candidate) => candidate !== os)];
 }
 
 export function Download() {
-  const { release, source, loading } = useRelease()
-  const os = useMemo(detectOs, [])
+  const { release, source, loading } = useRelease();
+  const os = useMemo(detectOs, []);
 
   return (
     <>
@@ -56,10 +68,10 @@ export function Download() {
         <Details release={release} />
       </div>
     </>
-  )
+  );
 }
 
-function Unavailable({ loading }: { loading: boolean }) {
+function Unavailable({ loading }: { loading: boolean; }) {
   return (
     <div className="rounded-[14px] border border-edge bg-surface p-6 text-muted">
       {loading && 'Loading the release manifest…'}
@@ -71,24 +83,24 @@ function Unavailable({ loading }: { loading: boolean }) {
         </>
       )}
     </div>
-  )
+  );
 }
 
-function Systems({ release, os }: { release: Release; os: Os | null }) {
+function Systems({ release, os }: { release: Release; os: Os | null; }) {
   return (
     <div className="grid items-start gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))]">
       {orderedSystems(os).map((system) => (
         <SystemCard key={system} release={release} os={system} yours={system === os} />
       ))}
     </div>
-  )
+  );
 }
 
-function SystemCard({ release, os, yours }: { release: Release; os: Os; yours: boolean }) {
+function SystemCard({ release, os, yours }: { release: Release; os: Os; yours: boolean; }) {
   const platforms = PLATFORMS
     .filter((platform) => platform.os === os)
     .map((platform) => ({ platform, entry: release.platforms[platform.id] }))
-    .filter((item): item is { platform: PlatformInfo; entry: PlatformRelease } => Boolean(item.entry))
+    .filter((item): item is { platform: PlatformInfo; entry: PlatformRelease; } => Boolean(item.entry));
 
   return (
     <section
@@ -117,8 +129,8 @@ function SystemCard({ release, os, yours }: { release: Release; os: Os; yours: b
             {entry.version !== release.version && <span>v{entry.version}</span>}
           </div>
           {entry.files.map((file) => {
-            const url = fileUrl(platform.id, file)
-            const primary = file.name === entry.update.name
+            const url = fileUrl(platform.id, file);
+            const primary = file.name === entry.update.name;
             return (
               <div key={file.name} className="grid gap-2 rounded-[10px] border border-edge bg-bg p-3">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -140,18 +152,18 @@ function SystemCard({ release, os, yours }: { release: Release; os: Os; yours: b
                   permanent link: /{entry.version}/{platform.id}/
                 </a>
               </div>
-            )
+            );
           })}
         </div>
       ))}
 
       <p className="text-[13.5px] text-muted">{OS_HINT[os]}</p>
     </section>
-  )
+  );
 }
 
-function Details({ release }: { release: Release | null }) {
-  const missingLinuxArm = release && !release.platforms.linux_aarch64
+function Details({ release }: { release: Release | null; }) {
+  const missingLinuxArm = release && !release.platforms.linux_aarch64;
   return (
     <div className="mt-12 grid gap-10 lg:grid-cols-2">
       <section className="grid content-start gap-3">
@@ -188,5 +200,5 @@ function Details({ release }: { release: Release | null }) {
         </div>
       </section>
     </div>
-  )
+  );
 }

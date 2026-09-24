@@ -1,31 +1,41 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The six themes that ship with Lumen — copied from
  * src/addons/builtin/themes.ts so the shots wear exactly the editor's colours.
  */
 
-import type { CSSProperties } from 'react'
+import type { CSSProperties } from 'react';
 
 export type TokenKind =
   | 'keyword' | 'control' | 'type' | 'builtin' | 'constant' | 'string' | 'escape' | 'number'
   | 'comment' | 'function' | 'variable' | 'property' | 'operator' | 'punctuation'
-  | 'tag' | 'attribute' | 'meta' | 'regexp' | 'invalid'
+  | 'tag' | 'attribute' | 'meta' | 'regexp' | 'invalid';
 
-type SyntaxStyle = string | { color: string; italic?: boolean; bold?: boolean }
+type SyntaxStyle = string | { color: string; italic?: boolean; bold?: boolean; };
 
 export interface Theme {
-  id: string
-  name: string
-  type: 'dark' | 'light'
+  id: string;
+  name: string;
+  type: 'dark' | 'light';
   ui: {
-    bg: string; bgElevated: string; bgOverlay: string; bgInput: string
-    bgHover: string; bgActive: string; border: string; borderStrong: string
-    text: string; textMuted: string; textSubtle: string
-    accent: string; accentText: string
-    success: string; warning: string; danger: string
-    selection: string; lineHighlight: string; cursor: string
-    gutter: string; scrollbar: string
-  }
-  syntax: Record<TokenKind, SyntaxStyle>
+    bg: string; bgElevated: string; bgOverlay: string; bgInput: string;
+    bgHover: string; bgActive: string; border: string; borderStrong: string;
+    text: string; textMuted: string; textSubtle: string;
+    accent: string; accentText: string;
+    success: string; warning: string; danger: string;
+    selection: string; lineHighlight: string; cursor: string;
+    gutter: string; scrollbar: string;
+  };
+  syntax: Record<TokenKind, SyntaxStyle>;
 }
 
 export const lumenDark: Theme = {
@@ -51,7 +61,7 @@ export const lumenDark: Theme = {
     tag: '#ff7a93', attribute: '#ffc46b', meta: '#b3a1ff',
     regexp: '#8ee6c8', invalid: '#ff5c5c',
   },
-}
+};
 
 export const lumenLight: Theme = {
   id: 'lumen-light',
@@ -75,7 +85,7 @@ export const lumenLight: Theme = {
     tag: '#b2114a', attribute: '#953800', meta: '#6639ba',
     regexp: '#0a7d32', invalid: '#cf222e',
   },
-}
+};
 
 export const midnight: Theme = {
   id: 'midnight',
@@ -99,7 +109,7 @@ export const midnight: Theme = {
     tag: '#f472b6', attribute: '#fbbf24', meta: '#c084fc',
     regexp: '#5eead4', invalid: '#fb7185',
   },
-}
+};
 
 export const forest: Theme = {
   id: 'forest',
@@ -123,7 +133,7 @@ export const forest: Theme = {
     tag: '#f0946a', attribute: '#e3b341', meta: '#b6a5e8',
     regexp: '#7fd6c1', invalid: '#f0796a',
   },
-}
+};
 
 export const solar: Theme = {
   id: 'solar',
@@ -147,7 +157,7 @@ export const solar: Theme = {
     tag: '#b91c1c', attribute: '#a16207', meta: '#7c3aed',
     regexp: '#4d7c0f', invalid: '#b91c1c',
   },
-}
+};
 
 export const graphite: Theme = {
   id: 'graphite',
@@ -172,35 +182,39 @@ export const graphite: Theme = {
     tag: '#d4d4da', attribute: '#a9a9b3', meta: '#8f8f99',
     regexp: '#9fb59f', invalid: '#e59a9a',
   },
-}
+};
 
-export const THEMES: Theme[] = [lumenDark, midnight, forest, graphite, lumenLight, solar]
+export const THEMES: Theme[] = [lumenDark, midnight, forest, graphite, lumenLight, solar];
 
 export function syntaxStyle(theme: Theme, kind: TokenKind): CSSProperties {
-  const raw = theme.syntax[kind]
-  if (typeof raw === 'string') return { color: raw }
+  const raw = theme.syntax[kind];
+  if (typeof raw === 'string') {
+    return { color: raw };
+  }
   return {
     color: raw.color,
     fontStyle: raw.italic ? 'italic' : undefined,
     fontWeight: raw.bold ? 700 : undefined,
-  }
+  };
 }
 
 export function syntaxColor(theme: Theme, kind: TokenKind): string {
-  const raw = theme.syntax[kind]
-  if (typeof raw === 'string') return raw
-  return raw.color
+  const raw = theme.syntax[kind];
+  if (typeof raw === 'string') {
+    return raw;
+  }
+  return raw.color;
 }
 
 /** `#rrggbb` → `r g b`, for `rgb(var(--c-accent-rgb) / x%)`. */
 function rgbTriplet(hex: string) {
-  const value = parseInt(hex.slice(1, 7), 16)
-  return `${(value >> 16) & 255} ${(value >> 8) & 255} ${value & 255}`
+  const value = parseInt(hex.slice(1, 7), 16);
+  return `${(value >> 16) & 255} ${(value >> 8) & 255} ${value & 255}`;
 }
 
 /** The `--c-*` variables core/theme.ts sets on `<html>` in the app — here scoped to one shot. */
 export function themeVars(theme: Theme): CSSProperties {
-  const { ui } = theme
+  const { ui } = theme;
   return {
     '--c-bg': ui.bg,
     '--c-bg-elevated': ui.bgElevated,
@@ -228,5 +242,5 @@ export function themeVars(theme: Theme): CSSProperties {
     '--s-keyword': syntaxColor(theme, 'keyword'),
     '--s-variable': syntaxColor(theme, 'variable'),
     colorScheme: theme.type,
-  } as CSSProperties
+  } as CSSProperties;
 }

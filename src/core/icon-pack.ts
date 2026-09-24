@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Icon packs: finding the icon for a file or folder, and checking loaded and
  * imported packs. No React — the drawing is done by
@@ -5,8 +15,9 @@
  * `components/icons/shapes.tsx`.
  */
 
-import { matchLanguage } from './language'
-import type { IconDef, IconPack, LanguageSpec } from './types'
+import { t } from '@/i18n';
+import { matchLanguage } from './language';
+import type { IconDef, IconPack, LanguageSpec } from './types';
 
 /** Built-in shapes (Lucide) that a pack can select through `shape`. */
 export const ICON_SHAPE_NAMES = [
@@ -58,157 +69,207 @@ export const ICON_SHAPE_NAMES = [
   'grape', 'carrot', 'candy', 'cake', 'cookie', 'pizza', 'beer', 'chef-hat', 'crown', 'trophy', 'sparkle',
   'plane', 'sailboat', 'dices', 'joystick', 'swords', 'house', 'building', 'landmark', 'castle', 'wallet',
   'coins',
-] as const
+] as const;
 
-export type IconShapeName = (typeof ICON_SHAPE_NAMES)[number]
+export type IconShapeName = (typeof ICON_SHAPE_NAMES)[number];
 
-const SHAPES = new Set<string>(ICON_SHAPE_NAMES)
+const SHAPES = new Set<string>(ICON_SHAPE_NAMES);
 
 export function isIconShape(name: string | undefined): name is IconShapeName {
-  return Boolean(name && SHAPES.has(name))
+  return Boolean(name && SHAPES.has(name));
 }
 
 /** A file's resolved icon: always with text and colour, plus the language. */
 export interface ResolvedIcon extends IconDef {
-  glyph: string
-  color: string
-  languageName: string | null
+  glyph: string;
+  color: string;
+  languageName: string | null;
 }
 
-const SUBTLE = 'var(--c-text-subtle)'
-const MUTED = 'var(--c-text-muted)'
+const SUBTLE = 'var(--c-text-subtle)';
+const MUTED = 'var(--c-text-muted)';
 
 /** `app.d.ts` → `d.ts`, `ts` — every extension, longest first. */
 function extensionsOf(name: string): string[] {
-  const parts = name.toLowerCase().split('.')
-  const out: string[] = []
+  const parts = name.toLowerCase().split('.');
+  const out: string[] = [];
   // A leading dot (`.env`) does not separate an extension.
-  const start = parts[0] === '' ? 2 : 1
-  for (let i = start; i < parts.length; i++) out.push(parts.slice(i).join('.'))
-  return out
+  const start = parts[0] === '' ? 2 : 1;
+  for (let i = start; i < parts.length; i++) {
+    out.push(parts.slice(i).join('.'));
+  }
+  return out;
 }
 
 function fallbackGlyph(name: string): string {
-  const ext = extensionsOf(name).pop()
-  if (!ext) return '·'
-  return ext.slice(0, 2).toUpperCase()
+  const ext = extensionsOf(name).pop();
+  if (!ext) {
+    return '·';
+  }
+  return ext.slice(0, 2).toUpperCase();
 }
 
 /** Fill the gaps of a found icon from the fallback. */
-function complete(def: IconDef, fallback: { glyph: string; color: string }, languageName: string | null): ResolvedIcon {
+function complete(def: IconDef, fallback: { glyph: string; color: string; }, languageName: string | null): ResolvedIcon {
   return {
     ...def,
     glyph: def.glyph ?? fallback.glyph,
     color: def.color ?? fallback.color,
     languageName,
-  }
+  };
 }
 
 export function resolveFileIcon(pack: IconPack | null, name: string, languages: LanguageSpec[]): ResolvedIcon {
-  const lower = name.toLowerCase()
-  const language = matchLanguage(name, languages) ?? null
-  const languageName = language?.name ?? null
+  const lower = name.toLowerCase();
+  const language = matchLanguage(name, languages) ?? null;
+  const languageName = language?.name ?? null;
   const fromLanguage = {
     glyph: language?.icon ?? fallbackGlyph(name),
     color: language?.color ?? SUBTLE,
-  }
+  };
 
-  const byName = pack?.fileNames?.[lower]
-  if (byName) return complete(byName, fromLanguage, languageName)
+  const byName = pack?.fileNames?.[lower];
+  if (byName) {
+    return complete(byName, fromLanguage, languageName);
+  }
 
   for (const ext of extensionsOf(name)) {
-    const byExt = pack?.extensions?.[ext]
-    if (byExt) return complete(byExt, fromLanguage, languageName)
+    const byExt = pack?.extensions?.[ext];
+    if (byExt) {
+      return complete(byExt, fromLanguage, languageName);
+    }
   }
 
-  const byLanguage = language ? pack?.languages?.[language.id] : undefined
-  if (byLanguage) return complete(byLanguage, fromLanguage, languageName)
+  const byLanguage = language ? pack?.languages?.[language.id] : undefined;
+  if (byLanguage) {
+    return complete(byLanguage, fromLanguage, languageName);
+  }
 
-  if (language) return complete({}, fromLanguage, languageName)
-  return complete(pack?.file ?? {}, { glyph: fallbackGlyph(name), color: SUBTLE }, null)
+  if (language) {
+    return complete({}, fromLanguage, languageName);
+  }
+  return complete(pack?.file ?? {}, { glyph: fallbackGlyph(name), color: SUBTLE }, null);
 }
 
 /** Which rule of a pack applies to a file name — for the Icon Studio. */
 export function explainFileIcon(
   pack: IconPack, name: string, languages: LanguageSpec[],
-): { rule: 'fileNames' | 'extensions' | 'languages' | 'language' | 'file'; key: string } {
-  const lower = name.toLowerCase()
-  if (pack.fileNames?.[lower]) return { rule: 'fileNames', key: lower }
-  const ext = extensionsOf(name).find((candidate) => pack.extensions?.[candidate])
-  if (ext) return { rule: 'extensions', key: ext }
-  const language = matchLanguage(name, languages)
-  if (language && pack.languages?.[language.id]) return { rule: 'languages', key: language.id }
-  if (language) return { rule: 'language', key: language.id }
-  return { rule: 'file', key: '' }
+): { rule: 'fileNames' | 'extensions' | 'languages' | 'language' | 'file'; key: string; } {
+  const lower = name.toLowerCase();
+  if (pack.fileNames?.[lower]) {
+    return { rule: 'fileNames', key: lower };
+  }
+  const ext = extensionsOf(name).find((candidate) => pack.extensions?.[candidate]);
+  if (ext) {
+    return { rule: 'extensions', key: ext };
+  }
+  const language = matchLanguage(name, languages);
+  if (language && pack.languages?.[language.id]) {
+    return { rule: 'languages', key: language.id };
+  }
+  if (language) {
+    return { rule: 'language', key: language.id };
+  }
+  return { rule: 'file', key: '' };
 }
 
 /** Folders: always a colour, a shape only when the pack supplies one. */
-export function resolveFolderIcon(pack: IconPack | null, name: string): IconDef & { color: string } {
-  const def = pack?.folderNames?.[name.toLowerCase()] ?? pack?.folder ?? {}
-  return { ...def, color: def.color ?? pack?.folder?.color ?? MUTED }
+export function resolveFolderIcon(pack: IconPack | null, name: string): IconDef & { color: string; } {
+  const def = pack?.folderNames?.[name.toLowerCase()] ?? pack?.folder ?? {};
+  return { ...def, color: def.color ?? pack?.folder?.color ?? MUTED };
 }
 
 /** Number of mappings — for the cards and the statistics. */
 export function iconPackSize(pack: IconPack): number {
   return [pack.fileNames, pack.extensions, pack.languages, pack.folderNames]
-    .reduce((sum, map) => sum + Object.keys(map ?? {}).length, 0)
+    .reduce((sum, map) => sum + Object.keys(map ?? {}).length, 0);
 }
 
 /* ------------------------------------------------------------------ *
  * Checking
  * ------------------------------------------------------------------ */
 
-const COLOR = /^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}|var\(--[\w-]+\))$/
+const COLOR = /^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}|var\(--[\w-]+\))$/;
 /** Path commands and numbers only — no markup that could do something else while drawing. */
-const PATH = /^[MmLlHhVvCcSsQqTtAaZz0-9eE.,+\-\s]+$/
+const PATH = /^[MmLlHhVvCcSsQqTtAaZz0-9eE.,+\-\s]+$/;
 
-export const ICON_MAP_KEYS = ['fileNames', 'extensions', 'languages', 'folderNames'] as const
+export const ICON_MAP_KEYS = ['fileNames', 'extensions', 'languages', 'folderNames'] as const;
 
 /** An icon's problems as readable text; empty means it is fine. */
 export function iconDefProblems(def: IconDef, where: string): string[] {
-  const out: string[] = []
-  if (!def || typeof def !== 'object') return [`${where}: kein Objekt`]
-  if (def.glyph !== undefined && (typeof def.glyph !== 'string' || def.glyph.length > 3)) out.push(`${where}: glyph höchstens 3 Zeichen`)
-  if (def.shape !== undefined && !isIconShape(def.shape)) out.push(`${where}: unbekannte Form „${def.shape}“`)
-  if (def.path !== undefined && (typeof def.path !== 'string' || !PATH.test(def.path) || def.path.length > 2000)) out.push(`${where}: ungültiger SVG-Pfad`)
-  if (def.color !== undefined && (typeof def.color !== 'string' || !COLOR.test(def.color))) out.push(`${where}: ungültige Farbe „${def.color}“`)
-  return out
+  const out: string[] = [];
+  if (!def || typeof def !== 'object') {
+    return [t('iconPacks.check.notObject', { where })];
+  }
+  if (def.glyph !== undefined && (typeof def.glyph !== 'string' || def.glyph.length > 3)) {
+    out.push(t('iconPacks.check.glyph', { where }));
+  }
+  if (def.shape !== undefined && !isIconShape(def.shape)) {
+    out.push(t('iconPacks.check.shape', { where, shape: def.shape }));
+  }
+  if (def.path !== undefined && (typeof def.path !== 'string' || !PATH.test(def.path) || def.path.length > 2000)) {
+    out.push(t('iconPacks.check.path', { where }));
+  }
+  if (def.color !== undefined && (typeof def.color !== 'string' || !COLOR.test(def.color))) {
+    out.push(t('iconPacks.check.color', { where, color: def.color }));
+  }
+  return out;
 }
 
 export function iconPackProblems(pack: IconPack): string[] {
-  const out: string[] = []
-  if (!pack || typeof pack !== 'object') return ['kein Objekt']
-  if (typeof pack.id !== 'string' || !/^[a-z0-9][a-z0-9._-]*$/.test(pack.id)) out.push('id: nur a–z, 0–9, . _ -')
-  if (typeof pack.name !== 'string' || !pack.name.trim()) out.push('name fehlt')
+  const out: string[] = [];
+  if (!pack || typeof pack !== 'object') {
+    return [t('iconPacks.check.notObject', { where: '' }).replace(/^: /, '')];
+  }
+  if (typeof pack.id !== 'string' || !/^[a-z0-9][a-z0-9._-]*$/.test(pack.id)) {
+    out.push(t('iconPacks.check.id'));
+  }
+  if (typeof pack.name !== 'string' || !pack.name.trim()) {
+    out.push(t('iconPacks.check.nameMissing'));
+  }
   for (const key of ICON_MAP_KEYS) {
-    const map = pack[key]
-    if (map === undefined) continue
+    const map = pack[key];
+    if (map === undefined) {
+      continue;
+    }
     if (!map || typeof map !== 'object') {
-      out.push(`${key}: kein Objekt`)
-      continue
+      out.push(t('iconPacks.check.notObject', { where: key }));
+      continue;
     }
     for (const [entry, def] of Object.entries(map)) {
-      if (entry !== entry.toLowerCase()) out.push(`${key}.${entry}: Schlüssel klein schreiben`)
-      if (key === 'extensions' && entry.startsWith('.')) out.push(`${key}.${entry}: Endung ohne Punkt`)
-      out.push(...iconDefProblems(def, `${key}.${entry}`))
+      if (entry !== entry.toLowerCase()) {
+        out.push(t('iconPacks.check.lowerKey', { where: `${key}.${entry}` }));
+      }
+      if (key === 'extensions' && entry.startsWith('.')) {
+        out.push(t('iconPacks.check.dotExt', { where: `${key}.${entry}` }));
+      }
+      out.push(...iconDefProblems(def, `${key}.${entry}`));
     }
   }
-  if (pack.file) out.push(...iconDefProblems(pack.file, 'file'))
-  if (pack.folder) out.push(...iconDefProblems(pack.folder, 'folder'))
-  return out
+  if (pack.file) {
+    out.push(...iconDefProblems(pack.file, 'file'));
+  }
+  if (pack.folder) {
+    out.push(...iconDefProblems(pack.folder, 'folder'));
+  }
+  return out;
 }
 
 export function isIconPack(value: unknown): value is IconPack {
-  return iconPackProblems(value as IconPack).length === 0
+  return iconPackProblems(value as IconPack).length === 0;
 }
 
 /** A unique id for copies and imports (`name-copy`, `name-copy-2` …). */
 export function uniqueIconPackId(base: string, taken: Iterable<string>): string {
-  const used = new Set(taken)
-  const clean = base.toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/-kopie(-\d+)?$/, '') || 'icons'
-  if (!used.has(clean)) return clean
-  let candidate = `${clean}-kopie`
-  let counter = 2
-  while (used.has(candidate)) candidate = `${clean}-kopie-${counter++}`
-  return candidate
+  const used = new Set(taken);
+  const clean = base.toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/-kopie(-\d+)?$/, '') || 'icons';
+  if (!used.has(clean)) {
+    return clean;
+  }
+  let candidate = `${clean}-kopie`;
+  let counter = 2;
+  while (used.has(candidate)) {
+    candidate = `${clean}-kopie-${counter++}`;
+  }
+  return candidate;
 }

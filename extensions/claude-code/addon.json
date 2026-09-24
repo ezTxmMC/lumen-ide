@@ -9,21 +9,21 @@
     {
       "id": "claude-code-project",
       "name": "Claude Code Projekt",
-      "description": "CLAUDE.md, Einstellungen und ein Slash-Befehl für Claude Code.",
+      "description": "CLAUDE.md, settings and a slash command for Claude Code.",
       "icon": "Cc",
       "color": "#d97757",
       "open": "CLAUDE.md",
       "fields": [
         {
           "id": "description",
-          "label": "Beschreibung",
+          "label": "Description",
           "section": "Projekt",
-          "placeholder": "Was macht das Projekt?",
+          "placeholder": "What does the project do?",
           "required": false
         },
         {
           "id": "commands",
-          "label": "Bau- und Testbefehle",
+          "label": "Build and test commands",
           "section": "Projekt",
           "placeholder": "npm test",
           "required": false,
@@ -33,7 +33,7 @@
       "files": [
         {
           "path": "CLAUDE.md",
-          "content": "# {{name}}\n\n{{description}}\n\n## Befehle\n\n```sh\n{{commands}}\n```\n\n## Konventionen\n\n- Kleine, überprüfbare Änderungen\n- Tests vor dem Abschluss ausführen\n"
+          "content": "# {{name}}\n\n{{description}}\n\n## Commands\n\n```sh\n{{commands}}\n```\n\n## Conventions\n\n- Small, reviewable changes\n- Run the tests before finishing\n"
         },
         {
           "path": ".claude/settings.json",
@@ -41,7 +41,7 @@
         },
         {
           "path": ".claude/commands/review.md",
-          "content": "---\ndescription: Änderungen im Arbeitsverzeichnis prüfen\n---\n\nPrüfe die aktuellen Änderungen (`git diff`) auf Fehler, fehlende Tests und unklare Namen. Fasse Ergebnisse nach Schwere zusammen.\n"
+          "content": "---\ndescription: Review the changes in the working directory\n---\n\nReview the current changes (`git diff`) for bugs, missing tests and unclear names. Summarize findings by severity.\n"
         }
       ]
     }

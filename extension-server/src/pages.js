@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The server's project pages: an overview and one page per extension.
  *
@@ -8,8 +18,8 @@
  * no effort.
  */
 
-import { escapeHtml, renderMarkdown } from './markdown.js'
-import { provides } from './store.js'
+import { escapeHtml, renderMarkdown } from './markdown.js';
+import { provides } from './store.js';
 
 const STYLE = `
 :root {
@@ -60,11 +70,16 @@ hr { border: none; border-top: 1px solid var(--edge); margin: 24px 0; }
 .install p { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
 .empty { padding: 40px 0; color: var(--subtle); text-align: center; }
 footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--edge); color: var(--subtle); font-size: 12.5px; }
-`
+`;
+
+const DEFAULT_BADGE_COLOR = '#7c8cff';
+const BADGE_LETTERS = 2;
+const NO_DESCRIPTION = 'No description';
+const BACK_LINK = '<a href="/">← All extensions</a>';
 
 function layout(title, body) {
   return `<!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -73,93 +88,144 @@ function layout(title, body) {
 </head>
 <body><div class="wrap">${body}</div></body>
 </html>
-`
+`;
 }
 
 function badge(entry) {
-  const label = escapeHtml((entry.icon ?? entry.name).slice(0, 2))
-  return `<span class="badge" style="background:${escapeHtml(entry.color ?? '#7c8cff')}">${label}</span>`
+  const label = escapeHtml((entry.icon ?? entry.name).slice(0, BADGE_LETTERS));
+  return `<span class="badge" style="background:${escapeHtml(entry.color ?? DEFAULT_BADGE_COLOR)}">${label}</span>`;
+}
+
+/** Optional text with a separator in front, empty when there is nothing to show. */
+function suffix(value) {
+  if (!value) {
+    return '';
+  }
+  return ` · ${escapeHtml(value)}`;
+}
+
+function pluralize(count) {
+  if (count === 1) {
+    return 'extension';
+  }
+  return 'extensions';
 }
 
 /** What the extension brings, as a readable list. */
 function providesText(provides) {
   const names = {
-    languages: 'Sprachen', themes: 'Themes', commands: 'Befehle', templates: 'Vorlagen',
-    projectKinds: 'Projektarten', snippets: 'Snippets', settings: 'Einstellungen', pages: 'Seiten', agents: 'Agenten', code: 'Programmcode',
-  }
+    languages: 'languages', themes: 'themes', commands: 'commands', templates: 'templates',
+    projectKinds: 'project kinds', snippets: 'snippets', settings: 'settings', pages: 'pages', agents: 'agents', code: 'code',
+  };
   const parts = Object.entries(provides ?? {})
     .filter(([, count]) => count > 0)
-    .map(([key, count]) => `${count} ${names[key] ?? key}`)
-  return parts.join(' · ')
+    .map(([key, count]) => `${count} ${names[key] ?? key}`);
+  return parts.join(' · ');
+}
+
+function card(entry) {
+  return `
+    <a class="card" href="/e/${encodeURIComponent(entry.id)}">
+      <h2>${badge(entry)}${escapeHtml(entry.name)}</h2>
+      <p>${escapeHtml(entry.description || NO_DESCRIPTION)}</p>
+      <div class="meta">${escapeHtml(entry.version)}${suffix(entry.author)}</div>
+    </a>`;
+}
+
+function cardGrid(extensions) {
+  if (!extensions.length) {
+    return '<div class="empty">This server does not host any extension yet.</div>';
+  }
+  return `<div class="grid">${extensions.map(card).join('')}</div>`;
 }
 
 export function indexPage(server, extensions) {
-  const cards = extensions.map((entry) => `
-    <a class="card" href="/e/${encodeURIComponent(entry.id)}">
-      <h2>${badge(entry)}${escapeHtml(entry.name)}</h2>
-      <p>${escapeHtml(entry.description || 'Ohne Beschreibung')}</p>
-      <div class="meta">${escapeHtml(entry.version)}${entry.author ? ` · ${escapeHtml(entry.author)}` : ''}</div>
-    </a>`).join('')
-
   const body = `
     <header>
       <h1>${escapeHtml(server.name)}</h1>
-      <p>Erweiterungsserver für Lumen — ${extensions.length} ${extensions.length === 1 ? 'Erweiterung' : 'Erweiterungen'}</p>
+      <p>Extension server for Lumen — ${extensions.length} ${pluralize(extensions.length)}</p>
     </header>
-    ${extensions.length ? `<div class="grid">${cards}</div>` : '<div class="empty">Auf diesem Server liegt noch keine Erweiterung.</div>'}
+    ${cardGrid(extensions)}
     <div class="install">
-      <p>In Lumen hinzufügen: <strong>Einstellungen → Erweiterungen → Server hinzufügen</strong></p>
+      <p>Add it in Lumen: <strong>Settings → Extensions → Add server</strong></p>
       <code>${escapeHtml(server.url)}</code>
     </div>
-    <footer>Katalog als JSON: <a href="/api/v1/index">/api/v1/index</a></footer>`
-  return layout(server.name, body)
+    <footer>Catalogue as JSON: <a href="/api/v1/index">/api/v1/index</a></footer>`;
+  return layout(server.name, body);
+}
+
+function listSection(title, items) {
+  if (!items?.length) {
+    return '';
+  }
+  return `<h2>${title}</h2><ul>${items.join('')}</ul>`;
+}
+
+function externalLink(url, label) {
+  if (!url) {
+    return '';
+  }
+  return `<a href="${escapeHtml(url)}" rel="noopener noreferrer">${label}</a>`;
+}
+
+function tagList(keywords) {
+  if (!keywords?.length) {
+    return '';
+  }
+  const tags = keywords.map((word) => `<span class="tag">${escapeHtml(word)}</span>`).join('');
+  return `<div class="tags">${tags}</div>`;
+}
+
+function readmeHtml(manifest) {
+  if (manifest.readme) {
+    return renderMarkdown(manifest.readme);
+  }
+  return renderMarkdown(`# ${manifest.name}\n\n${manifest.description || ''}`);
+}
+
+function versionItem(manifest, version) {
+  const href = `/api/v1/extensions/${encodeURIComponent(manifest.id)}/${encodeURIComponent(version)}`;
+  return `<li><code>${escapeHtml(version)}</code> — <a href="${href}">Manifest</a></li>`;
 }
 
 export function extensionPage(server, entry) {
-  const { manifest, meta } = entry
-  const settings = manifest.settings?.length
-    ? `<h2>Einstellungen</h2><ul>${manifest.settings
-        .map((setting) => `<li><code>${escapeHtml(setting.key)}</code> — ${escapeHtml(setting.label)}</li>`)
-        .join('')}</ul>`
-    : ''
-  const pages = manifest.pages?.length
-    ? `<h2>Seiten</h2><ul>${manifest.pages
-        .map((page) => `<li>${escapeHtml(page.title)}</li>`)
-        .join('')}</ul>`
-    : ''
+  const { manifest, meta } = entry;
+  const settings = listSection('Settings', manifest.settings?.map((setting) => `<li><code>${escapeHtml(setting.key)}</code> — ${escapeHtml(setting.label)}</li>`));
+  const pages = listSection('Pages', manifest.pages?.map((page) => `<li>${escapeHtml(page.title)}</li>`));
   const links = [
-    manifest.homepage ? `<a href="${escapeHtml(manifest.homepage)}" rel="noopener noreferrer">Projektseite</a>` : '',
-    manifest.repository ? `<a href="${escapeHtml(manifest.repository)}" rel="noopener noreferrer">Quelltext</a>` : '',
-  ].filter(Boolean).join(' · ')
+    externalLink(manifest.homepage, 'Project page'),
+    externalLink(manifest.repository, 'Source code'),
+  ].filter(Boolean).join(' · ');
+  const linkLine = links ? `<br>${links}` : '';
 
   const body = `
     <header>
       <h1>${badge(manifest)} ${escapeHtml(manifest.name)}</h1>
-      <p>${escapeHtml(manifest.description || 'Ohne Beschreibung')}</p>
+      <p>${escapeHtml(manifest.description || NO_DESCRIPTION)}</p>
     </header>
 
     <div class="install">
-      <p>In Lumen installieren: Server hinzufügen, dann <strong>${escapeHtml(manifest.name)}</strong> in der Liste wählen.</p>
+      <p>Install in Lumen: add the server, then pick <strong>${escapeHtml(manifest.name)}</strong> from the list.</p>
       <code>${escapeHtml(server.url)}</code>
     </div>
 
     <p class="meta">
-      Version ${escapeHtml(manifest.version)}${manifest.author ? ` · ${escapeHtml(manifest.author)}` : ''}${manifest.license ? ` · ${escapeHtml(manifest.license)}` : ''}<br>
-      Kennung <code>${escapeHtml(manifest.id)}</code><br>
+      Version ${escapeHtml(manifest.version)}${suffix(manifest.author)}${suffix(manifest.license)}<br>
+      Identifier <code>${escapeHtml(manifest.id)}</code><br>
       ${escapeHtml(providesText(provides(manifest)))}
-      ${links ? `<br>${links}` : ''}
+      ${linkLine}
     </p>
-    ${manifest.keywords?.length ? `<div class="tags">${manifest.keywords.map((word) => `<span class="tag">${escapeHtml(word)}</span>`).join('')}</div>` : ''}
+    ${tagList(manifest.keywords)}
     <hr>
-    ${renderMarkdown(manifest.readme || `# ${manifest.name}\n\n${manifest.description || ''}`)}
+    ${readmeHtml(manifest)}
     ${settings}
     ${pages}
-    <h2>Versionen</h2>
-    <ul>${meta.versions.map((version) => `<li><code>${escapeHtml(version)}</code> — <a href="/api/v1/extensions/${encodeURIComponent(manifest.id)}/${encodeURIComponent(version)}">Manifest</a></li>`).join('')}</ul>
-    <footer><a href="/">← Alle Erweiterungen</a></footer>`
-  return layout(`${manifest.name} — ${server.name}`, body)
+    <h2>Versions</h2>
+    <ul>${meta.versions.map((version) => versionItem(manifest, version)).join('')}</ul>
+    <footer>${BACK_LINK}</footer>`;
+  return layout(`${manifest.name} — ${server.name}`, body);
 }
 
 export function errorPage(status, message) {
-  return layout(`${status}`, `<header><h1>${status}</h1><p>${escapeHtml(message)}</p></header><footer><a href="/">← Alle Erweiterungen</a></footer>`)
+  return layout(`${status}`, `<header><h1>${status}</h1><p>${escapeHtml(message)}</p></header><footer>${BACK_LINK}</footer>`);
 }

@@ -197,7 +197,7 @@
         {
           "label": "enum",
           "detail": "Enum",
-          "body": "enum ${Name}: string\n{\n    case ${Eins} = '${eins}';$0\n}"
+          "body": "enum ${Name}: string\n{\n    case ${Eins} = '${one}';$0\n}"
         },
         {
           "label": "trait",
@@ -339,7 +339,7 @@
         {
           "id": "namespace",
           "label": "Namespace",
-          "default": "Beispiel\\{{slug|pascal}}",
+          "default": "Example\\{{slug|pascal}}",
           "pattern": "[A-Z][A-Za-z0-9]*(\\\\[A-Z][A-Za-z0-9]*)*",
           "patternHint": "templates.lang.namespaceHint",
           "section": "templates.sections.project",
@@ -461,7 +461,7 @@
         },
         {
           "path": "src/Greeter.php",
-          "content": "<?php\n\ndeclare(strict_types=1);\n\nnamespace {{namespace}};\n\nfinal class Greeter\n{\n    public function greet(string $name): string\n    {\n        return \"Hallo, {$name}!\";\n    }\n}\n"
+          "content": "<?php\n\ndeclare(strict_types=1);\n\nnamespace {{namespace}};\n\nfinal class Greeter\n{\n    public function greet(string $name): string\n    {\n        return \"Hello, {$name}!\";\n    }\n}\n"
         },
         {
           "path": "public/index.php",
@@ -469,7 +469,7 @@
         },
         {
           "path": "tests/GreeterTest.php",
-          "content": "<?php\n\ndeclare(strict_types=1);\n\nnamespace {{namespace}}\\Tests;\n\nuse {{namespace}}\\Greeter;\nuse PHPUnit\\Framework\\TestCase;\n\nfinal class GreeterTest extends TestCase\n{\n    public function testGreet(): void\n    {\n        self::assertSame('Hallo, Welt!', (new Greeter())->greet('Welt'));\n    }\n}\n"
+          "content": "<?php\n\ndeclare(strict_types=1);\n\nnamespace {{namespace}}\\Tests;\n\nuse {{namespace}}\\Greeter;\nuse PHPUnit\\Framework\\TestCase;\n\nfinal class GreeterTest extends TestCase\n{\n    public function testGreet(): void\n    {\n        self::assertSame('Hello, World!', (new Greeter())->greet('World'));\n    }\n}\n"
         },
         {
           "path": "phpunit.xml",

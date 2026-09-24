@@ -80,8 +80,8 @@
         },
         {
           "label": "defer",
-          "detail": "Verzögertes Laden",
-          "body": "@defer (on viewport) {\n  <${komponente} />$0\n} @placeholder {\n  <div>Lädt…</div>\n}"
+          "detail": "Deferred loading",
+          "body": "@defer (on viewport) {\n  <${component} />$0\n} @placeholder {\n  <div>Loading…</div>\n}"
         },
         {
           "label": "ngif",
@@ -513,7 +513,7 @@
         },
         {
           "label": "fetch",
-          "detail": "fetch mit await",
+          "detail": "fetch with await",
           "body": "const res = await fetch('${url}')\nif (!res.ok) throw new Error(res.statusText)\nconst data = await res.json()$0"
         },
         {
@@ -584,7 +584,7 @@
         {
           "label": "comp",
           "detail": "Standalone-Komponente",
-          "body": "import { Component, ChangeDetectionStrategy, signal } from '@angular/core'\n\n@Component({\n  selector: '${app-name}',\n  standalone: true,\n  imports: [],\n  template: `\n    <h1>{{ ${titel}() }}</h1>\n  `,\n  changeDetection: ChangeDetectionStrategy.OnPush,\n})\nexport class ${Name}Component {\n  readonly ${titel} = signal('${Hallo}')$0\n}"
+          "body": "import { Component, ChangeDetectionStrategy, signal } from '@angular/core'\n\n@Component({\n  selector: '${app-name}',\n  standalone: true,\n  imports: [],\n  template: `\n    <h1>{{ ${titel}() }}</h1>\n  `,\n  changeDetection: ChangeDetectionStrategy.OnPush,\n})\nexport class ${Name}Component {\n  readonly ${titel} = signal('${Hello}')$0\n}"
         },
         {
           "label": "service",
@@ -614,7 +614,7 @@
         {
           "label": "out",
           "detail": "Signal-Output",
-          "body": "readonly ${geändert} = output<${string}>()$0"
+          "body": "readonly ${changed} = output<${string}>()$0"
         },
         {
           "label": "inj",
@@ -1115,7 +1115,7 @@
         },
         {
           "path": "src/index.html",
-          "content": "<!doctype html>\n<html lang=\"de\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <title>{{name}}</title>\n    <base href=\"/\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n  </head>\n  <body>\n    <{{prefix}}-root></{{prefix}}-root>\n  </body>\n</html>\n"
+          "content": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <title>{{name}}</title>\n    <base href=\"/\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n  </head>\n  <body>\n    <{{prefix}}-root></{{prefix}}-root>\n  </body>\n</html>\n"
         },
         {
           "path": "src/main.ts",

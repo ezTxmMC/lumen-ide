@@ -52,18 +52,18 @@
       "snippets": [
         {
           "label": "page",
-          "detail": "Seite mit Frontmatter",
+          "detail": "Page with frontmatter",
           "body": "---\nimport Layout from '${../layouts/Layout.astro}'\n\nconst ${titel} = '${Seite}'\n---\n\n<Layout title={${titel}}>\n  $0\n</Layout>"
         },
         {
           "label": "comp",
-          "detail": "Komponente mit Props",
+          "detail": "Component with props",
           "body": "---\ninterface Props {\n  ${titel}: ${string}\n}\n\nconst { ${titel} } = Astro.props\n---\n\n<div>{${titel}}</div>$0"
         },
         {
           "label": "paths",
           "detail": "getStaticPaths",
-          "body": "export async function getStaticPaths() {\n  const ${einträge} = await getCollection('${blog}')\n  return ${einträge}.map((eintrag) => ({\n    params: { slug: eintrag.slug },\n    props: { eintrag },\n  }))\n}$0"
+          "body": "export async function getStaticPaths() {\n  const ${entries} = await getCollection('${blog}')\n  return ${entries}.map((entry) => ({\n    params: { slug: entry.slug },\n    props: { entry },\n  }))\n}$0"
         },
         {
           "label": "coll",
@@ -72,7 +72,7 @@
         },
         {
           "label": "island",
-          "detail": "Insel mit Hydration",
+          "detail": "Island with hydration",
           "body": "<${Komponente} client:visible ${prop}={${wert}} />$0"
         },
         {
@@ -382,7 +382,7 @@
         },
         {
           "path": "src/layouts/Layout.astro",
-          "content": "---\ninterface Props {\n  title: string\n}\nconst { title } = Astro.props\n---\n\n<!doctype html>\n<html lang=\"de\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width\" />\n    <title>{title} · {{name}}</title>\n  </head>\n  <body>\n    <slot />\n  </body>\n</html>\n"
+          "content": "---\ninterface Props {\n  title: string\n}\nconst { title } = Astro.props\n---\n\n<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width\" />\n    <title>{title} · {{name}}</title>\n  </head>\n  <body>\n    <slot />\n  </body>\n</html>\n"
         },
         {
           "path": "src/components/Card.astro",
@@ -410,7 +410,7 @@
             "field": "mdx",
             "equals": "true"
           },
-          "content": "---\nlayout: ../layouts/Layout.astro\ntitle: Beispiel\n---\n\n# MDX in {{name}}\n\nMarkdown mit **Komponenten**.\n"
+          "content": "---\nlayout: ../layouts/Layout.astro\ntitle: Example\n---\n\n# MDX in {{name}}\n\nMarkdown with **components**.\n"
         }
       ]
     }

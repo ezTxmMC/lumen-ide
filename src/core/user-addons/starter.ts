@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * An example tool add-on in the shape of “Minecraft Development”: a project
  * kind with detection, tasks and facts; a project template with a version list
@@ -5,11 +15,11 @@
  * Java. It serves as a starting point in the Add-on Studio.
  */
 
-import { t } from '@/i18n'
-import { createUserAddon, type UserAddonModel } from './schema'
+import { t } from '@/i18n';
+import { createUserAddon, type UserAddonModel } from './schema';
 
 const SETTINGS = `rootProject.name = "{{slug}}"
-`
+`;
 
 const BUILD = `plugins {
     java
@@ -35,7 +45,7 @@ java {
 tasks.runServer {
     minecraftVersion("{{mcVersion}}")
 }
-`
+`;
 
 const PLUGIN_YML = `name: {{name|pascal}}
 version: '1.0.0'
@@ -45,7 +55,7 @@ api-version: '{{mcVersion}}'
   hello:
     description: Grüßt den Spieler
     usage: /hello
-{{/if}}`
+{{/if}}`;
 
 const MAIN = `package {{group}};
 
@@ -59,7 +69,7 @@ public final class {{name|pascal}} extends JavaPlugin {
 {{/if}}        getLogger().info("{{name}} ist aktiv.");
     }
 }
-`
+`;
 
 const COMMAND = `package {{group}};
 
@@ -75,10 +85,10 @@ public final class HelloCommand implements CommandExecutor {
         return true;
     }
 }
-`
+`;
 
 export function createToolkitStarter(existingIds: string[]): UserAddonModel {
-  const model = createUserAddon(t('studioProject.starter.name'), existingIds)
+  const model = createUserAddon(t('studioProject.starter.name'), existingIds);
   return {
     ...model,
     description: t('studioProject.starter.description'),
@@ -152,5 +162,5 @@ export function createToolkitStarter(existingIds: string[]): UserAddonModel {
         body: 'getServer().getScheduler().runTaskTimer(this, () -> {\n    $0\n}, ${0}L, ${20}L);',
       },
     ],
-  }
+  };
 }

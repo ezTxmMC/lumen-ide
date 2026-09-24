@@ -1,4 +1,14 @@
-import type { NamespaceMessages } from '@/i18n'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import type { NamespaceMessages } from '@/i18n';
 
 /** Search in the folder; the match count is used by the references panel too. */
 export default {
@@ -50,4 +60,4 @@ export default {
     inFiles_one: 'in {count} bestand', inFiles_other: 'in {count} bestanden',
     noHits: 'Geen resultaten', noHitsHint: 'Niets gevonden voor “{query}”.',
   },
-} satisfies NamespaceMessages
+} satisfies NamespaceMessages;

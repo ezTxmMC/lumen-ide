@@ -1,34 +1,44 @@
-import { useState, useSyncExternalStore, type ReactNode } from 'react'
-import { ChevronRight } from 'lucide-react'
-import { debug } from '@/core/debug/manager'
-import { breakpoints } from '@/core/debug/breakpoints'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import { useState, useSyncExternalStore, type ReactNode } from 'react';
+import { ChevronRight } from 'lucide-react';
+import { debug } from '@/core/debug/manager';
+import { breakpoints } from '@/core/debug/breakpoints';
 
 /** Re-renders when the debugger or the breakpoints change. */
 export function useDebugVersion() {
-  const version = useSyncExternalStore(debug.subscribe, debug.getVersion)
-  const bpVersion = useSyncExternalStore(breakpoints.subscribe, breakpoints.getVersion)
-  return `${version}:${bpVersion}`
+  const version = useSyncExternalStore(debug.subscribe, debug.getVersion);
+  const bpVersion = useSyncExternalStore(breakpoints.subscribe, breakpoints.getVersion);
+  return `${version}:${bpVersion}`;
 }
 
-const openSections = new Map<string, boolean>()
+const openSections = new Map<string, boolean>();
 
 /** A collapsible section of the sidebar; its state survives switching views. */
 export function DebugSection({
   id, title, count, actions, children, defaultOpen = true, grow = false,
 }: {
-  id: string
-  title: string
-  count?: number
-  actions?: ReactNode
-  children: ReactNode
-  defaultOpen?: boolean
-  grow?: boolean
+  id: string;
+  title: string;
+  count?: number;
+  actions?: ReactNode;
+  children: ReactNode;
+  defaultOpen?: boolean;
+  grow?: boolean;
 }) {
-  const [open, setOpen] = useState(openSections.get(id) ?? defaultOpen)
+  const [open, setOpen] = useState(openSections.get(id) ?? defaultOpen);
   const toggle = () => {
-    openSections.set(id, !open)
-    setOpen(!open)
-  }
+    openSections.set(id, !open);
+    setOpen(!open);
+  };
   return (
     <section className={`flex min-h-0 flex-col border-t border-edge ${open && grow ? 'flex-1' : ''}`}>
       <div className="group flex h-7 shrink-0 cursor-pointer select-none items-center gap-1 px-1.5" onClick={toggle}>
@@ -45,15 +55,15 @@ export function DebugSection({
       </div>
       {open && <div className="lm-anim-fade min-h-0 overflow-y-auto pb-1.5">{children}</div>}
     </section>
-  )
+  );
 }
 
 export function IconButton({ title, onClick, children, disabled, tone = 'hover:text-fg' }: {
-  title: string
-  onClick: () => void
-  children: ReactNode
-  disabled?: boolean
-  tone?: string
+  title: string;
+  onClick: () => void;
+  children: ReactNode;
+  disabled?: boolean;
+  tone?: string;
 }) {
   return (
     <button
@@ -61,20 +71,26 @@ export function IconButton({ title, onClick, children, disabled, tone = 'hover:t
       aria-label={title}
       disabled={disabled}
       onClick={(e) => {
-        e.stopPropagation()
-        onClick()
+        e.stopPropagation();
+        onClick();
       }}
       className={`lm-transition flex size-5 items-center justify-center rounded-lumen-sm text-subtle hover:bg-hover disabled:pointer-events-none disabled:opacity-40 ${tone}`}
     >
       {children}
     </button>
-  )
+  );
 }
 
 /** A value's colour, roughly by kind. */
 export function valueTone(value: string, type?: string) {
-  if (/^["'`]/.test(value) || /string|str\b|char/i.test(type ?? '')) return 'text-ok'
-  if (/^-?\d/.test(value)) return 'text-warn'
-  if (/^(true|false|null|nil|None|undefined|True|False)$/.test(value)) return 'text-accent'
-  return 'text-fg'
+  if (/^["'`]/.test(value) || /string|str\b|char/i.test(type ?? '')) {
+    return 'text-ok';
+  }
+  if (/^-?\d/.test(value)) {
+    return 'text-warn';
+  }
+  if (/^(true|false|null|nil|None|undefined|True|False)$/.test(value)) {
+    return 'text-accent';
+  }
+  return 'text-fg';
 }

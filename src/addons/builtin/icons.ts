@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The bundled icon packs.
  *
@@ -12,20 +22,21 @@
  * folders as tinted arrows.
  */
 
-import type { Addon, IconDef, IconPack } from '@/core/types'
+import type { Addon, IconDef, IconPack } from '@/core/types';
+import { t } from '@/i18n';
 
 /** Several keys sharing one icon. */
 function same(keys: string[], def: IconDef): Record<string, IconDef> {
-  return Object.fromEntries(keys.map((key) => [key, def]))
+  return Object.fromEntries(keys.map((key) => [key, def]));
 }
 
 /** `name.config.js`, `name.config.ts` … — every script flavour of a config file. */
 function configFiles(base: string, def: IconDef, extensions = ['js', 'mjs', 'cjs', 'ts', 'mts', 'cts', 'json']): Record<string, IconDef> {
-  return same(extensions.map((ext) => `${base}.${ext}`), def)
+  return same(extensions.map((ext) => `${base}.${ext}`), def);
 }
 
-const MUTED = 'var(--c-text-muted)'
-const SUBTLE = 'var(--c-text-subtle)'
+const MUTED = 'var(--c-text-muted)';
+const SUBTLE = 'var(--c-text-subtle)';
 
 /**
  * The palette for roles — tuned to read on dark and light backgrounds alike,
@@ -50,7 +61,7 @@ const P = {
   brown: '#c69568',
   gray: '#9aa3b0',
   slate: '#7f8a99',
-} as const
+} as const;
 
 /** Brand colours, for tools recognised by them. */
 const B = {
@@ -89,41 +100,41 @@ const B = {
   markdown: '#519aba',
   github: MUTED,
   gitlab: '#fc6d26',
-} as const
+} as const;
 
 /* ------------------------------------------------------------------ *
  * Shared icons
  * ------------------------------------------------------------------ */
 
-const TEST: IconDef = { shape: 'flask', color: P.green }
-const SPEC: IconDef = { shape: 'test-tube', color: P.teal }
-const IMAGE: IconDef = { shape: 'file-image', color: P.violet }
-const VECTOR: IconDef = { shape: 'pen-tool', color: P.amber }
-const AUDIO: IconDef = { shape: 'file-audio', color: P.pink }
-const VIDEO: IconDef = { shape: 'file-video', color: P.rose }
-const FONT: IconDef = { shape: 'type', color: P.red }
-const ARCHIVE: IconDef = { shape: 'file-archive', color: P.brown }
-const LOCK: IconDef = { shape: 'lock', color: P.gray }
-const SHEET: IconDef = { shape: 'file-spreadsheet', color: P.green }
-const BINARY: IconDef = { shape: 'binary', color: P.slate }
-const CONFIG: IconDef = { shape: 'settings', color: P.gray }
-const KEY: IconDef = { shape: 'key-round', color: P.amber }
-const ENV: IconDef = { shape: 'file-key', color: P.yellow }
-const CERT: IconDef = { shape: 'certificate', color: P.amber }
-const DATA: IconDef = { shape: 'database', color: P.amber }
-const LOG: IconDef = { shape: 'scroll', color: P.slate }
-const TEXT: IconDef = { shape: 'file-text', color: MUTED }
-const SHELL: IconDef = { shape: 'shell', color: P.lime }
-const DIFF: IconDef = { shape: 'file-diff', color: P.orange }
-const NOTEBOOK: IconDef = { shape: 'notebook-pen', color: '#f37726' }
-const DOCUMENT: IconDef = { shape: 'file-text', color: P.blue }
-const SLIDES: IconDef = { shape: 'presentation', color: P.orange }
-const MODEL3D: IconDef = { shape: 'box', color: P.teal }
-const TEMPLATE: IconDef = { shape: 'layout-template', color: P.teal }
-const LINT: IconDef = { shape: 'shield-check', color: P.violet }
-const FORMAT: IconDef = { shape: 'sparkles', color: P.amber }
-const CI: IconDef = { shape: 'workflow', color: P.orange }
-const DEPLOY: IconDef = { shape: 'rocket', color: P.sky }
+const TEST: IconDef = { shape: 'flask', color: P.green };
+const SPEC: IconDef = { shape: 'test-tube', color: P.teal };
+const IMAGE: IconDef = { shape: 'file-image', color: P.violet };
+const VECTOR: IconDef = { shape: 'pen-tool', color: P.amber };
+const AUDIO: IconDef = { shape: 'file-audio', color: P.pink };
+const VIDEO: IconDef = { shape: 'file-video', color: P.rose };
+const FONT: IconDef = { shape: 'type', color: P.red };
+const ARCHIVE: IconDef = { shape: 'file-archive', color: P.brown };
+const LOCK: IconDef = { shape: 'lock', color: P.gray };
+const SHEET: IconDef = { shape: 'file-spreadsheet', color: P.green };
+const BINARY: IconDef = { shape: 'binary', color: P.slate };
+const CONFIG: IconDef = { shape: 'settings', color: P.gray };
+const KEY: IconDef = { shape: 'key-round', color: P.amber };
+const ENV: IconDef = { shape: 'file-key', color: P.yellow };
+const CERT: IconDef = { shape: 'certificate', color: P.amber };
+const DATA: IconDef = { shape: 'database', color: P.amber };
+const LOG: IconDef = { shape: 'scroll', color: P.slate };
+const TEXT: IconDef = { shape: 'file-text', color: MUTED };
+const SHELL: IconDef = { shape: 'shell', color: P.lime };
+const DIFF: IconDef = { shape: 'file-diff', color: P.orange };
+const NOTEBOOK: IconDef = { shape: 'notebook-pen', color: '#f37726' };
+const DOCUMENT: IconDef = { shape: 'file-text', color: P.blue };
+const SLIDES: IconDef = { shape: 'presentation', color: P.orange };
+const MODEL3D: IconDef = { shape: 'box', color: P.teal };
+const TEMPLATE: IconDef = { shape: 'layout-template', color: P.teal };
+const LINT: IconDef = { shape: 'shield-check', color: P.violet };
+const FORMAT: IconDef = { shape: 'sparkles', color: P.amber };
+const CI: IconDef = { shape: 'workflow', color: P.orange };
+const DEPLOY: IconDef = { shape: 'rocket', color: P.sky };
 
 /* ------------------------------------------------------------------ *
  * Languages — the fallback when neither the name nor the extension match
@@ -166,7 +177,7 @@ const LANGUAGES: Record<string, IconDef> = {
   cmake: { shape: 'cmake', color: B.cmake },
   makefile: { shape: 'hammer', color: P.orange },
   lumenlog: LOG,
-}
+};
 
 /* ------------------------------------------------------------------ *
  * Extensions (without a language add-on too)
@@ -329,7 +340,7 @@ const EXTENSIONS: Record<string, IconDef> = {
   mcfunction: { shape: 'pickaxe', color: '#8bc34a' },
   mcmeta: { shape: 'pickaxe', color: '#8bc34a' },
   nbt: { shape: 'pickaxe', color: '#a1887f' },
-}
+};
 
 /* ------------------------------------------------------------------ *
  * File names: the basic files and the build tools
@@ -565,7 +576,7 @@ const FILE_NAMES: Record<string, IconDef> = {
 
   // Lumen itself
   'lumen-extension.json': { shape: 'lumen', color: P.indigo },
-}
+};
 
 /* ------------------------------------------------------------------ *
  * Folders
@@ -675,7 +686,7 @@ const FOLDER_NAMES: Record<string, IconDef> = {
   // Minecraft
   ...same(['mixin', 'mixins'], { shape: 'folder-plugin', color: '#dbd0b4' }),
   ...same(['datagen', 'generated'], { shape: 'folder-dist', color: '#8bc34a' }),
-}
+};
 
 /* ------------------------------------------------------------------ *
  * The packs
@@ -692,11 +703,11 @@ export const lumenIconPack: IconPack = {
   folderNames: FOLDER_NAMES,
   file: { shape: 'file', color: SUBTLE },
   folder: { shape: 'folder', color: MUTED },
-}
+};
 
 /** Every colour of a map replaced by one tone. */
 function tone(map: Record<string, IconDef>, color: string): Record<string, IconDef> {
-  return Object.fromEntries(Object.entries(map).map(([key, def]) => [key, { ...def, color }]))
+  return Object.fromEntries(Object.entries(map).map(([key, def]) => [key, { ...def, color }]));
 }
 
 /**
@@ -714,7 +725,7 @@ export const monoIconPack: IconPack = {
   folderNames: tone(FOLDER_NAMES, SUBTLE),
   file: { shape: 'file', color: SUBTLE },
   folder: { shape: 'folder', color: SUBTLE },
-}
+};
 
 export const classicIconPack: IconPack = {
   id: 'lumen-classic',
@@ -728,17 +739,19 @@ export const classicIconPack: IconPack = {
     ...same(['assets', 'public', 'static', 'images'], { color: '#fbbf24' }),
     ...same(['config', 'scripts'], { color: '#f472b6' }),
   },
-}
+};
 
-export const DEFAULT_ICON_PACK_ID = lumenIconPack.id
+export const DEFAULT_ICON_PACK_ID = lumenIconPack.id;
 
 export const iconsAddon: Addon = {
   id: 'icons.lumen',
   name: 'Lumen Icons',
   version: '2.0.0',
-  description: 'Icon-Pakete „Lumen“, „Lumen Monochrome“ und „Lumen Classic“ für Explorer, Tabs und Suchlisten.',
+  get description() {
+    return t('addons.icons');
+  },
   icon: '◈',
   builtin: true,
   category: 'theme',
   iconPacks: [lumenIconPack, monoIconPack, classicIconPack],
-}
+};

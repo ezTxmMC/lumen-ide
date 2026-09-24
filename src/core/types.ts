@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Lumen Add-on API
  * ================
@@ -22,7 +32,7 @@
  *   }
  */
 
-import type { StringStream } from '@codemirror/language'
+import type { StringStream } from '@codemirror/language';
 
 /* ------------------------------------------------------------------ *
  * Tokens
@@ -31,7 +41,7 @@ import type { StringStream } from '@codemirror/language'
 /** Every token kind a theme can colour. */
 export const TOKEN_KINDS = [
   'keyword',     // let, class, import …
-  'control',     // if, for, return … (eigene Farbe für Kontrollfluss)
+  'control',     // if, for, return … (own colour for control flow)
   'type',        // int, String, benutzerdefinierte Typen
   'builtin',     // eingebaute Funktionen/Objekte
   'constant',    // true, false, null, PI
@@ -46,12 +56,12 @@ export const TOKEN_KINDS = [
   'punctuation',
   'tag',         // <div>
   'attribute',   // class="…"
-  'meta',        // #include, @media, Präprozessor
+  'meta',        // #include, @media, preprocessor
   'regexp',
   'invalid',
-] as const
+] as const;
 
-export type TokenKind = (typeof TOKEN_KINDS)[number]
+export type TokenKind = (typeof TOKEN_KINDS)[number];
 
 /* ------------------------------------------------------------------ *
  * Languages
@@ -59,34 +69,34 @@ export type TokenKind = (typeof TOKEN_KINDS)[number]
 
 export interface StringRule {
   /** Character that opens the string, and closes it too when `end` is absent. */
-  start: string
-  end?: string
+  start: string;
+  end?: string;
   /** May the string span several lines? */
-  multiline?: boolean
+  multiline?: boolean;
   /** Honour backslash escapes? Defaults to true. */
-  escapes?: boolean
+  escapes?: boolean;
   /** Colour as `meta` rather than `string` — template literals, say. */
-  kind?: TokenKind
+  kind?: TokenKind;
   /**
    * Start of an interpolation, such as `'${'` (Novus, JavaScript) or `'#{'`
    * (Crystal). Everything up to the matching closing brace is coloured as
    * `meta` instead of as part of the string.
    */
-  interpolate?: string
+  interpolate?: string;
 }
 
 export interface RunConfig {
   /** Label in the run menu. */
-  label: string
+  label: string;
   /** Executable to launch, such as `python3`. */
-  command: string
+  command: string;
   /**
    * Arguments. Placeholders:
    *  `${file}` `${fileDir}` `${fileName}` `${fileStem}` `${workspace}`
    */
-  args: string[]
+  args: string[];
   /** Optional second stage (compile, then run). */
-  then?: { command: string; args: string[] }
+  then?: { command: string; args: string[]; };
 }
 
 /**
@@ -115,42 +125,42 @@ export interface RunConfig {
  * Node.js or Python — for scripts such as jdtls' launcher.
  */
 export type LspPackage =
-  | { type: 'npm'; packages: string[]; bin?: string }
-  | { type: 'pypi'; package: string; python?: string; with?: string[]; bin?: string }
-  | { type: 'go'; module: string; bin?: string }
-  | { type: 'dotnet'; package: string; bin?: string }
-  | { type: 'github'; repo: string; assets: Record<string, string>; bin?: string; version?: string; runtime?: 'python' | 'node' }
-  | { type: 'archive'; url: string | Record<string, string>; bin?: string; runtime?: 'python' | 'node'; executables?: string[] }
+  | { type: 'npm'; packages: string[]; bin?: string; }
+  | { type: 'pypi'; package: string; python?: string; with?: string[]; bin?: string; }
+  | { type: 'go'; module: string; bin?: string; }
+  | { type: 'dotnet'; package: string; bin?: string; }
+  | { type: 'github'; repo: string; assets: Record<string, string>; bin?: string; version?: string; runtime?: 'python' | 'node'; }
+  | { type: 'archive'; url: string | Record<string, string>; bin?: string; runtime?: 'python' | 'node'; executables?: string[]; };
 
 /** System package managers Lumen can drive — the keys of `LspConfig.systemPackages`. */
 export type SystemPackageManager =
   | 'pacman' | 'apt' | 'dnf' | 'zypper' | 'apk' | 'xbps' | 'emerge'
-  | 'brew' | 'winget' | 'scoop' | 'choco'
+  | 'brew' | 'winget' | 'scoop' | 'choco';
 
 /** Package names per system package manager; several packages separated by spaces. */
-export type SystemPackages = Partial<Record<SystemPackageManager, string>>
+export type SystemPackages = Partial<Record<SystemPackageManager, string>>;
 
 export interface LspConfig {
   /** Display name, for instance "typescript-language-server". */
-  label: string
-  command: string
-  args?: string[]
+  label: string;
+  command: string;
+  args?: string[];
   /**
    * Further places the server may live when `command` is not on the PATH.
    * Absolute paths, `~` and the placeholders `${root}` (project root),
    * `${home}` and `${dataDir}` are allowed. The first hit becomes the
    * program.
    */
-  candidates?: string[]
+  candidates?: string[];
   /** Extra environment variables for the server process. */
-  env?: Record<string, string>
+  env?: Record<string, string>;
   /** The LSP `languageId`, when it differs from `LanguageSpec.id`. */
-  languageId?: string
+  languageId?: string;
   /**
    * Files or folders that mark the project root (`package.json`, `go.mod`).
    * With no hit the opened folder is used.
    */
-  rootMarkers?: string[]
+  rootMarkers?: string[];
   /**
    * `nearest` (the default) takes the first folder upwards holding a marker.
    * `outermost` takes the highest one within the workspace folder — for build
@@ -158,143 +168,143 @@ export interface LspConfig {
    * to resolve one module's classes in another. VCS markers such as `.git`
    * then only count when nothing else is found.
    */
-  rootSearch?: 'nearest' | 'outermost'
-  initializationOptions?: unknown
+  rootSearch?: 'nearest' | 'outermost';
+  initializationOptions?: unknown;
   /** Sent through `workspace/didChangeConfiguration`. */
-  settings?: unknown
+  settings?: unknown;
   /** How to install the server, in prose. */
-  install?: string
+  install?: string;
   /**
    * Install commands per platform. Lumen only runs them when someone clicks
    * in the language-server panel or confirms the install prompt — never on
    * its own.
    */
-  installCommands?: Partial<Record<'linux' | 'darwin' | 'win32', string>>
+  installCommands?: Partial<Record<'linux' | 'darwin' | 'win32', string>>;
   /** Installs the server into Lumen's own environment; preferred over `installCommands`. */
-  package?: LspPackage
+  package?: LspPackage;
   /**
    * The package that provides the server in the system's package manager, per
    * manager (`{ pacman: 'clang', apt: 'clangd', brew: 'llvm' }`). Lumen detects
    * the manager itself, builds the command and asks for the administrator
    * password where the manager needs root.
    */
-  systemPackages?: SystemPackages
+  systemPackages?: SystemPackages;
   /** Link to the server's documentation. */
-  docs?: string
+  docs?: string;
   /**
    * One process serving several languages (clangd for C and C++, tsserver
    * for JavaScript and TypeScript). Defaults to true: clients are shared by
    * program and project root.
    */
-  shared?: boolean
+  shared?: boolean;
 }
 
 export interface Snippet {
-  label: string
-  detail?: string
+  label: string;
+  detail?: string;
   /** `$0` marks where the cursor lands after insertion. */
-  body: string
+  body: string;
 }
 
 /** A snippet an add-on contributes to some other language. */
 export interface AddonSnippet extends Snippet {
-  languageId: string
+  languageId: string;
 }
 
 /** A tokenizer of your own — only needed for markup and the like. */
 export interface CustomTokenizer<S = unknown> {
-  startState(): S
-  copyState?(state: S): S
-  token(stream: StringStream, state: S): TokenKind | null
+  startState(): S;
+  copyState?(state: S): S;
+  token(stream: StringStream, state: S): TokenKind | null;
 }
 
 export interface LanguageSpec {
-  id: string
-  name: string
+  id: string;
+  name: string;
   /** Lower case, with the dot: `['.ts', '.mts']` */
-  extensions: string[]
+  extensions: string[];
   /** Exact file names without an extension, e.g. `['Makefile', 'Dockerfile']` */
-  filenames?: string[]
+  filenames?: string[];
   /** One or two characters for the file icon. */
-  icon?: string
+  icon?: string;
   /** Accent colour of the language (file icon, status bar). */
-  color?: string
+  color?: string;
 
-  comments?: { line?: string; block?: [string, string] }
-  keywords?: string[]
-  controls?: string[]
-  types?: string[]
-  builtins?: string[]
-  constants?: string[]
+  comments?: { line?: string; block?: [string, string]; };
+  keywords?: string[];
+  controls?: string[];
+  types?: string[];
+  builtins?: string[];
+  constants?: string[];
 
   /** Defaults to `"` and `'`, single-line, with escapes. */
-  strings?: StringRule[]
-  numbers?: RegExp
-  identifier?: RegExp
-  operators?: RegExp
+  strings?: StringRule[];
+  numbers?: RegExp;
+  identifier?: RegExp;
+  operators?: RegExp;
   /** Preprocessor directives at the start of a line, `/^#\w+/` for C. */
-  meta?: RegExp
-  caseInsensitive?: boolean
+  meta?: RegExp;
+  caseInsensitive?: boolean;
   /** Colour capitalised identifiers as types (Java, Rust, Go …). */
-  capitalizedAsType?: boolean
+  capitalizedAsType?: boolean;
 
   /** Characters that indent and outdent. Defaults to `{[(` / `}])` */
-  indentOpen?: RegExp
-  indentClose?: RegExp
-  indentUnit?: number
+  indentOpen?: RegExp;
+  indentClose?: RegExp;
+  indentUnit?: number;
 
   /** Extra words for completion. */
-  completions?: string[]
-  snippets?: Snippet[]
-  run?: RunConfig[]
+  completions?: string[];
+  snippets?: Snippet[];
+  run?: RunConfig[];
   /** Language servers, most preferred first. */
-  lsp?: LspConfig[]
+  lsp?: LspConfig[];
   /** Debug adapters, most preferred first. */
-  debug?: DebugAdapterConfig[]
+  debug?: DebugAdapterConfig[];
 
   /** Replaces the generic tokenizer outright. */
-  tokenizer?: CustomTokenizer<never>
+  tokenizer?: CustomTokenizer<never>;
 
   /**
    * Higher wins when several languages claim the same extension (Tailwind
    * ahead of CSS, for instance). Defaults to 0.
    */
-  priority?: number
+  priority?: number;
 }
 
 /* ------------------------------------------------------------------ *
  * Projects
  * ------------------------------------------------------------------ */
 
-export type TaskGroup = 'build' | 'run' | 'test' | 'clean' | 'other'
+export type TaskGroup = 'build' | 'run' | 'test' | 'clean' | 'other';
 
 /** A runnable task of a project — build, test, script … */
 export interface ProjectTask {
   /** Unique within the project, such as `maven:package`. */
-  id: string
-  label: string
-  command: string
-  args: string[]
-  group?: TaskGroup
+  id: string;
+  label: string;
+  command: string;
+  args: string[];
+  group?: TaskGroup;
   /** Relative to the project root, which is also the default. */
-  cwd?: string
-  env?: Record<string, string>
+  cwd?: string;
+  env?: Record<string, string>;
   /** Second stage (compile, then run). */
-  then?: { command: string; args: string[] }
+  then?: { command: string; args: string[]; };
   /** Short description for the panel. */
-  detail?: string
+  detail?: string;
   /**
    * Where a discovered task belongs — a Gradle task group (`Build`, `Help`)
    * or a Maven plugin prefix (`spring-boot`). Used to group custom tasks.
    */
-  category?: string
+  category?: string;
 }
 
 export interface ProjectDependency {
-  name: string
-  version?: string
+  name: string;
+  version?: string;
   /** For instance "test", "dev", "compile". */
-  scope?: string
+  scope?: string;
 }
 
 /**
@@ -303,80 +313,80 @@ export interface ProjectDependency {
  */
 export interface ProjectModule {
   /** Unique within the project: the Maven module path or the Gradle project path (`:app:core`). */
-  id: string
-  name: string
+  id: string;
+  name: string;
   /** Folder relative to the project root (`services/api`). */
-  path: string
+  path: string;
   /** A short kind: Maven packaging (`jar`, `pom`) or the Gradle flavour (`application`, `library`). */
-  kind?: string
+  kind?: string;
   /** Tasks scoped to this module (`mvn -pl … -am`, `gradle :app:build`), custom ones included. */
-  tasks: ProjectTask[]
-  facts?: Record<string, string>
-  dependencies?: ProjectDependency[]
+  tasks: ProjectTask[];
+  facts?: Record<string, string>;
+  dependencies?: ProjectDependency[];
   /** Build file relative to the project root. */
-  buildFile?: string
-  modules?: ProjectModule[]
+  buildFile?: string;
+  modules?: ProjectModule[];
 }
 
 export interface ProjectMeta {
-  name?: string
-  version?: string
-  description?: string
+  name?: string;
+  version?: string;
+  description?: string;
   /** Java version, language standard, package manager and the like. */
-  facts?: Record<string, string>
-  dependencies?: ProjectDependency[]
+  facts?: Record<string, string>;
+  dependencies?: ProjectDependency[];
   /** Source folders relative to the root (`src/main/java`). */
-  sourceRoots?: string[]
+  sourceRoots?: string[];
   /** File offered when the project opens (`pom.xml`). */
-  buildFile?: string
+  buildFile?: string;
   /** Modules of a multi-module build, as a tree. */
-  modules?: ProjectModule[]
+  modules?: ProjectModule[];
   /** Tasks found in the build files beyond the standard ones — Gradle tasks, Maven plugin goals, profiles. */
-  customTasks?: ProjectTask[]
+  customTasks?: ProjectTask[];
 }
 
 export interface ProjectContext {
-  root: string
+  root: string;
   /** Reads a file relative to the root; `null` when it is missing. */
-  readFile(relative: string): Promise<string | null>
-  exists(relative: string): Promise<boolean>
+  readFile(relative: string): Promise<string | null>;
+  exists(relative: string): Promise<boolean>;
   /** Entries of a folder relative to the root (names only). */
-  list(relative: string): Promise<{ name: string; isDirectory: boolean }[]>
-  platform: string
+  list(relative: string): Promise<{ name: string; isDirectory: boolean; }[]>;
+  platform: string;
 }
 
 /* ------------------------------------------------------------------ *
  * Forms (project templates, dependencies, dialogs)
  * ------------------------------------------------------------------ */
 
-export type FormValues = Record<string, string>
+export type FormValues = Record<string, string>;
 
 /** One entry of a select. `group` puts it under a heading (“Releases”, “Snapshots”). */
 export interface FieldChoice {
-  value: string
-  label: string
-  hint?: string
-  group?: string
+  value: string;
+  label: string;
+  hint?: string;
+  group?: string;
   /** A short tag beside the label — “latest”, “recommended”, “beta”. */
-  badge?: string
+  badge?: string;
 }
 
 /** An input in a dialog. Values are always strings — `'true'`/`'false'` for switches. */
 export interface FormField {
-  id: string
-  label: string
+  id: string;
+  label: string;
   /**
    * Defaults to `text`. `combobox` is a select with a search box, for long
    * lists such as every Minecraft version or every loader build.
    */
-  type?: 'text' | 'select' | 'combobox' | 'toggle' | 'password' | 'textarea'
+  type?: 'text' | 'select' | 'combobox' | 'toggle' | 'password' | 'textarea';
   /** A fixed starting value, or one derived from other fields until someone edits it. */
-  default?: string | ((values: FormValues) => string)
-  placeholder?: string
-  hint?: string
-  choices?: FieldChoice[]
+  default?: string | ((values: FormValues) => string);
+  placeholder?: string;
+  hint?: string;
+  choices?: FieldChoice[];
   /** Choices computed from the other fields — replaces `choices` when given. */
-  choicesFor?: (values: FormValues) => FieldChoice[]
+  choicesFor?: (values: FormValues) => FieldChoice[];
   /**
    * Choices fetched on demand — versions from a Maven repository, say. Called
    * when the form opens and again whenever a field named in `dependsOn`
@@ -385,26 +395,26 @@ export interface FormField {
    * current value is not among the result, the field's `default` (or the
    * first choice) takes its place.
    */
-  loadChoices?: (values: FormValues, signal: AbortSignal) => Promise<FieldChoice[]>
+  loadChoices?: (values: FormValues, signal: AbortSignal) => Promise<FieldChoice[]>;
   /** Fields whose change reloads `loadChoices` (and recomputes `choicesFor`). */
-  dependsOn?: string[]
+  dependsOn?: string[];
   /** Regular expression source; the whole value has to match. */
-  pattern?: string
+  pattern?: string;
   /** Message shown when `pattern` does not match. */
-  patternHint?: string
+  patternHint?: string;
   /** Defaults to true for text fields. */
-  required?: boolean
+  required?: boolean;
   /** Heading the field appears under. */
-  section?: string
+  section?: string;
   /** Only show — and only read — the field while the condition holds. */
-  when?: (values: FormValues) => boolean
+  when?: (values: FormValues) => boolean;
   /** Render in a monospaced font (packages, versions, paths). */
-  mono?: boolean
+  mono?: boolean;
   /**
    * Suggestions for the field, offered beside the input rather than enforced.
    * A function when they depend on other fields, such as versions of a package.
    */
-  suggestions?: string[] | ((values: FormValues) => string[])
+  suggestions?: string[] | ((values: FormValues) => string[]);
 }
 
 /* ------------------------------------------------------------------ *
@@ -412,9 +422,9 @@ export interface FormField {
  * ------------------------------------------------------------------ */
 
 export interface DependencySpec {
-  name: string
-  version?: string
-  scope?: string
+  name: string;
+  version?: string;
+  scope?: string;
 }
 
 /**
@@ -423,20 +433,20 @@ export interface DependencySpec {
  * `vcpkg.json`), optionally followed by a command.
  */
 export type DependencyAction =
-  | { type: 'task'; task: ProjectTask }
-  | { type: 'edit'; file: string; content: string; then?: ProjectTask }
+  | { type: 'task'; task: ProjectTask; }
+  | { type: 'edit'; file: string; content: string; then?: ProjectTask; };
 
 export interface DependencySupport {
   /** What the package manager is called — “npm”, “vcpkg”, “Maven”. */
-  manager: string
+  manager: string;
   /** Placeholder for the name field, such as `org.slf4j:slf4j-api`. */
-  placeholder: string
-  hint?: string
+  placeholder: string;
+  hint?: string;
   /** Scopes, such as compile/test or dependencies/devDependencies. */
-  scopes?: { value: string; label: string }[]
+  scopes?: { value: string; label: string; }[];
   /** Does a version have to be given, as Maven requires? */
-  versionRequired?: boolean
-  add(ctx: ProjectContext, dep: DependencySpec): Promise<DependencyAction> | DependencyAction
+  versionRequired?: boolean;
+  add(ctx: ProjectContext, dep: DependencySpec): Promise<DependencyAction> | DependencyAction;
 }
 
 /**
@@ -446,31 +456,31 @@ export interface DependencySupport {
  * come out of the build files.
  */
 export interface ProjectKind {
-  id: string
-  name: string
+  id: string;
+  name: string;
   /** One or two characters for the panel. */
-  icon?: string
-  color?: string
+  icon?: string;
+  color?: string;
   /**
    * Files of which at least one must sit in the root. Simple `*` patterns
    * are allowed (`*.csproj`).
    */
-  markers: string[]
+  markers: string[];
   /**
    * A closer look once the markers matched — whether `build.gradle` uses a
    * particular plugin, say. `false` rejects the kind despite the markers.
    */
-  detect?(ctx: ProjectContext): Promise<boolean> | boolean
+  detect?(ctx: ProjectContext): Promise<boolean> | boolean;
   /** Higher wins when several kinds match. Defaults to 0. */
-  priority?: number
+  priority?: number;
   /** Languages this kind is typical for. */
-  languageIds?: string[]
+  languageIds?: string[];
   /** `build` for build systems, `packages` for plain package managers (vcpkg, Conan). */
-  role?: 'build' | 'packages'
-  tasks(ctx: ProjectContext): Promise<ProjectTask[]> | ProjectTask[]
-  inspect?(ctx: ProjectContext): Promise<ProjectMeta> | ProjectMeta
+  role?: 'build' | 'packages';
+  tasks(ctx: ProjectContext): Promise<ProjectTask[]> | ProjectTask[];
+  inspect?(ctx: ProjectContext): Promise<ProjectMeta> | ProjectMeta;
   /** Adding dependencies through this kind's package manager. */
-  dependencies?: DependencySupport
+  dependencies?: DependencySupport;
 }
 
 /* ------------------------------------------------------------------ *
@@ -479,45 +489,45 @@ export interface ProjectKind {
 
 export interface TemplateContext {
   /** Project name, as typed. */
-  name: string
+  name: string;
   /** Cleaned-up name for folders, artefacts and packages (`my-project`). */
-  slug: string
+  slug: string;
   /** Path of the new project. */
-  dir: string
+  dir: string;
   /** Every field value of the template, filled in, defaults applied. */
-  values: FormValues
+  values: FormValues;
 }
 
 /** A template for “New project”. */
 export interface ProjectTemplate {
-  id: string
-  name: string
-  description?: string
+  id: string;
+  name: string;
+  description?: string;
   /**
    * The group on the project page — “Minecraft”, “Web”, “JVM” … Without one
    * the template's language names the group.
    */
-  category?: string
+  category?: string;
   /** Search terms beyond the name — “spigot bukkit plugin”, say. */
-  keywords?: string[]
-  languageId?: string
+  keywords?: string[];
+  languageId?: string;
   /** Kind of project this produces (`maven`, say) — may depend on the fields. */
-  kindId?: string | ((values: FormValues) => string | undefined)
-  icon?: string
-  color?: string
+  kindId?: string | ((values: FormValues) => string | undefined);
+  icon?: string;
+  color?: string;
   /** Fields in the dialog, beyond name and target folder. */
-  fields?: FormField[]
+  fields?: FormField[];
   /**
    * Relative path → contents. May be asynchronous (to fetch a file); the
    * project page previews the paths of a synchronous result only.
    */
-  files(ctx: TemplateContext): Record<string, string> | Promise<Record<string, string>>
+  files(ctx: TemplateContext): Record<string, string> | Promise<Record<string, string>>;
   /** File opened once the project exists (relative). */
-  open?: string | ((ctx: TemplateContext) => string)
+  open?: string | ((ctx: TemplateContext) => string);
   /** Commands to run afterwards — installing dependencies and such — only on request. */
-  setup?(ctx: TemplateContext): ProjectTask[]
+  setup?(ctx: TemplateContext): ProjectTask[];
   /** A hint shown once the project is created. */
-  next?: string | ((ctx: TemplateContext) => string)
+  next?: string | ((ctx: TemplateContext) => string);
 }
 
 /* ------------------------------------------------------------------ *
@@ -537,7 +547,7 @@ export const UI_COLOR_KEYS = [
   'textMuted',
   'textSubtle',
   'accent',
-  'accentText',    // Text auf Akzentfläche
+  'accentText',    // Text on accent surface
   'success',
   'warning',
   'danger',
@@ -546,24 +556,24 @@ export const UI_COLOR_KEYS = [
   'cursor',
   'gutter',
   'scrollbar',
-] as const
+] as const;
 
-export type UIColorKey = (typeof UI_COLOR_KEYS)[number]
+export type UIColorKey = (typeof UI_COLOR_KEYS)[number];
 
 export interface SyntaxStyle {
-  color: string
-  italic?: boolean
-  bold?: boolean
-  underline?: boolean
+  color: string;
+  italic?: boolean;
+  bold?: boolean;
+  underline?: boolean;
 }
 
 export interface Theme {
-  id: string
-  name: string
-  type: 'dark' | 'light'
-  author?: string
-  ui: Record<UIColorKey, string>
-  syntax: Partial<Record<TokenKind, string | SyntaxStyle>>
+  id: string;
+  name: string;
+  type: 'dark' | 'light';
+  author?: string;
+  ui: Record<UIColorKey, string>;
+  syntax: Partial<Record<TokenKind, string | SyntaxStyle>>;
 }
 
 /* ------------------------------------------------------------------ *
@@ -571,20 +581,20 @@ export interface Theme {
  * ------------------------------------------------------------------ */
 
 export interface Command {
-  id: string
-  title: string
+  id: string;
+  title: string;
   /** Group in the command palette, such as "File" or "View". */
-  category?: string
+  category?: string;
   /**
    * Suggested binding, such as `'Ctrl+Shift+P'` or `'Ctrl+K Ctrl+X'`. It
    * applies as long as neither the preset nor the user says otherwise.
    */
-  keybinding?: string
-  run: () => void | Promise<void>
+  keybinding?: string;
+  run: () => void | Promise<void>;
   /** Hide the command when `false`. */
-  when?: () => boolean
+  when?: () => boolean;
   /** `editor`: the shortcut only fires while the editor has focus. */
-  scope?: 'editor' | 'global'
+  scope?: 'editor' | 'global';
 }
 
 /* ------------------------------------------------------------------ *
@@ -593,18 +603,18 @@ export interface Command {
 
 export interface AddonContext {
   /** Message in the status bar, or as a toast. */
-  notify(message: string, kind?: 'info' | 'success' | 'warning' | 'error'): void
+  notify(message: string, kind?: 'info' | 'success' | 'warning' | 'error'): void;
   /** A persistent key-value store, one per add-on. */
   storage: {
-    get<T>(key: string, fallback: T): T
-    set(key: string, value: unknown): void
-  }
+    get<T>(key: string, fallback: T): T;
+    set(key: string, value: unknown): void;
+  };
   /** Register later, at runtime — languages generated on the fly, say. */
-  registerLanguage(spec: LanguageSpec): void
-  registerTheme(theme: Theme): void
-  registerCommand(command: Command): void
-  registerProjectKind(kind: ProjectKind): void
-  registerProjectTemplate(template: ProjectTemplate): void
+  registerLanguage(spec: LanguageSpec): void;
+  registerTheme(theme: Theme): void;
+  registerCommand(command: Command): void;
+  registerProjectKind(kind: ProjectKind): void;
+  registerProjectTemplate(template: ProjectTemplate): void;
 }
 
 /* ------------------------------------------------------------------ *
@@ -617,13 +627,13 @@ export interface AddonContext {
  */
 export interface IconDef {
   /** Short text, one to three characters, such as `TS`. */
-  glyph?: string
+  glyph?: string;
   /** Name from the built-in icon set (`ICON_SHAPE_NAMES`), such as `lock`. */
-  shape?: string
+  shape?: string;
   /** An SVG path (`d`) of your own on a 24×24 grid, stroked as an outline. */
-  path?: string
+  path?: string;
   /** Hex colour or CSS variable. */
-  color?: string
+  color?: string;
 }
 
 /**
@@ -634,19 +644,19 @@ export interface IconDef {
  * All keys are lower case, extensions carry no dot.
  */
 export interface IconPack {
-  id: string
-  name: string
-  author?: string
-  description?: string
-  fileNames?: Record<string, IconDef>
-  extensions?: Record<string, IconDef>
+  id: string;
+  name: string;
+  author?: string;
+  description?: string;
+  fileNames?: Record<string, IconDef>;
+  extensions?: Record<string, IconDef>;
   /** Language ids of the add-ons (`java`, `typescript` …). */
-  languages?: Record<string, IconDef>
-  folderNames?: Record<string, IconDef>
+  languages?: Record<string, IconDef>;
+  folderNames?: Record<string, IconDef>;
   /** Fallback for unknown files. */
-  file?: IconDef
+  file?: IconDef;
   /** Fallback for folders. */
-  folder?: IconDef
+  folder?: IconDef;
 }
 
 /**
@@ -655,48 +665,48 @@ export interface IconPack {
  * The user can drag it to any dock; `location` is only where it starts.
  */
 export interface AddonPanel {
-  id: string
-  title: string
+  id: string;
+  title: string;
   /** An icon-pack shape or action icon name (`book-open`, `rocket` …). */
-  icon?: string
-  location?: 'left' | 'right' | 'bottom'
-  format?: 'markdown' | 'html'
-  content: string
+  icon?: string;
+  location?: 'left' | 'right' | 'bottom';
+  format?: 'markdown' | 'html';
+  content: string;
 }
 
 export interface Addon {
-  id: string
-  name: string
-  version: string
-  description?: string
-  author?: string
+  id: string;
+  name: string;
+  version: string;
+  description?: string;
+  author?: string;
   /** An emoji, or one to two characters. */
-  icon?: string
+  icon?: string;
   /** Built-in add-ons cannot be switched off. */
-  builtin?: boolean
+  builtin?: boolean;
   /** Made in the Add-on Studio (a file under userData/addons). */
-  user?: boolean
+  user?: boolean;
   /** Not listed on its own — the window code of an extension, which belongs to that extension's entry. */
-  hidden?: boolean
+  hidden?: boolean;
   /** Category in the add-on manager. */
-  category?: 'language' | 'theme' | 'tool'
+  category?: 'language' | 'theme' | 'tool';
 
-  languages?: LanguageSpec[]
-  themes?: Theme[]
+  languages?: LanguageSpec[];
+  themes?: Theme[];
   /** Icon packs for the explorer, tabs and search lists. */
-  iconPacks?: IconPack[]
+  iconPacks?: IconPack[];
   /** Snippets for other add-ons' languages — Minecraft snippets for `java`, say. */
-  snippets?: AddonSnippet[]
+  snippets?: AddonSnippet[];
   /** Panels for the docks (left, right, bottom). */
-  panels?: AddonPanel[]
-  commands?: Command[]
+  panels?: AddonPanel[];
+  commands?: Command[];
   /** Project kinds the add-on recognises (Maven, CMake, npm …). */
-  projectKinds?: ProjectKind[]
+  projectKinds?: ProjectKind[];
   /** Templates for “New project”. */
-  projectTemplates?: ProjectTemplate[]
+  projectTemplates?: ProjectTemplate[];
 
   /** Runs on activation. Its return value is called on deactivation. */
-  activate?(ctx: AddonContext): void | (() => void)
+  activate?(ctx: AddonContext): void | (() => void);
 }
 
 /* ------------------------------------------------------------------ *
@@ -709,43 +719,43 @@ export interface DebugAdapterProgram {
    * Program or path (`~` and `*` are allowed in path segments). When the path
    * ends in `.js`, `.py` or `.jar`, Lumen starts it with node, python3 or java.
    */
-  command: string
-  args?: string[]
+  command: string;
+  args?: string[];
   /** A trial run with these arguments must exit 0, e.g. `['-c', 'import debugpy']`. */
-  probe?: string[]
+  probe?: string[];
 }
 
 /** Surroundings when a debug session starts — for adapter configurations. */
 export interface DebugContext {
   /** The active file, when there is one. */
-  file: string | null
-  fileDir: string
-  fileName: string
-  fileStem: string
-  workspace: string
-  projectRoot: string
-  projectName: string
+  file: string | null;
+  fileDir: string;
+  fileName: string;
+  fileStem: string;
+  workspace: string;
+  projectRoot: string;
+  projectName: string;
   /** Recognised project kinds (`cargo`, `cmake`, `maven` …). */
-  projectKinds: string[]
-  languageId: string | null
-  platform: string
-  home: string
+  projectKinds: string[];
+  languageId: string | null;
+  platform: string;
+  home: string;
   /** Replaces `${file}`, `${fileDir}`, `${fileStem}`, `${workspace}`, `${projectRoot}` … */
-  substitute(value: string): string
-  exists(path: string): Promise<boolean>
+  substitute(value: string): string;
+  exists(path: string): Promise<boolean>;
   /** Resolve paths containing `*` in their segments. */
-  glob(pattern: string): Promise<string[]>
+  glob(pattern: string): Promise<string[]>;
   /** `workspace/executeCommand` on the language's server. */
-  lspCommand(command: string, args?: unknown[]): Promise<unknown>
+  lspCommand(command: string, args?: unknown[]): Promise<unknown>;
   /** A choice; `null` when cancelled. */
-  pick(title: string, choices: { value: string; label: string; detail?: string }[]): Promise<string | null>
+  pick(title: string, choices: { value: string; label: string; detail?: string; }[]): Promise<string | null>;
   /** A form; `null` when cancelled. */
-  ask(title: string, fields: FormField[], initial?: FormValues): Promise<FormValues | null>
+  ask(title: string, fields: FormField[], initial?: FormValues): Promise<FormValues | null>;
   /** Values Lumen remembers per project — the last chosen program, say. */
-  memory: { get(key: string): string | undefined; set(key: string, value: string): void }
+  memory: { get(key: string): string | undefined; set(key: string, value: string): void; };
 }
 
-export type DebugLaunchArguments = Record<string, unknown>
+export type DebugLaunchArguments = Record<string, unknown>;
 
 /**
  * A debug adapter for this language. As with language servers, Lumen installs
@@ -754,36 +764,36 @@ export type DebugLaunchArguments = Record<string, unknown>
  */
 export interface DebugAdapterConfig {
   /** Display name, such as “lldb-dap”. */
-  label: string
+  label: string;
   /** DAP type of the configuration, such as `lldb`, `debugpy`, `pwa-node`. */
-  type: string
+  type: string;
   /** Defaults to `stdio`. With `tcp`, Lumen replaces `${port}` in the arguments. */
-  transport?: 'stdio' | 'tcp'
-  command?: string
-  args?: string[]
+  transport?: 'stdio' | 'tcp';
+  command?: string;
+  args?: string[];
   /** Trial run for `command` (see `DebugAdapterProgram.probe`). */
-  probe?: string[]
+  probe?: string[];
   /** Further places the adapter may live; the first one found wins. */
-  candidates?: (string | DebugAdapterProgram)[]
-  env?: Record<string, string>
+  candidates?: (string | DebugAdapterProgram)[];
+  env?: Record<string, string>;
   /** A fixed TCP port; otherwise Lumen looks for a free one. */
-  port?: number
-  host?: string
+  port?: number;
+  host?: string;
   /** TCP without a process of our own: the port comes from elsewhere, as with Java's language server. */
-  connect?(ctx: DebugContext): Promise<{ port: number; host?: string }>
+  connect?(ctx: DebugContext): Promise<{ port: number; host?: string; }>;
   /** Defaults to `launch`. */
-  request?: 'launch' | 'attach'
+  request?: 'launch' | 'attach';
   /**
    * Arguments for `launch`/`attach`. As an object, placeholders are replaced
    * in every string; as a function it may ask questions — `null` cancels.
    */
-  launch?: DebugLaunchArguments | ((ctx: DebugContext) => DebugLaunchArguments | null | Promise<DebugLaunchArguments | null>)
+  launch?: DebugLaunchArguments | ((ctx: DebugContext) => DebugLaunchArguments | null | Promise<DebugLaunchArguments | null>);
   /** Plugins the language's server has to load (java-debug for jdtls, say). */
-  lspBundles?: string[]
+  lspBundles?: string[];
   /** Project kinds this adapter is preferred for. */
-  kinds?: string[]
+  kinds?: string[];
   /** How to install the adapter, in prose. */
-  install?: string
-  installCommands?: Partial<Record<'linux' | 'darwin' | 'win32', string>>
-  docs?: string
+  install?: string;
+  installCommands?: Partial<Record<'linux' | 'darwin' | 'win32', string>>;
+  docs?: string;
 }

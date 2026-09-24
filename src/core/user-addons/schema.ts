@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Data model of user add-ons, the ones built in the Add-on Studio.
  *
@@ -8,54 +18,54 @@
  * Each add-on lives in one file, `userData/addons/<id>.lumen-addon.json`.
  */
 
-import type { LspConfig, RunConfig, Snippet, StringRule, Theme } from '@/core/types'
+import type { LspConfig, RunConfig, Snippet, StringRule, Theme } from '@/core/types';
 
-export const USER_ADDON_SCHEMA = 1
-export const USER_ADDON_PREFIX = 'user.'
-export const USER_ADDON_EXTENSION = '.lumen-addon.json'
+export const USER_ADDON_SCHEMA = 1;
+export const USER_ADDON_PREFIX = 'user.';
+export const USER_ADDON_EXTENSION = '.lumen-addon.json';
 
 /* ------------------------------------------------------------------ *
  * Graphs (visual scripting)
  * ------------------------------------------------------------------ */
 
-export type PinType = 'exec' | 'string' | 'number' | 'boolean' | 'list' | 'any'
+export type PinType = 'exec' | 'string' | 'number' | 'boolean' | 'list' | 'any';
 
 export interface GraphNode {
-  id: string
+  id: string;
   /** Node kind from the catalogue, such as `text.concat`. */
-  type: string
-  x: number
-  y: number
+  type: string;
+  x: number;
+  y: number;
   /** Inline values of unconnected data pins and settings, keyed by id. */
-  values?: Record<string, string | number | boolean>
+  values?: Record<string, string | number | boolean>;
 }
 
 export interface PinRef {
-  node: string
-  pin: string
+  node: string;
+  pin: string;
 }
 
 export interface GraphEdge {
-  id: string
-  from: PinRef
-  to: PinRef
+  id: string;
+  from: PinRef;
+  to: PinRef;
 }
 
 /** A comment box, or a frame grouping nodes. */
 export interface GraphComment {
-  id: string
-  x: number
-  y: number
-  w: number
-  h: number
-  text: string
-  color?: string
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  text: string;
+  color?: string;
 }
 
 export interface Graph {
-  nodes: GraphNode[]
-  edges: GraphEdge[]
-  comments?: GraphComment[]
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  comments?: GraphComment[];
 }
 
 /* ------------------------------------------------------------------ *
@@ -64,86 +74,86 @@ export interface Graph {
 
 /** A language — like `LanguageSpec`, but with regexes as source text. */
 export interface UserLanguage {
-  id: string
-  name: string
-  extensions: string[]
-  filenames?: string[]
-  icon?: string
-  color?: string
-  comments?: { line?: string; block?: [string, string] }
-  keywords?: string[]
-  controls?: string[]
-  types?: string[]
-  builtins?: string[]
-  constants?: string[]
-  strings?: StringRule[]
-  numbers?: string
-  identifier?: string
-  operators?: string
-  meta?: string
-  caseInsensitive?: boolean
-  capitalizedAsType?: boolean
-  indentOpen?: string
-  indentClose?: string
-  indentUnit?: number
-  completions?: string[]
-  snippets?: Snippet[]
-  run?: RunConfig[]
-  lsp?: LspConfig[]
+  id: string;
+  name: string;
+  extensions: string[];
+  filenames?: string[];
+  icon?: string;
+  color?: string;
+  comments?: { line?: string; block?: [string, string]; };
+  keywords?: string[];
+  controls?: string[];
+  types?: string[];
+  builtins?: string[];
+  constants?: string[];
+  strings?: StringRule[];
+  numbers?: string;
+  identifier?: string;
+  operators?: string;
+  meta?: string;
+  caseInsensitive?: boolean;
+  capitalizedAsType?: boolean;
+  indentOpen?: string;
+  indentClose?: string;
+  indentUnit?: number;
+  completions?: string[];
+  snippets?: Snippet[];
+  run?: RunConfig[];
+  lsp?: LspConfig[];
   /**
    * Debug adapters that ship with Lumen, named (`delve`, `debugpy` …). An
    * adapter of your own cannot be declared here because its launch request is
    * code; `core/debug/builtin-adapters.ts` lists the names that work.
    */
-  debug?: string[]
+  debug?: string[];
   /**
    * A tokenizer that ships with Lumen, named (`markdown`, `markup`, `jsx` …).
    * For the few languages whose highlighting is a program rather than a list
    * of keywords; `core/user-addons/tokenizers.ts` lists the names that work.
    */
-  tokenizer?: string
-  priority?: number
+  tokenizer?: string;
+  priority?: number;
 }
 
 /** A theme: either referenced from the Theme Studio or embedded outright. */
-export type UserThemeEntry = { ref: string } | { theme: Theme }
+export type UserThemeEntry = { ref: string; } | { theme: Theme; };
 
 export interface UserCommand {
   /** Local id; the command ends up called `<add-on-id>.<id>`. */
-  id: string
-  title: string
-  category?: string
-  keybinding?: string
-  graph: Graph
+  id: string;
+  title: string;
+  category?: string;
+  keybinding?: string;
+  graph: Graph;
 }
 
 export interface UserEventGraph {
-  id: string
-  name: string
-  graph: Graph
+  id: string;
+  name: string;
+  graph: Graph;
 }
 
 /** A test on a field: `equals`/`notEquals`; with neither, “set and not false”. */
 export interface UserCondition {
-  field: string
-  equals?: string
-  notEquals?: string
+  field: string;
+  equals?: string;
+  notEquals?: string;
 }
 
 export interface UserTemplateField {
-  id: string
-  label: string
-  type?: 'text' | 'select' | 'toggle'
-  default?: string
-  placeholder?: string
-  hint?: string
-  choices?: { value: string; label: string }[]
-  pattern?: string
-  required?: boolean
-  section?: string
-  mono?: boolean
+  id: string;
+  label: string;
+  type?: 'text' | 'select' | 'toggle';
+  default?: string;
+  placeholder?: string;
+  hint?: string;
+  choices?: { value: string; label: string; }[];
+  pattern?: string;
+  required?: boolean;
+  section?: string;
+  mono?: boolean;
   /** Only show the field while the condition holds. */
-  when?: UserCondition
+  when?: UserCondition;
   /**
    * Choices fetched over the network (HTTPS, JSON). `choicesPath` points at
    * the list (`versions`, `data.items`); entries are strings, or objects read
@@ -152,42 +162,42 @@ export interface UserTemplateField {
    *
    * Until the list arrives, `choices` stands in.
    */
-  choicesUrl?: string
-  choicesPath?: string
-  choicesValue?: string
-  choicesLabel?: string
-  choicesMatch?: string
+  choicesUrl?: string;
+  choicesPath?: string;
+  choicesValue?: string;
+  choicesLabel?: string;
+  choicesMatch?: string;
   /** At most this many entries; `choicesReverse` flips the list, newest first. */
-  choicesLimit?: number
-  choicesReverse?: boolean
+  choicesLimit?: number;
+  choicesReverse?: boolean;
 }
 
 export interface UserTemplateFile {
-  path: string
-  content: string
+  path: string;
+  content: string;
   /**
    * Only create the file while the condition holds. Several conditions must
    * all hold — a `package.json` often hangs on two or three switches at once.
    */
-  when?: UserCondition | UserCondition[]
+  when?: UserCondition | UserCondition[];
 }
 
 export interface UserTemplate {
-  id: string
-  name: string
-  description?: string
-  languageId?: string
-  icon?: string
-  color?: string
-  fields: UserTemplateField[]
+  id: string;
+  name: string;
+  description?: string;
+  languageId?: string;
+  icon?: string;
+  color?: string;
+  fields: UserTemplateField[];
   /**
    * Path and contents may use `{{name}}`, `{{slug}}` and `{{field}}`, plus the
    * blocks `{{#if field}}…{{/if}}`, `{{#if field=value}}…{{/if}}` and
    * `{{#unless field}}…{{/unless}}`.
    */
-  files: UserTemplateFile[]
+  files: UserTemplateFile[];
   /** Kind the new project is recognised as — one of ours, or an existing id. */
-  kindId?: string
+  kindId?: string;
   /**
    * Apply `kindId` only while this condition holds.
    *
@@ -195,16 +205,16 @@ export interface UserTemplate {
    * along; without that it is a folder of Markdown files with no build file
    * for a project kind to hang on.
    */
-  kindWhen?: UserCondition
-  open?: string
-  next?: string
-  setup?: { label: string; command: string; args: string[] }[]
+  kindWhen?: UserCondition;
+  open?: string;
+  next?: string;
+  setup?: { label: string; command: string; args: string[]; }[];
 }
 
 /** A detection rule: the file exists, and matches `pattern` when one is given. */
 export interface UserKindRule {
-  file: string
-  pattern?: string
+  file: string;
+  pattern?: string;
 }
 
 /**
@@ -218,13 +228,13 @@ export interface UserKindRule {
  */
 export interface UserKindTaskPerDir {
   /** Folder whose subfolders become the tasks (`cmd`). */
-  dir: string
-  label: string
-  args: string[]
+  dir: string;
+  label: string;
+  args: string[];
   /** At most this many tasks (four by default) — more would flood the list. */
-  limit?: number
+  limit?: number;
   /** With no subfolders the task disappears entirely, rather than standing in. */
-  omitWhenEmpty?: boolean
+  omitWhenEmpty?: boolean;
 }
 
 /**
@@ -240,15 +250,15 @@ export interface UserKindTaskPerDir {
  */
 export interface UserKindTaskPerMatch {
   /** One file, or several spellings — the first one present counts. */
-  file: string | string[]
+  file: string | string[];
   /** Pattern over the text. Not needed when `json` is set. */
-  pattern?: string
-  section?: string
+  pattern?: string;
+  section?: string;
   /**
    * An indented block under a YAML heading (`targets:`) — the counterpart to
    * `section` for files that have no bracketed sections.
    */
-  block?: string
+  block?: string;
   /**
    * Read the file as JSON and look under this path.
    *
@@ -256,52 +266,52 @@ export interface UserKindTaskPerMatch {
    * `composer.json`). A list of objects — the presets of a `CMakePresets.json`
    * — means `jsonName` says which field holds the name.
    */
-  json?: string
+  json?: string;
   /** Field holding the name, when `json` points at a list of objects. */
-  jsonName?: string
+  jsonName?: string;
   /** Field holding the label; without it, `jsonName` is used. */
-  jsonLabel?: string
+  jsonLabel?: string;
   /** Skip entries where this field is true (`hidden`). */
-  jsonSkipWhen?: string
-  label: string
-  args: string[]
-  limit?: number
+  jsonSkipWhen?: string;
+  label: string;
+  args: string[];
+  limit?: number;
   /** Matches that never become a task (`.PHONY`, `all`). */
-  skip?: string[]
+  skip?: string[];
   /** Matches hitting this pattern fall away (`^(pre|post)-`). */
-  skipPattern?: string
+  skipPattern?: string;
   /**
    * Label used when there is exactly one match.
    *
    * With a single target the task is simply called “Run”; naming it only
    * pays off from two onwards.
    */
-  singleLabel?: string
+  singleLabel?: string;
   /**
    * With no matches the task disappears entirely, rather than standing in —
    * for tasks that would not exist without their pattern.
    */
-  omitWhenEmpty?: boolean
+  omitWhenEmpty?: boolean;
   /**
    * Grouping by the match's name; the first rule that fits wins. A Makefile
    * target called `test` belongs with the tests, `clean` with the cleanup.
    */
-  groups?: { pattern: string; group: 'build' | 'run' | 'test' | 'clean' | 'other' }[]
+  groups?: { pattern: string; group: 'build' | 'run' | 'test' | 'clean' | 'other'; }[];
 }
 
 export interface UserKindTask {
-  id: string
-  label: string
-  command: string
-  args: string[]
-  group?: 'build' | 'run' | 'test' | 'clean' | 'other'
+  id: string;
+  label: string;
+  command: string;
+  args: string[];
+  group?: 'build' | 'run' | 'test' | 'clean' | 'other';
   /** Wrapper in the project root that replaces `command` when present (`gradlew`, `mvnw`). */
-  wrapper?: string
-  detail?: string
-  forEachDir?: UserKindTaskPerDir
-  forEachMatch?: UserKindTaskPerMatch
+  wrapper?: string;
+  detail?: string;
+  forEachDir?: UserKindTaskPerDir;
+  forEachMatch?: UserKindTaskPerMatch;
   /** Second stage: build first, then run. */
-  then?: { command: string; args: string[] }
+  then?: { command: string; args: string[]; };
   /**
    * Extra arguments depending on which file the project has.
    *
@@ -309,26 +319,26 @@ export interface UserKindTask {
    * `{extraArgs}` stands. That way a CMake call appends the toolchain of
    * vcpkg or Conan without the task having to know about either.
    */
-  argsWhenFile?: { file: string | string[]; args: string[] }[]
+  argsWhenFile?: { file: string | string[]; args: string[]; }[];
   /**
    * Tasks added only when `forEachMatch` or `forEachDir` found nothing —
    * standing in for what the pattern would otherwise have produced.
    */
-  alsoWhenEmpty?: UserKindTask[]
+  alsoWhenEmpty?: UserKindTask[];
 }
 
 /** A fact for the project panel: the first group of `pattern` in `file`. */
 export interface UserKindFact {
-  label: string
-  file: string
+  label: string;
+  file: string;
   /** Pattern over the text; not needed when `json` is set. */
-  pattern?: string
+  pattern?: string;
   /** Read the file as JSON and take the value under this path (`require.php`). */
-  json?: string
+  json?: string;
   /** Use as the project's name, version or description instead of as a fact. */
-  role?: 'name' | 'version' | 'description'
+  role?: 'name' | 'version' | 'description';
   /** Only search inside this TOML/INI section (`package`, `tool.poetry`). */
-  section?: string
+  section?: string;
 }
 
 /**
@@ -345,26 +355,26 @@ export interface UserKindFact {
  * is `name@version`, or just `name` when no version is given.
  */
 export interface UserDependencySupport {
-  manager: string
-  placeholder: string
-  hint?: string
-  scopes?: { value: string; label: string }[]
-  versionRequired?: boolean
+  manager: string;
+  placeholder: string;
+  hint?: string;
+  scopes?: { value: string; label: string; }[];
+  versionRequired?: boolean;
   /** Separator for `{spec}` — `@` by default (`cargo add x@1.2`). */
-  specSeparator?: string
+  specSeparator?: string;
   /** Command that adds the dependency. Not needed when `edit` is set. */
-  command?: string
-  args?: string[]
-  label?: string
+  command?: string;
+  args?: string[];
+  label?: string;
   /** Id of the task produced; `<command>:add` by default. */
-  id?: string
+  id?: string;
   /** Instead of a command: write the entry into the build file. */
-  edit?: UserDependencyEdit
+  edit?: UserDependencyEdit;
   /**
    * Extra arguments per scope — `{ "dev": ["--dev"] }`. The list goes in
    * wherever the placeholder `{scopeArgs}` stands.
    */
-  scopeArgs?: Record<string, string[]>
+  scopeArgs?: Record<string, string[]>;
 }
 
 /**
@@ -382,40 +392,40 @@ export interface UserDependencySupport {
  * version `  version: {version}` writes no half-finished line.
  */
 export interface UserDependencyEdit {
-  file: string
+  file: string;
   /** Pattern that finds the section heading (`^{scope}:\\s*$`). */
-  sectionPattern: string
+  sectionPattern: string;
   /** Heading written when the section does not exist yet. */
-  sectionHeader: string
+  sectionHeader: string;
   /** Lines of the entry, without their shared indentation. */
-  lines: string[]
+  lines: string[];
   /** Indentation before every line (two spaces by default). */
-  indent?: string
+  indent?: string;
   /** Command to run afterwards (`shards install`). */
-  then?: { id?: string; label: string; command: string; args: string[] }
+  then?: { id?: string; label: string; command: string; args: string[]; };
 }
 
 /** A project kind — like `ProjectKind`, but declared as data. */
 export interface UserProjectKind {
-  id: string
-  name: string
-  icon?: string
-  color?: string
+  id: string;
+  name: string;
+  icon?: string;
+  color?: string;
   /** At least one of these files has to sit in the root (`*` allowed). */
-  markers: string[]
+  markers: string[];
   /** Every rule has to hold — `build.gradle.kts` containing `paperweight`, say. */
-  rules?: UserKindRule[]
-  priority?: number
-  languageIds?: string[]
-  tasks: UserKindTask[]
-  facts?: UserKindFact[]
-  dependencies?: UserDependencySupport
+  rules?: UserKindRule[];
+  priority?: number;
+  languageIds?: string[];
+  tasks: UserKindTask[];
+  facts?: UserKindFact[];
+  dependencies?: UserDependencySupport;
   /** File the project builds from (`go.mod`, `pom.xml`) — shown in the panel. */
-  buildFile?: string
+  buildFile?: string;
   /** Read dependencies out of the build file; several passes are allowed. */
-  dependencyScan?: UserKindDependencyScan | UserKindDependencyScan[]
+  dependencyScan?: UserKindDependencyScan | UserKindDependencyScan[];
   /** Folders holding source code — for the outline and for search (`src`, `tests`). */
-  sourceRoots?: string[]
+  sourceRoots?: string[];
 }
 
 /**
@@ -429,80 +439,80 @@ export interface UserProjectKind {
  * needing to know how the file is laid out.
  */
 export interface UserKindDependencyScan {
-  file: string
+  file: string;
   /** Pattern over the text; not needed when `json` is set. */
-  pattern?: string
+  pattern?: string;
   /**
    * Read the file as JSON and take the object under this path — `require` in
    * a `composer.json`, `dependencies` in a `package.json`. The key is the
    * name, the value the version.
    */
-  json?: string
+  json?: string;
   /** Names hitting this pattern fall away (`^(php|ext-)`). */
-  skipPattern?: string
+  skipPattern?: string;
   /** Only search inside this section. */
-  section?: string
+  section?: string;
   /** Only search inside this indented YAML block. */
-  block?: string
+  block?: string;
   /**
    * Pull the version out of the match when it is not in the second group —
    * a line further down in a YAML list, for instance.
    */
-  versionPattern?: string
+  versionPattern?: string;
   /** Scope of these finds (`direct` by default). */
-  scope?: string
+  scope?: string;
   /** Scope when the third group matches (`indirect` by default). */
-  indirectScope?: string
+  indirectScope?: string;
   /** Scope otherwise (`direct` by default). */
-  directScope?: string
+  directScope?: string;
 }
 
 /** A snippet for any language, including ones from other add-ons such as `java`. */
 export interface UserSnippet {
-  languageId: string
-  label: string
-  detail?: string
-  body: string
+  languageId: string;
+  label: string;
+  detail?: string;
+  body: string;
 }
 
-export type UserAddonCategory = 'language' | 'theme' | 'tool'
+export type UserAddonCategory = 'language' | 'theme' | 'tool';
 
 /** A panel for the docks: Markdown or HTML, shown without scripts. */
 export interface UserPanel {
-  id: string
-  title: string
-  icon?: string
-  location: 'left' | 'right' | 'bottom'
-  format: 'markdown' | 'html'
-  content: string
+  id: string;
+  title: string;
+  icon?: string;
+  location: 'left' | 'right' | 'bottom';
+  format: 'markdown' | 'html';
+  content: string;
 }
 
 export interface UserAddonModel {
-  schema: typeof USER_ADDON_SCHEMA
-  id: string
-  name: string
-  version: string
-  description?: string
-  author?: string
-  icon?: string
-  color?: string
-  category?: UserAddonCategory
-  languages: UserLanguage[]
-  themes: UserThemeEntry[]
-  commands: UserCommand[]
-  events: UserEventGraph[]
-  templates: UserTemplate[]
-  projectKinds: UserProjectKind[]
-  snippets: UserSnippet[]
+  schema: typeof USER_ADDON_SCHEMA;
+  id: string;
+  name: string;
+  version: string;
+  description?: string;
+  author?: string;
+  icon?: string;
+  color?: string;
+  category?: UserAddonCategory;
+  languages: UserLanguage[];
+  themes: UserThemeEntry[];
+  commands: UserCommand[];
+  events: UserEventGraph[];
+  templates: UserTemplate[];
+  projectKinds: UserProjectKind[];
+  snippets: UserSnippet[];
   /** Optional in files from before panels existed; `normalizeModel` fills it in. */
-  panels?: UserPanel[]
+  panels?: UserPanel[];
 }
 
 /* ------------------------------------------------------------------ *
  * Helpers
  * ------------------------------------------------------------------ */
 
-export const emptyGraph = (): Graph => ({ nodes: [], edges: [], comments: [] })
+export const emptyGraph = (): Graph => ({ nodes: [], edges: [], comments: [] });
 
 /** Turn a name into a valid identifier (`My Add-on` → `my-add-on`). */
 export function slugify(value: string): string {
@@ -512,11 +522,11 @@ export function slugify(value: string): string {
     .toLowerCase()
     .replace(/ß/g, 'ss')
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+    .replace(/^-+|-+$/g, '');
 }
 
 export function newId(prefix = 'n'): string {
-  return `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`
+  return `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 }
 
 /** An empty add-on with sensible starting values. */
@@ -539,22 +549,26 @@ export function createUserAddon(name: string, existing: string[] = []): UserAddo
     projectKinds: [],
     snippets: [],
     panels: [],
-  }
+  };
 }
 
 export function uniqueAddonId(base: string, existing: string[]): string {
-  const plain = base.startsWith(USER_ADDON_PREFIX) ? base.slice(USER_ADDON_PREFIX.length) : base
-  const root = `${USER_ADDON_PREFIX}${slugify(plain) || 'addon'}`
-  if (!existing.includes(root)) return root
-  let n = 2
-  while (existing.includes(`${root}-${n}`)) n++
-  return `${root}-${n}`
+  const plain = base.startsWith(USER_ADDON_PREFIX) ? base.slice(USER_ADDON_PREFIX.length) : base;
+  const root = `${USER_ADDON_PREFIX}${slugify(plain) || 'addon'}`;
+  if (!existing.includes(root)) {
+    return root;
+  }
+  let n = 2;
+  while (existing.includes(`${root}-${n}`)) {
+    n++;
+  }
+  return `${root}-${n}`;
 }
 
 /** Fill in missing lists — for older or hand-written files. */
 export function normalizeModel(raw: unknown): UserAddonModel {
-  const data = (raw && typeof raw === 'object' ? raw : {}) as Partial<UserAddonModel>
-  const list = <T,>(value: T[] | undefined): T[] => (Array.isArray(value) ? value : [])
+  const data = (raw && typeof raw === 'object' ? raw : {}) as Partial<UserAddonModel>;
+  const list = <T,>(value: T[] | undefined): T[] => (Array.isArray(value) ? value : []);
   return {
     ...data,
     schema: USER_ADDON_SCHEMA,
@@ -575,7 +589,7 @@ export function normalizeModel(raw: unknown): UserAddonModel {
     })),
     snippets: list(data.snippets),
     panels: list(data.panels),
-  }
+  };
 }
 
 export function normalizeGraph(graph: Partial<Graph> | undefined): Graph {
@@ -583,5 +597,5 @@ export function normalizeGraph(graph: Partial<Graph> | undefined): Graph {
     nodes: Array.isArray(graph?.nodes) ? graph.nodes : [],
     edges: Array.isArray(graph?.edges) ? graph.edges : [],
     comments: Array.isArray(graph?.comments) ? graph.comments : [],
-  }
+  };
 }

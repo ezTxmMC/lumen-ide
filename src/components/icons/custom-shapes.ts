@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Shapes Lucide does not have, drawn for Lumen on the same 24×24 grid with
  * the same 2px round-capped strokes, so they sit next to the Lucide shapes
@@ -11,25 +21,25 @@
  *     taken from Lucide on purpose: its 1.x line dropped them.
  */
 
-import { createLucideIcon, type LucideIcon } from 'lucide-react'
+import { createLucideIcon, type LucideIcon } from 'lucide-react';
 
-type Element = [string, Record<string, string>]
+type Element = [string, Record<string, string>];
 
-const path = (d: string): Element => ['path', { d }]
-const circle = (cx: number, cy: number, r: number): Element => ['circle', { cx: String(cx), cy: String(cy), r: String(r) }]
+const path = (d: string): Element => ['path', { d }];
+const circle = (cx: number, cy: number, r: number): Element => ['circle', { cx: String(cx), cy: String(cy), r: String(r) }];
 const ellipse = (cx: number, cy: number, rx: number, ry: number): Element =>
-  ['ellipse', { cx: String(cx), cy: String(cy), rx: String(rx), ry: String(ry) }]
+  ['ellipse', { cx: String(cx), cy: String(cy), rx: String(rx), ry: String(ry) }];
 
 function shape(name: string, elements: Element[]): LucideIcon {
-  const node = elements.map(([tag, attrs], index) => [tag, { ...attrs, key: `${name}-${index}` }])
-  return createLucideIcon(name, node as Parameters<typeof createLucideIcon>[1])
+  const node = elements.map(([tag, attrs], index) => [tag, { ...attrs, key: `${name}-${index}` }]);
+  return createLucideIcon(name, node as Parameters<typeof createLucideIcon>[1]);
 }
 
 /** Lucide's folder outline; the emblems live in its body (x 6–18, y 9.5–17.5). */
-const FOLDER = 'M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z'
+const FOLDER = 'M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z';
 
 function folder(name: string, emblem: Element[]): LucideIcon {
-  return shape(name, [path(FOLDER), ...emblem])
+  return shape(name, [path(FOLDER), ...emblem]);
 }
 
 /* ------------------------------------------------------------------ *
@@ -137,7 +147,7 @@ export const ROLE_FOLDERS = {
     path('M12.5 9.5v1.2'),
   ]),
   'folder-src': folder('folder-src', [path('m10 10.5-2 2.5 2 2.5'), path('m14 10.5 2 2.5-2 2.5')]),
-} as const
+} as const;
 
 /* ------------------------------------------------------------------ *
  * Marks for tools and formats
@@ -244,4 +254,4 @@ export const MARKS = {
     path('M12 2.5 14 10l7.5 2-7.5 2-2 7.5-2-7.5-7.5-2 7.5-2Z'),
     circle(12, 12, 1.2),
   ]),
-} as const
+} as const;

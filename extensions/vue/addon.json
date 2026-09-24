@@ -92,7 +92,7 @@
         {
           "label": "sfc",
           "detail": "Single-File-Komponente",
-          "body": "<script setup lang=\"ts\">\nimport { ref } from 'vue'\n\nconst ${zähler} = ref(0)\n</script>\n\n<template>\n  <button @click=\"${zähler}++\">{{ ${zähler} }}</button>$0\n</template>\n\n<style scoped>\n</style>"
+          "body": "<script setup lang=\"ts\">\nimport { ref } from 'vue'\n\nconst ${counter} = ref(0)\n</script>\n\n<template>\n  <button @click=\"${counter}++\">{{ ${counter} }}</button>$0\n</template>\n\n<style scoped>\n</style>"
         },
         {
           "label": "script",
@@ -494,7 +494,7 @@
             "field": "lang",
             "equals": "ts"
           },
-          "content": "<!doctype html>\n<html lang=\"de\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <div id=\"app\"></div>\n    <script type=\"module\" src=\"/src/main.ts\"></script>\n  </body>\n</html>\n"
+          "content": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <div id=\"app\"></div>\n    <script type=\"module\" src=\"/src/main.ts\"></script>\n  </body>\n</html>\n"
         },
         {
           "path": "index.html",
@@ -502,7 +502,7 @@
             "field": "lang",
             "equals": "js"
           },
-          "content": "<!doctype html>\n<html lang=\"de\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <div id=\"app\"></div>\n    <script type=\"module\" src=\"/src/main.js\"></script>\n  </body>\n</html>\n"
+          "content": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <div id=\"app\"></div>\n    <script type=\"module\" src=\"/src/main.js\"></script>\n  </body>\n</html>\n"
         },
         {
           "path": "src/main.ts",

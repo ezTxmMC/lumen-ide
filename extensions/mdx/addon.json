@@ -48,7 +48,7 @@
         },
         {
           "label": "wrap",
-          "detail": "Komponente mit Inhalt",
+          "detail": "Component with content",
           "body": "<${Callout} type=\"${info}\">\n\n$0\n\n</${Callout}>"
         },
         {
@@ -240,19 +240,19 @@
         },
         {
           "path": "index.html",
-          "content": "<!doctype html>\n<html lang=\"de\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.tsx\"></script>\n  </body>\n</html>\n"
+          "content": "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>{{name}}</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.tsx\"></script>\n  </body>\n</html>\n"
         },
         {
           "path": "src/main.tsx",
           "content": "import { createRoot } from 'react-dom/client'\nimport Einfuehrung from './docs/einfuehrung.mdx'\nimport './style.css'\n\ncreateRoot(document.getElementById('root')!).render(\n  <article>\n    <Einfuehrung />\n  </article>,\n)\n"
         },
         {
-          "path": "src/components/Hinweis.tsx",
-          "content": "import type { ReactNode } from 'react'\n\nexport function Hinweis({ children }: { children: ReactNode }) {\n  return <aside className=\"hinweis\">{children}</aside>\n}\n"
+          "path": "src/components/Notice.tsx",
+          "content": "import type { ReactNode } from 'react'\n\nexport function Notice({ children }: { children: ReactNode }) {\n  return <aside className=\"hinweis\">{children}</aside>\n}\n"
         },
         {
           "path": "src/docs/einfuehrung.mdx",
-          "content": "import { Hinweis } from '../components/Hinweis'\n\n# {{name}}\n\nWillkommen in der Dokumentation.\n\n<Hinweis>\n  MDX erlaubt **Markdown** und React-Komponenten.\n</Hinweis>\n"
+          "content": "import { Notice } from '../components/Notice'\n\n# {{name}}\n\nWelcome to the documentation.\n\n<Notice>\n  MDX allows **Markdown** and React components.\n</Notice>\n"
         },
         {
           "path": "src/style.css",

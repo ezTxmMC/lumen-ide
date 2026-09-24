@@ -1,44 +1,54 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Search, Loader2 } from 'lucide-react'
-import { useStore } from '@/state/store'
-import { useT } from '@/i18n'
-import { Empty } from '../ui'
-import type { SearchHit } from '../../../electron/preload'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import { useEffect, useMemo, useState } from 'react';
+import { Search, Loader2 } from 'lucide-react';
+import { useStore } from '@/state/store';
+import { useT } from '@/i18n';
+import { Empty } from '../ui';
+import type { SearchHit } from '../../../electron/preload';
 
 export function SearchPanel() {
-  const t = useT()
-  const workspace = useStore((s) => s.workspace)
-  const openFile = useStore((s) => s.openFile)
-  const [query, setQuery] = useState('')
-  const [hits, setHits] = useState<SearchHit[]>([])
-  const [busy, setBusy] = useState(false)
+  const t = useT();
+  const workspace = useStore((s) => s.workspace);
+  const openFile = useStore((s) => s.openFile);
+  const [query, setQuery] = useState('');
+  const [hits, setHits] = useState<SearchHit[]>([]);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!workspace || query.trim().length < 2) {
-      setHits([])
-      return
+      setHits([]);
+      return;
     }
-    let cancelled = false
-    setBusy(true)
+    let cancelled = false;
+    setBusy(true);
     const timer = setTimeout(() => {
       window.lumen.fs
         .search(workspace, query.trim(), 300)
         .then((result) => !cancelled && setHits(result))
         .catch(() => !cancelled && setHits([]))
-        .finally(() => !cancelled && setBusy(false))
-    }, 220)
-    return () => { cancelled = true; clearTimeout(timer) }
-  }, [query, workspace])
+        .finally(() => !cancelled && setBusy(false));
+    }, 220);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [query, workspace]);
 
   const grouped = useMemo(() => {
-    const map = new Map<string, SearchHit[]>()
+    const map = new Map<string, SearchHit[]>();
     for (const hit of hits) {
-      const list = map.get(hit.path) ?? []
-      list.push(hit)
-      map.set(hit.path, list)
+      const list = map.get(hit.path) ?? [];
+      list.push(hit);
+      map.set(hit.path, list);
     }
-    return [...map.entries()]
-  }, [hits])
+    return [...map.entries()];
+  }, [hits]);
 
   return (
     <div className="flex h-full flex-col">
@@ -90,5 +100,5 @@ export function SearchPanel() {
         ))}
       </div>
     </div>
-  )
+  );
 }

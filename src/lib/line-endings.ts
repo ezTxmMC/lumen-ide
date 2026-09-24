@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Line endings between disk and editor.
  *
@@ -9,23 +19,27 @@
  * text, remember the file's ending, and write it back the way it was.
  */
 
-export type LineEnding = '\n' | '\r\n'
+export type LineEnding = '\n' | '\r\n';
 
 /** Split a file's text into LF text and the ending it uses (the majority, for mixed files). */
-export function fromDisk(raw: string): { text: string; eol: LineEnding } {
-  if (!raw.includes('\r')) return { text: raw, eol: '\n' }
-  const crlf = raw.match(/\r\n/g)?.length ?? 0
-  const lf = (raw.match(/\n/g)?.length ?? 0) - crlf
-  return { text: raw.replace(/\r\n?/g, '\n'), eol: crlf > lf ? '\r\n' : '\n' }
+export function fromDisk(raw: string): { text: string; eol: LineEnding; } {
+  if (!raw.includes('\r')) {
+    return { text: raw, eol: '\n' };
+  }
+  const crlf = raw.match(/\r\n/g)?.length ?? 0;
+  const lf = (raw.match(/\n/g)?.length ?? 0) - crlf;
+  return { text: raw.replace(/\r\n?/g, '\n'), eol: crlf > lf ? '\r\n' : '\n' };
 }
 
 /** The text to write for a tab: LF text in the file's own line ending. */
 export function toDisk(text: string, eol: LineEnding | undefined): string {
-  if (eol !== '\r\n') return text
-  return text.replace(/\r?\n/g, '\r\n')
+  if (eol !== '\r\n') {
+    return text;
+  }
+  return text.replace(/\r?\n/g, '\r\n');
 }
 
 /** Read a file for a tab: LF text plus the file's line ending. */
-export async function readText(path: string): Promise<{ text: string; eol: LineEnding }> {
-  return fromDisk(await window.lumen.fs.readFile(path))
+export async function readText(path: string): Promise<{ text: string; eol: LineEnding; }> {
+  return fromDisk(await window.lumen.fs.readFile(path));
 }

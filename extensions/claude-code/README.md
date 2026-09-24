@@ -1,49 +1,49 @@
 # Claude Code
 
-Claude Code als Chat-Agent in Lumen — mit derselben Engine wie der `claude`-Befehl:
-deine Anmeldung, `CLAUDE.md`, Einstellungen und MCP-Server gelten.
+Claude Code as a chat agent in Lumen — with the same engine as the `claude` command:
+your login, `CLAUDE.md`, settings and MCP servers all apply.
 
 ## Chat
 
-- **Live-Antworten**: Text und Gedankengang erscheinen, während Claude schreibt;
-  Antworten als Markdown mit kopierbaren Code-Blöcken
-- **Werkzeuge** mit Vorschau — Diffs bei Änderungen, der Befehl bei `Bash`, die
-  Datei zum Öffnen; geänderte Dateien öffnen sich von selbst
-- **Erlauben / Immer erlauben / Ablehnen** (auch mit Begründung) für jede Aktion
-- **Plan**: die To-do-Liste von Claude als Karte mit Fortschritt
-- **Kosten** je Antwort: Tokens, Cache, Schritte, Dauer und Preis
-- **Mehrere Chats** nebeneinander, **frühere Sitzungen fortsetzen**
-- **Modelle** kommen direkt aus der installierten Claude-Code-CLI — immer
-  passend zu Version und Konto; ↻ neben der Auswahl lädt sie neu
-- **Aufwand je Modell** im Chat wählen — nur die Stufen, die das Modell kann
-  (Haiku z. B. hat keine); die Wahl merkt sich Lumen pro Modell
-- **Modi** direkt im Chat umschalten: Nachfragen, Edits automatisch,
-  Plan und — nur wenn freigeschaltet — Ohne Rückfrage
-- **Eingabe**: `/` für Slash-Befehle, `@` für Dateien, ↑ für frühere Nachrichten,
-  Bilder einfügen (Strg+V) oder anhängen, geöffnete Datei und Auswahl mitsenden
+- **Live answers**: text and reasoning appear while Claude writes;
+  answers as Markdown with copyable code blocks
+- **Tools** with preview — diffs for changes, the command for `Bash`, the
+  file to open; changed files open on their own
+- **Allow / Always allow / Deny** (also with a reason) for every action
+- **Plan**: Claude's to-do list as a card with progress
+- **Cost** per answer: tokens, cache, steps, duration and price
+- **Multiple chats** side by side, **resume earlier sessions**
+- **Models** come straight from the installed Claude Code CLI — always
+  matching your version and account; ↻ next to the picker reloads them
+- **Effort per model** chosen in the chat — only the levels the model supports
+  (Haiku, for example, has none); Lumen remembers the choice per model
+- **Modes** switched directly in the chat: Ask, Auto-accept edits,
+  Plan and — only when enabled — No prompts
+- **Input**: `/` for slash commands, `@` for files, ↑ for earlier messages,
+  paste (Ctrl+V) or attach images, send the open file and selection along
 
-## Einstellungen
+## Settings
 
-*Einstellungen → Erweiterungen → Claude Code*: Pfad zu `claude`, Standard- und
-Ersatzmodell, weitere Modelle, Zwischenspeicher der Modellliste,
-Standard-Aufwand, erweitertes Nachdenken (adaptiv, Budget, aus), Schnellmodus,
-Ausgabestil, Sitzungen speichern, Live-Antworten, Höchstzahl an Schritten, Kostengrenze, zusätzliche Anweisungen,
-erlaubte und gesperrte Werkzeuge, weitere Ordner, Einstellungsquellen,
-zusätzliche MCP-Server (JSON) und Umgebungsvariablen.
+*Settings → Extensions → Claude Code*: path to `claude`, default and
+fallback model, more models, model list cache,
+default effort, extended thinking (adaptive, budget, off), fast mode,
+output style, save sessions, live answers, maximum steps, cost limit, additional instructions,
+allowed and denied tools, more folders, settings sources,
+additional MCP servers (JSON) and environment variables.
 
-## Vorlage
+## Template
 
-*Neues Projekt → Claude Code Projekt* legt `CLAUDE.md`, `.claude/settings.json`
-und den Slash-Befehl `/review` an.
+*New project → Claude Code project* creates `CLAUDE.md`, `.claude/settings.json`
+and the slash command `/review`.
 
-## Voraussetzung
+## Requirements
 
-Claude Code muss installiert und angemeldet sein:
+Claude Code must be installed and signed in:
 
 ```sh
 npm install -g @anthropic-ai/claude-code
 claude
 ```
 
-Die Erweiterung bringt Programmcode mit, der beim Installieren bestätigt werden
-muss. Er startet das installierte `claude`.
+The extension ships executable code that must be confirmed on installation.
+It starts the installed `claude`.

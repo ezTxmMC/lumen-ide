@@ -1,7 +1,7 @@
 {
   "name": "lumen-extension-server",
   "version": "0.4.0",
-  "description": "Erweiterungsserver für Lumen — Katalog, Veröffentlichung und Projektseiten",
+  "description": "Extension server for Lumen — catalog, publishing and project pages",
   "type": "module",
   "license": "MIT",
   "bin": { "lumen-extension-server": "src/main.js" },

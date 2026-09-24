@@ -1,12 +1,12 @@
 {
   "name": "lumen-ide",
-  "version": "0.5.7",
+  "version": "0.6.0",
   "description": "Lumen — eine moderne, leichtgewichtige IDE mit einfachem Add-on-System",
   "private": true,
   "type": "module",
   "main": "dist-electron/main.js",
-  "author": "Lumen",
-  "license": "MIT",
+  "author": "ezTxmMC",
+  "license": "AGPL-3.0-or-later",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

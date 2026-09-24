@@ -1,17 +1,27 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /** Indent guides as a lightweight ViewPlugin. */
 
-import { Decoration, ViewPlugin, type DecorationSet, type EditorView, type ViewUpdate } from '@codemirror/view'
-import { RangeSetBuilder } from '@codemirror/state'
+import { Decoration, ViewPlugin, type DecorationSet, type EditorView, type ViewUpdate } from '@codemirror/view';
+import { RangeSetBuilder } from '@codemirror/state';
 
 function buildGuides(view: EditorView): DecorationSet {
-  const builder = new RangeSetBuilder<Decoration>()
-  const tabSize = view.state.tabSize
+  const builder = new RangeSetBuilder<Decoration>();
+  const tabSize = view.state.tabSize;
 
   for (const { from, to } of view.visibleRanges) {
     for (let pos = from; pos <= to;) {
-      const line = view.state.doc.lineAt(pos)
-      const indent = /^[ \t]*/.exec(line.text)![0]
-      const columns = indent.replace(/\t/g, ' '.repeat(tabSize)).length
+      const line = view.state.doc.lineAt(pos);
+      const indent = /^[ \t]*/.exec(line.text)![0];
+      const columns = indent.replace(/\t/g, ' '.repeat(tabSize)).length;
       if (columns > 0 && indent.length < line.text.length) {
         builder.add(
           line.from,
@@ -19,25 +29,25 @@ function buildGuides(view: EditorView): DecorationSet {
           Decoration.line({
             attributes: { 'data-indent': '', style: `--indent-w: ${columns}ch` },
           }),
-        )
+        );
       }
-      pos = line.to + 1
+      pos = line.to + 1;
     }
   }
-  return builder.finish()
+  return builder.finish();
 }
 
 export const indentGuides = ViewPlugin.fromClass(
   class {
-    decorations: DecorationSet
+    decorations: DecorationSet;
     constructor(view: EditorView) {
-      this.decorations = buildGuides(view)
+      this.decorations = buildGuides(view);
     }
     update(update: ViewUpdate) {
       if (update.docChanged || update.viewportChanged) {
-        this.decorations = buildGuides(update.view)
+        this.decorations = buildGuides(update.view);
       }
     }
   },
   { decorations: (plugin) => plugin.decorations },
-)
+);

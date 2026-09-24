@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Pop-out windows: views and editor groups the user moved into a window of
  * their own.
@@ -11,19 +21,21 @@
  * few window controls a frameless window lacks.
  */
 
-import { BrowserWindow, ipcMain, shell, type HandlerDetails, type IpcMainInvokeEvent, type WindowOpenHandlerResponse } from 'electron'
+import { BrowserWindow, ipcMain, shell, type HandlerDetails, type IpcMainInvokeEvent, type WindowOpenHandlerResponse } from 'electron';
 
 /** The name the renderer opens its windows under (`popoutWindowName` in src/state/popout.ts). */
-const POPOUT_PREFIX = 'lumen-popout:'
+const POPOUT_PREFIX = 'lumen-popout:';
 
 /** Windows by opener and name — `<webContents id>|<name>`. */
-const windows = new Map<string, BrowserWindow>()
+const windows = new Map<string, BrowserWindow>();
 
-const keyOf = (owner: number, name: string) => `${owner}|${name}`
+const keyOf = (owner: number, name: string) => `${owner}|${name}`;
 
 /** The options of a pop-out window, or `null` when the request is not for one. */
 export function popoutOpenResult(details: HandlerDetails): WindowOpenHandlerResponse | null {
-  if (!details.frameName.startsWith(POPOUT_PREFIX)) return null
+  if (!details.frameName.startsWith(POPOUT_PREFIX)) {
+    return null;
+  }
   return {
     action: 'allow',
     overrideBrowserWindowOptions: {
@@ -36,7 +48,7 @@ export function popoutOpenResult(details: HandlerDetails): WindowOpenHandlerResp
       autoHideMenuBar: true,
       show: true,
     },
-  }
+  };
 }
 
 /**
@@ -45,56 +57,72 @@ export function popoutOpenResult(details: HandlerDetails): WindowOpenHandlerResp
  * is gone then).
  */
 export function trackPopouts(owner: BrowserWindow) {
-  const contents = owner.webContents
-  const ownerId = contents.id
-  const own = new Set<BrowserWindow>()
+  const contents = owner.webContents;
+  const ownerId = contents.id;
+  const own = new Set<BrowserWindow>();
 
   const closeAll = () => {
-    for (const child of [...own]) if (!child.isDestroyed()) child.destroy()
-    own.clear()
-  }
+    for (const child of [...own]) {
+      if (!child.isDestroyed()) {
+        child.destroy();
+      }
+    }
+    own.clear();
+  };
 
   contents.on('did-create-window', (child, details) => {
-    if (!details.frameName.startsWith(POPOUT_PREFIX)) return
-    const key = keyOf(ownerId, details.frameName)
-    windows.set(key, child)
-    own.add(child)
+    if (!details.frameName.startsWith(POPOUT_PREFIX)) {
+      return;
+    }
+    const key = keyOf(ownerId, details.frameName);
+    windows.set(key, child);
+    own.add(child);
     // A pop-out shows what the renderer puts into it, nothing else: no navigation, links go outside.
     child.webContents.setWindowOpenHandler(({ url }) => {
-      if (/^https?:\/\//.test(url)) void shell.openExternal(url)
-      return { action: 'deny' }
-    })
-    child.webContents.on('will-navigate', (event) => event.preventDefault())
+      if (/^https?:\/\//.test(url)) {
+        void shell.openExternal(url);
+      }
+      return { action: 'deny' };
+    });
+    child.webContents.on('will-navigate', (event) => event.preventDefault());
     child.on('closed', () => {
-      own.delete(child)
-      if (windows.get(key) === child) windows.delete(key)
-    })
-  })
+      own.delete(child);
+      if (windows.get(key) === child) {
+        windows.delete(key);
+      }
+    });
+  });
 
   contents.on('did-start-navigation', (details) => {
-    if (details.isMainFrame && !details.isSameDocument) closeAll()
-  })
-  owner.on('closed', closeAll)
+    if (details.isMainFrame && !details.isSameDocument) {
+      closeAll();
+    }
+  });
+  owner.on('closed', closeAll);
 }
 
-type PopoutAction = 'minimize' | 'toggleMaximize' | 'focus' | 'close'
+type PopoutAction = 'minimize' | 'toggleMaximize' | 'focus' | 'close';
 
 /** The window controls of a pop-out, asked for by the opener. */
 export function registerPopoutIpc() {
   ipcMain.handle('window:popout', (e: IpcMainInvokeEvent, name: string, action: PopoutAction) => {
-    const win = windows.get(keyOf(e.sender.id, String(name)))
-    if (!win || win.isDestroyed()) return false
+    const win = windows.get(keyOf(e.sender.id, String(name)));
+    if (!win || win.isDestroyed()) {
+      return false;
+    }
     const actions: Record<PopoutAction, () => void> = {
       minimize: () => win.minimize(),
       toggleMaximize: () => (win.isMaximized() ? win.unmaximize() : win.maximize()),
       focus: () => {
-        if (win.isMinimized()) win.restore()
-        win.show()
-        win.focus()
+        if (win.isMinimized()) {
+          win.restore();
+        }
+        win.show();
+        win.focus();
       },
       close: () => win.close(),
-    }
-    actions[action]?.()
-    return win.isMaximized()
-  })
+    };
+    actions[action]?.();
+    return win.isMaximized();
+  });
 }

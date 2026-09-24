@@ -1,7 +1,19 @@
-import type { Addon, LanguageSpec } from '@/core/types'
-import { denoKind, jsBrowserTemplate, jsNodeTemplate, npmKind } from '../lib/node-project'
-import { jsDebugNode } from '@/core/debug/adapters'
-import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import type { Addon, LanguageSpec } from '@/core/types';
+import { denoKind, jsBrowserTemplate, jsNodeTemplate, npmKind } from '../lib/node-project';
+import { jsDebugNode } from '@/core/debug/adapters';
+import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages';
+import { localizeSnippets } from '../lib/localize';
+import { t } from '@/i18n';
 
 /** Inlay hints and suggestion settings, shared by the tsserver front ends. */
 export const TS_INLAY_HINTS = {
@@ -11,11 +23,11 @@ export const TS_INLAY_HINTS = {
   propertyDeclarationTypes: { enabled: true },
   functionLikeReturnTypes: { enabled: true },
   enumMemberValues: { enabled: true },
-}
+};
 
 /** vtsls reads the defaults as VS Code does, from `typescript.preferences` / `typescript.suggest`. */
-export const VTSLS_PREFERENCES = { includePackageJsonAutoImports: 'on' }
-export const VTSLS_SUGGEST = { autoImports: true, includeCompletionsForImportStatements: true, completeFunctionCalls: true }
+export const VTSLS_PREFERENCES = { includePackageJsonAutoImports: 'on' };
+export const VTSLS_SUGGEST = { autoImports: true, includeCompletionsForImportStatements: true, completeFunctionCalls: true };
 
 export const TS_PREFERENCES = {
   includeInlayParameterNameHints: 'all',
@@ -40,7 +52,7 @@ export const TS_PREFERENCES = {
   providePrefixAndSuffixTextForRename: true,
   allowRenameOfImportPath: true,
   jsxAttributeCompletionStyle: 'auto',
-}
+};
 
 
 export const javascriptSpec: LanguageSpec = {
@@ -80,27 +92,27 @@ export const javascriptSpec: LanguageSpec = {
     'URLSearchParams', 'FormData', 'Headers', 'Response', 'Request',
     'process', 'Buffer', '__dirname', 'module', 'exports', 'globalThis',
   ],
-  snippets: [
+  snippets: localizeSnippets([
     { label: 'log', detail: 'console.log', body: 'console.log($0)' },
-    { label: 'fn', detail: 'Funktion', body: 'function ${name}(${args}) {\n  $0\n}' },
+    { label: 'fn', detail: 'addons.snippets.javascript.fn', body: 'function ${name}(${args}) {\n  $0\n}' },
     { label: 'afn', detail: 'Arrow Function', body: 'const ${name} = (${args}) => {\n  $0\n}' },
     { label: 'asfn', detail: 'async Arrow Function', body: 'const ${name} = async (${args}) => {\n  $0\n}' },
     { label: 'try', detail: 'try/catch', body: 'try {\n  $0\n} catch (err) {\n  console.error(err)\n}' },
-    { label: 'cls', detail: 'Klasse', body: 'class ${Name} {\n  constructor(${args}) {\n    $0\n  }\n}' },
+    { label: 'cls', detail: 'addons.snippets.javascript.cls', body: 'class ${Name} {\n  constructor(${args}) {\n    $0\n  }\n}' },
     { label: 'imp', detail: 'Import', body: "import { ${name} } from '${modul}'" },
-    { label: 'impd', detail: 'Default-Import', body: "import ${Name} from '${modul}'" },
+    { label: 'impd', detail: 'addons.snippets.javascript.impd', body: "import ${Name} from '${modul}'" },
     { label: 'exp', detail: 'Export', body: 'export const ${name} = $0' },
     { label: 'forof', detail: 'for…of', body: 'for (const ${element} of ${liste}) {\n  $0\n}' },
     { label: 'fore', detail: 'forEach', body: '${liste}.forEach((${element}) => {\n  $0\n})' },
     { label: 'map', detail: 'map', body: '${liste}.map((${element}) => $0)' },
     { label: 'filter', detail: 'filter', body: '${liste}.filter((${element}) => $0)' },
     { label: 'reduce', detail: 'reduce', body: '${liste}.reduce((${acc}, ${element}) => $0, ${start})' },
-    { label: 'fetch', detail: 'fetch mit await', body: "const res = await fetch('${url}')\nif (!res.ok) throw new Error(res.statusText)\nconst data = await res.json()$0" },
+    { label: 'fetch', detail: 'addons.snippets.javascript.fetch', body: "const res = await fetch('${url}')\nif (!res.ok) throw new Error(res.statusText)\nconst data = await res.json()$0" },
     { label: 'prom', detail: 'Promise', body: 'new Promise((resolve, reject) => {\n  $0\n})' },
     { label: 'timeout', detail: 'setTimeout', body: 'setTimeout(() => {\n  $0\n}, ${200})' },
     { label: 'switch', detail: 'switch', body: 'switch (${wert}) {\n  case ${1}:\n    $0\n    break\n  default:\n    break\n}' },
-    { label: 'destr', detail: 'Destrukturierung', body: 'const { ${a}, ${b} } = ${objekt}$0' },
-  ],
+    { label: 'destr', detail: 'addons.snippets.javascript.destr', body: 'const { ${a}, ${b} } = ${objekt}$0' },
+  ]),
   run: [
     { label: 'Node', command: 'node', args: ['${file}'] },
     { label: 'Bun', command: 'bun', args: ['run', '${file}'] },
@@ -191,19 +203,19 @@ export const javascriptSpec: LanguageSpec = {
       docs: 'https://docs.deno.com/runtime/reference/lsp_integration/',
     },
   ],
-}
+};
 
 export const javascriptAddon: Addon = {
   id: 'lang.javascript',
   name: 'JavaScript',
   version: '1.0.0',
-  description:
-    'Syntax, Snippets und Node-/Bun-Ausführung für JavaScript und JSX. npm-, pnpm-, ' +
-    'yarn-, bun- und Deno-Projekte mit Skripten als Aufgaben, Vorlagen, tsserver-LSP.',
+  get description() {
+    return t('addons.javascriptDescription');
+  },
   icon: 'JS',
   builtin: true,
   category: 'language',
   languages: [javascriptSpec],
   projectKinds: [npmKind, denoKind],
   projectTemplates: [jsNodeTemplate, jsBrowserTemplate],
-}
+};

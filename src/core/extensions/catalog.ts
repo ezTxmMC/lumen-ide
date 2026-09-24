@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The catalogues of every enabled extension server, kept together.
  *
@@ -6,45 +16,47 @@
  * fetching on their own.
  */
 
-import { fetchIndex } from './client'
-import { extensions } from './manager'
-import { isNewer } from './version'
-import type { ExtensionServer, ExtensionSummary } from './types'
+import { fetchIndex } from './client';
+import { extensions } from './manager';
+import { isNewer } from './version';
+import type { ExtensionServer, ExtensionSummary } from './types';
 
 export interface ServerCatalog {
-  loading: boolean
-  error: string | null
-  entries: ExtensionSummary[]
+  loading: boolean;
+  error: string | null;
+  entries: ExtensionSummary[];
 }
 
 /** An extension as offered by one server. */
 export interface CatalogEntry {
-  summary: ExtensionSummary
-  server: ExtensionServer
+  summary: ExtensionSummary;
+  server: ExtensionServer;
 }
 
 export interface AvailableUpdate {
-  id: string
-  name: string
-  from: string
-  to: string
-  server: ExtensionServer
+  id: string;
+  name: string;
+  from: string;
+  to: string;
+  server: ExtensionServer;
 }
 
-const listeners = new Set<() => void>()
-const catalogs = new Map<string, ServerCatalog>()
-let version = 0
-let generation = 0
+const listeners = new Set<() => void>();
+const catalogs = new Map<string, ServerCatalog>();
+let version = 0;
+let generation = 0;
 
 function emit() {
-  version++
-  for (const fn of listeners) fn()
+  version++;
+  for (const fn of listeners) {
+    fn();
+  }
 }
 
 export const catalog = {
   subscribe(fn: () => void) {
-    listeners.add(fn)
-    return () => { listeners.delete(fn) }
+    listeners.add(fn);
+    return () => { listeners.delete(fn); };
   },
   getVersion: () => version,
 
@@ -55,26 +67,32 @@ export const catalog = {
 
   /** Fetch every enabled server. A later call supersedes an earlier one. */
   async refresh(servers: readonly ExtensionServer[]) {
-    const run = ++generation
-    const active = servers.filter((server) => !server.disabled)
+    const run = ++generation;
+    const active = servers.filter((server) => !server.disabled);
     for (const url of [...catalogs.keys()]) {
-      if (!active.some((server) => server.url === url)) catalogs.delete(url)
+      if (!active.some((server) => server.url === url)) {
+        catalogs.delete(url);
+      }
     }
     for (const server of active) {
-      catalogs.set(server.url, { loading: true, error: null, entries: catalogs.get(server.url)?.entries ?? [] })
+      catalogs.set(server.url, { loading: true, error: null, entries: catalogs.get(server.url)?.entries ?? [] });
     }
-    emit()
+    emit();
     await Promise.all(active.map(async (server) => {
       try {
-        const index = await fetchIndex(server.url)
-        if (run !== generation) return
-        catalogs.set(server.url, { loading: false, error: null, entries: index.extensions })
+        const index = await fetchIndex(server.url);
+        if (run !== generation) {
+          return;
+        }
+        catalogs.set(server.url, { loading: false, error: null, entries: index.extensions });
       } catch (err) {
-        if (run !== generation) return
-        catalogs.set(server.url, { loading: false, error: (err as Error).message, entries: [] })
+        if (run !== generation) {
+          return;
+        }
+        catalogs.set(server.url, { loading: false, error: (err as Error).message, entries: [] });
       }
-      emit()
-    }))
+      emit();
+    }));
   },
 
   /**
@@ -84,15 +102,17 @@ export const catalog = {
    * the server listed first does, so the order in the server list decides.
    */
   explore(servers: readonly ExtensionServer[]): CatalogEntry[] {
-    const best = new Map<string, CatalogEntry>()
+    const best = new Map<string, CatalogEntry>();
     for (const server of servers) {
       for (const summary of catalogs.get(server.url)?.entries ?? []) {
-        const known = best.get(summary.id)
-        if (known && !isNewer(summary.version, known.summary.version)) continue
-        best.set(summary.id, { summary, server })
+        const known = best.get(summary.id);
+        if (known && !isNewer(summary.version, known.summary.version)) {
+          continue;
+        }
+        best.set(summary.id, { summary, server });
       }
     }
-    return [...best.values()].sort((a, b) => a.summary.name.localeCompare(b.summary.name))
+    return [...best.values()].sort((a, b) => a.summary.name.localeCompare(b.summary.name));
   },
 
   /**
@@ -102,14 +122,18 @@ export const catalog = {
    * who vouches for the extension without anyone being asked.
    */
   updates(servers: readonly ExtensionServer[]): AvailableUpdate[] {
-    const out: AvailableUpdate[] = []
+    const out: AvailableUpdate[] = [];
     for (const { manifest, server: origin } of extensions.list()) {
-      const server = servers.find((candidate) => candidate.url === origin)
-      if (!server) continue
-      const remote = catalogs.get(server.url)?.entries.find((entry) => entry.id === manifest.id)
-      if (!remote || !isNewer(remote.version, manifest.version)) continue
-      out.push({ id: manifest.id, name: manifest.name, from: manifest.version, to: remote.version, server })
+      const server = servers.find((candidate) => candidate.url === origin);
+      if (!server) {
+        continue;
+      }
+      const remote = catalogs.get(server.url)?.entries.find((entry) => entry.id === manifest.id);
+      if (!remote || !isNewer(remote.version, manifest.version)) {
+        continue;
+      }
+      out.push({ id: manifest.id, name: manifest.name, from: manifest.version, to: remote.version, server });
     }
-    return out
+    return out;
   },
-}
+};

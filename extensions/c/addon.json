@@ -134,7 +134,7 @@
       "snippets": [
         {
           "label": "main",
-          "detail": "main-Funktion",
+          "detail": "main function",
           "body": "#include <stdio.h>\n\nint main(int argc, char **argv) {\n  $0\n  return 0;\n}"
         },
         {
@@ -144,17 +144,17 @@
         },
         {
           "label": "fori",
-          "detail": "for-Schleife",
+          "detail": "for loop",
           "body": "for (int i = 0; i < ${n}; i++) {\n  $0\n}"
         },
         {
           "label": "guard",
-          "detail": "Header-Guard",
+          "detail": "Header guard",
           "body": "#ifndef ${NAME_H}\n#define ${NAME_H}\n\n$0\n\n#endif  /* ${NAME_H} */"
         },
         {
           "label": "struct",
-          "detail": "Struct mit typedef",
+          "detail": "Struct with typedef",
           "body": "typedef struct {\n  ${int} ${feld};\n} ${Name};$0"
         },
         {
@@ -164,12 +164,12 @@
         },
         {
           "label": "malloc",
-          "detail": "Speicher anfordern",
+          "detail": "Allocate memory",
           "body": "${Typ} *${name} = malloc(${n} * sizeof(*${name}));\nif (!${name}) return ${-1};$0"
         },
         {
           "label": "fopen",
-          "detail": "Datei lesen",
+          "detail": "Read a file",
           "body": "FILE *f = fopen(\"${datei}\", \"r\");\nif (!f) { perror(\"${datei}\"); return 1; }\n$0\nfclose(f);"
         },
         {
@@ -254,7 +254,7 @@
             "meson.build",
             ".git"
           ],
-          "install": "Arch: pacman -S clang · Debian/Ubuntu: apt install clangd · macOS: brew install llvm (oder Xcode CLT)",
+          "install": "Arch: pacman -S clang · Debian/Ubuntu: apt install clangd · macOS: brew install llvm (or Xcode CLT)",
           "package": {
             "type": "github",
             "repo": "clangd/clangd",

@@ -1,44 +1,58 @@
-import { useEffect, useState } from 'react'
-import { Music } from 'lucide-react'
-import type { Tab } from '@/state/store'
-import { mediaUrl } from '@/lib/media-kind'
-import { useT } from '@/i18n'
-import { InfoBar, InfoItem, useFileInfo, ViewerFallback } from './chrome'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import { useEffect, useState } from 'react';
+import { Music } from 'lucide-react';
+import type { Tab } from '@/state/store';
+import { mediaUrl } from '@/lib/media-kind';
+import { useT } from '@/i18n';
+import { InfoBar, InfoItem, useFileInfo, ViewerFallback } from './chrome';
 
 interface Facts {
-  duration: number
-  width: number
-  height: number
+  duration: number;
+  width: number;
+  height: number;
 }
 
 export function formatDuration(seconds: number): string {
-  if (!Number.isFinite(seconds)) return '–'
-  const total = Math.round(seconds)
-  const h = Math.floor(total / 3600)
-  const m = Math.floor((total % 3600) / 60)
-  const s = String(total % 60).padStart(2, '0')
-  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${s}`
-  return `${m}:${s}`
+  if (!Number.isFinite(seconds)) {
+    return '–';
+  }
+  const total = Math.round(seconds);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = String(total % 60).padStart(2, '0');
+  if (h > 0) {
+    return `${h}:${String(m).padStart(2, '0')}:${s}`;
+  }
+  return `${m}:${s}`;
 }
 
 /** Video and audio with the native controls, framed in Lumen's look. */
-export function PlayerViewer({ tab, kind }: { tab: Tab; kind: 'video' | 'audio' }) {
-  const t = useT()
-  const path = tab.path ?? ''
-  const revision = tab.revision ?? 0
-  const info = useFileInfo(path, revision)
-  const src = mediaUrl(path, revision)
-  const [facts, setFacts] = useState<Facts | null>(null)
-  const [failed, setFailed] = useState(false)
+export function PlayerViewer({ tab, kind }: { tab: Tab; kind: 'video' | 'audio'; }) {
+  const t = useT();
+  const path = tab.path ?? '';
+  const revision = tab.revision ?? 0;
+  const info = useFileInfo(path, revision);
+  const src = mediaUrl(path, revision);
+  const [facts, setFacts] = useState<Facts | null>(null);
+  const [failed, setFailed] = useState(false);
 
-  useEffect(() => { setFailed(false) }, [src])
+  useEffect(() => { setFailed(false); }, [src]);
 
   const onMetadata = (event: React.SyntheticEvent<HTMLMediaElement>) => {
-    const media = event.currentTarget
-    const video = media instanceof HTMLVideoElement ? media : null
-    setFacts({ duration: media.duration, width: video?.videoWidth ?? 0, height: video?.videoHeight ?? 0 })
-  }
-  const onError = () => setFailed(true)
+    const media = event.currentTarget;
+    const video = media instanceof HTMLVideoElement ? media : null;
+    setFacts({ duration: media.duration, width: video?.videoWidth ?? 0, height: video?.videoHeight ?? 0 });
+  };
+  const onError = () => setFailed(true);
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-bg" data-viewer={kind}>
@@ -84,5 +98,5 @@ export function PlayerViewer({ tab, kind }: { tab: Tab; kind: 'video' | 'audio' 
         {facts && facts.width > 0 && <InfoItem label={t('media.dimensions')} value={`${facts.width} × ${facts.height}`} />}
       </InfoBar>
     </div>
-  )
+  );
 }

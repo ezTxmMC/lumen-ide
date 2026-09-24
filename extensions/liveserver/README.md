@@ -1,24 +1,17 @@
 # Live Server
 
-Ein lokaler Server für den Projektordner — HTML, PHP und alles Statische — der
-die Seite im Browser neu lädt, sobald sich eine Datei ändert.
+Serves the project folder over HTTP (HTML, PHP and static files) and reloads
+the page in the browser when a file changes.
 
-- **Go Live** in der Statusleiste (oder der Befehl *Live Server: Starten / Stoppen*) startet den Server und öffnet die aktive Datei im Browser.
-- **HTML** bekommt ein kleines Skript eingefügt; Änderungen an **CSS** tauschen nur die Stile aus, alles andere lädt neu.
-- **PHP** läuft über `php -S` (PHP muss installiert sein); die Ausgabe wird durch den Live-Server geleitet, sodass auch PHP-Seiten neu laden.
-- Ordner ohne `index.html` zeigen eine Dateiliste. Der Port, die Adresse, ein Unterordner (`dist`, `public`), die beobachteten Dateitypen und ignorierte Ordner stehen in den Einstellungen.
+- **Go Live** in the status bar (or the command *Live Server: Start / Stop*) starts the server and opens the active file in the browser.
+- **HTML** gets a small script injected; changes to **CSS** only swap the styles, everything else reloads.
+- **PHP** runs through `php -S` (PHP must be installed); the output is routed through the live server so PHP pages reload too.
+- Folders without `index.html` show a file list. The port, the address, a subfolder (`dist`, `public`), the watched file types, ignored folders and the path to `php` are in the settings.
 
-## Befehle
+## Commands
 
-| Befehl | Was er tut |
+| Command | What it does |
 |---|---|
-| Live Server: Starten / Stoppen | schaltet den Server um |
-| Live Server: Aktive Datei im Browser öffnen | öffnet die Datei unter der Server-Adresse |
-| Live Server: Startseite im Browser öffnen | öffnet die Wurzel des Servers |
-
----
-
-Serves the project folder over HTTP — HTML, PHP and static files — and reloads
-the page in the browser when a file changes. CSS changes are swapped in without
-a reload. PHP runs through `php -S`. Settings: port, address, subfolder, the
-file types that trigger a reload, ignored folders and the path to `php`.
+| Live Server: Start / Stop | toggles the server |
+| Live Server: Open active file in browser | opens the file at the server address |
+| Live Server: Open the site in the browser | opens the root of the server |

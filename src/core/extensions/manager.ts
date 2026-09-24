@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Installed extensions.
  *
@@ -13,61 +23,69 @@
  * update never overwrites what someone typed.
  */
 
-import { useStore } from '@/state/store'
-import { userAddons } from '@/core/user-addons/manager'
-import { blockingIssues } from '@/core/user-addons/validate'
-import { normalizeModel } from '@/core/user-addons/schema'
-import { t } from '@/i18n'
-import { fetchManifest } from './client'
-import { normalizeServerUrl } from './trust'
-import { isNewer } from './version'
-import { EXTENSION_ID_PATTERN, type ExtensionManifest, type ExtensionPage, type InstalledExtension } from './types'
-import { appVersion } from './app-version'
-import { fitsApp } from './compat'
-import { codeHashInput } from '../../../electron/features/extension-host/code-hash'
+import { useStore } from '@/state/store';
+import { userAddons } from '@/core/user-addons/manager';
+import { blockingIssues } from '@/core/user-addons/validate';
+import { normalizeModel } from '@/core/user-addons/schema';
+import { t } from '@/i18n';
+import { fetchManifest } from './client';
+import { normalizeServerUrl } from './trust';
+import { isNewer } from './version';
+import { EXTENSION_ID_PATTERN, type ExtensionManifest, type ExtensionPage, type InstalledExtension } from './types';
+import { appVersion } from './app-version';
+import { fitsApp } from './compat';
+import { codeHashInput } from '../../../electron/features/extension-host/code-hash';
 
 /** Thrown when an extension's code has not been approved yet — the caller asks the user and tries again. */
 export class CodeApprovalRequired extends Error {
   constructor(readonly manifest: ExtensionManifest, readonly hash: string) {
-    super(`${manifest.name} brings program code that has to be approved`)
-    this.name = 'CodeApprovalRequired'
+    super(`${manifest.name} brings program code that has to be approved`);
+    this.name = 'CodeApprovalRequired';
   }
 }
 
 export async function sha256Hex(text: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-const listeners = new Set<() => void>()
-const installed = new Map<string, InstalledExtension>()
-let version = 0
-let started = false
+const listeners = new Set<() => void>();
+const installed = new Map<string, InstalledExtension>();
+let version = 0;
+let started = false;
 
 function emit() {
-  version++
-  for (const fn of listeners) fn()
+  version++;
+  for (const fn of listeners) {
+    fn();
+  }
 }
 
 /** Read a stored manifest back — foreign data, so carefully. */
 function toInstalled(raw: unknown): InstalledExtension | null {
-  if (!raw || typeof raw !== 'object') return null
-  const entry = raw as Record<string, unknown>
-  const manifest = entry.manifest as ExtensionManifest | undefined
-  if (!manifest || typeof manifest !== 'object') return null
-  if (!EXTENSION_ID_PATTERN.test(String(manifest.id))) return null
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const entry = raw as Record<string, unknown>;
+  const manifest = entry.manifest as ExtensionManifest | undefined;
+  if (!manifest || typeof manifest !== 'object') {
+    return null;
+  }
+  if (!EXTENSION_ID_PATTERN.test(String(manifest.id))) {
+    return null;
+  }
   return {
     manifest,
     server: typeof entry.server === 'string' ? entry.server : '',
     installedAt: typeof entry.installedAt === 'number' ? entry.installedAt : Date.now(),
     codeHash: typeof entry.codeHash === 'string' ? entry.codeHash : undefined,
-  }
+  };
 }
 
 export const extensions = {
   subscribe(fn: () => void) {
-    listeners.add(fn)
-    return () => { listeners.delete(fn) }
+    listeners.add(fn);
+    return () => { listeners.delete(fn); };
   },
   getVersion: () => version,
 
@@ -78,28 +96,34 @@ export const extensions = {
   has: (id: string) => installed.has(id),
 
   /** Every page of every installed extension, with where it came from. */
-  pages(): { extensionId: string; extensionName: string; page: ExtensionPage }[] {
-    const out: { extensionId: string; extensionName: string; page: ExtensionPage }[] = []
+  pages(): { extensionId: string; extensionName: string; page: ExtensionPage; }[] {
+    const out: { extensionId: string; extensionName: string; page: ExtensionPage; }[] = [];
     for (const entry of extensions.list()) {
       for (const page of entry.manifest.pages ?? []) {
-        out.push({ extensionId: entry.manifest.id, extensionName: entry.manifest.name, page })
+        out.push({ extensionId: entry.manifest.id, extensionName: entry.manifest.name, page });
       }
     }
-    return out
+    return out;
   },
 
   /** On startup: read the stored manifests. `userAddons.init` loads the add-ons. */
   async init() {
-    if (started) return
-    started = true
-    const stored = await window.lumen.extensions.list().catch(() => [])
-    for (const entry of stored) {
-      if (entry.error || !entry.data) continue
-      const record = toInstalled(entry.data)
-      if (!record) continue
-      installed.set(record.manifest.id, record)
+    if (started) {
+      return;
     }
-    emit()
+    started = true;
+    const stored = await window.lumen.extensions.list().catch(() => []);
+    for (const entry of stored) {
+      if (entry.error || !entry.data) {
+        continue;
+      }
+      const record = toInstalled(entry.data);
+      if (!record) {
+        continue;
+      }
+      installed.set(record.manifest.id, record);
+    }
+    emit();
   },
 
   /**
@@ -108,53 +132,67 @@ export const extensions = {
    * The add-on goes through the usual validation; when that fails nothing is
    * stored and the first message is passed on.
    */
-  async install(manifest: ExtensionManifest, server: string, options: { approveCode?: boolean } = {}): Promise<void> {
+  async install(manifest: ExtensionManifest, server: string, options: { approveCode?: boolean; } = {}): Promise<void> {
     if (!fitsApp(manifest.minAppVersion, appVersion())) {
-      throw new Error(t('extensions.needsNewerApp', { name: manifest.name, required: manifest.minAppVersion ?? '', current: appVersion() }))
+      throw new Error(t('extensions.needsNewerApp', { name: manifest.name, required: manifest.minAppVersion ?? '', current: appVersion() }));
     }
-    const { code, ...stored } = manifest
-    const known = installed.get(manifest.id)?.codeHash
-    const codeHash = code ? await sha256Hex(codeHashInput(code)) : undefined
+    const { code, ...stored } = manifest;
+    const known = installed.get(manifest.id)?.codeHash;
+    const codeHash = code ? await sha256Hex(codeHashInput(code)) : undefined;
     // Code that was approved before and has not changed runs on; anything else asks first.
-    if (code && codeHash !== known && !options.approveCode) throw new CodeApprovalRequired(manifest, codeHash ?? '')
+    if (code && codeHash !== known && !options.approveCode) {
+      throw new CodeApprovalRequired(manifest, codeHash ?? '');
+    }
 
-    const model = normalizeModel(structuredClone(manifest.addon))
+    const model = normalizeModel(structuredClone(manifest.addon));
     // A user add-on of the same id from the Studio is the user's own work: never overwrite it.
-    if (!installed.has(model.id) && userAddons.get(model.id)) throw new Error(t('addonStudio.validate.duplicateId', { id: model.id }))
-    const issues = await userAddons.save(model, model.id)
-    const blocking = blockingIssues(issues)
-    if (blocking.length) throw new Error(blocking[0].message)
+    if (!installed.has(model.id) && userAddons.get(model.id)) {
+      throw new Error(t('addonStudio.validate.duplicateId', { id: model.id }));
+    }
+    const issues = await userAddons.save(model, model.id);
+    const blocking = blockingIssues(issues);
+    if (blocking.length) {
+      throw new Error(blocking[0].message);
+    }
 
-    if (code && codeHash) await window.lumen.extensions.installCode(manifest.id, code, codeHash)
-    if (!code && known) await window.lumen.extensions.removeCode(manifest.id)
+    if (code && codeHash) {
+      await window.lumen.extensions.installCode(manifest.id, code, codeHash);
+    }
+    if (!code && known) {
+      await window.lumen.extensions.removeCode(manifest.id);
+    }
 
     const record: InstalledExtension = {
       manifest: stored,
       server: normalizeServerUrl(server),
       installedAt: installed.get(manifest.id)?.installedAt ?? Date.now(),
       codeHash,
-    }
-    await window.lumen.extensions.save(manifest.id, `${JSON.stringify(record, null, 2)}\n`)
-    installed.set(manifest.id, record)
-    useStore.getState().applyExtensionDefaults(manifest)
-    emit()
+    };
+    await window.lumen.extensions.save(manifest.id, `${JSON.stringify(record, null, 2)}\n`);
+    installed.set(manifest.id, record);
+    useStore.getState().applyExtensionDefaults(manifest);
+    emit();
   },
 
   /** Fetch from a server and install. */
-  async installFrom(server: string, id: string, version?: string, options: { approveCode?: boolean } = {}): Promise<ExtensionManifest> {
-    const manifest = await fetchManifest(server, id, version)
-    await extensions.install(manifest, server, options)
-    return manifest
+  async installFrom(server: string, id: string, version?: string, options: { approveCode?: boolean; } = {}): Promise<ExtensionManifest> {
+    const manifest = await fetchManifest(server, id, version);
+    await extensions.install(manifest, server, options);
+    return manifest;
   },
 
   async uninstall(id: string) {
-    if (!installed.has(id)) return
-    await userAddons.remove(id)
-    if (installed.get(id)?.codeHash) await window.lumen.extensions.removeCode(id)
-    await window.lumen.extensions.remove(id)
-    installed.delete(id)
-    useStore.getState().forgetExtensionSettings(id)
-    emit()
+    if (!installed.has(id)) {
+      return;
+    }
+    await userAddons.remove(id);
+    if (installed.get(id)?.codeHash) {
+      await window.lumen.extensions.removeCode(id);
+    }
+    await window.lumen.extensions.remove(id);
+    installed.delete(id);
+    useStore.getState().forgetExtensionSettings(id);
+    emit();
   },
 
   /**
@@ -163,40 +201,48 @@ export const extensions = {
    * One catalogue fetch per server rather than one request per extension, so a
    * server with many installed extensions is asked exactly once.
    */
-  async checkUpdates(): Promise<{ id: string; from: string; to: string; server: string }[]> {
-    const byServer = new Map<string, InstalledExtension[]>()
+  async checkUpdates(): Promise<{ id: string; from: string; to: string; server: string; }[]> {
+    const byServer = new Map<string, InstalledExtension[]>();
     for (const entry of installed.values()) {
-      if (!entry.server) continue
-      byServer.set(entry.server, [...(byServer.get(entry.server) ?? []), entry])
-    }
-    const out: { id: string; from: string; to: string; server: string }[] = []
-    await Promise.all([...byServer.entries()].map(async ([server, entries]) => {
-      const { fetchIndex } = await import('./client')
-      const index = await fetchIndex(server).catch(() => null)
-      if (!index) return
-      for (const entry of entries) {
-        const remote = index.extensions.find((candidate) => candidate.id === entry.manifest.id)
-        if (!remote || !isNewer(remote.version, entry.manifest.version)) continue
-        // The newest version wants a newer Lumen — this one keeps what it has.
-        if (!fitsApp(remote.minAppVersion, appVersion())) continue
-        out.push({ id: entry.manifest.id, from: entry.manifest.version, to: remote.version, server })
+      if (!entry.server) {
+        continue;
       }
-    }))
-    return out
+      byServer.set(entry.server, [...(byServer.get(entry.server) ?? []), entry]);
+    }
+    const out: { id: string; from: string; to: string; server: string; }[] = [];
+    await Promise.all([...byServer.entries()].map(async ([server, entries]) => {
+      const { fetchIndex } = await import('./client');
+      const index = await fetchIndex(server).catch(() => null);
+      if (!index) {
+        return;
+      }
+      for (const entry of entries) {
+        const remote = index.extensions.find((candidate) => candidate.id === entry.manifest.id);
+        if (!remote || !isNewer(remote.version, entry.manifest.version)) {
+          continue;
+        }
+        // The newest version wants a newer Lumen — this one keeps what it has.
+        if (!fitsApp(remote.minAppVersion, appVersion())) {
+          continue;
+        }
+        out.push({ id: entry.manifest.id, from: entry.manifest.version, to: remote.version, server });
+      }
+    }));
+    return out;
   },
 
   /** Apply every update found; returns the names. */
   async updateAll(): Promise<string[]> {
-    const updates = await extensions.checkUpdates()
-    const done: string[] = []
+    const updates = await extensions.checkUpdates();
+    const done: string[] = [];
     for (const update of updates) {
       try {
-        const manifest = await extensions.installFrom(update.server, update.id, update.to)
-        done.push(manifest.name)
+        const manifest = await extensions.installFrom(update.server, update.id, update.to);
+        done.push(manifest.name);
       } catch (err) {
-        useStore.getState().notify(t('extensions.updateFailed', { name: update.id, error: (err as Error).message }), 'warning')
+        useStore.getState().notify(t('extensions.updateFailed', { name: update.id, error: (err as Error).message }), 'warning');
       }
     }
-    return done
+    return done;
   },
-}
+};

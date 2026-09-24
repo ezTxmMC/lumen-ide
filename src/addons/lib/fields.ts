@@ -1,13 +1,23 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The fields that recur in project templates: version, description, author,
  * licence, package manager — so that every template uses the same names and
  * the same checks.
  */
 
-import type { FormField, FormValues } from '@/core/types'
-import { identifier, isValidPackage } from '@/core/project/scaffold'
+import type { FormField, FormValues } from '@/core/types';
+import { identifier, isValidPackage } from '@/core/project/scaffold';
 
-export const SEMVER = String.raw`\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?`
+export const SEMVER = String.raw`\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?`;
 
 export function versionField(fallback = '0.1.0', pattern = SEMVER): FormField {
   return {
@@ -18,7 +28,7 @@ export function versionField(fallback = '0.1.0', pattern = SEMVER): FormField {
     patternHint: 'templates.fields.versionHint',
     mono: true,
     section: 'templates.sections.project',
-  }
+  };
 }
 
 export const descriptionField: FormField = {
@@ -27,7 +37,7 @@ export const descriptionField: FormField = {
   placeholder: 'templates.fields.descriptionPlaceholder',
   required: false,
   section: 'templates.sections.project',
-}
+};
 
 export const authorField: FormField = {
   id: 'author',
@@ -35,7 +45,7 @@ export const authorField: FormField = {
   placeholder: 'templates.fields.authorPlaceholder',
   required: false,
   section: 'templates.sections.project',
-}
+};
 
 export const licenseField: FormField = {
   id: 'license',
@@ -49,9 +59,9 @@ export const licenseField: FormField = {
     { value: 'UNLICENSED', label: 'templates.fields.licenseNone' },
   ],
   section: 'templates.sections.project',
-}
+};
 
-export const commonFields = [versionField(), descriptionField, authorField, licenseField]
+export const commonFields = [versionField(), descriptionField, authorField, licenseField];
 
 export const nodePackageManagerField: FormField = {
   id: 'pm',
@@ -64,7 +74,7 @@ export const nodePackageManagerField: FormField = {
     { value: 'bun', label: 'Bun' },
   ],
   section: 'templates.sections.build',
-}
+};
 
 export const languageVariantField: FormField = {
   id: 'lang',
@@ -75,7 +85,7 @@ export const languageVariantField: FormField = {
     { value: 'js', label: 'JavaScript' },
   ],
   section: 'templates.sections.build',
-}
+};
 
 /** The Maven and Gradle coordinates plus the Java package derived from them. */
 export const jvmCoordinateFields: FormField[] = [
@@ -108,7 +118,7 @@ export const jvmCoordinateFields: FormField[] = [
     section: 'templates.sections.coordinates',
   },
   descriptionField,
-]
+];
 
 export const javaVersionField: FormField = {
   id: 'java',
@@ -124,27 +134,27 @@ export const javaVersionField: FormField = {
     { value: '26', label: 'Java 26' },
   ],
   section: 'templates.sections.build',
-}
+};
 
 export const toggle = (id: string, label: string, fallback: boolean, section = 'templates.sections.options', hint?: string): FormField => ({
   id, label, type: 'toggle', default: String(fallback), section, hint,
-})
+});
 
-export const isOn = (values: FormValues, id: string) => values[id] === 'true'
+export const isOn = (values: FormValues, id: string) => values[id] === 'true';
 
-export { isValidPackage }
+export { isValidPackage };
 
 /** `de.firma.app` → `de/firma/app` */
-export const packagePath = (pkg: string) => pkg.replace(/\./g, '/')
+export const packagePath = (pkg: string) => pkg.replace(/\./g, '/');
 
 /** JSON with two spaces and a line break at the end. */
-export const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`
+export const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 
 /** Remove the empty entries (undefined, '') from an object — for package.json and its like. */
 export function compact<T extends Record<string, unknown>>(value: T): Partial<T> {
   return Object.fromEntries(
     Object.entries(value).filter(([, v]) => v !== undefined && v !== ''),
-  ) as Partial<T>
+  ) as Partial<T>;
 }
 
 /** The package manager commands for Node projects. */
@@ -153,6 +163,6 @@ export const NODE_PM = {
   pnpm: { install: ['install'], add: ['add'], addDev: ['add', '-D'], run: (s: string) => ['run', s], exec: 'pnpm dlx' },
   yarn: { install: ['install'], add: ['add'], addDev: ['add', '-D'], run: (s: string) => ['run', s], exec: 'yarn dlx' },
   bun: { install: ['install'], add: ['add'], addDev: ['add', '-d'], run: (s: string) => ['run', s], exec: 'bunx' },
-} as const
+} as const;
 
-export type NodePm = keyof typeof NODE_PM
+export type NodePm = keyof typeof NODE_PM;

@@ -1,8 +1,32 @@
-import type { NamespaceMessages } from '@/i18n'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import type { NamespaceMessages } from '@/i18n';
 
 /** Language servers: state, log lines and error messages. */
 export default {
   de: {
+    editor: {
+      importTimeout: 'Auto-Import für „{name}“ nicht rechtzeitig geladen — Vorschlag ohne Import eingefügt',
+      importFailed: 'Auto-Import für „{name}“ fehlgeschlagen: {error}',
+      insertCancelled: 'Einfügen von „{name}“ abgebrochen: Cursor wurde verschoben',
+      extraDropped: '{count} Zusatzänderung(en) von „{name}“ verworfen: {reason}',
+      insertFailed: 'Einfügen von „{name}“ fehlgeschlagen: {error}',
+      commandFailed: 'Befehl fehlgeschlagen: {error}',
+      noCodeActions: 'Kein Language-Server mit Code-Aktionen aktiv',
+      actionFailed: 'Aktion fehlgeschlagen: {error}',
+      renameUnsupported: 'Umbenennen wird von diesem Server nicht unterstützt',
+      nothingToRename: 'Hier lässt sich nichts umbenennen',
+      noChanges: 'Server lieferte keine Änderungen',
+      renameFailed: 'Umbenennen fehlgeschlagen: {error}',
+    },
     java: {
       importProblems: 'Nicht alle Java-Projekte ließen sich importieren — Klassen anderer Module bleiben dann unbekannt. Details im Protokoll des Language-Servers; „Java: Projekte neu importieren“ versucht es erneut.',
       gradleJdk: 'Gradle läuft nicht mit diesem JDK. Wähle unter Einstellungen → SDKs & JDKs ein passendes JDK für das Projekt und starte den Server neu.',
@@ -66,6 +90,20 @@ export default {
     },
   },
   en: {
+    editor: {
+      importTimeout: 'Auto-import for “{name}” did not load in time — suggestion inserted without import',
+      importFailed: 'Auto-import for “{name}” failed: {error}',
+      insertCancelled: 'Inserting “{name}” cancelled: the cursor moved',
+      extraDropped: '{count} additional change(s) of “{name}” dropped: {reason}',
+      insertFailed: 'Inserting “{name}” failed: {error}',
+      commandFailed: 'Command failed: {error}',
+      noCodeActions: 'No language server with code actions is active',
+      actionFailed: 'Action failed: {error}',
+      renameUnsupported: 'This server does not support renaming',
+      nothingToRename: 'There is nothing to rename here',
+      noChanges: 'The server returned no changes',
+      renameFailed: 'Rename failed: {error}',
+    },
     java: {
       importProblems: 'Not every Java project could be imported — classes of other modules then stay unknown. Details in the language server\'s log; “Java: Reimport Projects” tries again.',
       gradleJdk: 'Gradle cannot run with this JDK. Choose a fitting JDK for the project under Settings → SDKs & JDKs and restart the server.',
@@ -129,6 +167,20 @@ export default {
     },
   },
   es: {
+    editor: {
+      importTimeout: 'Importación automática de «{name}» no cargó a tiempo: sugerencia insertada sin importación',
+      importFailed: 'Falló la importación automática de «{name}»: {error}',
+      insertCancelled: 'Inserción de «{name}» cancelada: el cursor se movió',
+      extraDropped: '{count} cambio(s) adicional(es) de «{name}» descartado(s): {reason}',
+      insertFailed: 'Error al insertar «{name}»: {error}',
+      commandFailed: 'Error del comando: {error}',
+      noCodeActions: 'No hay ningún servidor de lenguaje activo con acciones de código',
+      actionFailed: 'Error de la acción: {error}',
+      renameUnsupported: 'Este servidor no admite el cambio de nombre',
+      nothingToRename: 'Aquí no hay nada que renombrar',
+      noChanges: 'El servidor no devolvió cambios',
+      renameFailed: 'Error al renombrar: {error}',
+    },
     java: {
       importProblems: 'No se pudieron importar todos los proyectos Java; las clases de otros módulos quedan desconocidas. Detalles en el registro del servidor; «Java: Reimportar proyectos» lo reintenta.',
       gradleJdk: 'Gradle no puede ejecutarse con este JDK. Elige un JDK adecuado para el proyecto en Ajustes → SDKs y JDKs y reinicia el servidor.',
@@ -192,6 +244,20 @@ export default {
     },
   },
   fr: {
+    editor: {
+      importTimeout: 'L\'import automatique de « {name} » n\'a pas chargé à temps : suggestion insérée sans import',
+      importFailed: 'Échec de l\'import automatique de « {name} » : {error}',
+      insertCancelled: 'Insertion de « {name} » annulée : le curseur a bougé',
+      extraDropped: '{count} modification(s) supplémentaire(s) de « {name} » ignorée(s) : {reason}',
+      insertFailed: 'Échec de l\'insertion de « {name} » : {error}',
+      commandFailed: 'Échec de la commande : {error}',
+      noCodeActions: 'Aucun serveur de langage avec actions de code n\'est actif',
+      actionFailed: 'Échec de l\'action : {error}',
+      renameUnsupported: 'Ce serveur ne prend pas en charge le renommage',
+      nothingToRename: 'Il n\'y a rien à renommer ici',
+      noChanges: 'Le serveur n\'a renvoyé aucune modification',
+      renameFailed: 'Échec du renommage : {error}',
+    },
     java: {
       importProblems: 'Tous les projets Java n’ont pas pu être importés — les classes des autres modules restent inconnues. Détails dans le journal du serveur ; « Java : Réimporter les projets » réessaie.',
       gradleJdk: 'Gradle ne peut pas s’exécuter avec ce JDK. Choisissez un JDK adapté au projet dans Paramètres → SDK et JDK, puis redémarrez le serveur.',
@@ -255,6 +321,20 @@ export default {
     },
   },
   pl: {
+    editor: {
+      importTimeout: 'Automatyczny import „{name}” nie załadował się na czas — podpowiedź wstawiono bez importu',
+      importFailed: 'Automatyczny import „{name}” nie powiódł się: {error}',
+      insertCancelled: 'Wstawianie „{name}” anulowane: kursor się przesunął',
+      extraDropped: 'Pominięto {count} dodatkowych zmian „{name}”: {reason}',
+      insertFailed: 'Wstawianie „{name}” nie powiodło się: {error}',
+      commandFailed: 'Polecenie nie powiodło się: {error}',
+      noCodeActions: 'Brak aktywnego serwera języka z akcjami kodu',
+      actionFailed: 'Akcja nie powiodła się: {error}',
+      renameUnsupported: 'Ten serwer nie obsługuje zmiany nazwy',
+      nothingToRename: 'Nie ma tu nic do zmiany nazwy',
+      noChanges: 'Serwer nie zwrócił żadnych zmian',
+      renameFailed: 'Zmiana nazwy nie powiodła się: {error}',
+    },
     java: {
       importProblems: 'Nie wszystkie projekty Java udało się zaimportować — klasy innych modułów pozostają nieznane. Szczegóły w dzienniku serwera; „Java: Ponownie zaimportuj projekty” spróbuje ponownie.',
       gradleJdk: 'Gradle nie może działać z tym JDK. Wybierz pasujący JDK dla projektu w Ustawienia → SDK i JDK i uruchom serwer ponownie.',
@@ -318,6 +398,20 @@ export default {
     },
   },
   it: {
+    editor: {
+      importTimeout: 'L\'importazione automatica di «{name}» non si è caricata in tempo: suggerimento inserito senza importazione',
+      importFailed: 'Importazione automatica di «{name}» non riuscita: {error}',
+      insertCancelled: 'Inserimento di «{name}» annullato: il cursore si è spostato',
+      extraDropped: '{count} modifica/modifiche aggiuntiva/e di «{name}» scartata/e: {reason}',
+      insertFailed: 'Inserimento di «{name}» non riuscito: {error}',
+      commandFailed: 'Comando non riuscito: {error}',
+      noCodeActions: 'Nessun server di linguaggio con azioni sul codice è attivo',
+      actionFailed: 'Azione non riuscita: {error}',
+      renameUnsupported: 'Questo server non supporta la rinomina',
+      nothingToRename: 'Qui non c\'è nulla da rinominare',
+      noChanges: 'Il server non ha restituito modifiche',
+      renameFailed: 'Rinomina non riuscita: {error}',
+    },
     java: {
       importProblems: 'Non tutti i progetti Java sono stati importati: le classi degli altri moduli restano sconosciute. Dettagli nel log del server; «Java: Reimporta i progetti» riprova.',
       gradleJdk: 'Gradle non può essere eseguito con questo JDK. Scegli un JDK adatto al progetto in Impostazioni → SDK e JDK e riavvia il server.',
@@ -381,6 +475,20 @@ export default {
     },
   },
   pt: {
+    editor: {
+      importTimeout: 'A importação automática de «{name}» não carregou a tempo — sugestão inserida sem importação',
+      importFailed: 'Falha na importação automática de «{name}»: {error}',
+      insertCancelled: 'Inserção de «{name}» cancelada: o cursor mudou de lugar',
+      extraDropped: '{count} alteração(ões) adicional(is) de «{name}» descartada(s): {reason}',
+      insertFailed: 'Falha ao inserir «{name}»: {error}',
+      commandFailed: 'Falha no comando: {error}',
+      noCodeActions: 'Nenhum servidor de linguagem com ações de código está ativo',
+      actionFailed: 'Falha na ação: {error}',
+      renameUnsupported: 'Este servidor não suporta renomeação',
+      nothingToRename: 'Não há nada para renomear aqui',
+      noChanges: 'O servidor não devolveu alterações',
+      renameFailed: 'Falha ao renomear: {error}',
+    },
     java: {
       importProblems: 'Nem todos os projetos Java puderam ser importados — as classes de outros módulos ficam desconhecidas. Detalhes no log do servidor; «Java: Reimportar projetos» tenta de novo.',
       gradleJdk: 'O Gradle não roda com este JDK. Escolha um JDK adequado ao projeto em Configurações → SDKs e JDKs e reinicie o servidor.',
@@ -444,6 +552,20 @@ export default {
     },
   },
   nl: {
+    editor: {
+      importTimeout: 'Automatisch importeren van „{name}” laadde niet op tijd — suggestie zonder import ingevoegd',
+      importFailed: 'Automatisch importeren van „{name}” mislukt: {error}',
+      insertCancelled: 'Invoegen van „{name}” geannuleerd: de cursor is verplaatst',
+      extraDropped: '{count} extra wijziging(en) van „{name}” genegeerd: {reason}',
+      insertFailed: 'Invoegen van „{name}” mislukt: {error}',
+      commandFailed: 'Opdracht mislukt: {error}',
+      noCodeActions: 'Er is geen taalserver met codeacties actief',
+      actionFailed: 'Actie mislukt: {error}',
+      renameUnsupported: 'Deze server ondersteunt hernoemen niet',
+      nothingToRename: 'Hier valt niets te hernoemen',
+      noChanges: 'De server gaf geen wijzigingen terug',
+      renameFailed: 'Hernoemen mislukt: {error}',
+    },
     java: {
       importProblems: 'Niet alle Java-projecten konden worden geïmporteerd — klassen van andere modules blijven dan onbekend. Details in het logboek van de taalserver; ‘Java: Projecten opnieuw importeren’ probeert het opnieuw.',
       gradleJdk: 'Gradle kan niet met deze JDK draaien. Kies bij Instellingen → SDK\'s & JDK\'s een passende JDK voor het project en herstart de server.',
@@ -506,4 +628,4 @@ export default {
       system: 'Gedetecteerd: {system}',
     },
   },
-} satisfies NamespaceMessages
+} satisfies NamespaceMessages;

@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * “Shrink Selection”: steps back through the selections an expansion grew
  * out of. CodeMirror only expands (`selectParentSyntax`); each selection that
@@ -5,41 +15,55 @@
  * cursor goes elsewhere.
  */
 
-import { EditorSelection, StateEffect, StateField } from '@codemirror/state'
-import type { EditorView } from '@codemirror/view'
-import { registerEditorExtension } from '@/lib/editor-extensions'
+import { EditorSelection, StateEffect, StateField } from '@codemirror/state';
+import type { EditorView } from '@codemirror/view';
+import { registerEditorExtension } from '@/lib/editor-extensions';
 
-const shrunk = StateEffect.define<null>()
+const shrunk = StateEffect.define<null>();
 
 /** Does `outer` enclose `inner` and reach further on at least one side? */
-function grows(inner: { from: number; to: number }, outer: { from: number; to: number }) {
-  if (outer.from > inner.from || outer.to < inner.to) return false
-  return outer.from < inner.from || outer.to > inner.to
+function grows(inner: { from: number; to: number; }, outer: { from: number; to: number; }) {
+  if (outer.from > inner.from || outer.to < inner.to) {
+    return false;
+  }
+  return outer.from < inner.from || outer.to > inner.to;
 }
 
 const history = StateField.define<EditorSelection[]>({
   create: () => [],
   update(stack, tr) {
-    if (tr.effects.some((effect) => effect.is(shrunk))) return stack.slice(0, -1)
-    if (tr.docChanged) return []
-    if (!tr.selection) return stack
-    if (!grows(tr.startState.selection.main, tr.selection.main)) return []
-    return [...stack, tr.startState.selection]
+    if (tr.effects.some((effect) => effect.is(shrunk))) {
+      return stack.slice(0, -1);
+    }
+    if (tr.docChanged) {
+      return [];
+    }
+    if (!tr.selection) {
+      return stack;
+    }
+    if (!grows(tr.startState.selection.main, tr.selection.main)) {
+      return [];
+    }
+    return [...stack, tr.startState.selection];
   },
-})
+});
 
 export function shrinkSelection(view: EditorView): boolean {
-  const stack = view.state.field(history, false)
-  const previous = stack?.[stack.length - 1]
-  if (!previous) return false
-  view.dispatch({ selection: previous, effects: shrunk.of(null), scrollIntoView: true, userEvent: 'select' })
-  return true
+  const stack = view.state.field(history, false);
+  const previous = stack?.[stack.length - 1];
+  if (!previous) {
+    return false;
+  }
+  view.dispatch({ selection: previous, effects: shrunk.of(null), scrollIntoView: true, userEvent: 'select' });
+  return true;
 }
 
-let started = false
+let started = false;
 
 export function initSelectionHistory() {
-  if (started) return
-  started = true
-  registerEditorExtension(() => history)
+  if (started) {
+    return;
+  }
+  started = true;
+  registerEditorExtension(() => history);
 }

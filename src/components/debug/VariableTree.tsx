@@ -1,43 +1,61 @@
-import { useEffect, useRef, useState } from 'react'
-import { ChevronRight, Loader2 } from 'lucide-react'
-import { useT } from '@/i18n'
-import { debug } from '@/core/debug/manager'
-import type { Scope, Variable } from '@/core/debug/protocol'
-import { valueTone } from './shared'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import { useEffect, useRef, useState } from 'react';
+import { ChevronRight, Loader2 } from 'lucide-react';
+import { useT } from '@/i18n';
+import { debug } from '@/core/debug/manager';
+import type { Scope, Variable } from '@/core/debug/protocol';
+import { valueTone } from './shared';
 
 /** Nodes left expanded across steps, keyed by a path of names. */
-const expanded = new Set<string>()
+const expanded = new Set<string>();
 
 function useChildren(sessionId: string, reference: number, open: boolean, generation: number) {
-  const [children, setChildren] = useState<Variable[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [children, setChildren] = useState<Variable[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    if (!open || !reference) return
-    let cancelled = false
-    const session = debug.sessionById(sessionId)
-    if (!session) return
+    if (!open || !reference) {
+      return;
+    }
+    let cancelled = false;
+    const session = debug.sessionById(sessionId);
+    if (!session) {
+      return;
+    }
     session.variables(reference).then(
       (list) => {
-        if (cancelled) return
-        setChildren(list)
-        setError(null)
+        if (cancelled) {
+          return;
+        }
+        setChildren(list);
+        setError(null);
       },
       (err: Error) => {
-        if (!cancelled) setError(err.message)
+        if (!cancelled) {
+          setError(err.message);
+        }
       },
-    )
-    return () => { cancelled = true }
-  }, [sessionId, reference, open, generation])
-  return { children, error }
+    );
+    return () => { cancelled = true; };
+  }, [sessionId, reference, open, generation]);
+  return { children, error };
 }
 
-function ValueEditor({ initial, onDone }: { initial: string; onDone: (value: string | null) => void }) {
-  const ref = useRef<HTMLInputElement>(null)
-  const [value, setValue] = useState(initial)
+function ValueEditor({ initial, onDone }: { initial: string; onDone: (value: string | null) => void; }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const [value, setValue] = useState(initial);
   useEffect(() => {
-    ref.current?.focus()
-    ref.current?.select()
-  }, [])
+    ref.current?.focus();
+    ref.current?.select();
+  }, []);
   return (
     <input
       ref={ref}
@@ -46,39 +64,49 @@ function ValueEditor({ initial, onDone }: { initial: string; onDone: (value: str
       onClick={(e) => e.stopPropagation()}
       onBlur={() => onDone(null)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') onDone(value)
-        if (e.key === 'Escape') onDone(null)
-        e.stopPropagation()
+        if (e.key === 'Enter') {
+          onDone(value);
+        }
+        if (e.key === 'Escape') {
+          onDone(null);
+        }
+        e.stopPropagation();
       }}
       className="min-w-0 flex-1 rounded-lumen-sm border border-accent bg-input px-1 font-mono text-[11.5px] text-fg outline-none"
     />
-  )
+  );
 }
 
 export function VariableNode({
   sessionId, variable, parentReference, depth, path, generation,
 }: {
-  sessionId: string
-  variable: Variable
-  parentReference: number
-  depth: number
-  path: string
-  generation: number
+  sessionId: string;
+  variable: Variable;
+  parentReference: number;
+  depth: number;
+  path: string;
+  generation: number;
 }) {
-  const t = useT()
-  const key = `${path}/${variable.name}`
-  const [open, setOpen] = useState(expanded.has(key))
-  const [editing, setEditing] = useState(false)
-  const expandable = variable.variablesReference > 0
-  const { children, error } = useChildren(sessionId, variable.variablesReference, open && expandable, generation)
-  const canEdit = Boolean(debug.sessionById(sessionId)?.canSetVariables) && parentReference > 0
+  const t = useT();
+  const key = `${path}/${variable.name}`;
+  const [open, setOpen] = useState(expanded.has(key));
+  const [editing, setEditing] = useState(false);
+  const expandable = variable.variablesReference > 0;
+  const { children, error } = useChildren(sessionId, variable.variablesReference, open && expandable, generation);
+  const canEdit = Boolean(debug.sessionById(sessionId)?.canSetVariables) && parentReference > 0;
 
   const toggle = () => {
-    if (!expandable) return
-    if (open) expanded.delete(key)
-    if (!open) expanded.add(key)
-    setOpen(!open)
-  }
+    if (!expandable) {
+      return;
+    }
+    if (open) {
+      expanded.delete(key);
+    }
+    if (!open) {
+      expanded.add(key);
+    }
+    setOpen(!open);
+  };
 
   return (
     <>
@@ -86,7 +114,9 @@ export function VariableNode({
         className="lm-row lm-transition group mx-1 flex items-center gap-1 font-mono text-[11.5px] text-muted hover:bg-hover"
         style={{ paddingLeft: 4 + depth * 12 }}
         onClick={toggle}
-        onDoubleClick={() => { if (canEdit) setEditing(true) }}
+        onDoubleClick={() => { if (canEdit) {
+          setEditing(true);
+        } }}
         title={[variable.type, variable.evaluateName].filter(Boolean).join(' · ') || undefined}
       >
         <ChevronRight
@@ -100,9 +130,11 @@ export function VariableNode({
           <ValueEditor
             initial={variable.value}
             onDone={(value) => {
-              setEditing(false)
-              if (value === null || value === variable.value) return
-              void debug.setVariable(sessionId, parentReference, variable, value)
+              setEditing(false);
+              if (value === null || value === variable.value) {
+                return;
+              }
+              void debug.setVariable(sessionId, parentReference, variable, value);
             }}
           />
         )}
@@ -132,21 +164,25 @@ export function VariableNode({
         />
       ))}
     </>
-  )
+  );
 }
 
 /** Children of a reference with no header of its own (scopes, console results). */
 export function VariableChildren({ sessionId, reference, depth, path, generation }: {
-  sessionId: string
-  reference: number
-  depth: number
-  path: string
-  generation: number
+  sessionId: string;
+  reference: number;
+  depth: number;
+  path: string;
+  generation: number;
 }) {
-  const t = useT()
-  const { children, error } = useChildren(sessionId, reference, true, generation)
-  if (error) return <div className="truncate px-3 py-0.5 text-[11px] text-bad">{error}</div>
-  if (!children) return <div className="px-3 py-0.5 text-[11px] text-subtle">{t('debug.loading')}</div>
+  const t = useT();
+  const { children, error } = useChildren(sessionId, reference, true, generation);
+  if (error) {
+    return <div className="truncate px-3 py-0.5 text-[11px] text-bad">{error}</div>;
+  }
+  if (!children) {
+    return <div className="px-3 py-0.5 text-[11px] text-subtle">{t('debug.loading')}</div>;
+  }
   return (
     <>
       {children.map((child, index) => (
@@ -161,40 +197,48 @@ export function VariableChildren({ sessionId, reference, depth, path, generation
         />
       ))}
     </>
-  )
+  );
 }
 
 /** Scopes of the focused frame. */
-export function ScopeList({ sessionId, frameId, generation }: { sessionId: string; frameId: number; generation: number }) {
-  const t = useT()
-  const [scopes, setScopes] = useState<Scope[] | null>(null)
+export function ScopeList({ sessionId, frameId, generation }: { sessionId: string; frameId: number; generation: number; }) {
+  const t = useT();
+  const [scopes, setScopes] = useState<Scope[] | null>(null);
   useEffect(() => {
-    let cancelled = false
-    const session = debug.sessionById(sessionId)
-    if (!session) return
-    void session.scopes(frameId).then((list) => { if (!cancelled) setScopes(list) })
-    return () => { cancelled = true }
-  }, [sessionId, frameId, generation])
+    let cancelled = false;
+    const session = debug.sessionById(sessionId);
+    if (!session) {
+      return;
+    }
+    void session.scopes(frameId).then((list) => { if (!cancelled) {
+      setScopes(list);
+    } });
+    return () => { cancelled = true; };
+  }, [sessionId, frameId, generation]);
 
-  if (!scopes) return <div className="px-3 py-1 text-[11.5px] text-subtle">{t('debug.loading')}</div>
-  if (!scopes.length) return <div className="px-3 py-1 text-[11.5px] text-subtle">{t('debug.variables.none')}</div>
+  if (!scopes) {
+    return <div className="px-3 py-1 text-[11.5px] text-subtle">{t('debug.loading')}</div>;
+  }
+  if (!scopes.length) {
+    return <div className="px-3 py-1 text-[11.5px] text-subtle">{t('debug.variables.none')}</div>;
+  }
   return (
     <>
       {scopes.map((scope, index) => (
         <ScopeNode key={`${scope.name}:${index}`} sessionId={sessionId} scope={scope} generation={generation} initiallyOpen={!scope.expensive && index === 0} />
       ))}
     </>
-  )
+  );
 }
 
-const openScopes = new Map<string, boolean>()
+const openScopes = new Map<string, boolean>();
 
-function ScopeNode({ sessionId, scope, generation, initiallyOpen }: { sessionId: string; scope: Scope; generation: number; initiallyOpen: boolean }) {
-  const [open, setOpen] = useState(openScopes.get(scope.name) ?? initiallyOpen)
+function ScopeNode({ sessionId, scope, generation, initiallyOpen }: { sessionId: string; scope: Scope; generation: number; initiallyOpen: boolean; }) {
+  const [open, setOpen] = useState(openScopes.get(scope.name) ?? initiallyOpen);
   const toggle = () => {
-    openScopes.set(scope.name, !open)
-    setOpen(!open)
-  }
+    openScopes.set(scope.name, !open);
+    setOpen(!open);
+  };
   return (
     <>
       <div className="lm-row lm-transition mx-1 flex items-center gap-1 text-[12px] text-fg hover:bg-hover" style={{ paddingLeft: 4 }} onClick={toggle}>
@@ -203,5 +247,5 @@ function ScopeNode({ sessionId, scope, generation, initiallyOpen }: { sessionId:
       </div>
       {open && <VariableChildren sessionId={sessionId} reference={scope.variablesReference} depth={1} path={scope.name} generation={generation} />}
     </>
-  )
+  );
 }

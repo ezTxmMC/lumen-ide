@@ -186,7 +186,7 @@
         },
         {
           "label": "result",
-          "detail": "Funktion mit Result",
+          "detail": "Function with Result",
           "body": "fn ${name}() -> Result<${T}, Box<dyn std::error::Error>> {\n    $0\n    Ok(${wert})\n}"
         },
         {
@@ -464,7 +464,7 @@
             "field": "type",
             "notEquals": "lib"
           },
-          "content": "{{#if clap}}use clap::Parser;\n\n/// {{name}}\n#[derive(Parser)]\n#[command(version, about)]\nstruct Args {\n    /// Wen begrüßen?\n    #[arg(short, long, default_value = \"Welt\")]\n    name: String,\n}\n\nfn main() {\n    let args = Args::parse();\n    println!(\"Hallo, {}!\", args.name);\n}\n{{/if}}{{#unless clap}}fn main() {\n    println!(\"Hallo aus {{name}}!\");\n}\n\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn rechnet() {\n        assert_eq!(2 + 2, 4);\n    }\n}\n{{/unless}}"
+          "content": "{{#if clap}}use clap::Parser;\n\n/// {{name}}\n#[derive(Parser)]\n#[command(version, about)]\nstruct Args {\n    /// Whom to greet?\n    #[arg(short, long, default_value = \"World\")]\n    name: String,\n}\n\nfn main() {\n    let args = Args::parse();\n    println!(\"Hello, {}!\", args.name);\n}\n{{/if}}{{#unless clap}}fn main() {\n    println!(\"Hello from {{name}}!\");\n}\n\n#[cfg(test)]\nmod tests {\n    #[test]\n    fn adds() {\n        assert_eq!(2 + 2, 4);\n    }\n}\n{{/unless}}"
         },
         {
           "path": "src/lib.rs",

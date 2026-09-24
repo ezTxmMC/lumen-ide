@@ -1,8 +1,8 @@
 {
   "id": "ext.database",
-  "name": "Datenbanken",
+  "name": "Databases",
   "version": "1.0.1",
-  "description": "Datenbanken durchsuchen und bearbeiten: SQLite- und H2-Dateien, MariaDB/MySQL, PostgreSQL, SQL Server, Redis und MongoDB — Tabellen, SQL-Konsole, Export. Bringt Programmcode mit.",
+  "description": "Browse and edit databases: SQLite and H2 files, MariaDB/MySQL, PostgreSQL, SQL Server, Redis and MongoDB — tables, SQL console, export. Ships executable code.",
   "author": "Lumen",
   "icon": "Db",
   "color": "#e0a526",
@@ -10,7 +10,6 @@
   "license": "MIT",
   "keywords": [
     "database",
-    "datenbank",
     "sql",
     "sqlite",
     "postgresql",
@@ -25,18 +24,14 @@
   "settings": [
     {
       "key": "pageSize",
-      "label": "Zeilen pro Seite",
+      "label": "Rows per page",
       "type": "number",
       "default": "200",
       "min": 10,
       "max": 10000,
       "step": 10,
-      "section": "Daten",
+      "section": "Data",
       "i18n": {
-        "en": {
-          "label": "Rows per page",
-          "section": "Data"
-        },
         "es": {
           "label": "Filas por página",
           "section": "Datos"
@@ -65,17 +60,12 @@
     },
     {
       "key": "confirmCommit",
-      "label": "Vor dem Übernehmen nachfragen",
+      "label": "Ask before committing",
       "type": "toggle",
       "default": "true",
-      "hint": "Zeigt die SQL-Anweisungen, bevor geänderte Zeilen geschrieben werden.",
-      "section": "Daten",
+      "hint": "Shows the SQL statements before changed rows are written.",
+      "section": "Data",
       "i18n": {
-        "en": {
-          "label": "Ask before committing",
-          "hint": "Shows the SQL statements before changed rows are written.",
-          "section": "Data"
-        },
         "es": {
           "label": "Preguntar antes de confirmar",
           "hint": "Muestra las sentencias SQL antes de escribir las filas modificadas.",
@@ -110,34 +100,25 @@
     },
     {
       "key": "csvSeparator",
-      "label": "CSV-Trennzeichen",
+      "label": "CSV separator",
       "type": "select",
       "default": "comma",
-      "section": "Daten",
+      "section": "Data",
       "choices": [
         {
           "value": "comma",
-          "label": "Komma (,)"
+          "label": "Comma (,)"
         },
         {
           "value": "semicolon",
-          "label": "Semikolon (;)"
+          "label": "Semicolon (;)"
         },
         {
           "value": "tab",
-          "label": "Tabulator"
+          "label": "Tab"
         }
       ],
       "i18n": {
-        "en": {
-          "label": "CSV separator",
-          "section": "Data",
-          "choices": {
-            "comma": "Comma (,)",
-            "semicolon": "Semicolon (;)",
-            "tab": "Tab"
-          }
-        },
         "es": {
           "label": "Separador CSV",
           "section": "Datos",
@@ -196,18 +177,14 @@
     },
     {
       "key": "maxRows",
-      "label": "Höchstens Zeilen im Ergebnis einer Abfrage",
+      "label": "Maximum rows in a query result",
       "type": "number",
       "default": "1000",
       "min": 10,
       "max": 100000,
       "step": 100,
-      "section": "Abfragen",
+      "section": "Queries",
       "i18n": {
-        "en": {
-          "label": "Maximum rows in a query result",
-          "section": "Queries"
-        },
         "es": {
           "label": "Máximo de filas en el resultado de una consulta",
           "section": "Consultas"
@@ -236,20 +213,15 @@
     },
     {
       "key": "queryTimeout",
-      "label": "Zeitlimit für Abfragen (Sekunden)",
+      "label": "Query timeout (seconds)",
       "type": "number",
       "default": "30",
       "min": 0,
       "max": 86400,
       "step": 5,
-      "hint": "0 heißt: kein Zeitlimit.",
-      "section": "Abfragen",
+      "hint": "0 means no limit.",
+      "section": "Queries",
       "i18n": {
-        "en": {
-          "label": "Query timeout (seconds)",
-          "hint": "0 means no limit.",
-          "section": "Queries"
-        },
         "es": {
           "label": "Tiempo límite de consulta (segundos)",
           "hint": "0 significa sin límite.",
@@ -284,7 +256,7 @@
     },
     {
       "key": "redisScanLimit",
-      "label": "Höchstens Schlüssel je Suche",
+      "label": "Maximum keys per search",
       "type": "number",
       "default": "1000",
       "min": 50,
@@ -292,10 +264,6 @@
       "step": 50,
       "section": "Redis",
       "i18n": {
-        "en": {
-          "label": "Maximum keys per search",
-          "section": "Redis"
-        },
         "es": {
           "label": "Máximo de claves por búsqueda",
           "section": "Redis"
@@ -324,20 +292,14 @@
     },
     {
       "key": "javaPath",
-      "label": "Pfad zu java",
+      "label": "Path to java",
       "type": "path",
       "pathKind": "file",
       "default": "",
-      "placeholder": "JAVA_HOME oder java aus dem PATH",
-      "hint": "Nur für H2-Datenbanken nötig (Java 11 oder neuer).",
+      "placeholder": "JAVA_HOME or java from the PATH",
+      "hint": "Only needed for H2 databases (Java 11 or newer).",
       "section": "H2",
       "i18n": {
-        "en": {
-          "label": "Path to java",
-          "hint": "Only needed for H2 databases (Java 11 or newer).",
-          "placeholder": "JAVA_HOME or java from the PATH",
-          "section": "H2"
-        },
         "es": {
           "label": "Ruta de java",
           "hint": "Solo necesario para bases de datos H2 (Java 11 o posterior).",
@@ -378,17 +340,12 @@
     },
     {
       "key": "h2Version",
-      "label": "H2-Version",
+      "label": "H2 version",
       "type": "text",
       "default": "2.3.232",
-      "hint": "Wird beim ersten Öffnen von Maven Central geladen. Muss zum Format der Datei passen.",
+      "hint": "Downloaded from Maven Central on first use. Must match the format of the file.",
       "section": "H2",
       "i18n": {
-        "en": {
-          "label": "H2 version",
-          "hint": "Downloaded from Maven Central on first use. Must match the format of the file.",
-          "section": "H2"
-        },
         "es": {
           "label": "Versión de H2",
           "hint": "Se descarga de Maven Central la primera vez. Debe coincidir con el formato del archivo.",
@@ -425,14 +382,11 @@
   "views": [
     {
       "id": "connections",
-      "title": "Datenbanken",
+      "title": "Databases",
       "icon": "database",
       "location": "left",
       "order": 40,
       "i18n": {
-        "en": {
-          "title": "Databases"
-        },
         "es": {
           "title": "Bases de datos"
         },
@@ -455,13 +409,10 @@
     },
     {
       "id": "data",
-      "title": "Datenbank",
+      "title": "Database",
       "icon": "table",
       "location": "editor",
       "i18n": {
-        "en": {
-          "title": "Database"
-        },
         "es": {
           "title": "Base de datos"
         },
@@ -486,14 +437,10 @@
   "commands": [
     {
       "id": "database.show",
-      "title": "Datenbanken: Verbindungen anzeigen",
-      "category": "Datenbanken",
+      "title": "Databases: Show Connections",
+      "category": "Databases",
       "icon": "database",
       "i18n": {
-        "en": {
-          "title": "Databases: Show Connections",
-          "category": "Databases"
-        },
         "es": {
           "title": "Bases de datos: Mostrar conexiones",
           "category": "Bases de datos"
@@ -522,14 +469,10 @@
     },
     {
       "id": "database.add-connection",
-      "title": "Datenbanken: Verbindung hinzufügen…",
-      "category": "Datenbanken",
+      "title": "Databases: Add Connection…",
+      "category": "Databases",
       "icon": "plus",
       "i18n": {
-        "en": {
-          "title": "Databases: Add Connection…",
-          "category": "Databases"
-        },
         "es": {
           "title": "Bases de datos: Añadir conexión…",
           "category": "Bases de datos"
@@ -558,14 +501,10 @@
     },
     {
       "id": "database.open-file",
-      "title": "Datenbanken: Datenbankdatei öffnen…",
-      "category": "Datenbanken",
+      "title": "Databases: Open Database File…",
+      "category": "Databases",
       "icon": "folder-open",
       "i18n": {
-        "en": {
-          "title": "Databases: Open Database File…",
-          "category": "Databases"
-        },
         "es": {
           "title": "Bases de datos: Abrir archivo de base de datos…",
           "category": "Bases de datos"
@@ -594,14 +533,10 @@
     },
     {
       "id": "database.new-query",
-      "title": "Datenbanken: Neue SQL-Konsole",
-      "category": "Datenbanken",
+      "title": "Databases: New SQL Console",
+      "category": "Databases",
       "icon": "square-terminal",
       "i18n": {
-        "en": {
-          "title": "Databases: New SQL Console",
-          "category": "Databases"
-        },
         "es": {
           "title": "Bases de datos: Nueva consola SQL",
           "category": "Bases de datos"
@@ -630,14 +565,10 @@
     },
     {
       "id": "database.refresh",
-      "title": "Datenbanken: Aktualisieren",
-      "category": "Datenbanken",
+      "title": "Databases: Refresh",
+      "category": "Databases",
       "icon": "refresh-cw",
       "i18n": {
-        "en": {
-          "title": "Databases: Refresh",
-          "category": "Databases"
-        },
         "es": {
           "title": "Bases de datos: Actualizar",
           "category": "Bases de datos"
@@ -666,14 +597,10 @@
     },
     {
       "id": "database.disconnect-all",
-      "title": "Datenbanken: Alle Verbindungen trennen",
-      "category": "Datenbanken",
+      "title": "Databases: Disconnect All",
+      "category": "Databases",
       "icon": "log-out",
       "i18n": {
-        "en": {
-          "title": "Databases: Disconnect All",
-          "category": "Databases"
-        },
         "es": {
           "title": "Bases de datos: Desconectar todas",
           "category": "Bases de datos"
@@ -704,7 +631,7 @@
   "openWith": [
     {
       "command": "database.open-file",
-      "title": "Datenbank-Ansicht",
+      "title": "Database view",
       "patterns": [
         "*.db",
         "*.sqlite",
@@ -713,9 +640,6 @@
         "*.mv.db"
       ],
       "i18n": {
-        "en": {
-          "title": "Database view"
-        },
         "es": {
           "title": "Vista de base de datos"
         },

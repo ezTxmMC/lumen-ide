@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * One pop-out: React rendered into the document of a native window.
  *
@@ -8,76 +18,90 @@
  * window is in front.
  */
 
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
-import { useStore } from '@/state/store'
-import { bindKeymap } from '@/hooks/useKeymap'
-import { OwnerContext } from '@/hooks/useOwner'
-import { mirrorDocument } from '@/core/popout/mirror'
-import { boundsOf, popoutWindow, saveBounds, setFocusedPopout } from '@/core/popout/windows'
-import { boundsChanged, type PopoutBounds, type PopoutEntry } from '@/state/popout'
-import { PopoutFrame, useFrameTitle } from './PopoutFrame'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useStore } from '@/state/store';
+import { bindKeymap } from '@/hooks/useKeymap';
+import { OwnerContext } from '@/hooks/useOwner';
+import { mirrorDocument } from '@/core/popout/mirror';
+import { boundsOf, popoutWindow, saveBounds, setFocusedPopout } from '@/core/popout/windows';
+import { boundsChanged, type PopoutBounds, type PopoutEntry } from '@/state/popout';
+import { PopoutFrame, useFrameTitle } from './PopoutFrame';
 
 /** How often the window's position and size are noted down. */
-const BOUNDS_MS = 1000
+const BOUNDS_MS = 1000;
 
-export function PopoutWindow({ entry }: { entry: PopoutEntry }) {
-  const win = popoutWindow(entry.key)
-  const [root, setRoot] = useState<HTMLElement | null>(null)
-  const title = useFrameTitle(entry)
+export function PopoutWindow({ entry }: { entry: PopoutEntry; }) {
+  const win = popoutWindow(entry.key);
+  const [root, setRoot] = useState<HTMLElement | null>(null);
+  const title = useFrameTitle(entry);
 
   useLayoutEffect(() => {
-    if (!win || win.closed) return
-    const doc = win.document
-    doc.body.textContent = ''
+    if (!win || win.closed) {
+      return;
+    }
+    const doc = win.document;
+    doc.body.textContent = '';
     // The same id as the main window's mount point: the stylesheet sizes it.
-    const mount = doc.createElement('div')
-    mount.id = 'root'
-    doc.body.append(mount)
-    const stopMirror = mirrorDocument(document, doc)
-    const stopKeymap = bindKeymap(win)
-    setRoot(mount)
+    const mount = doc.createElement('div');
+    mount.id = 'root';
+    doc.body.append(mount);
+    const stopMirror = mirrorDocument(document, doc);
+    const stopKeymap = bindKeymap(win);
+    setRoot(mount);
     return () => {
-      stopMirror()
-      stopKeymap()
-      mount.remove()
-      setRoot(null)
+      stopMirror();
+      stopKeymap();
+      mount.remove();
+      setRoot(null);
+    };
+  }, [win]);
+
+  useEffect(() => {
+    if (!win) {
+      return;
     }
-  }, [win])
+    win.document.title = title;
+  }, [win, title]);
 
   useEffect(() => {
-    if (!win) return
-    win.document.title = title
-  }, [win, title])
-
-  useEffect(() => {
-    if (!win) return
-    const onFocus = () => setFocusedPopout(entry.key)
-    win.addEventListener('focus', onFocus)
-    if (win.document.hasFocus()) onFocus()
-    let last: PopoutBounds | null = entry.bounds
+    if (!win) {
+      return;
+    }
+    const onFocus = () => setFocusedPopout(entry.key);
+    win.addEventListener('focus', onFocus);
+    if (win.document.hasFocus()) {
+      onFocus();
+    }
+    let last: PopoutBounds | null = entry.bounds;
     const timer = setInterval(() => {
-      if (win.closed) return
-      const bounds = boundsOf(win)
-      if (!bounds || !boundsChanged(last, bounds)) return
-      last = bounds
-      saveBounds(entry.key, bounds)
-      useStore.getState().setPopoutBounds(entry.key, bounds)
-    }, BOUNDS_MS)
+      if (win.closed) {
+        return;
+      }
+      const bounds = boundsOf(win);
+      if (!bounds || !boundsChanged(last, bounds)) {
+        return;
+      }
+      last = bounds;
+      saveBounds(entry.key, bounds);
+      useStore.getState().setPopoutBounds(entry.key, bounds);
+    }, BOUNDS_MS);
     return () => {
-      win.removeEventListener('focus', onFocus)
-      clearInterval(timer)
-    }
+      win.removeEventListener('focus', onFocus);
+      clearInterval(timer);
+    };
     // The bounds the entry opened with are only the starting point of the comparison.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [win, entry.key])
+  }, [win, entry.key]);
 
-  const owner = useMemo(() => (win ? { win, doc: win.document } : null), [win])
-  if (!root || !owner) return null
+  const owner = useMemo(() => (win ? { win, doc: win.document } : null), [win]);
+  if (!root || !owner) {
+    return null;
+  }
   return createPortal(
     <OwnerContext.Provider value={owner}>
       <PopoutFrame entry={entry} />
     </OwnerContext.Provider>,
     root,
-  )
+  );
 }

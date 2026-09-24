@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Localisation.
  *
@@ -12,8 +22,8 @@
  * In components use `useT()`, which re-renders on a language change.
  */
 
-import { useSyncExternalStore } from 'react'
-import { MESSAGES } from './messages'
+import { useSyncExternalStore } from 'react';
+import { MESSAGES } from './messages';
 
 export const LANGUAGES = [
   { id: 'de', name: 'Deutsch', english: 'German' },
@@ -24,85 +34,101 @@ export const LANGUAGES = [
   { id: 'it', name: 'Italiano', english: 'Italian' },
   { id: 'pt', name: 'Português', english: 'Portuguese' },
   { id: 'nl', name: 'Nederlands', english: 'Dutch' },
-] as const
+] as const;
 
-export type LanguageCode = (typeof LANGUAGES)[number]['id']
+export type LanguageCode = (typeof LANGUAGES)[number]['id'];
 
 /** `system` follows the operating system's language. */
-export type LanguageSetting = LanguageCode | 'system'
+export type LanguageSetting = LanguageCode | 'system';
 
-export type Params = Record<string, string | number>
+export type Params = Record<string, string | number>;
 
 /** A dictionary: nested objects with texts at the leaves. */
 export interface Dictionary {
-  [key: string]: string | Dictionary
+  [key: string]: string | Dictionary;
 }
 
 /** Contents of a namespace file: German required, every other language expected. */
-export type NamespaceMessages = { de: Dictionary } & Partial<Record<LanguageCode, Dictionary>>
+export type NamespaceMessages = { de: Dictionary; } & Partial<Record<LanguageCode, Dictionary>>;
 
-const FALLBACK_CHAIN: LanguageCode[] = ['en', 'de']
+const FALLBACK_CHAIN: LanguageCode[] = ['en', 'de'];
 
-let current: LanguageCode = 'de'
-let version = 0
-const listeners = new Set<() => void>()
-const flatCache = new Map<LanguageCode, Map<string, string>>()
+let current: LanguageCode = 'de';
+let version = 0;
+const listeners = new Set<() => void>();
+const flatCache = new Map<LanguageCode, Map<string, string>>();
 
 function flatten(prefix: string, dict: Dictionary, out: Map<string, string>) {
   for (const [key, value] of Object.entries(dict)) {
-    const path = prefix ? `${prefix}.${key}` : key
+    const path = prefix ? `${prefix}.${key}` : key;
     if (typeof value === 'string') {
-      out.set(path, value)
-      continue
+      out.set(path, value);
+      continue;
     }
-    flatten(path, value, out)
+    flatten(path, value, out);
   }
 }
 
 function table(lang: LanguageCode): Map<string, string> {
-  const hit = flatCache.get(lang)
-  if (hit) return hit
-  const out = new Map<string, string>()
-  for (const [ns, messages] of Object.entries(MESSAGES)) {
-    const dict = messages[lang]
-    if (dict) flatten(ns, dict, out)
+  const hit = flatCache.get(lang);
+  if (hit) {
+    return hit;
   }
-  flatCache.set(lang, out)
-  return out
+  const out = new Map<string, string>();
+  for (const [ns, messages] of Object.entries(MESSAGES)) {
+    const dict = messages[lang];
+    if (dict) {
+      flatten(ns, dict, out);
+    }
+  }
+  flatCache.set(lang, out);
+  return out;
 }
 
 function lookup(key: string, lang: LanguageCode): string | undefined {
-  const own = table(lang).get(key)
-  if (own !== undefined) return own
-  for (const fallback of FALLBACK_CHAIN) {
-    const value = table(fallback).get(key)
-    if (value !== undefined) return value
+  const own = table(lang).get(key);
+  if (own !== undefined) {
+    return own;
   }
-  return undefined
+  for (const fallback of FALLBACK_CHAIN) {
+    const value = table(fallback).get(key);
+    if (value !== undefined) {
+      return value;
+    }
+  }
+  return undefined;
 }
 
 function interpolate(text: string, params?: Params) {
-  if (!params) return text
+  if (!params) {
+    return text;
+  }
   return text.replace(/\{(\w+)\}/g, (match, name: string) => {
-    const value = params[name]
-    if (value === undefined) return match
-    if (typeof value === 'number') return value.toLocaleString(current)
-    return value
-  })
+    const value = params[name];
+    if (value === undefined) {
+      return match;
+    }
+    if (typeof value === 'number') {
+      return value.toLocaleString(current);
+    }
+    return value;
+  });
 }
 
 /** Translates a key into the current language. */
 export function t(key: string, params?: Params): string {
-  const count = params?.count
+  const count = params?.count;
   if (typeof count === 'number') {
-    const category = new Intl.PluralRules(current).select(count)
-    const plural = lookup(`${key}_${category}`, current) ?? lookup(`${key}_other`, current)
-    if (plural !== undefined) return interpolate(plural, params)
+    const category = new Intl.PluralRules(current).select(count);
+    const plural = lookup(`${key}_${category}`, current) ?? lookup(`${key}_other`, current);
+    if (plural !== undefined) {
+      return interpolate(plural, params);
+    }
   }
-  return interpolate(lookup(key, current) ?? key, params)
+  return interpolate(lookup(key, current) ?? key, params);
 }
 
-const KEY_PATTERN = /^[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9_]+)+$/
+const KEY_PATTERN = /^[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9_]+)+$/;
 
 /**
  * Text or key: for texts that sit in static objects — add-ons, templates,
@@ -111,63 +137,77 @@ const KEY_PATTERN = /^[a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9_]+)+$/
  * comes back unchanged.
  */
 export function tr(textOrKey: string | undefined, params?: Params): string {
-  if (!textOrKey) return ''
-  if (!KEY_PATTERN.test(textOrKey)) return interpolate(textOrKey, params)
-  const hit = lookup(textOrKey, current)
-  if (hit === undefined) return textOrKey
-  return t(textOrKey, params)
+  if (!textOrKey) {
+    return '';
+  }
+  if (!KEY_PATTERN.test(textOrKey)) {
+    return interpolate(textOrKey, params);
+  }
+  const hit = lookup(textOrKey, current);
+  if (hit === undefined) {
+    return textOrKey;
+  }
+  return t(textOrKey, params);
 }
 
 /** The operating system's language where supported — otherwise English. */
 export function systemLanguage(): LanguageCode {
-  const candidates = [...(navigator.languages ?? []), navigator.language]
+  const candidates = [...(navigator.languages ?? []), navigator.language];
   for (const tag of candidates) {
-    const base = tag?.toLowerCase().split('-')[0]
-    const match = LANGUAGES.find((l) => l.id === base)
-    if (match) return match.id
+    const base = tag?.toLowerCase().split('-')[0];
+    const match = LANGUAGES.find((l) => l.id === base);
+    if (match) {
+      return match.id;
+    }
   }
-  return 'en'
+  return 'en';
 }
 
 export function resolveLanguage(setting: LanguageSetting | string | undefined): LanguageCode {
-  if (!setting || setting === 'system') return systemLanguage()
-  const match = LANGUAGES.find((l) => l.id === setting)
-  return match ? match.id : systemLanguage()
+  if (!setting || setting === 'system') {
+    return systemLanguage();
+  }
+  const match = LANGUAGES.find((l) => l.id === setting);
+  return match ? match.id : systemLanguage();
 }
 
 export function setLanguage(setting: LanguageSetting | string | undefined) {
-  const next = resolveLanguage(setting)
-  if (next === current) return
-  current = next
-  version++
-  document.documentElement.lang = next
-  for (const fn of listeners) fn()
+  const next = resolveLanguage(setting);
+  if (next === current) {
+    return;
+  }
+  current = next;
+  version++;
+  document.documentElement.lang = next;
+  for (const fn of listeners) {
+    fn();
+  }
 }
 
 export function getLanguage(): LanguageCode {
-  return current
+  return current;
 }
 
 /** The BCP-47 tag for `localeCompare`, `Intl.DateTimeFormat` and the like. */
 export function locale(): string {
-  return current
+  return current;
 }
 
 export function subscribeLanguage(fn: () => void) {
-  listeners.add(fn)
-  return () => { listeners.delete(fn) }
+  listeners.add(fn);
+  return () => { listeners.delete(fn); };
 }
 
-const getVersion = () => version
+const getVersion = () => version;
 
 /** The translation function for components; re-renders on a language change. */
 export function useT() {
-  useSyncExternalStore(subscribeLanguage, getVersion)
-  return t
+  useSyncExternalStore(subscribeLanguage, getVersion);
+  return t;
 }
 
 /** The current language as a hook, for use as a `useMemo` dependency. */
 export function useLanguage(): LanguageCode {
-  useSyncExternalStore(subscribeLanguage, getVersion)
-  return current
+  useSyncExternalStore(subscribeLanguage, getVersion);
+  return current;
 }

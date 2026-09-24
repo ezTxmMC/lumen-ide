@@ -134,7 +134,7 @@ export const ICON_MAP_KEYS = ['fileNames', 'extensions', 'languages', 'folderNam
 export function iconDefProblems(def: IconDef, where: string): string[] {
   const out: string[] = []
   if (!def || typeof def !== 'object') return [`${where}: kein Objekt`]
-  if (def.glyph !== undefined && (typeof def.glyph !== 'string' || def.glyph.length > 3)) out.push(`${where}: glyph höchstens 3 Zeichen`)
+  if (def.glyph !== undefined && (typeof def.glyph !== 'string' || def.glyph.length > 3)) out.push(`${where}: glyph at most 3 characters`)
   if (def.shape !== undefined && !isIconShape(def.shape)) out.push(`${where}: unbekannte Form „${def.shape}“`)
   if (def.path !== undefined && (typeof def.path !== 'string' || !PATH.test(def.path) || def.path.length > 2000)) out.push(`${where}: ungültiger SVG-Pfad`)
   if (def.color !== undefined && (typeof def.color !== 'string' || !COLOR.test(def.color))) out.push(`${where}: ungültige Farbe „${def.color}“`)

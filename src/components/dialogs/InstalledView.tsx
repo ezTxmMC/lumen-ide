@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * “Installed”: every add-on that is present — built in, from an extension
  * server, or built by hand — by category, with switches and a detail area
@@ -6,23 +16,25 @@
  * duplicated, exported and deleted.
  */
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import {
   Blocks, Code2, Copy, Download, FolderOpen, Hammer, Lock, Package, Palette, Pencil, Plus, RefreshCw, Sparkles, Trash2, Upload, User, Wrench, Zap,
-} from 'lucide-react'
-import { useStore } from '@/state/store'
-import { registry } from '@/core/registry'
-import { formatBindingsFor } from '@/core/keybindings'
-import { useT } from '@/i18n'
-import { userAddons } from '@/core/user-addons/manager'
-import { extensions } from '@/core/extensions/manager'
-import type { AvailableUpdate } from '@/core/extensions/catalog'
-import { hostOf } from '@/core/extensions/trust'
-import { installExtension } from '@/core/extensions/flow'
-import type { Addon } from '@/core/types'
-import { Button, Empty } from '../ui'
+} from 'lucide-react';
+import { useStore } from '@/state/store';
+import { registry } from '@/core/registry';
+import { useT } from '@/i18n';
+import { userAddons } from '@/core/user-addons/manager';
+import { extensions } from '@/core/extensions/manager';
+import type { AvailableUpdate } from '@/core/extensions/catalog';
+import { hostOf } from '@/core/extensions/trust';
+import { installExtension } from '@/core/extensions/flow';
+import type { Addon } from '@/core/types';
+import { Button, Empty } from '../ui';
+import {
+  Badge, CommandsSection, DetailSection, KindsSection, LanguagesSection, TemplatesSection, ThemesSection,
+} from './AddonSections';
 
-type Filter = 'all' | 'language' | 'theme' | 'tool' | 'extension' | 'user'
+type Filter = 'all' | 'language' | 'theme' | 'tool' | 'extension' | 'user';
 
 const FILTER_ICONS: Record<Filter, typeof Blocks> = {
   all: Blocks,
@@ -31,14 +43,20 @@ const FILTER_ICONS: Record<Filter, typeof Blocks> = {
   tool: Wrench,
   extension: Package,
   user: User,
-}
+};
 
 /** An add-on's category — stated, or inferred from its contents. */
 function categoryOf(addon: Addon): Exclude<Filter, 'all' | 'user' | 'extension'> {
-  if (addon.category) return addon.category
-  if (addon.languages?.length) return 'language'
-  if (addon.themes?.length && !addon.commands?.length) return 'theme'
-  return 'tool'
+  if (addon.category) {
+    return addon.category;
+  }
+  if (addon.languages?.length) {
+    return 'language';
+  }
+  if (addon.themes?.length && !addon.commands?.length) {
+    return 'theme';
+  }
+  return 'tool';
 }
 
 const matchesFilter: Record<Filter, (addon: Addon) => boolean> = {
@@ -48,84 +66,108 @@ const matchesFilter: Record<Filter, (addon: Addon) => boolean> = {
   tool: (addon) => categoryOf(addon) === 'tool',
   extension: (addon) => extensions.has(addon.id),
   user: (addon) => Boolean(addon.user) && !extensions.has(addon.id),
+};
+
+function FilterBar({ filter, addons, onFilter, onImport, onOpenStudio }: {
+  filter: Filter;
+  addons: Addon[];
+  onFilter: (id: Filter) => void;
+  onImport: () => void;
+  onOpenStudio: (id: string | null, starter?: 'toolkit') => void;
+}) {
+  const t = useT();
+  const filterLabel = (id: Filter) => (id === 'extension' ? t('extensions.extensionBadge') : t(`addonStudio.dialog.nav.${id}`));
+  return (
+    <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-edge px-3 py-2">
+      {(Object.keys(matchesFilter) as Filter[]).map((id) => {
+        const FilterIcon = FILTER_ICONS[id];
+        return (
+          <button
+            key={id}
+            onClick={() => onFilter(id)}
+            className={[
+              'lm-transition flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11.5px]',
+              id === filter ? 'border-accent bg-active text-fg' : 'border-edge text-muted hover:border-edge-strong',
+            ].join(' ')}
+          >
+            <FilterIcon size={11} />
+            {filterLabel(id)}
+            <span className="font-mono text-[10px] text-subtle">{addons.filter(matchesFilter[id]).length}</span>
+          </button>
+        );
+      })}
+      <span className="flex-1" />
+      <Button size="sm" variant="outline" onClick={() => onImport()} title={t('addonStudio.dialog.importHint')}>
+        <Upload size={12} /> {t('common.import')}
+      </Button>
+      <Button size="sm" variant="outline" onClick={() => onOpenStudio(null, 'toolkit')} title={t('studioProject.starter.hint')}>
+        <Hammer size={12} /> {t('studioProject.starter.button')}
+      </Button>
+      <Button size="sm" variant="solid" onClick={() => onOpenStudio(null)}>
+        <Plus size={12} /> {t('addonStudio.dialog.new')}
+      </Button>
+    </div>
+  );
 }
 
 export function InstalledView({ query, initialFilter, updates }: {
-  query: string
-  initialFilter?: string | null
-  updates: AvailableUpdate[]
+  query: string;
+  initialFilter?: string | null;
+  updates: AvailableUpdate[];
 }) {
-  const t = useT()
-  const registryVersion = useStore((s) => s.registryVersion)
-  const openStudio = useStore((s) => s.openAddonStudio)
-  useSyncExternalStore(userAddons.subscribe, userAddons.getVersion)
-  useSyncExternalStore(extensions.subscribe, extensions.getVersion)
+  const t = useT();
+  const registryVersion = useStore((s) => s.registryVersion);
+  const openStudio = useStore((s) => s.openAddonStudio);
+  useSyncExternalStore(userAddons.subscribe, userAddons.getVersion);
+  useSyncExternalStore(extensions.subscribe, extensions.getVersion);
 
-  const [filter, setFilter] = useState<Filter>('all')
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [filter, setFilter] = useState<Filter>('all');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (initialFilter && initialFilter in matchesFilter) setFilter(initialFilter as Filter)
-  }, [initialFilter])
+    if (initialFilter && initialFilter in matchesFilter) {
+      setFilter(initialFilter as Filter);
+    }
+  }, [initialFilter]);
 
-  const addons = useMemo(() => registry.all().filter((addon) => !addon.hidden), [registryVersion])
+  const addons = useMemo(() => registry.all().filter((addon) => !addon.hidden), [registryVersion]);
 
   const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase()
+    const needle = query.trim().toLowerCase();
     return addons.filter(matchesFilter[filter]).filter((a) => {
-      if (!needle) return true
+      if (!needle) {
+        return true;
+      }
       return (
         a.name.toLowerCase().includes(needle)
         || a.id.toLowerCase().includes(needle)
         || (a.description ?? '').toLowerCase().includes(needle)
         || (a.languages ?? []).some((l) => l.name.toLowerCase().includes(needle) || l.extensions.some((e) => e.includes(needle)))
-      )
-    })
-  }, [addons, filter, query])
+      );
+    });
+  }, [addons, filter, query]);
 
-  const selected = filtered.find((a) => a.id === selectedId) ?? filtered[0] ?? null
-  const activeCount = addons.filter((a) => registry.isActive(a.id)).length
+  const selected = filtered.find((a) => a.id === selectedId) ?? filtered[0] ?? null;
+  const activeCount = addons.filter((a) => registry.isActive(a.id)).length;
 
   const importAddon = async () => {
-    const model = await userAddons.importFile()
-    if (!model) return
-    setFilter('user')
-    setSelectedId(model.id)
-  }
-
-  const filterLabel = (id: Filter) => (id === 'extension' ? t('extensions.extensionBadge') : t(`addonStudio.dialog.nav.${id}`))
+    const model = await userAddons.importFile();
+    if (!model) {
+      return;
+    }
+    setFilter('user');
+    setSelectedId(model.id);
+  };
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-edge px-3 py-2">
-        {(Object.keys(matchesFilter) as Filter[]).map((id) => {
-          const FilterIcon = FILTER_ICONS[id]
-          return (
-            <button
-              key={id}
-              onClick={() => setFilter(id)}
-              className={[
-                'lm-transition flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11.5px]',
-                id === filter ? 'border-accent bg-active text-fg' : 'border-edge text-muted hover:border-edge-strong',
-              ].join(' ')}
-            >
-              <FilterIcon size={11} />
-              {filterLabel(id)}
-              <span className="font-mono text-[10px] text-subtle">{addons.filter(matchesFilter[id]).length}</span>
-            </button>
-          )
-        })}
-        <span className="flex-1" />
-        <Button size="sm" variant="outline" onClick={() => void importAddon()} title={t('addonStudio.dialog.importHint')}>
-          <Upload size={12} /> {t('common.import')}
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => openStudio(null, 'toolkit')} title={t('studioProject.starter.hint')}>
-          <Hammer size={12} /> {t('studioProject.starter.button')}
-        </Button>
-        <Button size="sm" variant="solid" onClick={() => openStudio(null)}>
-          <Plus size={12} /> {t('addonStudio.dialog.new')}
-        </Button>
-      </div>
+      <FilterBar
+        filter={filter}
+        addons={addons}
+        onFilter={setFilter}
+        onImport={() => void importAddon()}
+        onOpenStudio={openStudio}
+      />
 
       <div className="flex min-h-0 flex-1">
         <div className="w-[380px] shrink-0 overflow-y-auto border-r border-edge p-2">
@@ -165,23 +207,23 @@ export function InstalledView({ query, initialFilter, updates }: {
         <span className="text-[11.5px] text-subtle">{t('addonStudio.dialog.footerHint')}</span>
       </footer>
     </div>
-  )
+  );
 }
 
 /* ------------------------------------------------------------------ */
 
-function Switch({ addon }: { addon: Addon }) {
-  const t = useT()
-  const toggleAddon = useStore((s) => s.toggleAddon)
-  const active = registry.isActive(addon.id)
+function Switch({ addon }: { addon: Addon; }) {
+  const t = useT();
+  const toggleAddon = useStore((s) => s.toggleAddon);
+  const active = registry.isActive(addon.id);
   return (
     <button
       role="switch"
       aria-checked={active}
       disabled={addon.builtin}
       onClick={(e) => {
-        e.stopPropagation()
-        toggleAddon(addon.id)
+        e.stopPropagation();
+        toggleAddon(addon.id);
       }}
       title={addon.builtin ? t('addonStudio.dialog.builtinHint') : undefined}
       aria-label={t(active ? 'addonStudio.dialog.disable' : 'addonStudio.dialog.enable', { name: addon.name })}
@@ -193,10 +235,10 @@ function Switch({ addon }: { addon: Addon }) {
     >
       <span className="lm-transition absolute top-[3px] size-3 rounded-full bg-white" style={{ left: active ? 16 : 3 }} />
     </button>
-  )
+  );
 }
 
-function AddonIcon({ addon, size = 28 }: { addon: Addon; size?: number }) {
+function AddonIcon({ addon, size = 28 }: { addon: Addon; size?: number; }) {
   return (
     <span
       className="lm-transition flex shrink-0 items-center justify-center rounded-lumen-sm bg-active font-mono font-bold"
@@ -204,32 +246,26 @@ function AddonIcon({ addon, size = 28 }: { addon: Addon; size?: number }) {
     >
       {addon.icon ?? addon.name.slice(0, 2)}
     </span>
-  )
+  );
 }
 
-const snippetCount = (addon: Addon) => (addon.languages ?? []).reduce((n, l) => n + (l.snippets?.length ?? 0), 0)
+const snippetCount = (addon: Addon) => (addon.languages ?? []).reduce((n, l) => n + (l.snippets?.length ?? 0), 0);
 
-function Badge({ children, title, className = '' }: { children: React.ReactNode; title?: string; className?: string }) {
-  return (
-    <span title={title} className={`flex items-center gap-0.5 rounded-full border border-edge px-1.5 py-px text-[10px] text-muted ${className}`}>
-      {children}
-    </span>
-  )
-}
-
-function AddonCard({ addon, index, selected, onSelect }: { addon: Addon; index: number; selected: boolean; onSelect: () => void }) {
-  const t = useT()
-  const active = registry.isActive(addon.id)
-  const snippets = snippetCount(addon)
+function AddonCard({ addon, index, selected, onSelect }: { addon: Addon; index: number; selected: boolean; onSelect: () => void; }) {
+  const t = useT();
+  const active = registry.isActive(addon.id);
+  const snippets = snippetCount(addon);
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={onSelect}
       onKeyDown={(e) => {
-        if (e.key !== 'Enter' && e.key !== ' ') return
-        e.preventDefault()
-        onSelect()
+        if (e.key !== 'Enter' && e.key !== ' ') {
+          return;
+        }
+        e.preventDefault();
+        onSelect();
       }}
       style={{ animationDelay: `calc(var(--duration) * ${Math.min(index, 12) * 0.08})` }}
       className={[
@@ -263,247 +299,184 @@ function AddonCard({ addon, index, selected, onSelect }: { addon: Addon; index: 
         {snippets > 0 && <Badge title={t('addonStudio.dialog.snippetsHint')}>{t('addonStudio.dialog.snippets', { count: snippets })}</Badge>}
       </div>
     </div>
-  )
+  );
 }
 
 /* ------------------------------------------------------------------ */
 
-function DetailSection({ title, count, children }: { title: string; count?: number; children: React.ReactNode }) {
-  return (
-    <section className="border-t border-edge px-5 py-3">
-      <h4 className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.09em] text-subtle">
-        {title}{count !== undefined ? ` · ${count}` : ''}
-      </h4>
-      {children}
-    </section>
-  )
-}
-
-function AddonDetails({ addon, update, onSelect }: { addon: Addon; update?: AvailableUpdate; onSelect: (id: string) => void }) {
-  const t = useT()
-  const openStudio = useStore((s) => s.openAddonStudio)
-  const setTheme = useStore((s) => s.setTheme)
-  const themeId = useStore((s) => s.themeId)
-  const closeDialog = useStore((s) => s.closeDialog)
-  const notify = useStore((s) => s.notify)
-  const active = registry.isActive(addon.id)
-  const model = addon.user ? userAddons.get(addon.id) : undefined
-  const extension = extensions.get(addon.id)
-  const [busy, setBusy] = useState(false)
-
-  const languages = addon.languages ?? []
-  const kinds = addon.projectKinds ?? []
-  const templates = addon.projectTemplates ?? []
-  const commands = addon.commands ?? []
-  const themes = addon.themes ?? []
+/** Updating and removing an extension. */
+function useExtensionActions(addon: Addon, update: AvailableUpdate | undefined) {
+  const t = useT();
+  const notify = useStore((s) => s.notify);
+  const extension = extensions.get(addon.id);
+  const [busy, setBusy] = useState(false);
 
   const updateExtension = async () => {
-    if (!update) return
-    setBusy(true)
+    if (!update) {
+      return;
+    }
+    setBusy(true);
     try {
       await installExtension(update.server.url, update.id, update.to, () => {
-        notify(t('extensions.updated', { names: update.name }), 'success')
-      })
+        notify(t('extensions.updated', { names: update.name }), 'success');
+      });
     } catch (err) {
-      notify(t('extensions.updateFailed', { name: update.name, error: (err as Error).message }), 'error')
+      notify(t('extensions.updateFailed', { name: update.name, error: (err as Error).message }), 'error');
     } finally {
-      setBusy(false)
+      setBusy(false);
     }
-  }
+  };
 
   const uninstallExtension = async () => {
-    if (!extension) return
-    if (!confirm(t('common.confirmDelete', { name: extension.manifest.name }))) return
-    setBusy(true)
-    try {
-      await extensions.uninstall(extension.manifest.id)
-      notify(t('extensions.removedNotice', { name: extension.manifest.name }), 'info')
-    } finally {
-      setBusy(false)
+    if (!extension) {
+      return;
     }
-  }
+    if (!confirm(t('common.confirmDelete', { name: extension.manifest.name }))) {
+      return;
+    }
+    setBusy(true);
+    try {
+      await extensions.uninstall(extension.manifest.id);
+      notify(t('extensions.removedNotice', { name: extension.manifest.name }), 'info');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return { extension, busy, updateExtension, uninstallExtension };
+}
+
+function AddonHeader({ addon, extension }: { addon: Addon; extension: ReturnType<typeof extensions.get>; }) {
+  const t = useT();
+  const active = registry.isActive(addon.id);
+  return (
+    <div className="flex items-start gap-3 px-5 pt-4 pb-3">
+      <AddonIcon addon={addon} size={44} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2">
+          <h3 className="truncate text-[16px] font-medium text-fg">{addon.name}</h3>
+          <span className="font-mono text-[11px] text-subtle">v{addon.version}</span>
+        </div>
+        <div className="mt-0.5 flex flex-wrap gap-x-3 text-[11.5px] text-subtle">
+          <span className="font-mono">{addon.id}</span>
+          {addon.author && <span>{t('common.author')}: {addon.author}</span>}
+          <span>{t(active ? 'common.enabled' : 'common.disabled')}</span>
+          {extension?.server && <span>{t('extensions.fromServer', { server: hostOf(extension.server) ?? extension.server })}</span>}
+        </div>
+        {addon.description && <p className="mt-2 text-[12.5px] leading-relaxed text-muted">{addon.description}</p>}
+      </div>
+      <Switch addon={addon} />
+    </div>
+  );
+}
+
+function AddonActions({ addon, update, onSelect }: { addon: Addon; update?: AvailableUpdate; onSelect: (id: string) => void; }) {
+  const t = useT();
+  const openStudio = useStore((s) => s.openAddonStudio);
+  const notify = useStore((s) => s.notify);
+  const model = addon.user ? userAddons.get(addon.id) : undefined;
+  const { extension, busy, updateExtension, uninstallExtension } = useExtensionActions(addon, update);
 
   const copyAsUser = async () => {
-    const copy = await userAddons.copyFromAddon(addon)
-    if (!copy) return
-    notify(t('addonStudio.dialog.copied', { name: copy.name }), 'success')
-    openStudio(copy.id)
-  }
+    const copy = await userAddons.copyFromAddon(addon);
+    if (!copy) {
+      return;
+    }
+    notify(t('addonStudio.dialog.copied', { name: copy.name }), 'success');
+    openStudio(copy.id);
+  };
+
+  return (
+    <div className="flex flex-wrap gap-1.5 px-5 pb-3">
+      {update && (
+        <Button size="sm" variant="solid" disabled={busy} onClick={() => void updateExtension()}>
+          <RefreshCw size={12} className={busy ? 'lm-anim-spin' : ''} />
+          {t('extensions.updateTo', { version: update.to })}
+        </Button>
+      )}
+      {extension && (
+        <Button size="sm" variant="danger" disabled={busy} onClick={() => void uninstallExtension()}>
+          <Trash2 size={12} /> {t('extensions.uninstall')}
+        </Button>
+      )}
+      {model && !extension && (
+        <>
+          <Button size="sm" variant="solid" onClick={() => openStudio(model.id)}><Pencil size={12} /> {t('common.edit')}</Button>
+          <Button size="sm" variant="outline" onClick={async () => {
+            const copy = await userAddons.duplicate(model.id);
+            if (copy) {
+              onSelect(copy.id);
+            }
+          }}>
+            <Copy size={12} /> {t('common.duplicate')}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => void userAddons.exportModel(model)}><Download size={12} /> {t('common.export')}</Button>
+          <Button size="sm" variant="danger" onClick={async () => {
+            if (!confirm(t('common.confirmDelete', { name: model.name }))) {
+              return;
+            }
+            await userAddons.remove(model.id);
+            notify(t('addonStudio.dialog.deleted', { name: model.name }), 'info');
+          }}>
+            <Trash2 size={12} /> {t('common.delete')}
+          </Button>
+        </>
+      )}
+      {!addon.user && ((addon.languages?.length ?? 0) > 0 || (addon.themes?.length ?? 0) > 0) && (
+        <Button size="sm" variant="outline" onClick={() => void copyAsUser()} title={t('addonStudio.dialog.copyAsUserHint')}>
+          <Copy size={12} /> {t('addonStudio.dialog.copyAsUser')}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function AddonDetails({ addon, update, onSelect }: { addon: Addon; update?: AvailableUpdate; onSelect: (id: string) => void; }) {
+  const t = useT();
+  const openStudio = useStore((s) => s.openAddonStudio);
+  const closeDialog = useStore((s) => s.closeDialog);
+  const active = registry.isActive(addon.id);
+  const model = addon.user ? userAddons.get(addon.id) : undefined;
+  const extension = extensions.get(addon.id);
+
+  const languages = addon.languages ?? [];
+  const kinds = addon.projectKinds ?? [];
+  const templates = addon.projectTemplates ?? [];
+  const commands = addon.commands ?? [];
+  const themes = addon.themes ?? [];
 
   return (
     <div className="lm-anim-fade">
-      <div className="flex items-start gap-3 px-5 pt-4 pb-3">
-        <AddonIcon addon={addon} size={44} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2">
-            <h3 className="truncate text-[16px] font-medium text-fg">{addon.name}</h3>
-            <span className="font-mono text-[11px] text-subtle">v{addon.version}</span>
-          </div>
-          <div className="mt-0.5 flex flex-wrap gap-x-3 text-[11.5px] text-subtle">
-            <span className="font-mono">{addon.id}</span>
-            {addon.author && <span>{t('common.author')}: {addon.author}</span>}
-            <span>{t(active ? 'common.enabled' : 'common.disabled')}</span>
-            {extension?.server && <span>{t('extensions.fromServer', { server: hostOf(extension.server) ?? extension.server })}</span>}
-          </div>
-          {addon.description && <p className="mt-2 text-[12.5px] leading-relaxed text-muted">{addon.description}</p>}
-        </div>
-        <Switch addon={addon} />
-      </div>
+      <AddonHeader addon={addon} extension={extension} />
+      <AddonActions addon={addon} update={update} onSelect={onSelect} />
 
-      <div className="flex flex-wrap gap-1.5 px-5 pb-3">
-        {update && (
-          <Button size="sm" variant="solid" disabled={busy} onClick={() => void updateExtension()}>
-            <RefreshCw size={12} className={busy ? 'lm-anim-spin' : ''} />
-            {t('extensions.updateTo', { version: update.to })}
-          </Button>
-        )}
-        {extension && (
-          <Button size="sm" variant="danger" disabled={busy} onClick={() => void uninstallExtension()}>
-            <Trash2 size={12} /> {t('extensions.uninstall')}
-          </Button>
-        )}
-        {model && !extension && (
-          <>
-            <Button size="sm" variant="solid" onClick={() => openStudio(model.id)}><Pencil size={12} /> {t('common.edit')}</Button>
-            <Button size="sm" variant="outline" onClick={async () => {
-              const copy = await userAddons.duplicate(model.id)
-              if (copy) onSelect(copy.id)
-            }}>
-              <Copy size={12} /> {t('common.duplicate')}
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => void userAddons.exportModel(model)}><Download size={12} /> {t('common.export')}</Button>
-            <Button size="sm" variant="danger" onClick={async () => {
-              if (!confirm(t('common.confirmDelete', { name: model.name }))) return
-              await userAddons.remove(model.id)
-              notify(t('addonStudio.dialog.deleted', { name: model.name }), 'info')
-            }}>
-              <Trash2 size={12} /> {t('common.delete')}
-            </Button>
-          </>
-        )}
-        {!addon.user && (languages.length > 0 || themes.length > 0) && (
-          <Button size="sm" variant="outline" onClick={() => void copyAsUser()} title={t('addonStudio.dialog.copyAsUserHint')}>
-            <Copy size={12} /> {t('addonStudio.dialog.copyAsUser')}
-          </Button>
-        )}
-      </div>
+      {languages.length > 0 && <LanguagesSection languages={languages} />}
 
-      {languages.length > 0 && (
-        <DetailSection title={t('addonStudio.nav.languages')} count={languages.length}>
-          {languages.map((lang) => (
-            <div key={lang.id} className="mb-2.5 rounded-lumen-sm border border-edge p-2.5">
-              <div className="flex items-center gap-2">
-                <span className="size-2.5 shrink-0 rounded-full" style={{ background: lang.color ?? 'var(--c-border-strong)' }} />
-                <span className="text-[12.5px] font-medium text-fg">{lang.name}</span>
-                <span className="font-mono text-[10.5px] text-subtle">{lang.id}</span>
-                <span className="flex-1" />
-                {(lang.snippets?.length ?? 0) > 0 && <Badge>{t('addonStudio.dialog.snippets', { count: lang.snippets?.length ?? 0 })}</Badge>}
-                {lang.tokenizer && <Badge>{t('addonStudio.dialog.customTokenizer')}</Badge>}
-              </div>
-              <div className="mt-1.5 flex flex-wrap gap-1">
-                {[...lang.extensions, ...(lang.filenames ?? [])].map((ext) => (
-                  <span key={ext} className="rounded-[4px] bg-input px-1.5 py-px font-mono text-[10.5px] text-muted">{ext}</span>
-                ))}
-              </div>
-              {(lang.run?.length ?? 0) > 0 && (
-                <div className="mt-1.5 text-[11.5px] text-subtle">
-                  {t('addonStudio.languages.run')}: {lang.run?.map((r) => r.label).join(', ')}
-                </div>
-              )}
-              {lang.lsp?.map((server) => (
-                <div key={`${server.label}${server.command}`} className="mt-1.5 flex items-start gap-1.5 text-[11.5px]">
-                  <Zap size={11} className="mt-0.5 shrink-0 text-accent" />
-                  <div className="min-w-0">
-                    <span className="text-muted">{server.label}</span>
-                    <span className="ml-1.5 font-mono text-[10.5px] text-subtle">{[server.command, ...(server.args ?? [])].join(' ')}</span>
-                    {server.install && <div className="text-subtle">{server.install}</div>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ))}
-        </DetailSection>
-      )}
+      {kinds.length > 0 && <KindsSection kinds={kinds} />}
 
-      {kinds.length > 0 && (
-        <DetailSection title={t('addonStudio.dialog.projectKinds')} count={kinds.length}>
-          <div className="flex flex-wrap gap-1.5">
-            {kinds.map((kind) => (
-              <span key={kind.id} title={kind.markers.join(', ')} className="flex items-center gap-1 rounded-lumen-sm border border-edge px-2 py-1 text-[11.5px] text-muted">
-                <span className="size-2 rounded-full" style={{ background: kind.color ?? 'var(--c-accent)' }} />
-                {kind.name}
-                <span className="font-mono text-[10px] text-subtle">{kind.markers.slice(0, 2).join(' ')}</span>
-              </span>
-            ))}
-          </div>
-        </DetailSection>
-      )}
+      {templates.length > 0 && <TemplatesSection templates={templates} />}
 
-      {templates.length > 0 && (
-        <DetailSection title={t('addonStudio.nav.templates')} count={templates.length}>
-          {templates.map((tpl) => (
-            <div key={tpl.id} className="mb-1 text-[12px]">
-              <span className="text-fg">{tpl.name}</span>
-              {tpl.description && <span className="ml-2 text-subtle">{tpl.description}</span>}
-            </div>
-          ))}
-        </DetailSection>
-      )}
+      {commands.length > 0 && <CommandsSection commands={commands} />}
 
-      {commands.length > 0 && (
-        <DetailSection title={t('addonStudio.nav.commands')} count={commands.length}>
-          {commands.map((command) => (
-            <div key={command.id} className="mb-1 flex items-center gap-2 text-[12px]">
-              <span className="min-w-0 flex-1 truncate text-fg">{command.title}</span>
-              {formatBindingsFor(command.id) && (
-                <kbd className="rounded border border-edge bg-input px-1.5 py-px font-mono text-[10.5px] text-muted">{formatBindingsFor(command.id)}</kbd>
-              )}
-            </div>
-          ))}
-        </DetailSection>
-      )}
-
-      {themes.length > 0 && (
-        <DetailSection title={t('addonStudio.nav.themes')} count={themes.length}>
-          <div className="grid grid-cols-2 gap-1.5">
-            {themes.map((theme) => (
-              <button
-                key={theme.id}
-                disabled={!active}
-                onClick={() => setTheme(theme.id)}
-                className={[
-                  'lm-transition flex items-center gap-2 rounded-lumen-sm border px-2 py-1.5 text-left disabled:opacity-50',
-                  theme.id === themeId ? 'border-accent' : 'border-edge hover:border-edge-strong',
-                ].join(' ')}
-              >
-                <span className="flex overflow-hidden rounded-[4px] border border-edge">
-                  {[theme.ui.bg, theme.ui.accent, theme.ui.text].map((c, i) => <span key={i} className="block h-5 w-3.5" style={{ background: c }} />)}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-[12px] text-fg">{theme.name}</span>
-                <span className="text-[10.5px] text-subtle">{t(theme.type === 'dark' ? 'common.dark' : 'common.light')}</span>
-              </button>
-            ))}
-          </div>
-        </DetailSection>
-      )}
+      {themes.length > 0 && <ThemesSection themes={themes} active={active} />}
 
       {!languages.length && !kinds.length && !templates.length && !commands.length && !themes.length && (
         <DetailSection title={t('addonStudio.dialog.contents')}>
           <p className="text-[12px] text-subtle">{t('addonStudio.dialog.noContents')}</p>
           {model && (
-            <Button size="sm" variant="outline" className="mt-2" onClick={() => { closeDialog(); openStudio(model.id) }}>
+            <Button size="sm" variant="outline" className="mt-2" onClick={() => { closeDialog(); openStudio(model.id); }}>
               <Pencil size={12} /> {t('common.edit')}
             </Button>
           )}
         </DetailSection>
       )}
     </div>
-  )
+  );
 }
 
 function LoadProblems() {
-  const t = useT()
-  const problems = userAddons.problems()
+  const t = useT();
+  const problems = userAddons.problems();
   return (
     <div className="mb-2 flex items-center gap-2 rounded-lumen-sm border border-dashed border-edge px-2.5 py-1.5">
       <div className="min-w-0 flex-1 text-[11.5px] text-subtle">
@@ -513,11 +486,11 @@ function LoadProblems() {
         ))}
       </div>
       <Button size="sm" title={t('addonStudio.dialog.openFolder')} onClick={async () => {
-        const dir = await window.lumen.userAddons.dir()
-        void window.lumen.shell.showItemInFolder(dir)
+        const dir = await window.lumen.userAddons.dir();
+        void window.lumen.shell.showItemInFolder(dir);
       }}>
         <FolderOpen size={12} />
       </Button>
     </div>
-  )
+  );
 }

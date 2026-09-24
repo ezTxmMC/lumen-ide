@@ -1,4 +1,14 @@
-import type { NamespaceMessages } from '@/i18n'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import type { NamespaceMessages } from '@/i18n';
 
 /** Icon-Pakete: Galerie im Themes-Dialog, Icon-Studio, Hinweise. */
 export default {
@@ -11,6 +21,11 @@ export default {
     newName: 'Eigene Icons',
     deleted: 'Icon-Paket gelöscht.',
     invalid: 'Keine gültige Icon-Paket-Datei.',
+    check: {
+      notObject: '{where}: kein Objekt', glyph: '{where}: glyph höchstens 3 Zeichen', shape: '{where}: unbekannte Form „{shape}“',
+      path: '{where}: ungültiger SVG-Pfad', color: '{where}: ungültige Farbe „{color}“', id: 'id: nur a–z, 0–9, . _ -',
+      nameMissing: 'name fehlt', lowerKey: '{where}: Schlüssel klein schreiben', dotExt: '{where}: Endung ohne Punkt',
+    },
     imported: 'Icon-Paket „{name}“ importiert.',
     importFailed: 'Import fehlgeschlagen: {error}',
     exported: 'Icon-Paket „{name}“ exportiert.',
@@ -51,6 +66,11 @@ export default {
     newName: 'My Icons',
     deleted: 'Icon pack deleted.',
     invalid: 'Not a valid icon pack file.',
+    check: {
+      notObject: '{where}: not an object', glyph: '{where}: glyph at most 3 characters', shape: '{where}: unknown shape “{shape}”',
+      path: '{where}: invalid SVG path', color: '{where}: invalid colour “{color}”', id: 'id: only a–z, 0–9, . _ -',
+      nameMissing: 'name missing', lowerKey: '{where}: keys must be lower case', dotExt: '{where}: extension without dot',
+    },
     imported: 'Icon pack “{name}” imported.',
     importFailed: 'Import failed: {error}',
     exported: 'Icon pack “{name}” exported.',
@@ -87,6 +107,17 @@ export default {
       lumen: 'Formas y marcas para más de 1600 archivos, extensiones y carpetas — lenguajes, herramientas de compilación, configuración, multimedia — en una paleta coordinada; las carpetas con función llevan un emblema.',
       mono: 'Las mismas formas y la misma cobertura que «Lumen», dibujadas en un único tono sereno que sigue al tema.',
       classic: 'Solo las abreviaturas y colores de los complementos de lenguaje; carpetas como flechas tintadas.',
+    },
+    check: {
+      notObject: '{where}: no es un objeto',
+      glyph: '{where}: glyph como máximo 3 caracteres',
+      shape: '{where}: forma desconocida «{shape}»',
+      path: '{where}: trazado SVG no válido',
+      color: '{where}: color no válido «{color}»',
+      id: 'id: solo a–z, 0–9, . _ -',
+      nameMissing: 'falta name',
+      lowerKey: '{where}: las claves en minúsculas',
+      dotExt: '{where}: extensión sin punto',
     },
     newName: 'Mis iconos',
     deleted: 'Paquete de iconos eliminado.',
@@ -128,6 +159,17 @@ export default {
       mono: 'Les mêmes formes et la même couverture que « Lumen », dessinées dans une seule teinte calme qui suit le thème.',
       classic: 'Uniquement les abréviations et couleurs des modules de langage ; dossiers en flèches teintées.',
     },
+    check: {
+      notObject: '{where} : n\'est pas un objet',
+      glyph: '{where} : glyph 3 caractères au maximum',
+      shape: '{where} : forme inconnue « {shape} »',
+      path: '{where} : tracé SVG invalide',
+      color: '{where} : couleur invalide « {color} »',
+      id: 'id : uniquement a–z, 0–9, . _ -',
+      nameMissing: 'name manquant',
+      lowerKey: '{where} : clés en minuscules',
+      dotExt: '{where} : extension sans point',
+    },
     newName: 'Mes icônes',
     deleted: 'Pack d’icônes supprimé.',
     invalid: 'Ce n’est pas un fichier de pack d’icônes valide.',
@@ -167,6 +209,17 @@ export default {
       lumen: 'Kształty i znaki dla ponad 1600 plików, rozszerzeń i folderów — języki, narzędzia budowania, konfiguracja, multimedia — w spójnej palecie; foldery z rolą mają emblemat.',
       mono: 'Te same kształty i ten sam zakres co „Lumen”, w jednym spokojnym odcieniu, który podąża za motywem.',
       classic: 'Tylko skróty i kolory dodatków językowych, foldery jako zabarwione strzałki.',
+    },
+    check: {
+      notObject: '{where}: nie jest obiektem',
+      glyph: '{where}: glyph najwyżej 3 znaki',
+      shape: '{where}: nieznany kształt „{shape}”',
+      path: '{where}: nieprawidłowa ścieżka SVG',
+      color: '{where}: nieprawidłowy kolor „{color}”',
+      id: 'id: tylko a–z, 0–9, . _ -',
+      nameMissing: 'brak name',
+      lowerKey: '{where}: klucze małymi literami',
+      dotExt: '{where}: rozszerzenie bez kropki',
     },
     newName: 'Moje ikony',
     deleted: 'Usunięto pakiet ikon.',
@@ -208,6 +261,17 @@ export default {
       mono: 'Le stesse forme e la stessa copertura di «Lumen», disegnate in un unico tono sobrio che segue il tema.',
       classic: 'Solo le sigle e i colori dei componenti di linguaggio, cartelle come frecce colorate.',
     },
+    check: {
+      notObject: '{where}: non è un oggetto',
+      glyph: '{where}: glyph al massimo 3 caratteri',
+      shape: '{where}: forma sconosciuta «{shape}»',
+      path: '{where}: percorso SVG non valido',
+      color: '{where}: colore non valido «{color}»',
+      id: 'id: solo a–z, 0–9, . _ -',
+      nameMissing: 'name mancante',
+      lowerKey: '{where}: chiavi in minuscolo',
+      dotExt: '{where}: estensione senza punto',
+    },
     newName: 'Le mie icone',
     deleted: 'Pacchetto di icone eliminato.',
     invalid: 'Non è un file di pacchetto di icone valido.',
@@ -247,6 +311,17 @@ export default {
       lumen: 'Formas e marcas para mais de 1.600 arquivos, extensões e pastas — linguagens, ferramentas de build, configuração, mídia — em uma paleta coordenada; pastas com função têm um emblema.',
       mono: 'As mesmas formas e a mesma cobertura do “Lumen”, desenhadas em um único tom sereno que segue o tema.',
       classic: 'Apenas as siglas e cores dos complementos de linguagem, pastas como setas coloridas.',
+    },
+    check: {
+      notObject: '{where}: não é um objeto',
+      glyph: '{where}: glyph no máximo 3 caracteres',
+      shape: '{where}: forma desconhecida «{shape}»',
+      path: '{where}: caminho SVG inválido',
+      color: '{where}: cor inválida «{color}»',
+      id: 'id: apenas a–z, 0–9, . _ -',
+      nameMissing: 'name em falta',
+      lowerKey: '{where}: chaves em minúsculas',
+      dotExt: '{where}: extensão sem ponto',
     },
     newName: 'Meus ícones',
     deleted: 'Pacote de ícones excluído.',
@@ -288,6 +363,17 @@ export default {
       mono: 'Dezelfde vormen en dekking als „Lumen”, getekend in één rustige tint die het thema volgt.',
       classic: 'Alleen de afkortingen en kleuren van de taal-add-ons, mappen als getinte pijlen.',
     },
+    check: {
+      notObject: '{where}: geen object',
+      glyph: '{where}: glyph maximaal 3 tekens',
+      shape: '{where}: onbekende vorm „{shape}”',
+      path: '{where}: ongeldig SVG-pad',
+      color: '{where}: ongeldige kleur „{color}”',
+      id: 'id: alleen a–z, 0–9, . _ -',
+      nameMissing: 'name ontbreekt',
+      lowerKey: '{where}: sleutels in kleine letters',
+      dotExt: '{where}: extensie zonder punt',
+    },
     newName: 'Mijn iconen',
     deleted: 'Iconenpakket verwijderd.',
     invalid: 'Geen geldig iconenpakketbestand.',
@@ -322,4 +408,4 @@ export default {
       problems_one: '{count} probleem', problems_other: '{count} problemen',
     },
   },
-} satisfies NamespaceMessages
+} satisfies NamespaceMessages;

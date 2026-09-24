@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Comparing versions of extensions.
  *
@@ -5,23 +15,31 @@
  * the finished version of the same number (`1.2.0-beta.1` < `1.2.0`).
  */
 
-function parse(version: string): { core: number[]; pre: string } {
-  const [core, pre = ''] = String(version).split('-', 2)
-  return { core: core.split('.').map((part) => Number(part) || 0), pre }
+function parse(version: string): { core: number[]; pre: string; } {
+  const [core, pre = ''] = String(version).split('-', 2);
+  return { core: core.split('.').map((part) => Number(part) || 0), pre };
 }
 
 /** Negative when `a` is older than `b`, positive when newer, zero when equal. */
 export function compareVersions(a: string, b: string): number {
-  const left = parse(a)
-  const right = parse(b)
+  const left = parse(a);
+  const right = parse(b);
   for (let i = 0; i < 3; i++) {
-    const diff = (left.core[i] ?? 0) - (right.core[i] ?? 0)
-    if (diff !== 0) return diff
+    const diff = (left.core[i] ?? 0) - (right.core[i] ?? 0);
+    if (diff !== 0) {
+      return diff;
+    }
   }
-  if (left.pre === right.pre) return 0
-  if (!left.pre) return 1
-  if (!right.pre) return -1
-  return left.pre < right.pre ? -1 : 1
+  if (left.pre === right.pre) {
+    return 0;
+  }
+  if (!left.pre) {
+    return 1;
+  }
+  if (!right.pre) {
+    return -1;
+  }
+  return left.pre < right.pre ? -1 : 1;
 }
 
-export const isNewer = (candidate: string, current: string) => compareVersions(candidate, current) > 0
+export const isNewer = (candidate: string, current: string) => compareVersions(candidate, current) > 0;

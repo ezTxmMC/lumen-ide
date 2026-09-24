@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Help for the Java language server (jdtls) with Gradle builds.
  *
@@ -23,15 +33,15 @@
  * re-imports once and stamps it (`lsp:javaImportDone`).
  */
 
-import { app, ipcMain } from 'electron'
-import fs from 'node:fs/promises'
-import path from 'node:path'
-import { javacBackendRange, zipEntry, type JavacBackend } from './javac-backend'
-import { ensureJdtlsAgent } from './jdtls-agent'
-import { cleanMetadata } from './jdtls-metadata'
+import { app, ipcMain } from 'electron';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { javacBackendRange, zipEntry, type JavacBackend } from './javac-backend';
+import { ensureJdtlsAgent } from './jdtls-agent';
+import { cleanMetadata } from './jdtls-metadata';
 
 /** Raise with every change to the script — workspaces imported with an older one are re-imported. */
-export const INIT_SCRIPT_VERSION = 4
+export const INIT_SCRIPT_VERSION = 4;
 
 export const INIT_SCRIPT = `// lumen-jdtls-init v${INIT_SCRIPT_VERSION}
 // Written by Lumen for the Java language server's Gradle import — see
@@ -114,39 +124,43 @@ allprojects { p ->
     }
   }
 }
-`
+`;
 
-const scriptFile = () => path.join(app.getPath('userData'), 'lsp', 'lumen-jdtls-init.gradle')
+const scriptFile = () => path.join(app.getPath('userData'), 'lsp', 'lumen-jdtls-init.gradle');
 
 /** Write the init script (when missing or outdated) and return its path. */
 async function ensureInitScript(): Promise<string> {
-  const file = scriptFile()
-  const current = await fs.readFile(file, 'utf8').catch(() => null)
-  if (current === INIT_SCRIPT) return file
-  await fs.mkdir(path.dirname(file), { recursive: true })
-  await fs.writeFile(file, INIT_SCRIPT, 'utf8')
-  return file
+  const file = scriptFile();
+  const current = await fs.readFile(file, 'utf8').catch(() => null);
+  if (current === INIT_SCRIPT) {
+    return file;
+  }
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  await fs.writeFile(file, INIT_SCRIPT, 'utf8');
+  return file;
 }
 
 /** The stamp file in a jdtls data folder. */
-const stampFile = (dataDir: string) => path.join(dataDir, 'lumen-import.json')
+const stampFile = (dataDir: string) => path.join(dataDir, 'lumen-import.json');
 
 /** A data folder below userData/lsp — the renderer names it, so it is checked. */
 function dataFolder(dir: string): string {
-  const base = path.join(app.getPath('userData'), 'lsp')
-  const target = path.resolve(String(dir))
-  const relative = path.relative(base, target)
-  if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) throw new Error('Not a language server data folder')
-  return target
+  const base = path.join(app.getPath('userData'), 'lsp');
+  const target = path.resolve(String(dir));
+  const relative = path.relative(base, target);
+  if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) {
+    throw new Error('Not a language server data folder');
+  }
+  return target;
 }
 
 async function exists(file: string): Promise<boolean> {
-  return fs.access(file).then(() => true, () => false)
+  return fs.access(file).then(() => true, () => false);
 }
 
 async function stampWorkspace(dataDir: string) {
-  await fs.mkdir(dataDir, { recursive: true })
-  await fs.writeFile(stampFile(dataDir), `${JSON.stringify({ gradleInitScript: INIT_SCRIPT_VERSION })}\n`, 'utf8')
+  await fs.mkdir(dataDir, { recursive: true });
+  await fs.writeFile(stampFile(dataDir), `${JSON.stringify({ gradleInitScript: INIT_SCRIPT_VERSION })}\n`, 'utf8');
 }
 
 /**
@@ -155,37 +169,47 @@ async function stampWorkspace(dataDir: string) {
  */
 async function importState(dataDir: string): Promise<'current' | 'stale'> {
   if (!(await exists(path.join(dataDir, '.metadata')))) {
-    await stampWorkspace(dataDir)
-    return 'current'
+    await stampWorkspace(dataDir);
+    return 'current';
   }
-  const raw = await fs.readFile(stampFile(dataDir), 'utf8').catch(() => null)
-  const stamp = raw ? (JSON.parse(raw) as { gradleInitScript?: number }) : null
-  if (stamp?.gradleInitScript === INIT_SCRIPT_VERSION) return 'current'
-  return 'stale'
+  const raw = await fs.readFile(stampFile(dataDir), 'utf8').catch(() => null);
+  const stamp = raw ? (JSON.parse(raw) as { gradleInitScript?: number; }) : null;
+  if (stamp?.gradleInitScript === INIT_SCRIPT_VERSION) {
+    return 'current';
+  }
+  return 'stale';
 }
 
 /** A program's path — as given when it names one, otherwise the first hit on the PATH. */
 async function locate(command: string): Promise<string | null> {
-  if (command.includes('/') || command.includes('\\')) return command
-  const suffixes = process.platform === 'win32' ? ['', '.bat', '.cmd', '.exe'] : ['']
-  const dirs = (process.env.PATH ?? '').split(path.delimiter).filter(Boolean)
+  if (command.includes('/') || command.includes('\\')) {
+    return command;
+  }
+  const suffixes = process.platform === 'win32' ? ['', '.bat', '.cmd', '.exe'] : [''];
+  const dirs = (process.env.PATH ?? '').split(path.delimiter).filter(Boolean);
   for (const dir of dirs) {
     for (const suffix of suffixes) {
-      const candidate = path.join(dir, command + suffix)
-      if (await exists(candidate)) return candidate
+      const candidate = path.join(dir, command + suffix);
+      if (await exists(candidate)) {
+        return candidate;
+      }
     }
   }
-  return null
+  return null;
 }
 
 /** The `plugins/` folder of the jdtls behind a launcher — the launcher sits in `bin/` next to it. */
 async function pluginsOf(command: string): Promise<string | null> {
-  const located = await locate(String(command))
-  const launcher = located ? await fs.realpath(located).catch(() => null) : null
-  if (!launcher) return null
-  const plugins = path.join(path.dirname(path.dirname(launcher)), 'plugins')
-  if (!(await exists(plugins))) return null
-  return plugins
+  const located = await locate(String(command));
+  const launcher = located ? await fs.realpath(located).catch(() => null) : null;
+  if (!launcher) {
+    return null;
+  }
+  const plugins = path.join(path.dirname(path.dirname(launcher)), 'plugins');
+  if (!(await exists(plugins))) {
+    return null;
+  }
+  return plugins;
 }
 
 /**
@@ -193,12 +217,16 @@ async function pluginsOf(command: string): Promise<string | null> {
  * JDK at `javaHome` against the ASM bundle of this jdtls.
  */
 async function javacAgent(command: string, javaHome: string): Promise<string | null> {
-  const plugins = await pluginsOf(command)
-  if (!plugins) return null
-  const bundles = await fs.readdir(plugins).catch(() => [] as string[])
-  const asm = bundles.find((name) => /^org\.objectweb\.asm_[\d.]+.*\.jar$/.test(name))
-  if (!asm) return null
-  return ensureJdtlsAgent(path.join(app.getPath('userData'), 'lsp', 'javac-agent'), String(javaHome), path.join(plugins, asm))
+  const plugins = await pluginsOf(command);
+  if (!plugins) {
+    return null;
+  }
+  const bundles = await fs.readdir(plugins).catch(() => [] as string[]);
+  const asm = bundles.find((name) => /^org\.objectweb\.asm_[\d.]+.*\.jar$/.test(name));
+  if (!asm) {
+    return null;
+  }
+  return ensureJdtlsAgent(path.join(app.getPath('userData'), 'lsp', 'javac-agent'), String(javaHome), path.join(plugins, asm));
 }
 
 /**
@@ -208,22 +236,28 @@ async function javacAgent(command: string, javaHome: string): Promise<string | n
  * newer one, compiling fails with `NoSuchFieldError`.
  */
 async function javacBackend(command: string): Promise<JavacBackend | null> {
-  const plugins = await pluginsOf(command)
-  if (!plugins) return null
-  const bundles = await fs.readdir(plugins).catch(() => [] as string[])
-  const bundle = bundles.find((name) => name.startsWith('org.eclipse.jdt.core.javac_') && name.endsWith('.jar'))
-  if (!bundle) return null
-  const archive = await fs.readFile(path.join(plugins, bundle)).catch(() => null)
-  const manifest = archive ? zipEntry(archive, 'META-INF/MANIFEST.MF') : null
-  if (!manifest) return null
-  return javacBackendRange(manifest.toString('utf8'))
+  const plugins = await pluginsOf(command);
+  if (!plugins) {
+    return null;
+  }
+  const bundles = await fs.readdir(plugins).catch(() => [] as string[]);
+  const bundle = bundles.find((name) => name.startsWith('org.eclipse.jdt.core.javac_') && name.endsWith('.jar'));
+  if (!bundle) {
+    return null;
+  }
+  const archive = await fs.readFile(path.join(plugins, bundle)).catch(() => null);
+  const manifest = archive ? zipEntry(archive, 'META-INF/MANIFEST.MF') : null;
+  if (!manifest) {
+    return null;
+  }
+  return javacBackendRange(manifest.toString('utf8'));
 }
 
 export function registerJdtlsIpc() {
-  ipcMain.handle('lsp:gradleInitScript', () => ensureInitScript())
-  ipcMain.handle('lsp:javaImportState', (_e, dataDir: string) => importState(dataFolder(dataDir)).catch(() => 'current' as const))
-  ipcMain.handle('lsp:javaImportDone', (_e, dataDir: string) => stampWorkspace(dataFolder(dataDir)))
-  ipcMain.handle('lsp:javaCleanMetadata', (_e, root: string) => cleanMetadata(root))
-  ipcMain.handle('lsp:jdtlsJavacBackend', (_e, command: string) => javacBackend(command).catch(() => null))
-  ipcMain.handle('lsp:jdtlsJavacAgent', (_e, command: string, javaHome: string) => javacAgent(command, javaHome).catch(() => null))
+  ipcMain.handle('lsp:gradleInitScript', () => ensureInitScript());
+  ipcMain.handle('lsp:javaImportState', (_e, dataDir: string) => importState(dataFolder(dataDir)).catch(() => 'current' as const));
+  ipcMain.handle('lsp:javaImportDone', (_e, dataDir: string) => stampWorkspace(dataFolder(dataDir)));
+  ipcMain.handle('lsp:javaCleanMetadata', (_e, root: string) => cleanMetadata(root));
+  ipcMain.handle('lsp:jdtlsJavacBackend', (_e, command: string) => javacBackend(command).catch(() => null));
+  ipcMain.handle('lsp:jdtlsJavacAgent', (_e, command: string, javaHome: string) => javacAgent(command, javaHome).catch(() => null));
 }

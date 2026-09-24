@@ -40,7 +40,7 @@ at build time.
   "id": "ext.go",
   "name": "Go",
   "version": "1.0.0",
-  "description": "Go-Sprachunterstützung mit gopls.",
+  "description": "Go language support with gopls.",
   "category": "language",
   "icon": "Go",
   "color": "#00add8",

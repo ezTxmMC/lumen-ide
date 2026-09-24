@@ -1,49 +1,60 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The directory of every namespace. Create a new file and enter it here — the
  * name of the entry is the prefix of its keys (`settings.title`).
  */
 
-import type { NamespaceMessages } from '@/i18n'
-import common from './common'
-import symbols from './symbols'
-import shell from './shell'
-import commands from './commands'
-import editor from './editor'
-import settings from './settings'
-import keybindings from './keybindings'
-import workspaces from './workspaces'
-import debug from './debug'
-import sdk from './sdk'
-import addonStudio from './addonStudio'
-import themeStudio from './themeStudio'
-import minecraft from './minecraft'
-import completion from './completion'
-import palette from './palette'
-import statusbar from './statusbar'
-import titlebar from './titlebar'
-import welcome from './welcome'
-import extensions from './extensions'
-import forms from './forms'
-import notify from './notify'
-import run from './run'
-import lsp from './lsp'
-import explorer from './explorer'
-import search from './search'
-import project from './project'
-import outline from './outline'
-import panels from './panels'
-import templates from './templates'
-import updater from './updater'
-import iconPacks from './iconPacks'
-import studioProject from './studioProject'
-import discord from './discord'
-import agent from './agent'
-import merge from './merge'
-import media from './media'
-import extensionView from './extensionView'
-import menubar from './menubar'
-import projectSwitcher from './projectSwitcher'
-import popout from './popout'
+import type { NamespaceMessages } from '@/i18n';
+import common from './common';
+import symbols from './symbols';
+import shell from './shell';
+import commands from './commands';
+import editor from './editor';
+import settings from './settings';
+import keybindings from './keybindings';
+import workspaces from './workspaces';
+import debug from './debug';
+import sdk from './sdk';
+import addonStudio from './addonStudio';
+import themeStudio from './themeStudio';
+import minecraft from './minecraft';
+import completion from './completion';
+import palette from './palette';
+import statusbar from './statusbar';
+import titlebar from './titlebar';
+import welcome from './welcome';
+import extensions from './extensions';
+import forms from './forms';
+import notify from './notify';
+import run from './run';
+import lsp from './lsp';
+import explorer from './explorer';
+import search from './search';
+import project from './project';
+import outline from './outline';
+import panels from './panels';
+import templates from './templates';
+import updater from './updater';
+import iconPacks from './iconPacks';
+import studioProject from './studioProject';
+import discord from './discord';
+import agent from './agent';
+import merge from './merge';
+import media from './media';
+import extensionView from './extensionView';
+import menubar from './menubar';
+import projectSwitcher from './projectSwitcher';
+import popout from './popout';
+import addons from './addons';
 
 export const MESSAGES: Record<string, NamespaceMessages> = {
   common,
@@ -86,4 +97,5 @@ export const MESSAGES: Record<string, NamespaceMessages> = {
   menubar,
   projectSwitcher,
   popout,
-}
+  addons,
+};

@@ -173,7 +173,7 @@
         {
           "label": "enum",
           "detail": "Enum",
-          "body": "enum ${Name} {\n  ${eins},\n  ${zwei};$0\n}"
+          "body": "enum ${Name} {\n  ${one},\n  ${two};$0\n}"
         },
         {
           "label": "mixin",
@@ -306,7 +306,7 @@
     {
       "id": "dart-package",
       "name": "Dart (Konsole / Paket)",
-      "description": "Dart-Konsolenprogramm oder wiederverwendbares Paket mit Tests.",
+      "description": "Dart console program or reusable package with tests.",
       "languageId": "dart",
       "kindId": "dart",
       "icon": "Dt",

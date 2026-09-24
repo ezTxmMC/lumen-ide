@@ -1,121 +1,137 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The built-in terminals in the renderer: xterm.js instances that survive the
  * panel being closed and reopened. The process itself (node-pty) runs in the
  * main process.
  */
 
-import { Terminal, type ITheme, type ILink } from '@xterm/xterm'
-import { FitAddon } from '@xterm/addon-fit'
-import { WebLinksAddon } from '@xterm/addon-web-links'
-import '@xterm/xterm/css/xterm.css'
-import type { Effects } from '@/core/theme'
-import type { SyntaxStyle, Theme } from '@/core/types'
-import { t } from '@/i18n'
+import { Terminal, type ITheme, type ILink } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
+import { WebLinksAddon } from '@xterm/addon-web-links';
+import '@xterm/xterm/css/xterm.css';
+import type { Effects } from '@/core/theme';
+import type { SyntaxStyle, Theme } from '@/core/types';
+import { t } from '@/i18n';
 
 export interface ShellProfile {
-  id: string
-  label: string
-  path: string
-  args: string[]
-  isDefault?: boolean
+  id: string;
+  label: string;
+  path: string;
+  args: string[];
+  isDefault?: boolean;
 }
 
 export interface ExternalTerminal {
-  id: string
-  label: string
-  command: string
+  id: string;
+  label: string;
+  command: string;
 }
 
 export interface TerminalSession {
-  id: string
+  id: string;
   /** Set by the user, or by the shell through an OSC title. */
-  title: string
-  shell: string
-  cwd: string
-  pid: number | null
+  title: string;
+  shell: string;
+  cwd: string;
+  pid: number | null;
   /** Exit code, once the process has finished. */
-  exitCode: number | null
-  error: string | null
-  term: Terminal
-  fit: FitAddon
-  element: HTMLDivElement
+  exitCode: number | null;
+  error: string | null;
+  term: Terminal;
+  fit: FitAddon;
+  element: HTMLDivElement;
 }
 
 export interface CreateOptions {
-  shell?: string
-  cwd?: string
-  title?: string
-  env?: Record<string, string>
+  shell?: string;
+  cwd?: string;
+  title?: string;
+  env?: Record<string, string>;
   /** A command typed in after the start. */
-  command?: string
+  command?: string;
 }
 
-type OpenLocation = (path: string, line: number, character: number) => void
+type OpenLocation = (path: string, line: number, character: number) => void;
 
 /** file:line:column in the output — relative or absolute. */
-const PATH_PATTERN = /(?:^|[\s'"(\[])((?:[A-Za-z]:)?(?:\.{0,2}\/)?[\w.@+-]+(?:\/[\w.@+-]+)*\.[A-Za-z0-9]{1,8})(?::(\d+))?(?::(\d+))?/g
+const PATH_PATTERN = /(?:^|[\s'"(\[])((?:[A-Za-z]:)?(?:\.{0,2}\/)?[\w.@+-]+(?:\/[\w.@+-]+)*\.[A-Za-z0-9]{1,8})(?::(\d+))?(?::(\d+))?/g;
 
-let counter = 0
+let counter = 0;
 
 class TerminalManager {
-  private sessions = new Map<string, TerminalSession>()
-  private order: string[] = []
-  private listeners = new Set<() => void>()
-  private version = 0
-  private started = false
-  private theme: ITheme = {}
+  private sessions = new Map<string, TerminalSession>();
+  private order: string[] = [];
+  private listeners = new Set<() => void>();
+  private version = 0;
+  private started = false;
+  private theme: ITheme = {};
   private options: Pick<Effects, 'terminalFontSize' | 'terminalCursor' | 'fontFamily' | 'terminalCopyOnSelect' | 'ligatures'> = {
     terminalFontSize: 13, terminalCursor: 'bar', fontFamily: 'monospace', terminalCopyOnSelect: false, ligatures: false,
-  }
-  activeId: string | null = null
+  };
+  activeId: string | null = null;
   /** Terminals currently starting, not yet in the list. */
-  pending = 0
-  shells: ShellProfile[] = []
-  externals: ExternalTerminal[] = []
-  openLocation: OpenLocation = () => {}
+  pending = 0;
+  shells: ShellProfile[] = [];
+  externals: ExternalTerminal[] = [];
+  openLocation: OpenLocation = () => {};
   /** Extra environment for new terminals (JAVA_HOME of the active JDK, say); project variables win. */
-  envProvider: () => Record<string, string> = () => ({})
+  envProvider: () => Record<string, string> = () => ({});
 
   /* ---------------------------------------------------------------- */
 
   subscribe(fn: () => void) {
-    this.listeners.add(fn)
-    return () => { this.listeners.delete(fn) }
+    this.listeners.add(fn);
+    return () => { this.listeners.delete(fn); };
   }
 
-  getVersion = () => this.version
+  getVersion = () => this.version;
 
   private emit() {
-    this.version++
-    for (const fn of this.listeners) fn()
+    this.version++;
+    for (const fn of this.listeners) {
+      fn();
+    }
   }
 
   list(): TerminalSession[] {
-    return this.order.map((id) => this.sessions.get(id)!).filter(Boolean)
+    return this.order.map((id) => this.sessions.get(id)!).filter(Boolean);
   }
 
   get(id: string | null) {
-    if (!id) return null
-    return this.sessions.get(id) ?? null
+    if (!id) {
+      return null;
+    }
+    return this.sessions.get(id) ?? null;
   }
 
   /** Once: subscribe to the main process's events and detect the shells. */
   async start() {
-    if (this.started) return
-    this.started = true
-    window.lumen.terminal.onData(({ id, data }) => this.sessions.get(id)?.term.write(data))
-    window.lumen.terminal.onExit(({ id, code }) => this.handleExit(id, code))
-    await this.refreshProfiles()
+    if (this.started) {
+      return;
+    }
+    this.started = true;
+    window.lumen.terminal.onData(({ id, data }) => this.sessions.get(id)?.term.write(data));
+    window.lumen.terminal.onExit(({ id, code }) => this.handleExit(id, code));
+    await this.refreshProfiles();
   }
 
   async refreshProfiles() {
     const [shells, externals] = await Promise.all([
       window.lumen.terminal.shells().catch(() => []),
       window.lumen.terminal.externalTerminals().catch(() => []),
-    ])
-    this.shells = shells
-    this.externals = externals
-    this.emit()
+    ]);
+    this.shells = shells;
+    this.externals = externals;
+    this.emit();
   }
 
   /* ---------------------------------------------------------------- *
@@ -123,15 +139,15 @@ class TerminalManager {
    * ---------------------------------------------------------------- */
 
   async create(options: CreateOptions = {}): Promise<string> {
-    this.pending++
+    this.pending++;
     try {
-      await this.start()
+      await this.start();
     } finally {
-      this.pending--
+      this.pending--;
     }
-    const id = `term-${++counter}`
-    const element = document.createElement('div')
-    element.className = 'lm-terminal h-full w-full'
+    const id = `term-${++counter}`;
+    const element = document.createElement('div');
+    element.className = 'lm-terminal h-full w-full';
     const term = new Terminal({
       allowProposedApi: true,
       cursorBlink: true,
@@ -143,17 +159,17 @@ class TerminalManager {
       theme: this.theme,
       macOptionIsMeta: true,
       rightClickSelectsWord: true,
-    })
-    const fit = new FitAddon()
-    term.loadAddon(fit)
+    });
+    const fit = new FitAddon();
+    term.loadAddon(fit);
     term.loadAddon(new WebLinksAddon((event, uri) => {
-      event.preventDefault()
-      void window.lumen.shell.openExternal(uri)
-    }))
-    term.open(element)
+      event.preventDefault();
+      void window.lumen.shell.openExternal(uri);
+    }));
+    term.open(element);
 
     const profile = this.shells.find((s) => s.id === options.shell || s.path === options.shell)
-      ?? this.shells.find((s) => s.isDefault)
+      ?? this.shells.find((s) => s.isDefault);
     const session: TerminalSession = {
       id,
       title: options.title ?? profile?.label ?? t('run.terminal'),
@@ -165,12 +181,12 @@ class TerminalManager {
       term,
       fit,
       element,
-    }
-    this.sessions.set(id, session)
-    this.order.push(id)
-    this.activeId = id
-    this.wire(session)
-    this.emit()
+    };
+    this.sessions.set(id, session);
+    this.order.push(id);
+    this.activeId = id;
+    this.wire(session);
+    this.emit();
 
     try {
       const info = await window.lumen.terminal.create(id, {
@@ -179,49 +195,59 @@ class TerminalManager {
         cols: term.cols,
         rows: term.rows,
         env: { ...this.envProvider(), ...(options.env ?? {}) },
-      })
-      session.pid = info.pid
-      session.cwd = info.cwd
-      session.shell = info.shell
-      if (!options.title) session.title = info.shell
-      this.emit()
-      if (options.command) window.setTimeout(() => void window.lumen.terminal.write(id, `${options.command}\r`), 150)
+      });
+      session.pid = info.pid;
+      session.cwd = info.cwd;
+      session.shell = info.shell;
+      if (!options.title) {
+        session.title = info.shell;
+      }
+      this.emit();
+      if (options.command) {
+        window.setTimeout(() => void window.lumen.terminal.write(id, `${options.command}\r`), 150);
+      }
     } catch (err) {
-      session.error = (err as Error).message
-      session.exitCode = -1
-      term.write(`\x1b[31m${session.error}\x1b[0m\r\n`)
-      this.emit()
+      session.error = (err as Error).message;
+      session.exitCode = -1;
+      term.write(`\x1b[31m${session.error}\x1b[0m\r\n`);
+      this.emit();
     }
-    return id
+    return id;
   }
 
   private wire(session: TerminalSession) {
-    const { term, id } = session
+    const { term, id } = session;
     term.onData((data) => {
       if (session.exitCode === null) {
-        void window.lumen.terminal.write(id, data)
-        return
+        void window.lumen.terminal.write(id, data);
+        return;
       }
       // A finished process: a key closes the tab.
-      this.close(id)
-    })
+      this.close(id);
+    });
     term.onResize(({ cols, rows }) => {
-      if (session.exitCode !== null) return
-      void window.lumen.terminal.resize(id, cols, rows)
-    })
+      if (session.exitCode !== null) {
+        return;
+      }
+      void window.lumen.terminal.resize(id, cols, rows);
+    });
     term.onTitleChange((title) => {
-      if (!title.trim()) return
-      session.title = title.trim().slice(0, 60)
-      this.emit()
-    })
+      if (!title.trim()) {
+        return;
+      }
+      session.title = title.trim().slice(0, 60);
+      this.emit();
+    });
     term.onSelectionChange(() => {
-      if (!this.options.terminalCopyOnSelect || !term.hasSelection()) return
-      void navigator.clipboard.writeText(term.getSelection()).catch(() => {})
-    })
-    term.attachCustomKeyEventHandler((event) => this.handleKey(session, event))
+      if (!this.options.terminalCopyOnSelect || !term.hasSelection()) {
+        return;
+      }
+      void navigator.clipboard.writeText(term.getSelection()).catch(() => {});
+    });
+    term.attachCustomKeyEventHandler((event) => this.handleKey(session, event));
     term.registerLinkProvider({
       provideLinks: (line, callback) => void this.fileLinks(session, line).then(callback),
-    })
+    });
   }
 
   /**
@@ -234,95 +260,121 @@ class TerminalManager {
    * the key itself (`^V`) — the default action, the paste, still happens.
    */
   private handleKey(session: TerminalSession, event: KeyboardEvent): boolean {
-    if (event.type !== 'keydown') return true
-    const mod = event.ctrlKey || event.metaKey
-    const key = event.key.toLowerCase()
-    if (mod && event.shiftKey && key === 'c') {
-      event.preventDefault()
-      if (session.term.hasSelection()) void navigator.clipboard.writeText(session.term.getSelection())
-      return false
+    if (event.type !== 'keydown') {
+      return true;
     }
-    if (mod && key === 'v') return false
+    const mod = event.ctrlKey || event.metaKey;
+    const key = event.key.toLowerCase();
+    if (mod && event.shiftKey && key === 'c') {
+      event.preventDefault();
+      if (session.term.hasSelection()) {
+        void navigator.clipboard.writeText(session.term.getSelection());
+      }
+      return false;
+    }
+    if (mod && key === 'v') {
+      return false;
+    }
     // Ctrl+C with a selection copies rather than sending SIGINT (as Windows Terminal and IntelliJ do).
     if (event.ctrlKey && !event.shiftKey && key === 'c' && session.term.hasSelection()) {
-      void navigator.clipboard.writeText(session.term.getSelection())
-      session.term.clearSelection()
-      return false
+      void navigator.clipboard.writeText(session.term.getSelection());
+      session.term.clearSelection();
+      return false;
     }
-    return true
+    return true;
   }
 
   private async fileLinks(session: TerminalSession, lineNumber: number): Promise<ILink[] | undefined> {
-    const line = session.term.buffer.active.getLine(lineNumber - 1)
-    if (!line) return undefined
-    const text = line.translateToString(true)
-    const links: ILink[] = []
+    const line = session.term.buffer.active.getLine(lineNumber - 1);
+    if (!line) {
+      return undefined;
+    }
+    const text = line.translateToString(true);
+    const links: ILink[] = [];
     for (const m of text.matchAll(PATH_PATTERN)) {
-      const raw = m[1]
-      if (/^\d+(\.\d+)+$/.test(raw)) continue
-      const absolute = raw.startsWith('/') || /^[A-Za-z]:/.test(raw)
-      const full = absolute ? raw : `${session.cwd.replace(/\/$/, '')}/${raw.replace(/^\.\//, '')}`
-      const exists = await window.lumen.fs.stat(full).then((s) => Boolean(s && !s.isDirectory)).catch(() => false)
-      if (!exists) continue
-      const start = (m.index ?? 0) + m[0].indexOf(raw) + 1
-      const suffix = `${m[2] ? `:${m[2]}` : ''}${m[3] ? `:${m[3]}` : ''}`
+      const raw = m[1];
+      if (/^\d+(\.\d+)+$/.test(raw)) {
+        continue;
+      }
+      const absolute = raw.startsWith('/') || /^[A-Za-z]:/.test(raw);
+      const full = absolute ? raw : `${session.cwd.replace(/\/$/, '')}/${raw.replace(/^\.\//, '')}`;
+      const exists = await window.lumen.fs.stat(full).then((s) => Boolean(s && !s.isDirectory)).catch(() => false);
+      if (!exists) {
+        continue;
+      }
+      const start = (m.index ?? 0) + m[0].indexOf(raw) + 1;
+      const suffix = `${m[2] ? `:${m[2]}` : ''}${m[3] ? `:${m[3]}` : ''}`;
       links.push({
         range: { start: { x: start, y: lineNumber }, end: { x: start + raw.length + suffix.length - 1, y: lineNumber } },
         text: raw + suffix,
         activate: () => this.openLocation(full, Math.max(0, Number(m[2] ?? 1) - 1), Math.max(0, Number(m[3] ?? 1) - 1)),
-      })
+      });
     }
-    return links
+    return links;
   }
 
   private handleExit(id: string, code: number) {
-    const session = this.sessions.get(id)
-    if (!session) return
-    session.exitCode = code
-    session.term.write(`\r\n\x1b[2m${t('run.terminalExited', { code: String(code) })}\x1b[0m\r\n`)
-    this.emit()
+    const session = this.sessions.get(id);
+    if (!session) {
+      return;
+    }
+    session.exitCode = code;
+    session.term.write(`\r\n\x1b[2m${t('run.terminalExited', { code: String(code) })}\x1b[0m\r\n`);
+    this.emit();
   }
 
   setActive(id: string) {
-    if (!this.sessions.has(id)) return
-    this.activeId = id
-    this.emit()
+    if (!this.sessions.has(id)) {
+      return;
+    }
+    this.activeId = id;
+    this.emit();
   }
 
   rename(id: string, title: string) {
-    const session = this.sessions.get(id)
-    if (!session || !title.trim()) return
-    session.title = title.trim()
-    this.emit()
+    const session = this.sessions.get(id);
+    if (!session || !title.trim()) {
+      return;
+    }
+    session.title = title.trim();
+    this.emit();
   }
 
   close(id: string) {
-    const session = this.sessions.get(id)
-    if (!session) return
-    void window.lumen.terminal.kill(id)
-    session.term.dispose()
-    session.element.remove()
-    this.sessions.delete(id)
-    const index = this.order.indexOf(id)
-    this.order = this.order.filter((x) => x !== id)
-    if (this.activeId === id) this.activeId = this.order[Math.min(index, this.order.length - 1)] ?? null
-    this.emit()
+    const session = this.sessions.get(id);
+    if (!session) {
+      return;
+    }
+    void window.lumen.terminal.kill(id);
+    session.term.dispose();
+    session.element.remove();
+    this.sessions.delete(id);
+    const index = this.order.indexOf(id);
+    this.order = this.order.filter((x) => x !== id);
+    if (this.activeId === id) {
+      this.activeId = this.order[Math.min(index, this.order.length - 1)] ?? null;
+    }
+    this.emit();
   }
 
   closeAll() {
-    for (const id of [...this.order]) this.close(id)
+    for (const id of [...this.order]) {
+      this.close(id);
+    }
   }
 
   /** Send text to the terminal — running a selection, for instance. */
   send(id: string, text: string) {
-    const session = this.sessions.get(id)
-    if (!session || session.exitCode !== null) return
-    void window.lumen.terminal.write(id, text)
-    session.term.focus()
+    const session = this.sessions.get(id);
+    if (!session || session.exitCode !== null) {
+      return;
+    }
+    void window.lumen.terminal.write(id, text);
+    session.term.focus();
   }
 
   clear(id: string | null) {
-    this.get(id)?.term.clear()
+    this.get(id)?.term.clear();
   }
 
   /* ---------------------------------------------------------------- *
@@ -331,60 +383,68 @@ class TerminalManager {
 
   /** Hang the element in the visible container and fit its size. */
   attach(id: string, host: HTMLElement) {
-    const session = this.sessions.get(id)
-    if (!session) return
+    const session = this.sessions.get(id);
+    if (!session) {
+      return;
+    }
     if (session.element.parentElement !== host) {
-      host.replaceChildren(session.element)
+      host.replaceChildren(session.element);
     }
     // A terminal moved into another window (a pop-out, or back) must learn of it, or its renderer keeps waiting on the old one.
-    session.term.open(session.element)
-    this.fit(id)
+    session.term.open(session.element);
+    this.fit(id);
   }
 
   fit(id: string | null) {
-    const session = this.get(id)
-    if (!session || !session.element.isConnected) return
+    const session = this.get(id);
+    if (!session || !session.element.isConnected) {
+      return;
+    }
     try {
-      session.fit.fit()
+      session.fit.fit();
     } catch {
       // The container has no size yet.
     }
   }
 
   focus(id: string | null) {
-    this.get(id)?.term.focus()
+    this.get(id)?.term.focus();
   }
 
   configure(theme: Theme, effects: Effects) {
-    this.theme = xtermTheme(theme)
+    this.theme = xtermTheme(theme);
     this.options = {
       terminalFontSize: effects.terminalFontSize,
       terminalCursor: effects.terminalCursor,
       fontFamily: effects.fontFamily,
       terminalCopyOnSelect: effects.terminalCopyOnSelect,
       ligatures: effects.ligatures,
-    }
+    };
     for (const session of this.sessions.values()) {
-      session.term.options.theme = this.theme
-      session.term.options.fontSize = effects.terminalFontSize
-      session.term.options.fontFamily = effects.fontFamily
-      session.term.options.cursorStyle = effects.terminalCursor
-      this.fit(session.id)
+      session.term.options.theme = this.theme;
+      session.term.options.fontSize = effects.terminalFontSize;
+      session.term.options.fontFamily = effects.fontFamily;
+      session.term.options.cursorStyle = effects.terminalCursor;
+      this.fit(session.id);
     }
   }
 }
 
 function color(value: string | SyntaxStyle | undefined, fallback: string): string {
-  if (!value) return fallback
-  if (typeof value === 'string') return value
-  return value.color
+  if (!value) {
+    return fallback;
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  return value.color;
 }
 
 /** The Lumen theme → xterm colours: the base areas from the interface, ANSI from the signal and syntax colours. */
 export function xtermTheme(theme: Theme): ITheme {
-  const ui = theme.ui
-  const s = theme.syntax
-  const dark = theme.type === 'dark'
+  const ui = theme.ui;
+  const s = theme.syntax;
+  const dark = theme.type === 'dark';
   return {
     background: ui.bgElevated,
     foreground: ui.text,
@@ -407,7 +467,7 @@ export function xtermTheme(theme: Theme): ITheme {
     brightMagenta: color(s.keyword, '#c678dd'),
     brightCyan: color(s.type, '#56b6c2'),
     brightWhite: ui.text,
-  }
+  };
 }
 
-export const terminals = new TerminalManager()
+export const terminals = new TerminalManager();

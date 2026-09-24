@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Recent projects on the taskbar or dock icon.
  *
@@ -7,49 +17,57 @@
  * and opens the folder an entry names.
  */
 
-import { useStore } from '@/state/store'
-import { subscribeLanguage, t } from '@/i18n'
-import type { RecentProject } from '@/state/store'
+import { useStore } from '@/state/store';
+import { subscribeLanguage, t } from '@/i18n';
+import type { RecentProject } from '@/state/store';
 
-let started = false
+let started = false;
 /** The list last sent — which avoids needless system calls. */
-let sent = ''
+let sent = '';
 
 function push() {
-  const state = useStore.getState()
-  const list = state.recentProjects.map((project) => ({ path: project.path, name: project.name }))
-  const payload = JSON.stringify(list)
-  if (payload === sent) return
-  sent = payload
-  void window.lumen.app.setRecentProjects(list, { category: t('explorer.recent') }).catch(() => {})
+  const state = useStore.getState();
+  const list = state.recentProjects.map((project) => ({ path: project.path, name: project.name }));
+  const payload = JSON.stringify(list);
+  if (payload === sent) {
+    return;
+  }
+  sent = payload;
+  void window.lumen.app.setRecentProjects(list, { category: t('explorer.recent') }).catch(() => {});
 }
 
 async function open(folder: string) {
-  const state = useStore.getState()
-  if (!folder || state.workspace === folder) return
-  const exists = await window.lumen.fs.exists(folder).catch(() => false)
-  if (!exists) {
-    state.notify(t('notify.projectMissing', { path: folder }), 'warning')
-    state.removeRecent(folder)
-    return
+  const state = useStore.getState();
+  if (!folder || state.workspace === folder) {
+    return;
   }
-  await state.setWorkspace(folder)
+  const exists = await window.lumen.fs.exists(folder).catch(() => false);
+  if (!exists) {
+    state.notify(t('notify.projectMissing', { path: folder }), 'warning');
+    state.removeRecent(folder);
+    return;
+  }
+  await state.setWorkspace(folder);
 }
 
 export function init() {
-  if (started) return
-  started = true
+  if (started) {
+    return;
+  }
+  started = true;
 
-  window.lumen.app.onOpenFolder((folder) => void open(folder))
+  window.lumen.app.onOpenFolder((folder) => void open(folder));
   void window.lumen.app.startupFolder().then((folder) => {
-    if (!folder) return
-    return open(folder)
-  }).catch(() => {})
+    if (!folder) {
+      return;
+    }
+    return open(folder);
+  }).catch(() => {});
 
-  push()
-  useStore.subscribe(push)
+  push();
+  useStore.subscribe(push);
   // Language change: the jump list's heading is translated.
-  subscribeLanguage(() => { sent = ''; push() })
+  subscribeLanguage(() => { sent = ''; push(); });
 }
 
-export type { RecentProject }
+export type { RecentProject };

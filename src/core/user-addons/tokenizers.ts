@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Tokenizers that ship with Lumen, each under a name.
  *
@@ -18,28 +28,32 @@
  * costing a language its colours.
  */
 
-import type { CustomTokenizer, LanguageSpec } from '@/core/types'
+import type { CustomTokenizer, LanguageSpec } from '@/core/types';
 
 /** The spec is the language's own, already compiled — `jsx` wraps it. */
-export type TokenizerFactory = (spec: LanguageSpec) => CustomTokenizer<never>
+export type TokenizerFactory = (spec: LanguageSpec) => CustomTokenizer<never>;
 
-const factories = new Map<string, TokenizerFactory>()
+const factories = new Map<string, TokenizerFactory>();
 
 export function registerTokenizers(entries: Record<string, TokenizerFactory>) {
-  for (const [name, factory] of Object.entries(entries)) factories.set(name, factory)
+  for (const [name, factory] of Object.entries(entries)) {
+    factories.set(name, factory);
+  }
 }
 
 /** The names an extension may use, sorted — for validation and the studio. */
 export function tokenizerNames(): string[] {
-  return [...factories.keys()].sort()
+  return [...factories.keys()].sort();
 }
 
 export function isTokenizerName(name: string): boolean {
-  return factories.has(name)
+  return factories.has(name);
 }
 
 /** `undefined` for an unknown name; the caller keeps the data-driven syntax. */
 export function resolveTokenizer(name: string | undefined, spec: LanguageSpec) {
-  if (!name) return undefined
-  return factories.get(name)?.(spec)
+  if (!name) {
+    return undefined;
+  }
+  return factories.get(name)?.(spec);
 }

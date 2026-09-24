@@ -219,7 +219,7 @@
         {
           "label": "enum",
           "detail": "Enum",
-          "body": "enum class ${Name}(val ${text}: String) {\n    ${EINS}(\"${eins}\"),\n    ${ZWEI}(\"${zwei}\");$0\n}"
+          "body": "enum class ${Name}(val ${text}: String) {\n    ${EINS}(\"${one}\"),\n    ${ZWEI}(\"${two}\");$0\n}"
         },
         {
           "label": "ext",

@@ -1,46 +1,46 @@
 # ChatGPT Codex
 
-OpenAI Codex als Chat-Agent in Lumen. Jede Nachricht startet die installierte
-Codex CLI (`codex exec`), deine Anmeldung, `AGENTS.md` und `~/.codex/config.toml`
-gelten.
+OpenAI Codex as a chat agent in Lumen. Each message starts the installed
+Codex CLI (`codex exec`); your login, `AGENTS.md` and `~/.codex/config.toml`
+apply.
 
 ## Chat
 
-- **Modi** sind Sandbox-Stufen: *Im Projekt* (Standard), *Nur lesen* und — nur
-  wenn freigeschaltet — *Voller Zugriff*
-- **Werkzeuge** mit Vorschau: Befehle mit ihrer Ausgabe, geänderte Dateien zum
-  Öffnen, MCP-Aufrufe, Websuchen
-- **Plan**: die To-do-Liste von Codex als Karte mit Fortschritt
-- **Tokens und Dauer** je Antwort
-- **Mehrere Chats**, **frühere Sitzungen fortsetzen** (aus `~/.codex/sessions`)
-- **Modelle** aus `~/.codex/models_cache.json` oder von `codex app-server`
-  (`model/list`) — ↻ neben der Auswahl fragt die CLI neu
-- **Denkaufwand je Modell** im Chat wählen — nur die Stufen, die das Modell
-  kann; die Wahl merkt sich Lumen pro Modell
-- **Modelle** direkt im Chat umschalten, **Bilder** einfügen oder anhängen,
-  `@` für Dateien, geöffnete Datei und Auswahl mitsenden
+- **Modes** are sandbox levels: *In project* (default), *Read only* and — only
+  when enabled — *Full access*
+- **Tools** with preview: commands with their output, changed files to
+  open, MCP calls, web searches
+- **Plan**: Codex's to-do list as a card with progress
+- **Tokens and duration** per answer
+- **Multiple chats**, **resume earlier sessions** (from `~/.codex/sessions`)
+- **Models** from `~/.codex/models_cache.json` or from `codex app-server`
+  (`model/list`) — ↻ next to the picker asks the CLI again
+- **Reasoning effort per model** chosen in the chat — only the levels the model
+  supports; Lumen remembers the choice per model
+- Switch **models** directly in the chat, paste or attach **images**,
+  `@` for files, send the open file and selection along
 
-## Einstellungen
+## Settings
 
-*Einstellungen → Erweiterungen → ChatGPT Codex*: Pfad zu `codex`, Profil,
-Standardmodell, Quelle der Modellliste, weitere Modelle, Standard-Denkaufwand,
-Zusammenfassung des Denkens, Ausführlichkeit, Gedankengang ausblenden, Websuche, Netzwerk in der Sandbox, Freigaberegel,
-voller Zugriff, weitere beschreibbare Ordner, Git-Prüfung, weitere
-Konfiguration (`-c key=value`) und Umgebungsvariablen.
+*Settings → Extensions → ChatGPT Codex*: path to `codex`, profile,
+default model, model list source, more models, default reasoning effort,
+reasoning summary, verbosity, hide reasoning, web search, network in the sandbox, approval policy,
+full access, more writable folders, Git check, more
+configuration (`-c key=value`) and environment variables.
 
-## Projekt
+## Project
 
-- **Projektart** `ChatGPT Codex` — erkannt an `AGENTS.md` oder `.codex/`, mit den
-  Aufgaben *Codex starten*, *Letzte Sitzung fortsetzen*, *Anmelden*,
-  *MCP-Server anzeigen* und *Codex installieren*
-- **Vorlage** `AGENTS.md` mit Befehlen und Konventionen
+- **Project type** `ChatGPT Codex` — detected by `AGENTS.md` or `.codex/`, with the
+  tasks *Start Codex*, *Resume last session*, *Sign in*,
+  *Show MCP servers* and *Install Codex*
+- **Template** `AGENTS.md` with commands and conventions
 
-## Voraussetzung
+## Requirements
 
 ```sh
 npm install -g @openai/codex
 codex login
 ```
 
-Die Erweiterung bringt Programmcode mit, der beim Installieren bestätigt werden
-muss. Er startet nur das Programm, das du installiert hast.
+The extension ships executable code that must be confirmed on installation.
+It only starts the program you have installed.

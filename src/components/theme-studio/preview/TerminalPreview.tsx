@@ -1,11 +1,21 @@
-import type { ReactNode } from 'react'
-import { useT } from '@/i18n'
-import { xtermTheme } from '@/lib/terminals'
-import type { Theme } from '@/core/types'
-import { uses, type ColorKey } from '../keys'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
 
-type Ansi = 'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'white'
-const ANSI: Ansi[] = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white']
+import type { ReactNode } from 'react';
+import { useT } from '@/i18n';
+import { xtermTheme } from '@/lib/terminals';
+import type { Theme } from '@/core/types';
+import { uses, type ColorKey } from '../keys';
+
+type Ansi = 'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'white';
+const ANSI: Ansi[] = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'];
 
 /** Where the theme's ANSI colour comes from (see `xtermTheme`). */
 const SOURCE: Record<Ansi, ColorKey | null> = {
@@ -17,23 +27,23 @@ const SOURCE: Record<Ansi, ColorKey | null> = {
   magenta: 'syntax:keyword',
   cyan: 'syntax:type',
   white: 'ui:textMuted',
-}
+};
 
-const brightKey = (name: Ansi) => `bright${name[0].toUpperCase()}${name.slice(1)}` as `bright${Capitalize<Ansi>}`
+const brightKey = (name: Ansi) => `bright${name[0].toUpperCase()}${name.slice(1)}` as `bright${Capitalize<Ansi>}`;
 
 /** A terminal in the ANSI colours the theme hands to xterm.js. */
-export function TerminalPreview({ theme }: { theme: Theme }) {
-  const t = useT()
-  const x = xtermTheme(theme)
-  const color = (name: Ansi, bright = false) => (bright ? x[brightKey(name)] : x[name]) ?? x.foreground ?? theme.ui.text
+export function TerminalPreview({ theme }: { theme: Theme; }) {
+  const t = useT();
+  const x = xtermTheme(theme);
+  const color = (name: Ansi, bright = false) => (bright ? x[brightKey(name)] : x[name]) ?? x.foreground ?? theme.ui.text;
   const paint = (name: Ansi, text: ReactNode, bright = false, bold = false) => {
-    const source = SOURCE[name]
+    const source = SOURCE[name];
     return (
       <span {...(source ? uses(source) : {})} style={{ color: color(name, bright), fontWeight: bold ? 700 : undefined }}>
         {text}
       </span>
-    )
-  }
+    );
+  };
 
   return (
     <div
@@ -71,7 +81,7 @@ export function TerminalPreview({ theme }: { theme: Theme }) {
       {/* Farbtabelle: normal und hell */}
       <div {...uses('ui:border')} className="grid shrink-0 grid-cols-8 gap-1 border-t p-2" style={{ borderColor: theme.ui.border }}>
         {[false, true].flatMap((bright) => ANSI.map((name) => {
-          const source = SOURCE[name]
+          const source = SOURCE[name];
           return (
             <div
               key={`${name}-${bright}`}
@@ -84,9 +94,9 @@ export function TerminalPreview({ theme }: { theme: Theme }) {
                 {bright ? name.slice(0, 3).toUpperCase() : name.slice(0, 3)}
               </span>
             </div>
-          )
+          );
         }))}
       </div>
     </div>
-  )
+  );
 }

@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Diffs and patches — what `git diff` and `git show` print, and `.diff` /
  * `.patch` files. Extensions open their diffs in this language
@@ -8,7 +18,7 @@
  * and file headers in their own colours.
  */
 
-import type { Addon, CustomTokenizer, TokenKind } from '@/core/types'
+import type { Addon, CustomTokenizer, TokenKind } from '@/core/types';
 
 /** Line starts and the colour of the whole line. */
 const LINE_KINDS: [RegExp, TokenKind][] = [
@@ -20,21 +30,21 @@ const LINE_KINDS: [RegExp, TokenKind][] = [
   [/^\+/, 'string'],
   [/^-/, 'invalid'],
   [/^\\ No newline/, 'comment'],
-]
+];
 
 const diffTokenizer: CustomTokenizer<null> = {
   startState: () => null,
   token(stream) {
     if (!stream.sol()) {
-      stream.skipToEnd()
-      return null
+      stream.skipToEnd();
+      return null;
     }
-    const line = stream.string
-    const hit = LINE_KINDS.find(([pattern]) => pattern.test(line))
-    stream.skipToEnd()
-    return hit?.[1] ?? null
+    const line = stream.string;
+    const hit = LINE_KINDS.find(([pattern]) => pattern.test(line));
+    stream.skipToEnd();
+    return hit?.[1] ?? null;
   },
-}
+};
 
 export const diffAddon: Addon = {
   id: 'lang.diff',
@@ -52,4 +62,4 @@ export const diffAddon: Addon = {
     color: '#5ecf8f',
     tokenizer: diffTokenizer as never,
   }],
-}
+};

@@ -365,7 +365,7 @@
             "meson.build",
             ".git"
           ],
-          "install": "Arch: pacman -S clang · Debian/Ubuntu: apt install clangd · macOS: brew install llvm (oder Xcode CLT)",
+          "install": "Arch: pacman -S clang · Debian/Ubuntu: apt install clangd · macOS: brew install llvm (or Xcode CLT)",
           "package": {
             "type": "github",
             "repo": "clangd/clangd",

@@ -1,15 +1,25 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /** The pull-request view: open pull requests with filters, checks and actions. */
 
-import { gate, labelText, repoLine } from './common.js'
-import { relativeTime } from '../i18n.js'
+import { gate, labelText, repoLine } from './common.js';
+import { relativeTime } from '../i18n.js';
 
-const CHECK_TONE = { success: 'success', failure: 'danger', pending: 'warning' }
-const CHECK_ICON = { success: 'circle-check', failure: 'circle-x', pending: 'circle-dot' }
+const CHECK_TONE = { success: 'success', failure: 'danger', pending: 'warning' };
+const CHECK_ICON = { success: 'circle-check', failure: 'circle-x', pending: 'circle-dot' };
 
 export function createPullsView({ ctx, store, actions, t }) {
   function row(pull) {
-    const check = store.state.pulls.checks[pull.number]
-    const payload = pull.number
+    const check = store.state.pulls.checks[pull.number];
+    const payload = pull.number;
     return {
       type: 'item',
       id: `pull:${pull.number}`,
@@ -35,18 +45,20 @@ export function createPullsView({ ctx, store, actions, t }) {
         { action: 'comment', title: t('pull.commentAction'), payload },
         { action: 'merge', title: t('pull.merge'), payload, danger: true },
       ],
-    }
+    };
   }
 
   function render() {
-    const blocked = gate(store, 'pulls', t)
+    const blocked = gate(store, 'pulls', t);
     const toolbar = [
       { action: 'create', title: t('pull.createTitle'), icon: 'plus' },
       { action: 'refresh', title: t('action.refresh'), icon: 'refresh-cw' },
-    ]
-    if (blocked) return { title: t('view.pulls'), toolbar, nodes: blocked }
-    const pulls = store.visiblePulls()
-    const { filter, loading, loaded } = store.state.pulls
+    ];
+    if (blocked) {
+      return { title: t('view.pulls'), toolbar, nodes: blocked };
+    }
+    const pulls = store.visiblePulls();
+    const { filter, loading, loaded } = store.state.pulls;
     return {
       title: t('view.pulls'),
       badge: store.state.pulls.items.length || undefined,
@@ -67,9 +79,12 @@ export function createPullsView({ ctx, store, actions, t }) {
         ...(loading ? [{ type: 'progress', label: t('busy.loading') }] : []),
         ...pulls.map(row),
         ...(!pulls.length && loaded && !loading ? [{ type: 'empty', title: t('empty.noPulls'), icon: 'git-pull-request' }] : []),
-        { type: 'buttons', buttons: [{ action: 'create', title: t('pull.createTitle'), icon: 'git-pull-request-arrow', variant: 'secondary' }] },
+        {
+          type: 'buttons',
+          buttons: [{ action: 'create', title: t('pull.createTitle'), icon: 'git-pull-request-arrow', variant: 'secondary' }],
+        },
       ],
-    }
+    };
   }
 
   const handlers = {
@@ -84,12 +99,14 @@ export function createPullsView({ ctx, store, actions, t }) {
     requestChanges: (number) => actions.reviewPull(number, 'REQUEST_CHANGES'),
     comment: (number) => actions.comment(number),
     merge: (number) => actions.mergePull(number),
-  }
+  };
 
   async function onAction(event) {
-    const handler = handlers[event.action]
-    if (handler) await handler(event.payload, event.inputs ?? {})
+    const handler = handlers[event.action];
+    if (handler) {
+      await handler(event.payload, event.inputs ?? {});
+    }
   }
 
-  return { render, onAction }
+  return { render, onAction };
 }

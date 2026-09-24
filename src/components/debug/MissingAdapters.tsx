@@ -1,14 +1,26 @@
-import { Download, ExternalLink, RefreshCw, ZapOff } from 'lucide-react'
-import { useStore } from '@/state/store'
-import { useT } from '@/i18n'
-import { debug } from '@/core/debug/manager'
-import { Button } from '../ui'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import { Download, ExternalLink, RefreshCw, ZapOff } from 'lucide-react';
+import { useStore } from '@/state/store';
+import { useT } from '@/i18n';
+import { debug } from '@/core/debug/manager';
+import { Button } from '../ui';
 
 /** Notes about missing debug adapters — installing happens only on a click, in the terminal. */
 export function MissingAdapters() {
-  const t = useT()
-  const missing = debug.missing
-  if (!missing.length) return null
+  const t = useT();
+  const missing = debug.missing;
+  if (!missing.length) {
+    return null;
+  }
   return (
     <div className="lm-anim-fade shrink-0 border-b border-edge bg-surface px-3 py-2">
       <div className="mb-1 flex items-center gap-2">
@@ -47,5 +59,5 @@ export function MissingAdapters() {
         ))}
       </div>
     </div>
-  )
+  );
 }

@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The add-on directory.
  *
@@ -5,23 +15,24 @@
  * Nothing more happens here.
  */
 
-import type { Addon } from '@/core/types'
+import type { Addon } from '@/core/types';
+import { t } from '@/i18n';
 
 // Side effect: registers the named tokenizers, so that `"tokenizer":
 // "markdown"` and its like resolve for extensions. Anything that compiles
 // add-on data outside the app imports the same module directly.
-import './lib/builtin-tokenizers'
+import './lib/builtin-tokenizers';
 
 // Built in — always active, cannot be switched off.
-import { themesAddon } from './builtin/themes'
-import { iconsAddon } from './builtin/icons'
-import { novusAddon } from './builtin/novus'
-import { javaAddon } from './builtin/java'
-import { htmlAddon } from './builtin/html'
-import { cssAddon } from './builtin/css'
-import { javascriptAddon } from './builtin/javascript'
-import { typescriptAddon } from './builtin/typescript'
-import { diffAddon } from './builtin/diff'
+import { themesAddon } from './builtin/themes';
+import { iconsAddon } from './builtin/icons';
+import { novusAddon } from './builtin/novus';
+import { javaAddon } from './builtin/java';
+import { htmlAddon } from './builtin/html';
+import { cssAddon } from './builtin/css';
+import { javascriptAddon } from './builtin/javascript';
+import { typescriptAddon } from './builtin/typescript';
+import { diffAddon } from './builtin/diff';
 
 // Bundled, active by default, can be switched off at any time — none at the
 // moment. Everything that used to stand here — the languages, the project
@@ -41,20 +52,22 @@ export const BUILTIN_ADDONS: Addon[] = [
   javascriptAddon,
   typescriptAddon,
   diffAddon,
-]
+];
 
-export const BUNDLED_ADDONS: Addon[] = []
+export const BUNDLED_ADDONS: Addon[] = [];
 
-export const ALL_ADDONS: Addon[] = [...BUILTIN_ADDONS, ...BUNDLED_ADDONS]
+export const ALL_ADDONS: Addon[] = [...BUILTIN_ADDONS, ...BUNDLED_ADDONS];
 
 /** Active on the first start. */
-export const DEFAULT_ENABLED = BUNDLED_ADDONS.map((a) => a.id)
+export const DEFAULT_ENABLED = BUNDLED_ADDONS.map((a) => a.id);
 
 /** The fallback when no language fits. */
 export const PLAIN_TEXT = {
   id: 'plaintext',
-  name: 'Klartext',
+  get name() {
+    return t('addons.plainText');
+  },
   extensions: [],
   icon: '·',
   color: '#8b939f',
-} as const
+} as const;

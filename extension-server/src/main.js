@@ -1,4 +1,14 @@
 #!/usr/bin/env node
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The entry point of the extension server.
  *
@@ -18,65 +28,90 @@
  * somebody starts quickly to try things out should never be open to strangers.
  */
 
-import path from 'node:path'
-import process from 'node:process'
-import { Store } from './store.js'
-import { createServer } from './server.js'
+import path from 'node:path';
+import process from 'node:process';
+import { Store } from './store.js';
+import { createServer } from './server.js';
 
-const HELP = `Lumen-Erweiterungsserver
+const HELP = `Lumen extension server
 
-  lumen-extension-server [Optionen]
+  lumen-extension-server [options]
 
-  --port <n>           Port (Standard 8730)
-  --host <adresse>     Lauschadresse (Standard 0.0.0.0)
-  --data <ordner>      Datenordner (Standard ./data)
-  --name <text>        Anzeigename auf den Projektseiten
-  --url <adresse>      Öffentliche Adresse, wie Lumen den Server erreicht
-  --token <geheim>     Token zum Veröffentlichen (mehrfach erlaubt)
-  --allow-overwrite    Bereits veröffentlichte Versionen dürfen ersetzt werden
-  --quiet              Keine Zugriffszeilen ausgeben
-  -h, --help           Diese Hilfe
-`
+  --port <n>           Port (default 8730)
+  --host <address>     Address to listen on (default 0.0.0.0)
+  --data <folder>      Data folder (default ./data)
+  --name <text>        Display name on the project pages
+  --url <address>      Public address at which Lumen reaches the server
+  --token <secret>     Token for publishing (may be repeated)
+  --allow-overwrite    Published versions may be replaced
+  --quiet              Print no access lines
+  -h, --help           Show this help
+`;
 
 function parseArgs(argv) {
   const options = {
     port: Number(process.env.LUMEN_EXT_PORT ?? 8730),
     host: process.env.LUMEN_EXT_HOST ?? '0.0.0.0',
     data: process.env.LUMEN_EXT_DATA ?? './data',
-    name: process.env.LUMEN_EXT_NAME ?? 'Lumen-Erweiterungen',
+    name: process.env.LUMEN_EXT_NAME ?? 'Lumen Extensions',
     url: process.env.LUMEN_EXT_URL ?? '',
     tokens: (process.env.LUMEN_EXT_TOKENS ?? '').split(',').map((token) => token.trim()).filter(Boolean),
     allowOverwrite: process.env.LUMEN_EXT_ALLOW_OVERWRITE === '1',
     quiet: false,
-  }
+  };
   for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i]
+    const arg = argv[i];
     if (arg === '--help' || arg === '-h') {
-      process.stdout.write(HELP)
-      process.exit(0)
+      process.stdout.write(HELP);
+      process.exit(0);
     }
-    if (arg === '--port') options.port = Number(argv[++i])
-    if (arg === '--host') options.host = argv[++i]
-    if (arg === '--data') options.data = argv[++i]
-    if (arg === '--name') options.name = argv[++i]
-    if (arg === '--url') options.url = argv[++i]
-    if (arg === '--token') options.tokens.push(argv[++i])
-    if (arg === '--allow-overwrite') options.allowOverwrite = true
-    if (arg === '--quiet') options.quiet = true
+    if (arg === '--port') {
+      options.port = Number(argv[++i]);
+    }
+    if (arg === '--host') {
+      options.host = argv[++i];
+    }
+    if (arg === '--data') {
+      options.data = argv[++i];
+    }
+    if (arg === '--name') {
+      options.name = argv[++i];
+    }
+    if (arg === '--url') {
+      options.url = argv[++i];
+    }
+    if (arg === '--token') {
+      options.tokens.push(argv[++i]);
+    }
+    if (arg === '--allow-overwrite') {
+      options.allowOverwrite = true;
+    }
+    if (arg === '--quiet') {
+      options.quiet = true;
+    }
   }
   if (!Number.isInteger(options.port) || options.port < 1 || options.port > 65535) {
-    throw new Error(`Invalid port: ${options.port}`)
+    throw new Error(`Invalid port: ${options.port}`);
   }
-  return options
+  return options;
+}
+
+/** One line saying whether publishing is possible and how. */
+function writeStatus(options) {
+  if (!options.tokens.length) {
+    return '  Writing     disabled — no token set up (--token)';
+  }
+  const overwrite = options.allowOverwrite ? ' (overwriting allowed)' : '';
+  return `  Writing     ${options.tokens.length} token(s) set up${overwrite}`;
 }
 
 async function main() {
-  const options = parseArgs(process.argv.slice(2))
-  const log = options.quiet ? () => {} : (line) => process.stdout.write(`${line}\n`)
+  const options = parseArgs(process.argv.slice(2));
+  const log = options.quiet ? () => {} : (line) => process.stdout.write(`${line}\n`);
 
-  const root = path.resolve(process.cwd(), options.data)
-  const store = new Store(root)
-  const count = await store.load()
+  const root = path.resolve(process.cwd(), options.data);
+  const store = new Store(root);
+  const count = await store.load();
 
   const config = {
     name: options.name,
@@ -84,34 +119,32 @@ async function main() {
     tokens: options.tokens,
     allowOverwrite: options.allowOverwrite,
     log,
-  }
+  };
 
-  const server = createServer({ store, config })
+  const server = createServer({ store, config });
   await new Promise((resolve, reject) => {
-    server.once('error', reject)
-    server.listen(options.port, options.host, resolve)
-  })
+    server.once('error', reject);
+    server.listen(options.port, options.host, resolve);
+  });
 
-  log(`Lumen-Erweiterungsserver — ${config.name}`)
-  log(`  Daten       ${root}`)
-  log(`  Erreichbar  ${config.publicUrl}`)
-  log(`  Lauscht     ${options.host}:${options.port}`)
-  log(`  Bestand     ${count} ${count === 1 ? 'Erweiterung' : 'Erweiterungen'}`)
-  log(options.tokens.length
-    ? `  Schreiben   ${options.tokens.length} Token eingerichtet${options.allowOverwrite ? ' (Überschreiben erlaubt)' : ''}`
-    : '  Schreiben   abgeschaltet — kein Token eingerichtet (--token)')
+  log(`Lumen extension server — ${config.name}`);
+  log(`  Data        ${root}`);
+  log(`  Reachable   ${config.publicUrl}`);
+  log(`  Listening   ${options.host}:${options.port}`);
+  log(`  Stock       ${count} ${count === 1 ? 'extension' : 'extensions'}`);
+  log(writeStatus(options));
 
   const shutdown = () => {
-    log('\nServer wird beendet…')
-    server.close(() => process.exit(0))
+    log('\nShutting down…');
+    server.close(() => process.exit(0));
     // Do not wait for ever on hanging connections.
-    setTimeout(() => process.exit(0), 3000).unref()
-  }
-  process.on('SIGINT', shutdown)
-  process.on('SIGTERM', shutdown)
+    setTimeout(() => process.exit(0), 3000).unref();
+  };
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 }
 
 main().catch((err) => {
-  process.stderr.write(`✗ ${err.message}\n`)
-  process.exit(1)
-})
+  process.stderr.write(`✗ ${err.message}\n`);
+  process.exit(1);
+});

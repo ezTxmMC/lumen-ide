@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Minecraft Development — the window part of the extension.
  *
@@ -7,67 +17,67 @@
  * build and run tasks, snippets, and commands to refresh the versions.
  */
 
-import type { RendererApi, RendererAddon } from '../../src/core/extensions/renderer-api'
-import type { AddonContext, Command } from '../../src/core/types'
-import { MINECRAFT_KINDS } from './src/kinds'
-import { lumen, setLumen, t, useStore, versions } from './src/lumen'
-import { MINECRAFT_SNIPPETS } from './src/snippets'
-import { TEMPLATES } from './src/templates'
+import type { RendererApi, RendererAddon } from '../../src/core/extensions/renderer-api';
+import type { AddonContext, Command } from '../../src/core/types';
+import { MINECRAFT_KINDS } from './src/kinds';
+import { lumen, setLumen, t, useStore, versions } from './src/lumen';
+import { MINECRAFT_SNIPPETS } from './src/snippets';
+import { TEMPLATES } from './src/templates';
 
 function updateCommand(ctx: AddonContext): Command {
-  let running = false
+  let running = false;
   return {
     id: 'minecraft.updateVersions',
-    get title() { return t('command.updateVersions') },
+    get title() { return t('command.updateVersions'); },
     category: 'Minecraft',
     async run() {
-      if (running) return
-      running = true
-      ctx.notify(t('toast.updating'), 'info')
+      if (running) { return; }
+      running = true;
+      ctx.notify(t('toast.updating'), 'info');
       try {
-        const failed = await versions().refresh()
+        const failed = await versions().refresh();
         if (failed.length) {
-          console.warn('[minecraft] versions partly not loaded:', failed)
-          ctx.notify(t('toast.partial', { count: failed.length, first: failed[0] }), 'warning')
-          return
+          console.warn('[minecraft] versions partly not loaded:', failed);
+          ctx.notify(t('toast.partial', { count: failed.length, first: failed[0] }), 'warning');
+          return;
         }
-        ctx.notify(t('toast.updated'), 'success')
+        ctx.notify(t('toast.updated'), 'success');
       } catch (err) {
-        ctx.notify(t('toast.failed', { message: (err as Error).message }), 'error')
+        ctx.notify(t('toast.failed', { message: (err as Error).message }), 'error');
       } finally {
-        running = false
+        running = false;
       }
     },
-  }
+  };
 }
 
 function clearCommand(ctx: AddonContext): Command {
   return {
     id: 'minecraft.clearVersions',
-    get title() { return t('command.clearVersions') },
+    get title() { return t('command.clearVersions'); },
     category: 'Minecraft',
     run() {
-      versions().clear()
-      ctx.notify(t('toast.cleared'), 'success')
+      versions().clear();
+      ctx.notify(t('toast.cleared'), 'success');
     },
-  }
+  };
 }
 
 function insertSnippetCommand(ctx: AddonContext): Command {
   return {
     id: 'minecraft.insertSnippet',
-    get title() { return t('command.insertSnippet') },
+    get title() { return t('command.insertSnippet'); },
     category: 'Minecraft',
     scope: 'editor',
     run() {
-      const api = lumen()
-      const language = api.editor.languageId()
+      const api = lumen();
+      const language = api.editor.languageId();
       if (!language) {
-        ctx.notify(t('toast.noEditor'), 'warning')
-        return
+        ctx.notify(t('toast.noEditor'), 'warning');
+        return;
       }
-      const matching = MINECRAFT_SNIPPETS.filter((s) => s.language === language)
-      const list = matching.length ? matching : MINECRAFT_SNIPPETS
+      const matching = MINECRAFT_SNIPPETS.filter((s) => s.language === language);
+      const list = matching.length ? matching : MINECRAFT_SNIPPETS;
       api.ui.openForm({
         title: t('command.insertSnippet'),
         description: t('snippet.description'),
@@ -85,30 +95,30 @@ function insertSnippetCommand(ctx: AddonContext): Command {
           })),
         }],
         onSubmit(values) {
-          const chosen = list[Number(values.snippet)]
-          if (!chosen) return t('snippet.missing')
-          if (!api.editor.insertSnippet(chosen.body)) return t('toast.noEditor')
+          const chosen = list[Number(values.snippet)];
+          if (!chosen) { return t('snippet.missing'); }
+          if (!api.editor.insertSnippet(chosen.body)) { return t('toast.noEditor'); }
         },
-      })
+      });
     },
-  }
+  };
 }
 
 export function addon(api: RendererApi): RendererAddon {
-  setLumen(api)
+  setLumen(api);
   return {
-    get description() { return t('addon.description') },
+    get description() { return t('addon.description'); },
     icon: 'MC',
     category: 'tool',
     projectKinds: MINECRAFT_KINDS,
     projectTemplates: TEMPLATES,
     snippets: MINECRAFT_SNIPPETS.map(({ language, platform, ...snippet }) => ({ ...snippet, languageId: language, detail: `${platform} · ${snippet.detail ?? ''}` })),
     activate(ctx) {
-      useStore(ctx.storage)
-      ctx.registerCommand(updateCommand(ctx))
-      ctx.registerCommand(clearCommand(ctx))
-      ctx.registerCommand(insertSnippetCommand(ctx))
-      return () => useStore(null)
+      useStore(ctx.storage);
+      ctx.registerCommand(updateCommand(ctx));
+      ctx.registerCommand(clearCommand(ctx));
+      ctx.registerCommand(insertSnippetCommand(ctx));
+      return () => useStore(null);
     },
-  }
+  };
 }

@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Installing with the questions that belong to it.
  *
@@ -7,11 +17,11 @@
  * update whose code has changed — only unchanged code carries over.
  */
 
-import { useStore } from '@/state/store'
-import { t } from '@/i18n'
-import { CodeApprovalRequired, extensions } from './manager'
-import { hostOf } from './trust'
-import type { ExtensionManifest } from './types'
+import { useStore } from '@/state/store';
+import { t } from '@/i18n';
+import { CodeApprovalRequired, extensions } from './manager';
+import { hostOf } from './trust';
+import type { ExtensionManifest } from './types';
 
 /**
  * Fetch and install; when the code needs approval, ask, then finish.
@@ -26,16 +36,20 @@ export async function installExtension(
   done: (manifest: ExtensionManifest) => void,
 ): Promise<void> {
   const finished = (manifest: ExtensionManifest) => {
-    done(manifest)
+    done(manifest);
     // A new agent should not have to be hunted for: show its chat.
-    const agent = manifest.agents?.[0]
-    if (agent) useStore.getState().showSidebar(`agent:${manifest.id}/${agent.id}`)
-  }
+    const agent = manifest.agents?.[0];
+    if (agent) {
+      useStore.getState().showSidebar(`agent:${manifest.id}/${agent.id}`);
+    }
+  };
   try {
-    finished(await extensions.installFrom(server, id, version))
+    finished(await extensions.installFrom(server, id, version));
   } catch (err) {
-    if (!(err instanceof CodeApprovalRequired)) throw err
-    const { manifest, hash } = err
+    if (!(err instanceof CodeApprovalRequired)) {
+      throw err;
+    }
+    const { manifest, hash } = err;
     useStore.getState().openForm({
       title: t('extensions.codeTitle'),
       description: t('extensions.codeBody', {
@@ -46,9 +60,9 @@ export async function installExtension(
       submitLabel: t('extensions.codeApprove'),
       fields: [],
       onSubmit: async () => {
-        await extensions.install(manifest, server, { approveCode: true })
-        finished(manifest)
+        await extensions.install(manifest, server, { approveCode: true });
+        finished(manifest);
       },
-    })
+    });
   }
 }

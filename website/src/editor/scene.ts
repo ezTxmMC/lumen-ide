@@ -1,43 +1,53 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * What the shots show: Lumen open on its own source, at src/core/icon-pack.ts.
  * The file is a verbatim copy, so the code and the minimap are the real thing.
  */
 
-import source from './samples/icon-pack.ts.txt?raw'
-import { tokenize, type Line } from './tokenize'
+import source from './samples/icon-pack.ts.txt?raw';
+import { tokenize, type Line } from './tokenize';
 
 export interface TreeRow {
-  name: string
-  depth: number
-  folder?: boolean
-  open?: boolean
-  selected?: boolean
+  name: string;
+  depth: number;
+  folder?: boolean;
+  open?: boolean;
+  selected?: boolean;
 }
 
 export interface TabSpec {
-  name: string
-  active?: boolean
-  dirty?: boolean
+  name: string;
+  active?: boolean;
+  dirty?: boolean;
 }
 
 export interface Scene {
-  workspace: string
-  kind: { name: string; color: string }
-  tree: TreeRow[]
-  tabs: TabSpec[]
-  lines: Line[]
+  workspace: string;
+  kind: { name: string; color: string; };
+  tree: TreeRow[];
+  tabs: TabSpec[];
+  lines: Line[];
   /** The first line in view (1-based) — the editor is scrolled down to it. */
-  firstLine: number
-  cursor: { line: number; column: number }
-  language: { name: string; color: string; indent: number }
-  server: string
+  firstLine: number;
+  cursor: { line: number; column: number; };
+  language: { name: string; color: string; indent: number; };
+  server: string;
   /** The symbol path at the cursor, as the status bar shows it. */
-  breadcrumb: { glyph: string; tone: 'type' | 'function' | 'keyword' | 'variable'; name: string }[]
-  addons: number
+  breadcrumb: { glyph: string; tone: 'type' | 'function' | 'keyword' | 'variable'; name: string; }[];
+  addons: number;
 }
 
-const folder = (name: string, depth: number, open = false): TreeRow => ({ name, depth, folder: true, open })
-const file = (name: string, depth: number, selected = false): TreeRow => ({ name, depth, selected })
+const folder = (name: string, depth: number, open = false): TreeRow => ({ name, depth, folder: true, open });
+const file = (name: string, depth: number, selected = false): TreeRow => ({ name, depth, selected });
 
 export const lumenScene: Scene = {
   workspace: 'lumen-ide',
@@ -86,4 +96,4 @@ export const lumenScene: Scene = {
   server: 'typescript-language-server',
   breadcrumb: [{ glyph: 'ƒ', tone: 'function', name: 'resolveFileIcon' }],
   addons: 24,
-}
+};

@@ -2,7 +2,7 @@
   "id": "ext.discord",
   "name": "Discord Rich Presence",
   "version": "1.0.1",
-  "description": "Zeigt in Discord, woran du arbeitest: Datei, Projekt, Sprache und Dauer — mit Leerlauf, privaten Projekten und Repository-Knopf. Bringt Programmcode mit.",
+  "description": "Shows in Discord what you are working on: file, project, language and duration, with idle detection, private projects and a repository button. Ships with program code.",
   "author": "Lumen",
   "icon": "DC",
   "color": "#5865f2",
@@ -19,18 +19,13 @@
   "settings": [
     {
       "key": "clientId",
-      "label": "Client-ID (Application ID)",
+      "label": "Client ID (Application ID)",
       "type": "text",
       "default": "1550197013260275863",
       "placeholder": "123456789012345678",
-      "hint": "Die Anwendung, deren Name in Discord als „Spielt …“ erscheint. Eine eigene legst du unter discord.com/developers an; ihre Bilder heißen wie die Sprach-IDs (java, typescript …) plus lumen. Leer = keine Verbindung.",
-      "section": "Verbindung",
+      "hint": "The application whose name appears in Discord as “Playing …”. Create your own at discord.com/developers; its art assets are named after the language IDs (java, typescript …) plus lumen. Empty = no connection.",
+      "section": "Connection",
       "i18n": {
-        "en": {
-          "label": "Client ID (Application ID)",
-          "hint": "The application whose name appears in Discord as “Playing …”. Create your own at discord.com/developers; its art assets are named after the language IDs (java, typescript …) plus lumen. Empty = no connection.",
-          "section": "Connection"
-        },
         "es": {
           "label": "ID de cliente (Application ID)",
           "hint": "La aplicación cuyo nombre aparece en Discord como «Jugando a …». Crea la tuya en discord.com/developers; sus imágenes se llaman como los ID de lenguaje (java, typescript …) más lumen. Vacío = sin conexión.",
@@ -65,15 +60,11 @@
     },
     {
       "key": "showFileName",
-      "label": "Dateiname",
+      "label": "File name",
       "type": "toggle",
       "default": "true",
-      "section": "Angezeigt wird",
+      "section": "Shown in Discord",
       "i18n": {
-        "en": {
-          "label": "File name",
-          "section": "Shown in Discord"
-        },
         "es": {
           "label": "Nombre de archivo",
           "section": "Se muestra"
@@ -102,15 +93,11 @@
     },
     {
       "key": "showProject",
-      "label": "Projekt",
+      "label": "Project",
       "type": "toggle",
       "default": "true",
-      "section": "Angezeigt wird",
+      "section": "Shown in Discord",
       "i18n": {
-        "en": {
-          "label": "Project",
-          "section": "Shown in Discord"
-        },
         "es": {
           "label": "Proyecto",
           "section": "Se muestra"
@@ -139,15 +126,11 @@
     },
     {
       "key": "showLanguage",
-      "label": "Sprache (als Bild)",
+      "label": "Language (as image)",
       "type": "toggle",
       "default": "true",
-      "section": "Angezeigt wird",
+      "section": "Shown in Discord",
       "i18n": {
-        "en": {
-          "label": "Language (as image)",
-          "section": "Shown in Discord"
-        },
         "es": {
           "label": "Lenguaje (como imagen)",
           "section": "Se muestra"
@@ -176,15 +159,11 @@
     },
     {
       "key": "showElapsed",
-      "label": "Verstrichene Zeit",
+      "label": "Elapsed time",
       "type": "toggle",
       "default": "true",
-      "section": "Angezeigt wird",
+      "section": "Shown in Discord",
       "i18n": {
-        "en": {
-          "label": "Elapsed time",
-          "section": "Shown in Discord"
-        },
         "es": {
           "label": "Tiempo transcurrido",
           "section": "Se muestra"
@@ -213,35 +192,26 @@
     },
     {
       "key": "elapsedFrom",
-      "label": "Zeit gezählt ab",
+      "label": "Count time from",
       "type": "select",
       "default": "session",
       "when": "showElapsed",
-      "section": "Angezeigt wird",
+      "section": "Shown in Discord",
       "choices": [
         {
           "value": "session",
-          "label": "Start von Lumen"
+          "label": "Lumen’s start"
         },
         {
           "value": "project",
-          "label": "Öffnen des Projekts"
+          "label": "Opening the project"
         },
         {
           "value": "file",
-          "label": "Wechsel zur Datei"
+          "label": "Switching to the file"
         }
       ],
       "i18n": {
-        "en": {
-          "label": "Count time from",
-          "section": "Shown in Discord",
-          "choices": {
-            "session": "Lumen’s start",
-            "project": "Opening the project",
-            "file": "Switching to the file"
-          }
-        },
         "es": {
           "label": "Contar el tiempo desde",
           "section": "Se muestra",
@@ -300,17 +270,12 @@
     },
     {
       "key": "repoButton",
-      "label": "Knopf „Repository ansehen“",
+      "label": "“View repository” button",
       "type": "toggle",
       "default": "false",
-      "hint": "Verlinkt das origin-Remote des Projekts (ohne Zugangsdaten). Nur für öffentliche Repositorys einschalten.",
-      "section": "Angezeigt wird",
+      "hint": "Links the project’s origin remote (without credentials). Only turn on for public repositories.",
+      "section": "Shown in Discord",
       "i18n": {
-        "en": {
-          "label": "“View repository” button",
-          "hint": "Links the project’s origin remote (without credentials). Only turn on for public repositories.",
-          "section": "Shown in Discord"
-        },
         "es": {
           "label": "Botón «Ver repositorio»",
           "hint": "Enlaza el remoto origin del proyecto (sin credenciales). Actívalo solo para repositorios públicos.",
@@ -345,20 +310,15 @@
     },
     {
       "key": "idleMinutes",
-      "label": "Leerlauf nach (Minuten ohne Fokus)",
+      "label": "Idle after (minutes without focus)",
       "type": "number",
       "default": "5",
       "min": 0,
       "max": 240,
       "step": 1,
-      "hint": "0 schaltet den Leerlauf aus.",
-      "section": "Leerlauf",
+      "hint": "0 turns idle detection off.",
+      "section": "Idle",
       "i18n": {
-        "en": {
-          "label": "Idle after (minutes without focus)",
-          "hint": "0 turns idle detection off.",
-          "section": "Idle"
-        },
         "es": {
           "label": "Inactivo tras (minutos sin foco)",
           "hint": "0 desactiva la detección de inactividad.",
@@ -393,29 +353,21 @@
     },
     {
       "key": "idleAction",
-      "label": "Im Leerlauf",
+      "label": "When idle",
       "type": "select",
       "default": "idle",
-      "section": "Leerlauf",
+      "section": "Idle",
       "choices": [
         {
           "value": "idle",
-          "label": "Leerlauf-Text zeigen"
+          "label": "Show the idle text"
         },
         {
           "value": "clear",
-          "label": "Nichts anzeigen"
+          "label": "Show nothing"
         }
       ],
       "i18n": {
-        "en": {
-          "label": "When idle",
-          "section": "Idle",
-          "choices": {
-            "idle": "Show the idle text",
-            "clear": "Show nothing"
-          }
-        },
         "es": {
           "label": "Al estar inactivo",
           "section": "Inactividad",
@@ -468,19 +420,13 @@
     },
     {
       "key": "idleText",
-      "label": "Leerlauf-Text",
+      "label": "Idle text",
       "type": "text",
       "default": "",
-      "placeholder": "Im Leerlauf",
-      "hint": "Erscheint im Leerlauf und ohne offene Datei. Leer = Standardtext.",
-      "section": "Leerlauf",
+      "placeholder": "Idle",
+      "hint": "Shown when idle and when no file is open. Empty = default text.",
+      "section": "Idle",
       "i18n": {
-        "en": {
-          "label": "Idle text",
-          "hint": "Shown when idle and when no file is open. Empty = default text.",
-          "placeholder": "Idle",
-          "section": "Idle"
-        },
         "es": {
           "label": "Texto de inactividad",
           "hint": "Se muestra en inactividad y sin archivo abierto. Vacío = texto predeterminado.",
@@ -521,31 +467,22 @@
     },
     {
       "key": "privateMode",
-      "label": "In privaten Projekten",
+      "label": "In private projects",
       "type": "select",
       "default": "names",
-      "hint": "Ein Projekt wird privat über „Discord: Projekt privat schalten“ oder die Liste darunter.",
-      "section": "Privatsphäre",
+      "hint": "Mark a project private with “Discord: Toggle Private Project” or the list below.",
+      "section": "Privacy",
       "choices": [
         {
           "value": "names",
-          "label": "Datei- und Projektnamen verbergen"
+          "label": "Hide file and project names"
         },
         {
           "value": "hide",
-          "label": "Gar nichts anzeigen"
+          "label": "Show nothing at all"
         }
       ],
       "i18n": {
-        "en": {
-          "label": "In private projects",
-          "hint": "Mark a project private with “Discord: Toggle Private Project” or the list below.",
-          "section": "Privacy",
-          "choices": {
-            "names": "Hide file and project names",
-            "hide": "Show nothing at all"
-          }
-        },
         "es": {
           "label": "En proyectos privados",
           "hint": "Marca un proyecto como privado con «Discord: Alternar proyecto privado» o con la lista de abajo.",
@@ -604,20 +541,14 @@
     },
     {
       "key": "privateProjects",
-      "label": "Private Ordner",
+      "label": "Private folders",
       "type": "textarea",
       "default": "",
       "rows": 3,
-      "placeholder": "/home/ich/arbeit",
-      "hint": "Ein absoluter Pfad pro Zeile; Projekte darin gelten als privat.",
-      "section": "Privatsphäre",
+      "placeholder": "/home/me/work",
+      "hint": "One absolute path per line; projects inside count as private.",
+      "section": "Privacy",
       "i18n": {
-        "en": {
-          "label": "Private folders",
-          "hint": "One absolute path per line; projects inside count as private.",
-          "placeholder": "/home/me/work",
-          "section": "Privacy"
-        },
         "es": {
           "label": "Carpetas privadas",
           "hint": "Una ruta absoluta por línea; los proyectos dentro se consideran privados.",
@@ -660,13 +591,10 @@
   "commands": [
     {
       "id": "discord.reconnect",
-      "title": "Discord: Neu verbinden",
+      "title": "Discord: Reconnect",
       "category": "Discord",
       "icon": "refresh-cw",
       "i18n": {
-        "en": {
-          "title": "Discord: Reconnect"
-        },
         "es": {
           "title": "Discord: Reconectar"
         },
@@ -689,13 +617,10 @@
     },
     {
       "id": "discord.enable",
-      "title": "Discord: Rich Presence einschalten",
+      "title": "Discord: Enable Rich Presence",
       "category": "Discord",
       "icon": "play",
       "i18n": {
-        "en": {
-          "title": "Discord: Enable Rich Presence"
-        },
         "es": {
           "title": "Discord: Activar Rich Presence"
         },
@@ -718,13 +643,10 @@
     },
     {
       "id": "discord.disable",
-      "title": "Discord: Rich Presence ausschalten",
+      "title": "Discord: Disable Rich Presence",
       "category": "Discord",
       "icon": "pause",
       "i18n": {
-        "en": {
-          "title": "Discord: Disable Rich Presence"
-        },
         "es": {
           "title": "Discord: Desactivar Rich Presence"
         },
@@ -747,13 +669,10 @@
     },
     {
       "id": "discord.toggle",
-      "title": "Discord: Rich Presence ein-/ausschalten",
+      "title": "Discord: Toggle Rich Presence",
       "category": "Discord",
       "icon": "messages",
       "i18n": {
-        "en": {
-          "title": "Discord: Toggle Rich Presence"
-        },
         "es": {
           "title": "Discord: Alternar Rich Presence"
         },
@@ -776,13 +695,10 @@
     },
     {
       "id": "discord.toggle-private",
-      "title": "Discord: Projekt privat schalten",
+      "title": "Discord: Toggle Private Project",
       "category": "Discord",
       "icon": "eye-off",
       "i18n": {
-        "en": {
-          "title": "Discord: Toggle Private Project"
-        },
         "es": {
           "title": "Discord: Alternar proyecto privado"
         },

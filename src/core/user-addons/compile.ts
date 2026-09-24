@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * User add-on (the data model) → an ordinary `Addon` object.
  *
@@ -8,38 +18,40 @@
 import type {
   Addon, DependencyAction, DependencySpec, DependencySupport, FormField, FormValues, LanguageSpec,
   ProjectContext, ProjectKind, ProjectMeta, ProjectTask, ProjectTemplate, TemplateContext, Theme,
-} from '@/core/types'
-import { resolveDebugAdapters } from '@/core/debug/builtin-adapters'
-import { resolveTokenizer } from './tokenizers'
-import { tr } from '@/i18n'
+} from '@/core/types';
+import { resolveDebugAdapters } from '@/core/debug/builtin-adapters';
+import { resolveTokenizer } from './tokenizers';
+import { tr } from '@/i18n';
 import type {
   UserAddonModel, UserCommand, UserCondition, UserDependencyEdit, UserDependencySupport,
   UserKindDependencyScan, UserKindTask, UserLanguage, UserProjectKind, UserTemplate, UserTemplateField,
-} from './schema'
+} from './schema';
 
 export interface CompileDeps {
   /** Runs a command's graph. */
-  runCommand?(model: UserAddonModel, command: UserCommand): void | Promise<void>
+  runCommand?(model: UserAddonModel, command: UserCommand): void | Promise<void>;
   /** Starts the event graphs; the return value cleans up on deactivation. */
-  startEvents?(model: UserAddonModel): () => void
+  startEvents?(model: UserAddonModel): () => void;
   /** Loaded choices of a field with `choicesUrl`, or `undefined` while none have arrived. */
-  remoteChoices?(field: UserTemplateField): { value: string; label: string }[] | undefined
+  remoteChoices?(field: UserTemplateField): { value: string; label: string; }[] | undefined;
   /** Resolves references to themes from the Theme Studio. */
-  resolveTheme?(id: string): Theme | undefined
+  resolveTheme?(id: string): Theme | undefined;
 }
 
 /** Regex source → RegExp; invalid ones fall away, and validation reports them. */
 function regex(source: string | undefined, anchored: boolean): RegExp | undefined {
-  if (!source) return undefined
-  const pattern = anchored && !source.startsWith('^') ? `^(?:${source})` : source
+  if (!source) {
+    return undefined;
+  }
+  const pattern = anchored && !source.startsWith('^') ? `^(?:${source})` : source;
   try {
-    return new RegExp(pattern)
+    return new RegExp(pattern);
   } catch {
-    return undefined
+    return undefined;
   }
 }
 
-const nonEmpty = <T,>(list: T[] | undefined): T[] | undefined => (list?.length ? list : undefined)
+const nonEmpty = <T,>(list: T[] | undefined): T[] | undefined => (list?.length ? list : undefined);
 
 export function compileLanguage(lang: UserLanguage): LanguageSpec {
   const spec: LanguageSpec = {
@@ -71,65 +83,85 @@ export function compileLanguage(lang: UserLanguage): LanguageSpec {
     lsp: nonEmpty(lang.lsp),
     debug: nonEmpty(resolveDebugAdapters(lang.debug)),
     priority: lang.priority,
-  }
+  };
   // After the spec is whole: `jsx` wraps the language's own highlighting.
-  const tokenizer = resolveTokenizer(lang.tokenizer, spec)
-  if (tokenizer) spec.tokenizer = tokenizer
+  const tokenizer = resolveTokenizer(lang.tokenizer, spec);
+  if (tokenizer) {
+    spec.tokenizer = tokenizer;
+  }
   // Drop undefined fields: parts of the tokenizer test with `in` and `??`.
   for (const key of Object.keys(spec) as (keyof LanguageSpec)[]) {
-    if (spec[key] === undefined) delete spec[key]
+    if (spec[key] === undefined) {
+      delete spec[key];
+    }
   }
-  return spec
+  return spec;
 }
 
 /** Do all conditions hold? An empty list always does. */
 export function conditionsHold(
   conditions: UserCondition | UserCondition[] | undefined, values: FormValues,
 ): boolean {
-  if (!conditions) return true
-  if (!Array.isArray(conditions)) return conditionHolds(conditions, values)
-  return conditions.every((condition) => conditionHolds(condition, values))
+  if (!conditions) {
+    return true;
+  }
+  if (!Array.isArray(conditions)) {
+    return conditionHolds(conditions, values);
+  }
+  return conditions.every((condition) => conditionHolds(condition, values));
 }
 
 /** Does the condition hold for these values? Without a comparison: set and not `false`. */
 export function conditionHolds(condition: UserCondition | undefined, values: FormValues): boolean {
-  if (!condition?.field) return true
-  const value = values[condition.field] ?? ''
-  if (condition.equals !== undefined) return value === condition.equals
-  if (condition.notEquals !== undefined) return value !== condition.notEquals
-  return value !== '' && value !== 'false'
+  if (!condition?.field) {
+    return true;
+  }
+  const value = values[condition.field] ?? '';
+  if (condition.equals !== undefined) {
+    return value === condition.equals;
+  }
+  if (condition.notEquals !== undefined) {
+    return value !== condition.notEquals;
+  }
+  return value !== '' && value !== 'false';
 }
 
 /** `field`, `field=value` or `field!=value` from a block's head. */
 function blockCondition(head: string): UserCondition {
-  const unequal = /^([\w.-]+)\s*!=\s*(.*)$/.exec(head)
-  if (unequal) return { field: unequal[1], notEquals: unequal[2].trim() }
-  const equal = /^([\w.-]+)\s*=\s*(.*)$/.exec(head)
-  if (equal) return { field: equal[1], equals: equal[2].trim() }
-  return { field: head.trim() }
+  const unequal = /^([\w.-]+)\s*!=\s*(.*)$/.exec(head);
+  if (unequal) {
+    return { field: unequal[1], notEquals: unequal[2].trim() };
+  }
+  const equal = /^([\w.-]+)\s*=\s*(.*)$/.exec(head);
+  if (equal) {
+    return { field: equal[1], equals: equal[2].trim() };
+  }
+  return { field: head.trim() };
 }
 
-const BLOCK = /\{\{#(if|unless)\s+([^}]+?)\s*\}\}((?:(?!\{\{#(?:if|unless)\s)[\s\S])*?)\{\{\/\1\}\}/
+const BLOCK = /\{\{#(if|unless)\s+([^}]+?)\s*\}\}((?:(?!\{\{#(?:if|unless)\s)[\s\S])*?)\{\{\/\1\}\}/;
 
 /** Resolve blocks innermost first, so nesting works. */
 function resolveBlocks(text: string, values: FormValues): string {
-  let out = text
+  let out = text;
   for (let guard = 0; guard < 500; guard++) {
-    const match = BLOCK.exec(out)
-    if (!match) return out
-    const holds = conditionHolds(blockCondition(match[2]), values)
-    const keep = match[1] === 'if' ? holds : !holds
-    out = out.slice(0, match.index) + (keep ? match[3] : '') + out.slice(match.index + match[0].length)
+    const match = BLOCK.exec(out);
+    if (!match) {
+      return out;
+    }
+    const holds = conditionHolds(blockCondition(match[2]), values);
+    const keep = match[1] === 'if' ? holds : !holds;
+    out = out.slice(0, match.index) + (keep ? match[3] : '') + out.slice(match.index + match[0].length);
   }
-  return out
+  return out;
 }
 
 /** Words of a value (`my-project`, `MyProject`, `my_project` → my, project). */
 function words(value: string): string[] {
-  return value.replace(/([a-z0-9])([A-Z])/g, '$1 $2').split(/[^A-Za-z0-9]+/).filter(Boolean)
+  return value.replace(/([a-z0-9])([A-Z])/g, '$1 $2').split(/[^A-Za-z0-9]+/).filter(Boolean);
 }
 
-const capitalize = (word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+const capitalize = (word: string) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 
 /** Filters after `|`: packages as paths, class names, spellings. */
 export const PLACEHOLDER_FILTERS: Record<string, (value: string) => string> = {
@@ -147,7 +179,7 @@ export const PLACEHOLDER_FILTERS: Record<string, (value: string) => string> = {
   // `Acme\\Demo` has to appear there with doubled backslashes, or the file is
   // broken. The surrounding quotes are dropped — the template already has them.
   json: (value) => JSON.stringify(value).slice(1, -1),
-}
+};
 
 /**
  * Replaces `{{name}}`, `{{slug}}`, `{{dir}}` and `{{field}}` — filters included,
@@ -155,48 +187,70 @@ export const PLACEHOLDER_FILTERS: Record<string, (value: string) => string> = {
  * `{{#unless}}` blocks.
  */
 export function fillPlaceholders(text: string, ctx: TemplateContext): string {
-  const values: FormValues = { ...ctx.values, name: ctx.name, slug: ctx.slug, dir: ctx.dir }
+  const values: FormValues = { ...ctx.values, name: ctx.name, slug: ctx.slug, dir: ctx.dir };
   return resolveBlocks(text, values).replace(/\{\{\s*([\w.-]+)\s*(?:\|\s*(\w+)\s*)?\}\}/g, (match, key: string, filter?: string) => {
-    const value = values[key]
-    if (value === undefined) return match
-    const apply = filter ? PLACEHOLDER_FILTERS[filter] : undefined
-    if (filter && !apply) return match
-    return apply ? apply(value) : value
-  })
+    const value = values[key];
+    if (value === undefined) {
+      return match;
+    }
+    const apply = filter ? PLACEHOLDER_FILTERS[filter] : undefined;
+    if (filter && !apply) {
+      return match;
+    }
+    return apply ? apply(value) : value;
+  });
 }
 
 /** A list from a JSON response, following `choicesPath` and the value/label field names. */
-export function extractChoices(data: unknown, field: UserTemplateField): { value: string; label: string }[] {
-  let node: unknown = data
+export function extractChoices(data: unknown, field: UserTemplateField): { value: string; label: string; }[] {
+  let node: unknown = data;
   for (const key of (field.choicesPath ?? '').split('.').filter(Boolean)) {
-    node = (node as Record<string, unknown> | null)?.[key]
+    node = (node as Record<string, unknown> | null)?.[key];
   }
-  if (!Array.isArray(node)) return []
+  if (!Array.isArray(node)) {
+    return [];
+  }
   const pick = (item: unknown, path: string | undefined): string => {
-    if (typeof item === 'string' || typeof item === 'number') return String(item)
-    if (!path || !item || typeof item !== 'object') return ''
-    let value: unknown = item
-    for (const key of path.split('.')) value = (value as Record<string, unknown> | null)?.[key]
-    if (typeof value === 'string' || typeof value === 'number') return String(value)
-    return ''
-  }
-  const match = field.choicesMatch ? safeRegex(field.choicesMatch) : null
+    if (typeof item === 'string' || typeof item === 'number') {
+      return String(item);
+    }
+    if (!path || !item || typeof item !== 'object') {
+      return '';
+    }
+    let value: unknown = item;
+    for (const key of path.split('.')) {
+      value = (value as Record<string, unknown> | null)?.[key];
+    }
+    if (typeof value === 'string' || typeof value === 'number') {
+      return String(value);
+    }
+    return '';
+  };
+  const match = field.choicesMatch ? safeRegex(field.choicesMatch) : null;
   const list = node
     .map((item) => {
-      const value = pick(item, field.choicesValue)
-      return { value, label: pick(item, field.choicesLabel) || value }
+      const value = pick(item, field.choicesValue);
+      return { value, label: pick(item, field.choicesLabel) || value };
     })
-    .filter((choice) => choice.value && (!match || match.test(choice.value)))
-  if (field.choicesReverse) list.reverse()
-  if (field.choicesLimit && field.choicesLimit > 0) return list.slice(0, field.choicesLimit)
-  return list
+    .filter((choice) => choice.value && (!match || match.test(choice.value)));
+  if (field.choicesReverse) {
+    list.reverse();
+  }
+  if (field.choicesLimit && field.choicesLimit > 0) {
+    return list.slice(0, field.choicesLimit);
+  }
+  return list;
 }
 
 /** The add-on's own project kind (a local id) or an existing one (`maven`, `tool.x`). */
 function qualifiedKindId(kindId: string | undefined, addonId: string, localKinds: ReadonlySet<string>): string | undefined {
-  if (!kindId) return undefined
-  if (!localKinds.has(kindId)) return kindId
-  return `${addonId}.${kindId}`
+  if (!kindId) {
+    return undefined;
+  }
+  if (!localKinds.has(kindId)) {
+    return kindId;
+  }
+  return `${addonId}.${kindId}`;
 }
 
 /**
@@ -208,19 +262,21 @@ function qualifiedKindId(kindId: string | undefined, addonId: string, localKinds
  * worked out so far, which `resolveValues` settles over several rounds.
  */
 function compileDefault(value: string | undefined) {
-  if (value === undefined || !value.includes('{{')) return value
+  if (value === undefined || !value.includes('{{')) {
+    return value;
+  }
   return (values: FormValues) => fillPlaceholders(value, {
     values,
     name: values.name ?? '',
     slug: values.slug ?? '',
     dir: values.dir ?? '',
-  } as TemplateContext)
+  } as TemplateContext);
 }
 
 export function compileTemplate(
   template: UserTemplate, addonId: string, deps: CompileDeps = {}, localKinds: ReadonlySet<string> = new Set(),
 ): ProjectTemplate {
-  const kindId = template.kindId
+  const kindId = template.kindId;
   const fields: FormField[] = template.fields.map((field) => ({
     id: field.id,
     label: field.label || field.id,
@@ -236,7 +292,7 @@ export function compileTemplate(
     section: field.section || undefined,
     mono: field.mono,
     when: field.when?.field ? (values: FormValues) => conditionHolds(field.when, values) : undefined,
-  }))
+  }));
   return {
     id: `${addonId}.${template.id}`,
     name: template.name,
@@ -269,31 +325,41 @@ export function compileTemplate(
         args: step.args.map((arg) => fillPlaceholders(arg, ctx)),
       }))
       : undefined,
-  }
+  };
 }
 
-async function ruleHolds(ctx: ProjectContext, rule: { file: string; pattern?: string }): Promise<boolean> {
-  const text = await ctx.readFile(rule.file)
-  if (text === null) return false
-  if (!rule.pattern) return true
-  const regex = safeRegex(rule.pattern, 'm')
-  return Boolean(regex?.test(text))
+async function ruleHolds(ctx: ProjectContext, rule: { file: string; pattern?: string; }): Promise<boolean> {
+  const text = await ctx.readFile(rule.file);
+  if (text === null) {
+    return false;
+  }
+  if (!rule.pattern) {
+    return true;
+  }
+  const regex = safeRegex(rule.pattern, 'm');
+  return Boolean(regex?.test(text));
 }
 
 function safeRegex(source: string, flags = ''): RegExp | null {
   try {
-    return new RegExp(source, flags)
+    return new RegExp(source, flags);
   } catch {
-    return null
+    return null;
   }
 }
 
 async function taskCommand(ctx: ProjectContext, command: string, wrapper: string | undefined): Promise<string> {
-  if (!wrapper) return command
-  const name = ctx.platform === 'win32' ? `${wrapper}.bat` : wrapper
-  if (!(await ctx.exists(name))) return command
-  if (ctx.platform === 'win32') return name
-  return `./${name}`
+  if (!wrapper) {
+    return command;
+  }
+  const name = ctx.platform === 'win32' ? `${wrapper}.bat` : wrapper;
+  if (!(await ctx.exists(name))) {
+    return command;
+  }
+  if (ctx.platform === 'win32') {
+    return name;
+  }
+  return `./${name}`;
 }
 
 /**
@@ -307,21 +373,21 @@ async function taskCommand(ctx: ProjectContext, command: string, wrapper: string
  * one would write a heading called `:`.
  */
 function dependencyFiller(dep: DependencySpec, separator: string, fallbackScope = '') {
-  const [first, ...rest] = dep.name.trim().split(/\s+/)
-  const name = first ?? dep.name
-  const spec = dep.version ? `${name}${separator}${dep.version}` : name
+  const [first, ...rest] = dep.name.trim().split(/\s+/);
+  const name = first ?? dep.name;
+  const spec = dep.version ? `${name}${separator}${dep.version}` : name;
   const values: Record<string, string> = {
     name,
     version: dep.version ?? '',
     scope: dep.scope || fallbackScope,
     spec,
     short: name.split('/').pop() ?? name,
-  }
-  const fill = (text: string) => text.replace(/\{(name|version|scope|spec|short)\}/g, (_all, key: string) => values[key])
+  };
+  const fill = (text: string) => text.replace(/\{(name|version|scope|spec|short)\}/g, (_all, key: string) => values[key]);
   /** Does the line contain a placeholder that stays empty? */
   const incomplete = (text: string) => /\{(name|version|scope|spec|short)\}/.test(text)
-    && [...text.matchAll(/\{(name|version|scope|spec|short)\}/g)].some((match) => !values[match[1]])
-  return { name, spec, rest, fill, incomplete }
+    && [...text.matchAll(/\{(name|version|scope|spec|short)\}/g)].some((match) => !values[match[1]]);
+  return { name, spec, rest, fill, incomplete };
 }
 
 /**
@@ -333,15 +399,17 @@ function dependencyFiller(dep: DependencySpec, separator: string, fallbackScope 
 async function editDependency(
   ctx: ProjectContext, edit: UserDependencyEdit, dep: DependencySpec, separator: string, fallbackScope: string,
 ): Promise<DependencyAction> {
-  const { fill, incomplete } = dependencyFiller(dep, separator, fallbackScope)
-  const text = await ctx.readFile(edit.file)
-  if (text === null) throw new Error(`${edit.file} fehlt`)
+  const { fill, incomplete } = dependencyFiller(dep, separator, fallbackScope);
+  const text = await ctx.readFile(edit.file);
+  if (text === null) {
+    throw new Error(`${edit.file} fehlt`);
+  }
 
-  const indent = edit.indent ?? '  '
+  const indent = edit.indent ?? '  ';
   const block = edit.lines
     .filter((line) => !incomplete(line))
     .map((line) => `${indent}${fill(line)}`)
-    .join('\n')
+    .join('\n');
 
   const then = edit.then
     ? {
@@ -350,22 +418,24 @@ async function editDependency(
       command: edit.then.command,
       args: edit.then.args.map(fill),
     }
-    : undefined
+    : undefined;
 
-  const header = safeRegex(fill(edit.sectionPattern), 'm')?.exec(text)
+  const header = safeRegex(fill(edit.sectionPattern), 'm')?.exec(text);
   if (!header) {
-    const head = text.replace(/\s*$/, '')
-    return { type: 'edit', file: edit.file, content: `${head}\n\n${fill(edit.sectionHeader)}\n${block}\n`, then }
+    const head = text.replace(/\s*$/, '');
+    return { type: 'edit', file: edit.file, content: `${head}\n\n${fill(edit.sectionHeader)}\n${block}\n`, then };
   }
-  const at = header.index + header[0].length
-  return { type: 'edit', file: edit.file, content: `${text.slice(0, at)}\n${block}${text.slice(at)}`, then }
+  const at = header.index + header[0].length;
+  return { type: 'edit', file: edit.file, content: `${text.slice(0, at)}\n${block}${text.slice(at)}`, then };
 }
 
 function compileDependencies(support: UserDependencySupport | undefined): DependencySupport | undefined {
-  const runsCommand = Boolean(support?.command?.trim())
-  if (!support || (!runsCommand && !support.edit)) return undefined
-  const separator = support.specSeparator ?? '@'
-  const fallbackScope = support.scopes?.[0]?.value ?? ''
+  const runsCommand = Boolean(support?.command?.trim());
+  if (!support || (!runsCommand && !support.edit)) {
+    return undefined;
+  }
+  const separator = support.specSeparator ?? '@';
+  const fallbackScope = support.scopes?.[0]?.value ?? '';
   return {
     manager: support.manager || support.command || support.edit?.file || '',
     placeholder: support.placeholder || '',
@@ -373,22 +443,28 @@ function compileDependencies(support: UserDependencySupport | undefined): Depend
     scopes: support.scopes?.length ? support.scopes : undefined,
     versionRequired: support.versionRequired,
     add: async (ctx, dep) => {
-      if (support.edit) return editDependency(ctx, support.edit, dep, separator, fallbackScope)
+      if (support.edit) {
+        return editDependency(ctx, support.edit, dep, separator, fallbackScope);
+      }
 
       // Anything after the name (`serde --features derive`) is kept and moved
       // to the end — the package manager gets it unchanged.
-      const { rest, fill } = dependencyFiller(dep, separator, fallbackScope)
-      const command = support.command ?? ''
+      const { rest, fill } = dependencyFiller(dep, separator, fallbackScope);
+      const command = support.command ?? '';
       // Empty arguments fall away: `{version}` without a version should not
       // hand the package manager a stray empty argument.
-      const scopeArgs = support.scopeArgs?.[dep.scope ?? ''] ?? []
+      const scopeArgs = support.scopeArgs?.[dep.scope ?? ''] ?? [];
       const args = (support.args ?? [])
         .flatMap((arg) => {
-          if (arg === '{scopeArgs}') return scopeArgs
-          if (arg === '{rest}') return rest
-          return [fill(arg)]
+          if (arg === '{scopeArgs}') {
+            return scopeArgs;
+          }
+          if (arg === '{rest}') {
+            return rest;
+          }
+          return [fill(arg)];
         })
-        .filter((arg) => arg !== '')
+        .filter((arg) => arg !== '');
       return {
         type: 'task',
         task: {
@@ -397,54 +473,64 @@ function compileDependencies(support: UserDependencySupport | undefined): Depend
           command,
           args,
         },
-      }
+      };
     },
-  }
+  };
 }
 
 
 /** Extra arguments, chosen by the first of these files the project has. */
 async function extraArgs(ctx: ProjectContext, task: UserKindTask): Promise<string[]> {
   for (const rule of task.argsWhenFile ?? []) {
-    const files = Array.isArray(rule.file) ? rule.file : [rule.file]
+    const files = Array.isArray(rule.file) ? rule.file : [rule.file];
     for (const file of files) {
-      if (await ctx.exists(file).catch(() => false)) return rule.args
+      if (await ctx.exists(file).catch(() => false)) {
+        return rule.args;
+      }
     }
   }
-  return []
+  return [];
 }
 
 /** Does the task disappear when its pattern yields nothing? */
 function omitsWhenEmpty(task: UserKindTask): boolean {
-  return Boolean(task.forEachDir?.omitWhenEmpty || task.forEachMatch?.omitWhenEmpty)
+  return Boolean(task.forEachDir?.omitWhenEmpty || task.forEachMatch?.omitWhenEmpty);
 }
 
 /** Pull a fact out of the file — through a JSON path or a pattern. */
-function factValue(text: string, fact: { pattern?: string; json?: string; section?: string }): string | undefined {
+function factValue(text: string, fact: { pattern?: string; json?: string; section?: string; }): string | undefined {
   if (fact.json !== undefined) {
-    const node = jsonAt(text, fact.json)
-    if (node === null || typeof node === 'object') return undefined
-    return String(node).trim() || undefined
+    const node = jsonAt(text, fact.json);
+    if (node === null || typeof node === 'object') {
+      return undefined;
+    }
+    return String(node).trim() || undefined;
   }
-  if (!fact.pattern?.trim()) return undefined
-  const haystack = fact.section ? section(text, fact.section) : text
-  if (!haystack) return undefined
-  return safeRegex(fact.pattern, 'm')?.exec(haystack)?.[1]?.trim() || undefined
+  if (!fact.pattern?.trim()) {
+    return undefined;
+  }
+  const haystack = fact.section ? section(text, fact.section) : text;
+  if (!haystack) {
+    return undefined;
+  }
+  return safeRegex(fact.pattern, 'm')?.exec(haystack)?.[1]?.trim() || undefined;
 }
 
 /** Value under a dotted path in a JSON text — `null` when anything is missing. */
 function jsonAt(text: string, path: string): unknown {
-  let node: unknown
+  let node: unknown;
   try {
-    node = JSON.parse(text)
+    node = JSON.parse(text);
   } catch {
-    return null
+    return null;
   }
   for (const step of path.split('.').filter(Boolean)) {
-    if (!node || typeof node !== 'object') return null
-    node = (node as Record<string, unknown>)[step]
+    if (!node || typeof node !== 'object') {
+      return null;
+    }
+    node = (node as Record<string, unknown>)[step];
   }
-  return node ?? null
+  return node ?? null;
 }
 
 /**
@@ -454,12 +540,14 @@ function jsonAt(text: string, path: string): unknown {
  * to run without the rest of the application, as the check scripts do.
  */
 function section(text: string, name: string): string {
-  const escaped = name.replace(/[.[\]\\]/g, '\\$&')
-  const head = new RegExp(`^\\[${escaped}\\]\\s*$`, 'm').exec(text)
-  if (!head) return ''
-  const rest = text.slice(head.index + head[0].length)
-  const next = /^\[/m.exec(rest)
-  return next ? rest.slice(0, next.index) : rest
+  const escaped = name.replace(/[.[\]\\]/g, '\\$&');
+  const head = new RegExp(`^\\[${escaped}\\]\\s*$`, 'm').exec(text);
+  if (!head) {
+    return '';
+  }
+  const rest = text.slice(head.index + head[0].length);
+  const next = /^\[/m.exec(rest);
+  return next ? rest.slice(0, next.index) : rest;
 }
 
 /**
@@ -469,8 +557,8 @@ function section(text: string, name: string): string {
  * the left margin again.
  */
 function block(text: string, name: string): string {
-  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  return new RegExp(`^${escaped}:\\s*\\n((?:[ \\t]+.*\\n?)*)`, 'm').exec(text)?.[1] ?? ''
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^${escaped}:\\s*\\n((?:[ \\t]+.*\\n?)*)`, 'm').exec(text)?.[1] ?? '';
 }
 
 /**
@@ -481,19 +569,88 @@ function block(text: string, name: string): string {
  */
 async function expandPerDir(
   ctx: ProjectContext, task: UserKindTask,
-): Promise<{ dir: string; label: string; args: string[]; group?: ProjectTask['group'] }[]> {
-  const spec = task.forEachDir
-  if (!spec?.dir.trim()) return []
-  const entries = await ctx.list(spec.dir).catch(() => [])
-  const dirs = entries.filter((entry) => entry.isDirectory).map((entry) => entry.name)
-  if (!dirs.length) return []
+): Promise<ExpandedTask[]> {
+  const spec = task.forEachDir;
+  if (!spec?.dir.trim()) {
+    return [];
+  }
+  const entries = await ctx.list(spec.dir).catch(() => []);
+  const dirs = entries.filter((entry) => entry.isDirectory).map((entry) => entry.name);
+  if (!dirs.length) {
+    return [];
+  }
   return dirs.slice(0, spec.limit ?? 4).map((dir) => ({
     dir,
     // `tr` with parameters: the label may be a translation key
     // (`templates.tasks.runTarget`), which then knows `{target}`.
     label: tr(spec.label, { target: dir, dir }),
     args: spec.args.map((arg) => arg.replaceAll('{dir}', dir)),
-  }))
+  }));
+}
+
+type ExpandedTask = { dir: string; label: string; args: string[]; group?: ProjectTask['group']; };
+type MatchSpec = NonNullable<UserKindTask['forEachMatch']>;
+
+/** The text of the first of the files that can be read. */
+async function readFirst(ctx: ProjectContext, files: string[]): Promise<string | null> {
+  for (const file of files) {
+    const text = await ctx.readFile(file).catch(() => null);
+    if (text !== null) {
+      return text;
+    }
+  }
+  return null;
+}
+
+/** Matches from a JSON path — a list of objects (CMake presets) or a plain object (scripts). */
+function jsonMatches(spec: MatchSpec, text: string): { found: string[]; labels: Map<string, string>; } | null {
+  const found: string[] = [];
+  /** Label per match, when the JSON carries a field of its own for it. */
+  const labels = new Map<string, string>();
+  const node = jsonAt(text, spec.json!);
+  if (!node || typeof node !== 'object') {
+    return null;
+  }
+  if (!Array.isArray(node)) {
+    found.push(...Object.keys(node as Record<string, unknown>));
+    return { found, labels };
+  }
+  for (const entry of node) {
+    if (!entry || typeof entry !== 'object') {
+      continue;
+    }
+    const row = entry as Record<string, unknown>;
+    if (spec.jsonSkipWhen && row[spec.jsonSkipWhen]) {
+      continue;
+    }
+    const name = String(row[spec.jsonName ?? 'name'] ?? '');
+    if (!name) {
+      continue;
+    }
+    found.push(name);
+    const label = spec.jsonLabel ? row[spec.jsonLabel] : undefined;
+    if (typeof label === 'string' && label) {
+      labels.set(name, label);
+    }
+  }
+  return { found, labels };
+}
+
+/** Matches of a pattern over the text, or over a block or section of it. */
+function patternMatches(spec: MatchSpec, text: string): string[] | null {
+  const haystack = spec.block ? block(text, spec.block) : spec.section ? section(text, spec.section) : text;
+  if (!haystack) {
+    return null;
+  }
+  const pattern = safeRegex(spec.pattern ?? '', 'gm');
+  if (!pattern) {
+    return null;
+  }
+  const found: string[] = [];
+  for (const hit of haystack.matchAll(pattern)) {
+    found.push(hit[1] ?? '');
+  }
+  return found;
 }
 
 /**
@@ -502,67 +659,65 @@ async function expandPerDir(
  * An empty list means the same as for `expandPerDir`: nothing to unfold, so
  * the task itself applies.
  */
-async function expandPerMatch(
-  ctx: ProjectContext, task: UserKindTask,
-): Promise<{ dir: string; label: string; args: string[]; group?: ProjectTask['group'] }[]> {
-  const spec = task.forEachMatch
-  const files = (Array.isArray(spec?.file) ? spec.file : [spec?.file]).filter((file): file is string => Boolean(file?.trim()))
+async function expandPerMatch(ctx: ProjectContext, task: UserKindTask): Promise<ExpandedTask[]> {
+  const spec = task.forEachMatch;
+  const files = (Array.isArray(spec?.file) ? spec.file : [spec?.file]).filter((file): file is string => Boolean(file?.trim()));
   // Either a pattern or a JSON path — with neither there is nothing to do.
-  if (!spec || !files.length) return []
-  if (spec.json === undefined && !spec.pattern?.trim()) return []
-  let text: string | null = null
-  for (const file of files) {
-    text = await ctx.readFile(file).catch(() => null)
-    if (text !== null) break
+  if (!spec || !files.length) {
+    return [];
   }
-  if (text === null) return []
+  if (spec.json === undefined && !spec.pattern?.trim()) {
+    return [];
+  }
+  const text = await readFirst(ctx, files);
+  if (text === null) {
+    return [];
+  }
 
   // Two routes to the matches: keys from a JSON path, or a pattern over the
   // text. The JSON knows its own nesting; the pattern does not.
-  const found: string[] = []
-  /** Label per match, when the JSON carries a field of its own for it. */
-  const labels = new Map<string, string>()
+  let found: string[] = [];
+  let labels = new Map<string, string>();
   if (spec.json !== undefined) {
-    const node = jsonAt(text, spec.json)
-    if (!node || typeof node !== 'object') return []
-    // A list of objects (CMake presets) or a plain object (scripts).
-    if (Array.isArray(node)) {
-      for (const entry of node) {
-        if (!entry || typeof entry !== 'object') continue
-        const row = entry as Record<string, unknown>
-        if (spec.jsonSkipWhen && row[spec.jsonSkipWhen]) continue
-        const name = String(row[spec.jsonName ?? 'name'] ?? '')
-        if (!name) continue
-        found.push(name)
-        const label = spec.jsonLabel ? row[spec.jsonLabel] : undefined
-        if (typeof label === 'string' && label) labels.set(name, label)
-      }
+    const viaJson = jsonMatches(spec, text);
+    if (!viaJson) {
+      return [];
     }
-    if (!Array.isArray(node)) found.push(...Object.keys(node as Record<string, unknown>))
+    ({ found, labels } = viaJson);
   }
   if (spec.json === undefined) {
-    const haystack = spec.block ? block(text, spec.block) : spec.section ? section(text, spec.section) : text
-    if (!haystack) return []
-    const pattern = safeRegex(spec.pattern ?? '', 'gm')
-    if (!pattern) return []
-    for (const hit of haystack.matchAll(pattern)) found.push(hit[1] ?? '')
+    const viaPattern = patternMatches(spec, text);
+    if (!viaPattern) {
+      return [];
+    }
+    found = viaPattern;
   }
+  return unfoldMatches(spec, found, labels);
+}
 
-  const skip = new Set(spec.skip ?? [])
-  const skipPattern = spec.skipPattern ? safeRegex(spec.skipPattern) : null
-  const seen = new Set<string>()
+/** One expanded task per distinct, non-skipped match, up to the limit. */
+function unfoldMatches(spec: MatchSpec, found: string[], labels: Map<string, string>): ExpandedTask[] {
+  const skip = new Set(spec.skip ?? []);
+  const skipPattern = spec.skipPattern ? safeRegex(spec.skipPattern) : null;
+  const seen = new Set<string>();
   const groupOf = (match: string): ProjectTask['group'] | undefined => {
     for (const rule of spec.groups ?? []) {
-      if (safeRegex(rule.pattern)?.test(match)) return rule.group
+      if (safeRegex(rule.pattern)?.test(match)) {
+        return rule.group;
+      }
     }
-    return undefined
-  }
-  const out: { dir: string; label: string; args: string[]; group?: ProjectTask['group'] }[] = []
+    return undefined;
+  };
+  const out: ExpandedTask[] = [];
   for (const raw of found) {
-    const match = raw.trim()
-    if (!match || skip.has(match) || seen.has(match)) continue
-    if (skipPattern?.test(match)) continue
-    seen.add(match)
+    const match = raw.trim();
+    if (!match || skip.has(match) || seen.has(match)) {
+      continue;
+    }
+    if (skipPattern?.test(match)) {
+      continue;
+    }
+    seen.add(match);
     out.push({
       dir: match,
       label: tr(found.length === 1 && spec.singleLabel ? spec.singleLabel : spec.label, {
@@ -571,67 +726,169 @@ async function expandPerMatch(
       }),
       args: spec.args.map((arg) => arg.replaceAll('{match}', match)),
       group: groupOf(match),
-    })
-    if (out.length >= (spec.limit ?? 12)) break
+    });
+    if (out.length >= (spec.limit ?? 12)) {
+      break;
+    }
   }
-  return out
+  return out;
 }
 
 /** Read dependencies out of the build file — one pass per entry. */
 async function scanDependencies(
   ctx: ProjectContext, scans: UserKindDependencyScan | UserKindDependencyScan[] | undefined,
 ): Promise<ProjectMeta['dependencies']> {
-  const list = [scans ?? []].flat()
-  if (!list.length) return undefined
-  const out: NonNullable<ProjectMeta['dependencies']> = []
-  const cache = new Map<string, string | null>()
+  const list = [scans ?? []].flat();
+  if (!list.length) {
+    return undefined;
+  }
+  const out: NonNullable<ProjectMeta['dependencies']> = [];
+  const cache = new Map<string, string | null>();
 
   for (const scan of list) {
-    if (!scan.file.trim()) continue
-    if (!cache.has(scan.file)) cache.set(scan.file, await ctx.readFile(scan.file))
-    const text = cache.get(scan.file)
-    if (text === null || text === undefined) continue
-    const skip = scan.skipPattern ? safeRegex(scan.skipPattern) : null
+    if (!scan.file.trim()) {
+      continue;
+    }
+    if (!cache.has(scan.file)) {
+      cache.set(scan.file, await ctx.readFile(scan.file));
+    }
+    const text = cache.get(scan.file);
+    if (text === null || text === undefined) {
+      continue;
+    }
+    const skip = scan.skipPattern ? safeRegex(scan.skipPattern) : null;
 
     // JSON: an object of name → version, the way Composer and npm keep it.
     if (scan.json !== undefined) {
-      const node = jsonAt(text, scan.json)
-      if (!node || typeof node !== 'object') continue
-      for (const [name, version] of Object.entries(node as Record<string, unknown>)) {
-        if (!name || skip?.test(name)) continue
-        out.push({ name, version: typeof version === 'string' ? version : undefined, scope: scan.scope ?? 'direct' })
+      const node = jsonAt(text, scan.json);
+      if (!node || typeof node !== 'object') {
+        continue;
       }
-      continue
+      for (const [name, version] of Object.entries(node as Record<string, unknown>)) {
+        if (!name || skip?.test(name)) {
+          continue;
+        }
+        out.push({ name, version: typeof version === 'string' ? version : undefined, scope: scan.scope ?? 'direct' });
+      }
+      continue;
     }
 
-    if (!scan.pattern?.trim()) continue
-    const haystack = scan.block ? block(text, scan.block) : scan.section ? section(text, scan.section) : text
-    if (!haystack) continue
-    const pattern = safeRegex(scan.pattern, 'gm')
-    if (!pattern) continue
+    if (!scan.pattern?.trim()) {
+      continue;
+    }
+    const haystack = scan.block ? block(text, scan.block) : scan.section ? section(text, scan.section) : text;
+    if (!haystack) {
+      continue;
+    }
+    const pattern = safeRegex(scan.pattern, 'gm');
+    if (!pattern) {
+      continue;
+    }
     for (const match of haystack.matchAll(pattern)) {
-      const name = match[1]?.trim()
-      if (!name || skip?.test(name)) continue
+      const name = match[1]?.trim();
+      if (!name || skip?.test(name)) {
+        continue;
+      }
       // When the version is not in the second group it comes from a second
       // pattern applied to the whole match.
       const fromPattern = scan.versionPattern
         ? safeRegex(scan.versionPattern)?.exec(match[0])?.[1]?.trim()
-        : undefined
+        : undefined;
       out.push({
         name,
         version: fromPattern ?? (match[2] ?? match[3])?.trim(),
         scope: match[3] && !match[2]
           ? scan.scope ?? scan.directScope ?? 'direct'
           : scan.scope ?? (match[3] ? scan.indirectScope ?? 'indirect' : scan.directScope ?? 'direct'),
-      })
+      });
     }
   }
-  return out.length ? out : undefined
+  return out.length ? out : undefined;
+}
+
+/** Turns a kind's task definitions into runnable tasks — unfolding, dropping out or pulling in replacements. */
+async function kindTasks(id: string, kind: UserProjectKind, ctx: ProjectContext): Promise<ProjectTask[]> {
+  const out: ProjectTask[] = [];
+  // Tasks can unfold, drop out or pull in replacements — hence a loop of
+  // its own rather than a `map`.
+  const emit = async (task: UserKindTask) => {
+    const command = await taskCommand(ctx, task.command, task.wrapper);
+    const extra = await extraArgs(ctx, task);
+    const fill = (args: string[]) => args.flatMap((arg) => (arg === '{extraArgs}' ? extra : [arg]));
+    const expanded: ExpandedTask[] = [...await expandPerDir(ctx, task), ...await expandPerMatch(ctx, task)];
+
+    if (expanded.length) {
+      for (const { dir, label, args, group } of expanded) {
+        const filled = fill(args);
+        out.push({
+          id: `${id}:${task.id}:${dir}`,
+          label,
+          command,
+          args: filled,
+          group: group ?? task.group,
+          then: task.then,
+          detail: [task.command, ...filled].join(' '),
+        });
+      }
+      return;
+    }
+    if (!omitsWhenEmpty(task)) {
+      const filled = fill(task.args);
+      out.push({
+        id: `${id}:${task.id}`,
+        label: task.label || task.id,
+        command,
+        args: filled,
+        group: task.group,
+        then: task.then,
+        detail: task.detail || [task.command, ...filled].join(' '),
+      });
+    }
+    for (const extraTask of task.alsoWhenEmpty ?? []) {
+      await emit(extraTask);
+    }
+  };
+  for (const task of kind.tasks) {
+    await emit(task);
+  }
+  return out;
+}
+
+/** Name, version, description and the free-form facts of a project. */
+async function inspectKind(kind: UserProjectKind, ctx: ProjectContext): Promise<ProjectMeta> {
+  const meta: ProjectMeta = { facts: {}, buildFile: kind.buildFile, sourceRoots: kind.sourceRoots };
+  meta.dependencies = await scanDependencies(ctx, kind.dependencyScan);
+  for (const fact of kind.facts ?? []) {
+    const text = await ctx.readFile(fact.file);
+    const value = text === null ? undefined : factValue(text, fact);
+    if (!value) {
+      continue;
+    }
+    if (fact.role === 'name') {
+      meta.name = value;
+      continue;
+    }
+    if (fact.role === 'version') {
+      meta.version = value;
+      continue;
+    }
+    if (fact.role === 'description') {
+      meta.description = value;
+      continue;
+    }
+    meta.facts![fact.label || fact.file] = value;
+  }
+  // No facts, no empty field: a project kind without `facts` should have
+  // the same shape as a hand-written one.
+  if (!Object.keys(meta.facts ?? {}).length) {
+    delete meta.facts;
+  }
+  return meta;
 }
 
 export function compileProjectKind(kind: UserProjectKind, addonId: string): ProjectKind {
-  const id = `${addonId}.${kind.id}`
-  const rules = kind.rules ?? []
+  const id = `${addonId}.${kind.id}`;
+  const rules = kind.rules ?? [];
   return {
     id,
     name: kind.name || kind.id,
@@ -645,91 +902,28 @@ export function compileProjectKind(kind: UserProjectKind, addonId: string): Proj
     async detect(ctx) {
       // Markers with `*` are checked by the core; a rule without a file cannot exist.
       for (const rule of rules) {
-        if (!(await ruleHolds(ctx, rule))) return false
+        if (!(await ruleHolds(ctx, rule))) {
+          return false;
+        }
       }
-      return true
+      return true;
     },
-    async tasks(ctx): Promise<ProjectTask[]> {
-      const out: ProjectTask[] = []
-      // Tasks can unfold, drop out or pull in replacements — hence a loop of
-      // its own rather than a `map`.
-      const emit = async (task: UserKindTask) => {
-        const command = await taskCommand(ctx, task.command, task.wrapper)
-        const extra = await extraArgs(ctx, task)
-        const fill = (args: string[]) => args.flatMap((arg) => (arg === '{extraArgs}' ? extra : [arg]))
-        const expanded: { dir: string; label: string; args: string[]; group?: ProjectTask['group'] }[] =
-          [...await expandPerDir(ctx, task), ...await expandPerMatch(ctx, task)]
-
-        if (expanded.length) {
-          for (const { dir, label, args, group } of expanded) {
-            const filled = fill(args)
-            out.push({
-              id: `${id}:${task.id}:${dir}`,
-              label,
-              command,
-              args: filled,
-              group: group ?? task.group,
-              then: task.then,
-              detail: [task.command, ...filled].join(' '),
-            })
-          }
-          return
-        }
-        if (!omitsWhenEmpty(task)) {
-          const filled = fill(task.args)
-          out.push({
-            id: `${id}:${task.id}`,
-            label: task.label || task.id,
-            command,
-            args: filled,
-            group: task.group,
-            then: task.then,
-            detail: task.detail || [task.command, ...filled].join(' '),
-          })
-        }
-        for (const extraTask of task.alsoWhenEmpty ?? []) await emit(extraTask)
-      }
-      for (const task of kind.tasks) await emit(task)
-      return out
-    },
-    async inspect(ctx): Promise<ProjectMeta> {
-      const meta: ProjectMeta = { facts: {}, buildFile: kind.buildFile, sourceRoots: kind.sourceRoots }
-      meta.dependencies = await scanDependencies(ctx, kind.dependencyScan)
-      for (const fact of kind.facts ?? []) {
-        const text = await ctx.readFile(fact.file)
-        const value = text === null ? undefined : factValue(text, fact)
-        if (!value) continue
-        if (fact.role === 'name') {
-          meta.name = value
-          continue
-        }
-        if (fact.role === 'version') {
-          meta.version = value
-          continue
-        }
-        if (fact.role === 'description') {
-          meta.description = value
-          continue
-        }
-        meta.facts![fact.label || fact.file] = value
-      }
-      // No facts, no empty field: a project kind without `facts` should have
-      // the same shape as a hand-written one.
-      if (!Object.keys(meta.facts ?? {}).length) delete meta.facts
-      return meta
-    },
-  }
+    tasks: (ctx) => kindTasks(id, kind, ctx),
+    inspect: (ctx) => inspectKind(kind, ctx),
+  };
 }
 
 export function compileAddon(model: UserAddonModel, deps: CompileDeps = {}): Addon {
-  const themes: Theme[] = []
+  const themes: Theme[] = [];
   for (const entry of model.themes) {
     if ('theme' in entry) {
-      themes.push(entry.theme)
-      continue
+      themes.push(entry.theme);
+      continue;
     }
-    const resolved = deps.resolveTheme?.(entry.ref)
-    if (resolved) themes.push(resolved)
+    const resolved = deps.resolveTheme?.(entry.ref);
+    if (resolved) {
+      themes.push(resolved);
+    }
   }
 
   const addon: Addon = {
@@ -759,14 +953,18 @@ export function compileAddon(model: UserAddonModel, deps: CompileDeps = {}): Add
     panels: (model.panels ?? [])
       .filter((panel) => panel.id && panel.title && panel.content)
       .map((panel) => ({ ...panel, icon: panel.icon || undefined })),
+  };
+  const startEvents = deps.startEvents;
+  if (model.events.length && startEvents) {
+    addon.activate = () => startEvents(model);
   }
-  const startEvents = deps.startEvents
-  if (model.events.length && startEvents) addon.activate = () => startEvents(model)
   // Leave out empty lists so a compiled add-on has the same shape as a
   // hand-written one. `addon.snippets?.length` behaves the same either way,
   // but comparisons and dumps get noisy with empty fields.
   for (const key of ['languages', 'themes', 'commands', 'projectTemplates', 'projectKinds', 'snippets', 'panels'] as const) {
-    if (addon[key]?.length === 0) delete addon[key]
+    if (addon[key]?.length === 0) {
+      delete addon[key];
+    }
   }
-  return addon
+  return addon;
 }

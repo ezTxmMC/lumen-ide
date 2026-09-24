@@ -1,9 +1,19 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * How the built-in languages' servers are installed into Lumen's closed
  * environment (`~/.lumen/lsp`) — see `LspPackage`.
  */
 
-import type { LspPackage, SystemPackages } from '@/core/types'
+import type { LspPackage, SystemPackages } from '@/core/types';
 
 /** `<prefix><rust target><suffix>` for every platform, as Rust-built releases name them. */
 function rustTargets(prefix: string, suffix: string, windowsSuffix = suffix): Record<string, string> {
@@ -14,7 +24,7 @@ function rustTargets(prefix: string, suffix: string, windowsSuffix = suffix): Re
     'darwin-arm64': `^${prefix}aarch64-apple-darwin${suffix}$`,
     'win32-x64': `^${prefix}x86_64-pc-windows-msvc${windowsSuffix}$`,
     'win32-arm64': `^${prefix}aarch64-pc-windows-msvc${windowsSuffix}$`,
-  }
+  };
 }
 
 export const LSP_PACKAGES = {
@@ -51,7 +61,7 @@ export const LSP_PACKAGES = {
     bin: 'bin/jdtls',
     runtime: 'python',
   },
-} satisfies Record<string, LspPackage>
+} satisfies Record<string, LspPackage>;
 
 /**
  * The same servers in the system's package managers — the alternative the
@@ -62,4 +72,4 @@ export const SYSTEM_PACKAGES = {
   langserversExtracted: { brew: 'vscode-langservers-extracted' },
   deno: { pacman: 'deno', brew: 'deno', winget: 'DenoLand.Deno', scoop: 'deno', choco: 'deno' },
   jdtls: { brew: 'jdtls' },
-} satisfies Record<string, SystemPackages>
+} satisfies Record<string, SystemPackages>;

@@ -7,7 +7,7 @@
     {
       "id": "flutter-app",
       "name": "Flutter (App)",
-      "description": "Flutter-App mit Material 3, Widget-Test und Lints.",
+      "description": "Flutter app with Material 3, a widget test and lints.",
       "category": "Flutter",
       "languageId": "dart",
       "kindId": "flutter",
@@ -114,7 +114,7 @@
         },
         {
           "path": "test/widget_test.dart",
-          "content": "import 'package:flutter/material.dart';\nimport 'package:flutter_test/flutter_test.dart';\nimport 'package:{{slug|snake}}/main.dart';\n\nvoid main() {\n  testWidgets('Zähler zählt hoch', (tester) async {\n    await tester.pumpWidget(const App());\n    expect(find.text('0'), findsOneWidget);\n\n    await tester.tap(find.byIcon(Icons.add));\n    await tester.pump();\n    expect(find.text('1'), findsOneWidget);\n  });\n}\n"
+          "content": "import 'package:flutter/material.dart';\nimport 'package:flutter_test/flutter_test.dart';\nimport 'package:{{slug|snake}}/main.dart';\n\nvoid main() {\n  testWidgets('Counter counts up', (tester) async {\n    await tester.pumpWidget(const App());\n    expect(find.text('0'), findsOneWidget);\n\n    await tester.tap(find.byIcon(Icons.add));\n    await tester.pump();\n    expect(find.text('1'), findsOneWidget);\n  });\n}\n"
         },
         {
           "path": "README.md",

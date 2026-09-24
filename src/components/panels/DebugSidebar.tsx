@@ -1,25 +1,35 @@
-import { Bug, ChevronDown, Eye, EyeOff, Loader2, Pause, Play, Settings2, Square } from 'lucide-react'
-import { useStore } from '@/state/store'
-import { useT } from '@/i18n'
-import { debug } from '@/core/debug/manager'
-import { openLaunchConfigFile } from '@/core/debug/config'
-import { formatBindingsFor } from '@/core/keybindings'
-import { useDebugVersion, DebugSection, IconButton } from '../debug/shared'
-import { ScopeList } from '../debug/VariableTree'
-import { WatchList } from '../debug/WatchList'
-import { CallStack } from '../debug/CallStack'
-import { BreakpointList } from '../debug/BreakpointList'
-import { Button } from '../ui'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import { Bug, ChevronDown, Eye, EyeOff, Loader2, Pause, Play, Settings2, Square } from 'lucide-react';
+import { useStore } from '@/state/store';
+import { useT } from '@/i18n';
+import { debug } from '@/core/debug/manager';
+import { openLaunchConfigFile } from '@/core/debug/config';
+import { formatBindingsFor } from '@/core/keybindings';
+import { useDebugVersion, DebugSection, IconButton } from '../debug/shared';
+import { ScopeList } from '../debug/VariableTree';
+import { WatchList } from '../debug/WatchList';
+import { CallStack } from '../debug/CallStack';
+import { BreakpointList } from '../debug/BreakpointList';
+import { Button } from '../ui';
 
 const withKeys = (label: string, id: string) => {
-  const keys = formatBindingsFor(id)
-  return keys ? `${label} (${keys})` : label
-}
+  const keys = formatBindingsFor(id);
+  return keys ? `${label} (${keys})` : label;
+};
 
 function StartBar() {
-  const t = useT()
-  const workspace = useStore((s) => s.workspace)
-  const starting = debug.starting
+  const t = useT();
+  const workspace = useStore((s) => s.workspace);
+  const starting = debug.starting;
   return (
     <div className="shrink-0 px-3 pb-2">
       <div className="flex items-center gap-1">
@@ -36,15 +46,15 @@ function StartBar() {
       </div>
       <p className="mt-2 text-[11.5px] leading-relaxed text-subtle">{t('debug.sidebar.hint')}</p>
     </div>
-  )
+  );
 }
 
 function SessionBar() {
-  const t = useT()
-  const session = debug.focusedSession() ?? debug.sessions[0]
-  const stopped = debug.isStopped
-  const progress = session ? [...session.progress.values()][0] : undefined
-  const status = stopped ? t('debug.sidebar.paused') : t('debug.sidebar.running')
+  const t = useT();
+  const session = debug.focusedSession() ?? debug.sessions[0];
+  const stopped = debug.isStopped;
+  const progress = session ? [...session.progress.values()][0] : undefined;
+  const status = stopped ? t('debug.sidebar.paused') : t('debug.sidebar.running');
   return (
     <div className="shrink-0 px-3 pb-2">
       <div className="flex items-center gap-2 rounded-lumen-sm border border-edge bg-input px-2 py-1.5">
@@ -60,17 +70,17 @@ function SessionBar() {
         <IconButton title={withKeys(t('debug.cmd.stop'), 'debug.stop')} onClick={() => void debug.stopAll()} tone="hover:text-bad"><Square size={11} /></IconButton>
       </div>
     </div>
-  )
+  );
 }
 
 /** The “run and debug” sidebar. */
 export function DebugSidebar() {
-  const t = useT()
-  useDebugVersion()
-  const active = debug.hasSessions
-  const session = debug.focusedSession()
-  const frame = debug.focusedFrame()
-  const showInline = debug.showInline
+  const t = useT();
+  useDebugVersion();
+  const active = debug.hasSessions;
+  const session = debug.focusedSession();
+  const frame = debug.focusedFrame();
+  const showInline = debug.showInline;
 
   return (
     <div className="flex h-full flex-col">
@@ -100,5 +110,5 @@ export function DebugSidebar() {
         <BreakpointList />
       </div>
     </div>
-  )
+  );
 }

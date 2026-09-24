@@ -1,22 +1,32 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /** The small form building blocks of the Add-on Studio. */
 
-import { useId, useState, type ReactNode } from 'react'
-import { Plus, X } from 'lucide-react'
-import { useT } from '@/i18n'
+import { useId, useState, type ReactNode } from 'react';
+import { Plus, X } from 'lucide-react';
+import { useT } from '@/i18n';
 
 export const inputClass =
-  'lm-transition w-full rounded-lumen-sm border bg-input px-2 py-1 text-[12.5px] outline-none focus:border-accent'
+  'lm-transition w-full rounded-lumen-sm border bg-input px-2 py-1 text-[12.5px] outline-none focus:border-accent';
 
 export function Field({
   label, hint, error, children, className = '',
 }: {
-  label: string
-  hint?: string
-  error?: string | null
-  children: (id: string) => ReactNode
-  className?: string
+  label: string;
+  hint?: string;
+  error?: string | null;
+  children: (id: string) => ReactNode;
+  className?: string;
 }) {
-  const id = useId()
+  const id = useId();
   return (
     <div className={`min-w-0 ${className}`}>
       <label htmlFor={id} className="mb-1 block text-[11.5px] text-muted">{label}</label>
@@ -24,20 +34,20 @@ export function Field({
       {error && <span className="mt-1 block text-[11px] text-bad">{error}</span>}
       {!error && hint && <span className="mt-1 block text-[11px] leading-snug text-subtle">{hint}</span>}
     </div>
-  )
+  );
 }
 
 export function TextField({
   label, value, onChange, hint, error, placeholder, mono, className,
 }: {
-  label: string
-  value: string | undefined
-  onChange: (value: string) => void
-  hint?: string
-  error?: string | null
-  placeholder?: string
-  mono?: boolean
-  className?: string
+  label: string;
+  value: string | undefined;
+  onChange: (value: string) => void;
+  hint?: string;
+  error?: string | null;
+  placeholder?: string;
+  mono?: boolean;
+  className?: string;
 }) {
   return (
     <Field label={label} hint={hint} error={error} className={className}>
@@ -52,19 +62,19 @@ export function TextField({
         />
       )}
     </Field>
-  )
+  );
 }
 
 export function NumberField({
   label, value, onChange, hint, min, max, className,
 }: {
-  label: string
-  value: number | undefined
-  onChange: (value: number | undefined) => void
-  hint?: string
-  min?: number
-  max?: number
-  className?: string
+  label: string;
+  value: number | undefined;
+  onChange: (value: number | undefined) => void;
+  hint?: string;
+  min?: number;
+  max?: number;
+  className?: string;
 }) {
   return (
     <Field label={label} hint={hint} className={className}>
@@ -80,19 +90,19 @@ export function NumberField({
         />
       )}
     </Field>
-  )
+  );
 }
 
 export function AreaField({
   label, value, onChange, hint, rows = 6, placeholder, className,
 }: {
-  label: string
-  value: string | undefined
-  onChange: (value: string) => void
-  hint?: string
-  rows?: number
-  placeholder?: string
-  className?: string
+  label: string;
+  value: string | undefined;
+  onChange: (value: string) => void;
+  hint?: string;
+  rows?: number;
+  placeholder?: string;
+  className?: string;
 }) {
   return (
     <Field label={label} hint={hint} className={className}>
@@ -105,28 +115,30 @@ export function AreaField({
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key !== 'Tab') return
-            e.preventDefault()
-            const el = e.currentTarget
-            const start = el.selectionStart
-            const next = `${el.value.slice(0, start)}  ${el.value.slice(el.selectionEnd)}`
-            onChange(next)
-            requestAnimationFrame(() => el.setSelectionRange(start + 2, start + 2))
+            if (e.key !== 'Tab') {
+              return;
+            }
+            e.preventDefault();
+            const el = e.currentTarget;
+            const start = el.selectionStart;
+            const next = `${el.value.slice(0, start)}  ${el.value.slice(el.selectionEnd)}`;
+            onChange(next);
+            requestAnimationFrame(() => el.setSelectionRange(start + 2, start + 2));
           }}
           className={`${inputClass} border-edge resize-y font-mono text-[12px] leading-relaxed`}
         />
       )}
     </Field>
-  )
+  );
 }
 
 export function CheckField({
   label, checked, onChange, hint,
 }: {
-  label: string
-  checked: boolean
-  onChange: (value: boolean) => void
-  hint?: string
+  label: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  hint?: string;
 }) {
   return (
     <label className="flex cursor-pointer items-start gap-2 py-1 text-[12.5px] text-muted">
@@ -141,16 +153,16 @@ export function CheckField({
         {hint && <span className="block text-[11px] text-subtle">{hint}</span>}
       </span>
     </label>
-  )
+  );
 }
 
 export function ColorField({
   label, value, onChange, className,
 }: {
-  label: string
-  value: string | undefined
-  onChange: (value: string) => void
-  className?: string
+  label: string;
+  value: string | undefined;
+  onChange: (value: string) => void;
+  className?: string;
 }) {
   return (
     <Field label={label} className={className}>
@@ -176,33 +188,35 @@ export function ColorField({
         </div>
       )}
     </Field>
-  )
+  );
 }
 
 /** A word list as chips: Enter, comma or space adds, pasting splits. */
 export function ChipInput({
   label, values, onChange, hint, placeholder, allowSpaces = false, className,
 }: {
-  label: string
-  values: string[] | undefined
-  onChange: (values: string[]) => void
-  hint?: string
-  placeholder?: string
+  label: string;
+  values: string[] | undefined;
+  onChange: (values: string[]) => void;
+  hint?: string;
+  placeholder?: string;
   /** Spaces belong to the value — file names, for instance. */
-  allowSpaces?: boolean
-  className?: string
+  allowSpaces?: boolean;
+  className?: string;
 }) {
-  const t = useT()
-  const [draft, setDraft] = useState('')
-  const list = values ?? []
-  const separator = allowSpaces ? /[,\n]+/ : /[\s,]+/
+  const t = useT();
+  const [draft, setDraft] = useState('');
+  const list = values ?? [];
+  const separator = allowSpaces ? /[,\n]+/ : /[\s,]+/;
 
   const add = (raw: string) => {
-    const parts = raw.split(separator).map((p) => p.trim()).filter(Boolean)
-    if (!parts.length) return
-    onChange([...new Set([...list, ...parts])])
-    setDraft('')
-  }
+    const parts = raw.split(separator).map((p) => p.trim()).filter(Boolean);
+    if (!parts.length) {
+      return;
+    }
+    onChange([...new Set([...list, ...parts])]);
+    setDraft('');
+  };
 
   return (
     <Field label={`${label} (${list.length})`} hint={hint} className={className}>
@@ -227,26 +241,30 @@ export function ChipInput({
             spellCheck={false}
             placeholder={list.length ? undefined : placeholder}
             onChange={(e) => {
-              const value = e.target.value
+              const value = e.target.value;
               if (separator.test(value.slice(-1))) {
-                add(value)
-                return
+                add(value);
+                return;
               }
-              setDraft(value)
+              setDraft(value);
             }}
             onPaste={(e) => {
-              const text = e.clipboardData.getData('text')
-              if (!separator.test(text)) return
-              e.preventDefault()
-              add(`${draft}${text}`)
+              const text = e.clipboardData.getData('text');
+              if (!separator.test(text)) {
+                return;
+              }
+              e.preventDefault();
+              add(`${draft}${text}`);
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
-                e.preventDefault()
-                add(draft)
-                return
+                e.preventDefault();
+                add(draft);
+                return;
               }
-              if (e.key === 'Backspace' && !draft && list.length) onChange(list.slice(0, -1))
+              if (e.key === 'Backspace' && !draft && list.length) {
+                onChange(list.slice(0, -1));
+              }
             }}
             onBlur={() => add(draft)}
             className="min-w-[80px] flex-1 bg-transparent px-1 py-0.5 font-mono text-[11.5px] outline-none placeholder:text-subtle"
@@ -254,11 +272,11 @@ export function ChipInput({
         </div>
       )}
     </Field>
-  )
+  );
 }
 
 /** The heading of a section in the Studio. */
-export function Heading({ title, hint, action }: { title: string; hint?: string; action?: ReactNode }) {
+export function Heading({ title, hint, action }: { title: string; hint?: string; action?: ReactNode; }) {
   return (
     <div className="mt-5 mb-2 flex items-end gap-2 first:mt-0">
       <div className="min-w-0 flex-1">
@@ -267,10 +285,10 @@ export function Heading({ title, hint, action }: { title: string; hint?: string;
       </div>
       {action}
     </div>
-  )
+  );
 }
 
-export function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
+export function AddButton({ label, onClick }: { label: string; onClick: () => void; }) {
   return (
     <button
       onClick={onClick}
@@ -278,27 +296,27 @@ export function AddButton({ label, onClick }: { label: string; onClick: () => vo
     >
       <Plus size={12} /> {label}
     </button>
-  )
+  );
 }
 
 /** The list on the left of the Studio (languages, commands …). */
 export function ItemList<T>({
   items, selected, onSelect, render, onAdd, addLabel, errorIndexes,
 }: {
-  items: T[]
-  selected: number
-  onSelect: (index: number) => void
-  render: (item: T) => { title: string; subtitle?: string; color?: string }
-  onAdd: () => void
-  addLabel: string
-  errorIndexes?: Set<number>
+  items: T[];
+  selected: number;
+  onSelect: (index: number) => void;
+  render: (item: T) => { title: string; subtitle?: string; color?: string; };
+  onAdd: () => void;
+  addLabel: string;
+  errorIndexes?: Set<number>;
 }) {
   return (
     <div className="flex h-full w-[210px] shrink-0 flex-col border-r border-edge">
       <div className="min-h-0 flex-1 overflow-y-auto p-1.5">
         {items.map((item, index) => {
-          const info = render(item)
-          const active = index === selected
+          const info = render(item);
+          const active = index === selected;
           return (
             <button
               key={index}
@@ -315,12 +333,12 @@ export function ItemList<T>({
               </span>
               {errorIndexes?.has(index) && <span className="size-1.5 shrink-0 rounded-full bg-bad" />}
             </button>
-          )
+          );
         })}
       </div>
       <div className="border-t border-edge p-1.5">
         <AddButton label={addLabel} onClick={onAdd} />
       </div>
     </div>
-  )
+  );
 }

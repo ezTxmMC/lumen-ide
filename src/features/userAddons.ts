@@ -1,27 +1,39 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Starting the “userAddons” feature: load and register user add-ons, and
  * register the Add-on Studio's commands.
  */
 
-import { createElement } from 'react'
-import { Blocks } from 'lucide-react'
-import { useStore } from '@/state/store'
-import { registerCommandProvider } from '@/core/commands'
-import { registry } from '@/core/registry'
-import { userAddons } from '@/core/user-addons/manager'
-import { viewRegistry, type ViewDef } from '@/core/views'
-import { namedIcon } from '@/components/ui/named-icons'
-import { ExtensionPageView } from '@/components/panels/ExtensionPageView'
-import { t } from '@/i18n'
+import { createElement } from 'react';
+import { Blocks } from 'lucide-react';
+import { useStore } from '@/state/store';
+import { registerCommandProvider } from '@/core/commands';
+import { registry } from '@/core/registry';
+import { userAddons } from '@/core/user-addons/manager';
+import { viewRegistry, type ViewDef } from '@/core/views';
+import { namedIcon } from '@/components/ui/named-icons';
+import { ExtensionPageView } from '@/components/panels/ExtensionPageView';
+import { t } from '@/i18n';
 
 /** What was last handed to the docks — the registry reports far more often than panels change. */
-let lastPanels = ''
+let lastPanels = '';
 
 /** The panels of every active add-on become views of the docks. */
 function syncPanels() {
-  const key = JSON.stringify(registry.panels())
-  if (key === lastPanels) return
-  lastPanels = key
+  const key = JSON.stringify(registry.panels());
+  if (key === lastPanels) {
+    return;
+  }
+  lastPanels = key;
   const views: ViewDef[] = registry.panels().map(({ addonId, addonName, panel }, index) => ({
     id: `addon:${addonId}:${panel.id}`,
     title: () => panel.title,
@@ -30,15 +42,15 @@ function syncPanels() {
     order: 300 + index,
     source: () => addonName,
     render: () => createElement(ExtensionPageView, { page: { ...panel, format: panel.format ?? 'markdown' } }),
-  }))
-  viewRegistry.sync('addon:', views)
+  }));
+  viewRegistry.sync('addon:', views);
 }
 
 export function init() {
-  syncPanels()
-  registry.subscribe(syncPanels)
+  syncPanels();
+  registry.subscribe(syncPanels);
   registerCommandProvider(() => {
-    const category = t('addonStudio.commands.category')
+    const category = t('addonStudio.commands.category');
     return [
       {
         id: 'addonStudio.new',
@@ -51,8 +63,10 @@ export function init() {
         title: t('addonStudio.commands.import'),
         category,
         run: async () => {
-          const model = await userAddons.importFile()
-          if (model) useStore.getState().openAddonStudio(model.id)
+          const model = await userAddons.importFile();
+          if (model) {
+            useStore.getState().openAddonStudio(model.id);
+          }
         },
       },
       ...userAddons.list().map((model) => ({
@@ -61,7 +75,7 @@ export function init() {
         category,
         run: () => useStore.getState().openAddonStudio(model.id),
       })),
-    ]
-  })
-  return userAddons.init()
+    ];
+  });
+  return userAddons.init();
 }

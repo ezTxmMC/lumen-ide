@@ -13,8 +13,8 @@
       "numbers": "^\\d+(?:\\.\\d+)?",
       "operators": "^(?:=>|[=<>:+-])",
       "snippets": [
-        { "label": "info", "detail": "Info-Zeile", "body": "info $0" },
-        { "label": "error", "detail": "Fehlerzeile", "body": "error $0" }
+        { "label": "info", "detail": "Info line", "body": "info $0" },
+        { "label": "error", "detail": "Error line", "body": "error $0" }
       ]
     }
   ],

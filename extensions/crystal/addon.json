@@ -547,7 +547,7 @@
             "field": "type",
             "equals": "app"
           },
-          "content": "module {{slug|pascal}}\n  VERSION = \"{{version}}\"\n\n  def self.greet(name : String) : String\n    \"Hallo, #{name}!\"\n  end\nend\n\nputs {{slug|pascal}}.greet(\"{{name}}\")\n"
+          "content": "module {{slug|pascal}}\n  VERSION = \"{{version}}\"\n\n  def self.greet(name : String) : String\n    \"Hello, #{name}!\"\n  end\nend\n\nputs {{slug|pascal}}.greet(\"{{name}}\")\n"
         },
         {
           "path": "src/{{slug|snake}}.cr",
@@ -555,11 +555,11 @@
             "field": "type",
             "equals": "lib"
           },
-          "content": "module {{slug|pascal}}\n  VERSION = \"{{version}}\"\n\n  def self.greet(name : String) : String\n    \"Hallo, #{name}!\"\n  end\nend\n"
+          "content": "module {{slug|pascal}}\n  VERSION = \"{{version}}\"\n\n  def self.greet(name : String) : String\n    \"Hello, #{name}!\"\n  end\nend\n"
         },
         {
           "path": "spec/{{slug|snake}}_spec.cr",
-          "content": "require \"./spec_helper\"\n\ndescribe {{slug|pascal}} do\n  it \"grüßt\" do\n    {{slug|pascal}}.greet(\"Welt\").should eq(\"Hallo, Welt!\")\n  end\nend\n"
+          "content": "require \"./spec_helper\"\n\ndescribe {{slug|pascal}} do\n  it \"greets\" do\n    {{slug|pascal}}.greet(\"World\").should eq(\"Hello, World!\")\n  end\nend\n"
         },
         {
           "path": "spec/spec_helper.cr",

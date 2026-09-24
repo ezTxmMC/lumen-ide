@@ -1,45 +1,61 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * “This window or a new one?” — asked when a project is picked from the
  * switcher while another one is open and the setting says `ask`. With
  * “Remember my choice” the answer goes into the setting (Settings › General).
  */
 
-import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
-import { AppWindow, PanelsTopLeft, X } from 'lucide-react'
-import { useT } from '@/i18n'
-import { resolveOpenChoice, useOpenChoice, type OpenTarget } from '@/lib/open-project'
-import { LAYER } from '../ui/layers'
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { AppWindow, PanelsTopLeft, X } from 'lucide-react';
+import { useT } from '@/i18n';
+import { resolveOpenChoice, useOpenChoice, type OpenTarget } from '@/lib/open-project';
+import { LAYER } from '../ui/layers';
 
 export function OpenProjectChoice() {
-  const pending = useOpenChoice((s) => s.pending)
-  if (!pending) return null
-  return <ChoiceDialog name={pending.name} path={pending.path} />
+  const pending = useOpenChoice((s) => s.pending);
+  if (!pending) {
+    return null;
+  }
+  return <ChoiceDialog name={pending.name} path={pending.path} />;
 }
 
-function ChoiceDialog({ name, path }: { name: string; path: string }) {
-  const t = useT()
-  const [remember, setRemember] = useState(false)
-  const first = useRef<HTMLButtonElement>(null)
+function ChoiceDialog({ name, path }: { name: string; path: string; }) {
+  const t = useT();
+  const [remember, setRemember] = useState(false);
+  const first = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => { first.current?.focus() }, [])
+  useEffect(() => { first.current?.focus(); }, []);
 
-  const choose = (target: OpenTarget | null) => resolveOpenChoice(target, remember)
+  const choose = (target: OpenTarget | null) => resolveOpenChoice(target, remember);
 
-  const options: { target: OpenTarget; icon: typeof AppWindow; label: string; hint: string }[] = [
+  const options: { target: OpenTarget; icon: typeof AppWindow; label: string; hint: string; }[] = [
     { target: 'this', icon: PanelsTopLeft, label: t('projectSwitcher.choice.this'), hint: t('projectSwitcher.choice.thisHint') },
     { target: 'new', icon: AppWindow, label: t('projectSwitcher.choice.new'), hint: t('projectSwitcher.choice.newHint') },
-  ]
+  ];
 
   return createPortal(
     <div
       className={`lm-anim-fade fixed inset-0 ${LAYER.dialog} flex items-start justify-center bg-black/40 p-6 pt-[16vh]`}
-      onMouseDown={(event) => { if (event.target === event.currentTarget) choose(null) }}
+      onMouseDown={(event) => { if (event.target === event.currentTarget) {
+        choose(null);
+      } }}
       onKeyDown={(event) => {
-        if (event.key !== 'Escape') return
-        event.preventDefault()
-        event.stopPropagation()
-        choose(null)
+        if (event.key !== 'Escape') {
+          return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        choose(null);
       }}
     >
       <div
@@ -108,5 +124,5 @@ function ChoiceDialog({ name, path }: { name: string; path: string }) {
       </div>
     </div>,
     document.body,
-  )
+  );
 }

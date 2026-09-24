@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * The project switcher in the title bar: the current project's name, and a
  * dropdown with the recent projects (searchable), “Open Folder…”, “New
@@ -5,34 +15,37 @@
  * `openProject` — this window, a new one, or the question which.
  */
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
-import { AppWindow, Check, ChevronDown, FolderGit2, FolderOpen, FolderPlus, Search } from 'lucide-react'
-import { useStore, type RecentProject } from '@/state/store'
-import { useT } from '@/i18n'
-import { formatBindingsFor } from '@/core/keybindings'
-import { openFolderAsProject, openProject, useProjectSwitcher } from '@/lib/open-project'
-import { LAYER } from '../ui/layers'
-import { OpenProjectChoice } from './OpenProjectChoice'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { AppWindow, Check, ChevronDown, FolderGit2, FolderOpen, FolderPlus, Search } from 'lucide-react';
+import { useStore, type RecentProject } from '@/state/store';
+import { useT } from '@/i18n';
+import { formatBindingsFor } from '@/core/keybindings';
+import { openFolderAsProject, openProject, useProjectSwitcher } from '@/lib/open-project';
+import { LAYER } from '../ui/layers';
+import { OpenProjectChoice } from './OpenProjectChoice';
+import { useMissingFolders } from './useMissingFolders';
 
-const closeSwitcher = () => useProjectSwitcher.setState({ open: false })
+const closeSwitcher = () => useProjectSwitcher.setState({ open: false });
 
-const baseName = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path
+const baseName = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 
 function matches(project: RecentProject, query: string): boolean {
-  const needle = query.trim().toLowerCase()
-  if (!needle) return true
-  return `${project.name} ${project.path}`.toLowerCase().includes(needle)
+  const needle = query.trim().toLowerCase();
+  if (!needle) {
+    return true;
+  }
+  return `${project.name} ${project.path}`.toLowerCase().includes(needle);
 }
 
 export function ProjectSwitcher() {
-  const t = useT()
-  const workspace = useStore((s) => s.workspace)
-  const project = useStore((s) => s.project)
-  const open = useProjectSwitcher((s) => s.open)
-  const button = useRef<HTMLButtonElement>(null)
+  const t = useT();
+  const workspace = useStore((s) => s.workspace);
+  const project = useStore((s) => s.project);
+  const open = useProjectSwitcher((s) => s.open);
+  const button = useRef<HTMLButtonElement>(null);
 
-  const label = project?.name ?? (workspace ? baseName(workspace) : t('projectSwitcher.noProject'))
+  const label = project?.name ?? (workspace ? baseName(workspace) : t('projectSwitcher.noProject'));
 
   return (
     <div style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
@@ -55,71 +68,141 @@ export function ProjectSwitcher() {
       {open && <SwitcherPopup anchor={button.current} onClose={closeSwitcher} />}
       <OpenProjectChoice />
     </div>
-  )
+  );
 }
 
-function SwitcherPopup({ anchor, onClose }: { anchor: HTMLElement | null; onClose: () => void }) {
-  const t = useT()
-  const recent = useStore((s) => s.recentProjects)
-  const workspace = useStore((s) => s.workspace)
-  const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState(0)
-  const [missing, setMissing] = useState<Set<string>>(new Set())
-  const [position, setPosition] = useState<{ left: number; top: number }>({ left: 0, top: 0 })
-  const panel = useRef<HTMLDivElement>(null)
-  const input = useRef<HTMLInputElement>(null)
-
+/** Where the popup sits: under its button, or centred under the title bar when opened by command. */
+function usePopupPosition(anchor: HTMLElement | null, panel: React.RefObject<HTMLDivElement>) {
+  const [position, setPosition] = useState<{ left: number; top: number; }>({ left: 0, top: 0 });
   useLayoutEffect(() => {
-    // Opened by command (no anchor in view): centred under the title bar.
-    const rect = anchor?.getBoundingClientRect()
-    const width = panel.current?.offsetWidth ?? 380
-    const left = rect ? rect.left : (window.innerWidth - width) / 2
-    setPosition({ left: Math.max(6, Math.min(left, window.innerWidth - width - 6)), top: (rect?.bottom ?? 36) + 4 })
-  }, [anchor])
+    const rect = anchor?.getBoundingClientRect();
+    const width = panel.current?.offsetWidth ?? 380;
+    const left = rect ? rect.left : (window.innerWidth - width) / 2;
+    setPosition({ left: Math.max(6, Math.min(left, window.innerWidth - width - 6)), top: (rect?.bottom ?? 36) + 4 });
+  }, [anchor, panel]);
+  return position;
+}
 
-  useEffect(() => { input.current?.focus() }, [])
-
-  useEffect(() => {
-    let cancelled = false
-    void Promise.all(recent.map(async (entry) => [entry.path, await window.lumen.fs.exists(entry.path).catch(() => false)] as const))
-      .then((results) => {
-        if (cancelled) return
-        setMissing(new Set(results.filter(([, exists]) => !exists).map(([path]) => path)))
-      })
-    return () => { cancelled = true }
-  }, [recent])
-
-  // A click beside it, or the window losing focus, closes it.
+/** A click beside the popup, or the window losing focus, closes it. */
+function useOutsideClose(panel: React.RefObject<HTMLDivElement>, onClose: () => void) {
   useEffect(() => {
     const onPointer = (event: MouseEvent) => {
-      const target = event.target as Element | null
-      if (panel.current?.contains(target)) return
-      if (target?.closest('[data-project-switcher]')) return
-      onClose()
-    }
-    document.addEventListener('mousedown', onPointer, true)
-    window.addEventListener('blur', onClose)
+      const target = event.target as Element | null;
+      if (panel.current?.contains(target)) {
+        return;
+      }
+      if (target?.closest('[data-project-switcher]')) {
+        return;
+      }
+      onClose();
+    };
+    document.addEventListener('mousedown', onPointer, true);
+    window.addEventListener('blur', onClose);
     return () => {
-      document.removeEventListener('mousedown', onPointer, true)
-      window.removeEventListener('blur', onClose)
-    }
-  }, [onClose])
+      document.removeEventListener('mousedown', onPointer, true);
+      window.removeEventListener('blur', onClose);
+    };
+  }, [onClose, panel]);
+}
+
+function SwitcherEntries({ list, index, workspace, missing, onHover, onChoose }: {
+  list: RecentProject[];
+  index: number;
+  workspace: string | null;
+  missing: Set<string>;
+  onHover(index: number): void;
+  onChoose(entry: RecentProject): void;
+}) {
+  const t = useT();
+  return (
+      <>
+    {list.map((entry, i) => {
+      const current = entry.path === workspace;
+      const gone = missing.has(entry.path);
+      return (
+        <button
+          key={entry.path}
+          data-project-path={entry.path}
+          onMouseEnter={() => onHover(i)}
+          onClick={() => onChoose(entry)}
+          disabled={gone}
+          title={gone ? t('projectSwitcher.missing') : entry.path}
+          className={[
+            'lm-transition flex w-full items-center gap-2 rounded-lumen-sm px-2 py-1.5 text-left disabled:opacity-40',
+            i === index ? 'bg-hover text-fg' : 'text-muted',
+          ].join(' ')}
+        >
+          <span className="w-3 shrink-0 text-accent">{current && <Check size={12} />}</span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[12.5px]">{entry.name}</span>
+            <span className="block truncate font-mono text-[10px] text-subtle">{entry.path}</span>
+          </span>
+          {current && <span className="shrink-0 text-[10.5px] text-subtle">{t('projectSwitcher.current')}</span>}
+        </button>
+      );
+    })}
+      </>
+  );
+}
+
+function SwitcherActions({ onRun }: { onRun(fn: () => void): () => void; }) {
+  const t = useT();
+  const actions = [
+    { icon: FolderOpen, label: t('projectSwitcher.openFolder'), keys: formatBindingsFor('file.open'), run: () => void openFolderAsProject() },
+    { icon: FolderPlus, label: t('projectSwitcher.newProject'), keys: formatBindingsFor('project.new'), run: () => useStore.getState().setNewProjectOpen(true) },
+    { icon: AppWindow, label: t('projectSwitcher.newWindow'), keys: formatBindingsFor('window.new'), run: () => void window.lumen.window.openProject() },
+  ];
+
+  return (
+    <div className="border-t border-edge p-1">
+      {actions.map(({ icon: Icon, label, keys, run: action }) => (
+        <button
+          key={label}
+          onClick={onRun(action)}
+          className="lm-transition flex w-full items-center gap-2 rounded-lumen-sm px-2 py-1 text-left text-[12.5px] text-muted hover:bg-hover hover:text-fg"
+        >
+          <Icon size={12} className="shrink-0 opacity-80" />
+          <span className="flex-1 truncate">{label}</span>
+          {keys && <span className="shrink-0 text-[10.5px] text-subtle">{keys}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function SwitcherPopup({ anchor, onClose }: { anchor: HTMLElement | null; onClose: () => void; }) {
+  const t = useT();
+  const recent = useStore((s) => s.recentProjects);
+  const workspace = useStore((s) => s.workspace);
+  const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState(0);
+  const panel = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const position = usePopupPosition(anchor, panel);
+
+  useEffect(() => { input.current?.focus(); }, []);
+
+  const missing = useMissingFolders(recent);
+
+  useOutsideClose(panel, onClose);
 
   const list = useMemo(
     () => [...recent].sort((a, b) => b.openedAt - a.openedAt).filter((entry) => matches(entry, query)),
     [recent, query],
-  )
-  const index = Math.min(selected, Math.max(0, list.length - 1))
+  );
+  const index = Math.min(selected, Math.max(0, list.length - 1));
 
   const choose = (entry: RecentProject | undefined) => {
-    if (!entry || missing.has(entry.path)) return
-    onClose()
-    void openProject(entry.path)
-  }
+    if (!entry || missing.has(entry.path)) {
+      return;
+    }
+    onClose();
+    void openProject(entry.path);
+  };
   const run = (fn: () => void) => () => {
-    onClose()
-    fn()
-  }
+    onClose();
+    fn();
+  };
 
   const onKey = (event: React.KeyboardEvent) => {
     const keys: Record<string, () => void> = {
@@ -127,19 +210,15 @@ function SwitcherPopup({ anchor, onClose }: { anchor: HTMLElement | null; onClos
       ArrowUp: () => setSelected(Math.max(index - 1, 0)),
       Enter: () => choose(list[index]),
       Escape: onClose,
+    };
+    const handler = keys[event.key];
+    if (!handler) {
+      return;
     }
-    const handler = keys[event.key]
-    if (!handler) return
-    event.preventDefault()
-    event.stopPropagation()
-    handler()
-  }
-
-  const actions = [
-    { icon: FolderOpen, label: t('projectSwitcher.openFolder'), keys: formatBindingsFor('file.open'), run: () => void openFolderAsProject() },
-    { icon: FolderPlus, label: t('projectSwitcher.newProject'), keys: formatBindingsFor('project.new'), run: () => useStore.getState().setNewProjectOpen(true) },
-    { icon: AppWindow, label: t('projectSwitcher.newWindow'), keys: formatBindingsFor('window.new'), run: () => void window.lumen.window.openProject() },
-  ]
+    event.preventDefault();
+    event.stopPropagation();
+    handler();
+  };
 
   return createPortal(
     <div
@@ -156,7 +235,7 @@ function SwitcherPopup({ anchor, onClose }: { anchor: HTMLElement | null; onClos
         <input
           ref={input}
           value={query}
-          onChange={(event) => { setQuery(event.target.value); setSelected(0) }}
+          onChange={(event) => { setQuery(event.target.value); setSelected(0); }}
           placeholder={t('projectSwitcher.search')}
           spellCheck={false}
           className="min-w-0 flex-1 bg-transparent text-[12.5px] text-fg outline-none placeholder:text-subtle"
@@ -170,47 +249,11 @@ function SwitcherPopup({ anchor, onClose }: { anchor: HTMLElement | null; onClos
             {query.trim() ? t('projectSwitcher.noMatch', { query: query.trim() }) : t('projectSwitcher.empty')}
           </p>
         )}
-        {list.map((entry, i) => {
-          const current = entry.path === workspace
-          const gone = missing.has(entry.path)
-          return (
-            <button
-              key={entry.path}
-              data-project-path={entry.path}
-              onMouseEnter={() => setSelected(i)}
-              onClick={() => choose(entry)}
-              disabled={gone}
-              title={gone ? t('projectSwitcher.missing') : entry.path}
-              className={[
-                'lm-transition flex w-full items-center gap-2 rounded-lumen-sm px-2 py-1.5 text-left disabled:opacity-40',
-                i === index ? 'bg-hover text-fg' : 'text-muted',
-              ].join(' ')}
-            >
-              <span className="w-3 shrink-0 text-accent">{current && <Check size={12} />}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[12.5px]">{entry.name}</span>
-                <span className="block truncate font-mono text-[10px] text-subtle">{entry.path}</span>
-              </span>
-              {current && <span className="shrink-0 text-[10.5px] text-subtle">{t('projectSwitcher.current')}</span>}
-            </button>
-          )
-        })}
+        <SwitcherEntries list={list} index={index} workspace={workspace} missing={missing} onHover={setSelected} onChoose={choose} />
       </div>
 
-      <div className="border-t border-edge p-1">
-        {actions.map(({ icon: Icon, label, keys, run: action }) => (
-          <button
-            key={label}
-            onClick={run(action)}
-            className="lm-transition flex w-full items-center gap-2 rounded-lumen-sm px-2 py-1 text-left text-[12.5px] text-muted hover:bg-hover hover:text-fg"
-          >
-            <Icon size={12} className="shrink-0 opacity-80" />
-            <span className="flex-1 truncate">{label}</span>
-            {keys && <span className="shrink-0 text-[10.5px] text-subtle">{keys}</span>}
-          </button>
-        ))}
-      </div>
+      <SwitcherActions onRun={run} />
     </div>,
     document.body,
-  )
+  );
 }

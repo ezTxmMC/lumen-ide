@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 import { useState, type ReactNode } from "react";
 import { DownloadCta } from "@/components/DownloadCta";
 import { EditorWindow, WINDOW_HEIGHT, WINDOW_WIDTH } from "@/editor/EditorWindow";
@@ -18,7 +28,7 @@ const FACTS = [
 
 const SHOT_FRAME = "rounded-[10px] shadow-[0_0_0_1px_rgb(255_255_255/0.08),0_30px_70px_-30px_rgb(0_0_0/0.85)]";
 
-function Wrap({ children, className = "", id }: { children: ReactNode; className?: string; id?: string }) {
+function Wrap({ children, className = "", id }: { children: ReactNode; className?: string; id?: string; }) {
   return (
     <div id={id} className={`mx-auto max-w-[1248px] px-4 sm:px-6 ${className}`}>
       {children}
@@ -26,7 +36,7 @@ function Wrap({ children, className = "", id }: { children: ReactNode; className
   );
 }
 
-function Head({ eyebrow, title, children }: { eyebrow: string; title: string; children: ReactNode }) {
+function Head({ eyebrow, title, children }: { eyebrow: string; title: string; children: ReactNode; }) {
   return (
     <div className="grid max-w-[68ch] gap-4">
       <span className="eyebrow text-accent">{eyebrow}</span>
@@ -36,7 +46,7 @@ function Head({ eyebrow, title, children }: { eyebrow: string; title: string; ch
   );
 }
 
-function Point({ title, tag, children }: { title: string; tag?: string; children: ReactNode }) {
+function Point({ title, tag, children }: { title: string; tag?: string; children: ReactNode; }) {
   return (
     <div className="grid max-w-[48ch] gap-1.5">
       <h3 className="flex items-baseline gap-2.5 text-[19px] font-semibold tracking-[-0.02em]">
@@ -48,7 +58,7 @@ function Point({ title, tag, children }: { title: string; tag?: string; children
   );
 }
 
-function Section({ id, children, ruled = true }: { id: string; children: ReactNode; ruled?: boolean }) {
+function Section({ id, children, ruled = true }: { id: string; children: ReactNode; ruled?: boolean; }) {
   return (
     <section id={id} className={`scroll-mt-[62px] ${ruled ? "border-t border-edge" : ""}`}>
       <Wrap className="py-[clamp(58px,8vw,96px)]">{children}</Wrap>
@@ -76,7 +86,7 @@ export function Home() {
 
 /* ------------------------------------------------------------------ */
 
-function Hero({ version }: { version?: string }) {
+function Hero({ version }: { version?: string; }) {
   return (
     <div className="field relative">
       <Wrap className="grid justify-items-center gap-[30px] pt-[clamp(56px,9vw,104px)] text-center">
@@ -150,7 +160,7 @@ function Workbench() {
   );
 }
 
-function Tile({ title, children }: { title: string; children: ReactNode }) {
+function Tile({ title, children }: { title: string; children: ReactNode; }) {
   return (
     <div className="grid content-start gap-2 rounded-[14px] border border-edge bg-surface p-6">
       <h3 className="text-[19px] font-semibold tracking-[-0.02em]">{title}</h3>
@@ -176,7 +186,7 @@ function Projects() {
   );
 }
 
-function Swatch({ theme, active, onPick }: { theme: Theme; active: boolean; onPick: () => void }) {
+function Swatch({ theme, active, onPick }: { theme: Theme; active: boolean; onPick: () => void; }) {
   const { ui } = theme;
   const strip = [ui.bg, ui.bgElevated, ui.accent, ...(["keyword", "string", "function", "number", "control"] as const).map((kind) => syntaxColor(theme, kind))];
   return (
@@ -372,7 +382,7 @@ function Details() {
   );
 }
 
-function GetIt({ version, date, notes }: { version?: string; date?: string; notes?: string }) {
+function GetIt({ version, date, notes }: { version?: string; date?: string; notes?: string; }) {
   return (
     <div className="field">
       <Wrap className="grid justify-items-center gap-5 py-[clamp(58px,8vw,90px)] text-center">

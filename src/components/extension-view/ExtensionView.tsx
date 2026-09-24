@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * Draws a view whose content an extension's code provides.
  *
@@ -8,94 +18,110 @@
  * together with the current values of every input of the view.
  */
 
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { ChevronRight, Loader2 } from 'lucide-react'
-import { extensionHost } from '@/core/extensions/host'
-import { renderMarkdown } from '@/lib/markdown'
-import type { ViewAction, ViewNode, ViewTone } from '../../../electron/features/extension-host/contract'
-import { namedIcon } from '../ui/named-icons'
-import { FileIcon } from '../icons/FileIcon'
-import { Button, Empty } from '../ui'
-import { ContextMenu, type MenuItem } from '../ui/ContextMenu'
-import { TONE_TEXT } from './tones'
-import { GridView } from './GridView'
-import { CodeInput } from './CodeInput'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { ChevronRight, Loader2 } from 'lucide-react';
+import { extensionHost } from '@/core/extensions/host';
+import { renderMarkdown } from '@/lib/markdown';
+import type { ViewAction, ViewNode, ViewTone } from '../../../electron/features/extension-host/contract';
+import { namedIcon } from '../ui/named-icons';
+import { FileIcon } from '../icons/FileIcon';
+import { Button, Empty } from '../ui';
+import { ContextMenu, type MenuItem } from '../ui/ContextMenu';
+import { TONE_TEXT } from './tones';
+import { GridView } from './GridView';
+import { CodeInput } from './CodeInput';
 
-export { TONE_TEXT }
+export { TONE_TEXT };
 
-type Inputs = Record<string, string | boolean>
+type Inputs = Record<string, string | boolean>;
 
 /**
  * What the user typed, per view (and editor tab). Kept outside the component:
  * an editor view unmounts when its tab is in the background, and a half-written
  * query must still be there when it comes back.
  */
-const inputCache = new Map<string, { inputs: Inputs; declared: Inputs }>()
+const inputCache = new Map<string, { inputs: Inputs; declared: Inputs; }>();
 
-const toneText = (tone: ViewTone | undefined, fallback = 'text-muted') => (tone ? TONE_TEXT[tone] : fallback)
+const toneText = (tone: ViewTone | undefined, fallback = 'text-muted') => (tone ? TONE_TEXT[tone] : fallback);
 
 interface Ctx {
-  run: (action: ViewAction) => void
-  inputs: Inputs
-  setInput: (id: string, value: string | boolean) => void
-  setInputs: (values: Inputs) => void
-  openMenu: (event: React.MouseEvent, actions: ViewAction[]) => void
+  run: (action: ViewAction) => void;
+  inputs: Inputs;
+  setInput: (id: string, value: string | boolean) => void;
+  setInputs: (values: Inputs) => void;
+  openMenu: (event: React.MouseEvent, actions: ViewAction[]) => void;
 }
 
 function useHost() {
-  useSyncExternalStore(extensionHost.subscribe, extensionHost.getVersion)
+  useSyncExternalStore(extensionHost.subscribe, extensionHost.getVersion);
 }
 
 /** The values of the view's inputs as the content declares them. */
 function declaredInputs(nodes: ViewNode[], out: Inputs = {}): Inputs {
   for (const node of nodes) {
-    if (node.type === 'input') out[node.id] = node.value ?? ''
-    if (node.type === 'code') out[node.id] = node.value ?? ''
-    if (node.type === 'select') out[node.id] = node.value
-    if (node.type === 'toggle') out[node.id] = node.value
-    if (node.type === 'section' || node.type === 'row') declaredInputs(node.children, out)
-    if (node.type === 'item' && node.children) declaredInputs(node.children, out)
+    if (node.type === 'input') {
+      out[node.id] = node.value ?? '';
+    }
+    if (node.type === 'code') {
+      out[node.id] = node.value ?? '';
+    }
+    if (node.type === 'select') {
+      out[node.id] = node.value;
+    }
+    if (node.type === 'toggle') {
+      out[node.id] = node.value;
+    }
+    if (node.type === 'section' || node.type === 'row') {
+      declaredInputs(node.children, out);
+    }
+    if (node.type === 'item' && node.children) {
+      declaredInputs(node.children, out);
+    }
   }
-  return out
+  return out;
 }
 
-export function ExtensionView({ extensionId, viewId, instance }: { extensionId: string; viewId: string; instance?: string }) {
-  useHost()
-  const state = extensionHost.view(extensionId, viewId, instance)
-  const cacheKey = `${extensionId}/${viewId}#${instance ?? ''}`
-  const cached = inputCache.get(cacheKey)
-  const [inputs, setInputsState] = useState<Inputs>(cached?.inputs ?? {})
+export function ExtensionView({ extensionId, viewId, instance }: { extensionId: string; viewId: string; instance?: string; }) {
+  useHost();
+  const state = extensionHost.view(extensionId, viewId, instance);
+  const cacheKey = `${extensionId}/${viewId}#${instance ?? ''}`;
+  const cached = inputCache.get(cacheKey);
+  const [inputs, setInputsState] = useState<Inputs>(cached?.inputs ?? {});
   // Actions read the inputs from here: a key pressed right after typing must see the last character.
-  const latest = useRef<Inputs>(inputs)
+  const latest = useRef<Inputs>(inputs);
   const setInputs = (update: (current: Inputs) => Inputs) => {
-    latest.current = update(latest.current)
-    setInputsState(latest.current)
-  }
-  const declared = useRef<Inputs>(cached?.declared ?? {})
-  const [menu, setMenu] = useState<{ x: number; y: number; items: MenuItem[] } | null>(null)
+    latest.current = update(latest.current);
+    setInputsState(latest.current);
+  };
+  const declared = useRef<Inputs>(cached?.declared ?? {});
+  const [menu, setMenu] = useState<{ x: number; y: number; items: MenuItem[]; } | null>(null);
 
-  useEffect(() => extensionHost.show(extensionId, viewId, instance), [extensionId, viewId, instance])
+  useEffect(() => extensionHost.show(extensionId, viewId, instance), [extensionId, viewId, instance]);
   useEffect(() => {
-    inputCache.set(cacheKey, { inputs, declared: declared.current })
-  }, [cacheKey, inputs])
+    inputCache.set(cacheKey, { inputs, declared: declared.current });
+  }, [cacheKey, inputs]);
   // A closed tab takes its typed text along.
   useEffect(() => () => {
-    if (instance !== undefined && !extensionHost.view(extensionId, viewId, instance).content) inputCache.delete(cacheKey)
-  }, [cacheKey, extensionId, viewId, instance])
+    if (instance !== undefined && !extensionHost.view(extensionId, viewId, instance).content) {
+      inputCache.delete(cacheKey);
+    }
+  }, [cacheKey, extensionId, viewId, instance]);
 
   // Take over values the extension changed (a cleared commit message, say), keep what the user typed otherwise.
   useEffect(() => {
-    const next = declaredInputs(state.content?.nodes ?? [])
-    const previous = declared.current
-    declared.current = next
+    const next = declaredInputs(state.content?.nodes ?? []);
+    const previous = declared.current;
+    declared.current = next;
     setInputs((current) => {
-      const merged: Inputs = { ...current }
+      const merged: Inputs = { ...current };
       for (const [id, value] of Object.entries(next)) {
-        if (!(id in current) || previous[id] !== value) merged[id] = value
+        if (!(id in current) || previous[id] !== value) {
+          merged[id] = value;
+        }
       }
-      return merged
-    })
-  }, [state.content])
+      return merged;
+    });
+  }, [state.content]);
 
   const ctx: Ctx = {
     run: (action) => void extensionHost.action(extensionId, viewId, action, latest.current, instance),
@@ -103,7 +129,7 @@ export function ExtensionView({ extensionId, viewId, instance }: { extensionId: 
     setInput: (id, value) => setInputs((current) => ({ ...current, [id]: value })),
     setInputs: (values) => setInputs((current) => ({ ...current, ...values })),
     openMenu: (event, actions) => {
-      event.preventDefault()
+      event.preventDefault();
       setMenu({
         x: event.clientX,
         y: event.clientY,
@@ -111,20 +137,22 @@ export function ExtensionView({ extensionId, viewId, instance }: { extensionId: 
           label: action.title, icon: action.icon ? namedIcon(action.icon) : undefined, danger: action.danger,
           disabled: action.disabled, run: () => ctx.run(action),
         })),
-      })
+      });
     },
-  }
+  };
 
   if (!state.content && state.loading) {
     return (
       <div className="flex h-full items-center justify-center text-subtle">
         <Loader2 size={16} className="lm-anim-spin" />
       </div>
-    )
+    );
   }
-  if (!state.content && state.error) return <Empty title={state.error} />
+  if (!state.content && state.error) {
+    return <Empty title={state.error} />;
+  }
 
-  const fill = state.content?.layout === 'fill'
+  const fill = state.content?.layout === 'fill';
   return (
     <div className={fill ? 'relative flex h-full flex-col overflow-hidden pb-2 [&>*:not(.flex-1)]:shrink-0' : 'relative h-full overflow-y-auto pb-3'}>
       {/* A tab in the editor area has no dock header: its toolbar goes on top. */}
@@ -139,19 +167,19 @@ export function ExtensionView({ extensionId, viewId, instance }: { extensionId: 
       <Nodes nodes={state.content?.nodes ?? []} ctx={ctx} depth={0} />
       {menu && <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => setMenu(null)} />}
     </div>
-  )
+  );
 }
 
 /** The view's toolbar actions, for the dock header. */
 export function ExtensionViewToolbar({ extensionId, viewId, instance, inputs = {} }: {
-  extensionId: string; viewId: string; instance?: string; inputs?: Inputs
+  extensionId: string; viewId: string; instance?: string; inputs?: Inputs;
 }) {
-  useHost()
-  const toolbar = extensionHost.view(extensionId, viewId, instance).content?.toolbar ?? []
+  useHost();
+  const toolbar = extensionHost.view(extensionId, viewId, instance).content?.toolbar ?? [];
   return (
     <>
       {toolbar.map((action) => {
-        const Icon = namedIcon(action.icon)
+        const Icon = namedIcon(action.icon);
         return (
           <Button
             key={action.action}
@@ -162,120 +190,167 @@ export function ExtensionViewToolbar({ extensionId, viewId, instance, inputs = {
           >
             <Icon size={13} />
           </Button>
-        )
+        );
       })}
     </>
-  )
+  );
 }
 
-function Nodes({ nodes, ctx, depth }: { nodes: ViewNode[]; ctx: Ctx; depth: number }) {
+function Nodes({ nodes, ctx, depth }: { nodes: ViewNode[]; ctx: Ctx; depth: number; }) {
   return (
     <>
       {nodes.map((node, index) => <Node key={nodeKey(node, index)} node={node} ctx={ctx} depth={depth} />)}
     </>
-  )
+  );
 }
 
 function nodeKey(node: ViewNode, index: number): string {
-  if ('id' in node && node.id) return `${node.type}:${node.id}`
-  return `${node.type}:${index}`
+  if ('id' in node && node.id) {
+    return `${node.type}:${node.id}`;
+  }
+  return `${node.type}:${index}`;
 }
 
-function Node({ node, ctx, depth }: { node: ViewNode; ctx: Ctx; depth: number }) {
-  const renderers: { [K in ViewNode['type']]: (n: Extract<ViewNode, { type: K }>) => React.ReactNode } = {
+type NodeOf<K extends ViewNode['type']> = Extract<ViewNode, { type: K; }>;
+
+function SelectNode({ n, ctx }: { n: NodeOf<'select'>; ctx: Ctx; }) {
+  return (
+    <label className="flex items-center gap-2 px-3 py-1 text-[11.5px] text-muted">
+      {n.label && <span className="shrink-0">{n.label}</span>}
+      <select
+        value={String(ctx.inputs[n.id] ?? n.value)}
+        onChange={(e) => {
+          ctx.setInput(n.id, e.target.value);
+          if (n.change) {
+            ctx.run({ ...n.change, payload: n.change.payload ?? e.target.value });
+          }
+        }}
+        className="min-w-0 flex-1 rounded-lumen-sm border border-edge bg-input px-1.5 py-0.5 text-[11.5px] text-fg"
+      >
+        {n.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </select>
+    </label>
+  );
+}
+
+function ToggleNode({ n, ctx }: { n: NodeOf<'toggle'>; ctx: Ctx; }) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2 px-3 py-1 text-[11.5px] text-muted">
+      <input
+        type="checkbox"
+        className="accent-[var(--c-accent)]"
+        checked={Boolean(ctx.inputs[n.id] ?? n.value)}
+        onChange={(e) => {
+          ctx.setInput(n.id, e.target.checked);
+          if (n.change) {
+            ctx.run({ ...n.change, payload: n.change.payload ?? e.target.checked });
+          }
+        }}
+      />
+      {n.label}
+    </label>
+  );
+}
+
+function ButtonsNode({ n, ctx }: { n: NodeOf<'buttons'>; ctx: Ctx; }) {
+  const variants = { primary: 'solid', secondary: 'outline', danger: 'danger' } as const;
+  return (
+    <div className="flex flex-wrap gap-1.5 px-3 py-1.5">
+      {n.buttons.map((button) => {
+        const Icon = button.icon ? namedIcon(button.icon) : null;
+        return (
+          <Button key={button.action} size="sm" variant={variants[button.variant ?? 'secondary']} disabled={button.disabled} onClick={() => ctx.run(button)}>
+            {Icon && <Icon size={12} />}
+            {button.title}
+          </Button>
+        );
+      })}
+    </div>
+  );
+}
+
+function TextNode({ n }: { n: NodeOf<'text'>; }) {
+  return (
+    <p className={`px-3 py-1 whitespace-pre-wrap break-words ${n.small ? 'text-[11px]' : 'text-[12px]'} ${n.mono ? 'font-mono' : ''} ${toneText(n.tone)}`}>
+      {n.text}
+    </p>
+  );
+}
+
+function KeyValueNode({ n }: { n: NodeOf<'keyValue'>; }) {
+  return (
+    <dl className="space-y-0.5 px-3 py-1 text-[12px]">
+      {n.rows.map((row) => (
+        <div key={row.key} className="flex items-baseline justify-between gap-3">
+          <dt className="shrink-0 text-subtle">{row.key}</dt>
+          <dd className={`truncate text-right ${toneText(row.tone)}`} title={row.value}>{row.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function EmptyNode({ n, ctx }: { n: NodeOf<'empty'>; ctx: Ctx; }) {
+  const Icon = n.icon ? namedIcon(n.icon) : null;
+  const action = n.action;
+  return (
+    <Empty
+      icon={Icon ? <Icon size={24} strokeWidth={1.4} /> : undefined}
+      title={n.title}
+      hint={n.hint}
+      action={action ? <Button size="sm" variant="solid" onClick={() => ctx.run(action)}>{action.title}</Button> : undefined}
+    />
+  );
+}
+
+/** Fields share the width; buttons, toggles and text keep theirs. The children's own padding goes. */
+function RowNode({ n, ctx, depth }: { n: NodeOf<'row'>; ctx: Ctx; depth: number; }) {
+  return (
+    <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 px-3 py-1">
+      {n.children.map((child, index) => (
+        <div
+          key={nodeKey(child, index)}
+          className={`[&>*]:px-0! [&>*]:py-0! ${GROWING_IN_ROW.has(child.type) ? 'min-w-[140px] flex-1' : 'shrink-0'}`}
+        >
+          <Node node={child} ctx={ctx} depth={depth} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CodeNode({ n, ctx }: { n: NodeOf<'code'>; ctx: Ctx; }) {
+  return (
+    <CodeInput
+      node={n}
+      value={String(ctx.inputs[n.id] ?? n.value ?? '')}
+      onChange={(value, selection) => ctx.setInputs({ [n.id]: value, [`${n.id}.selection`]: selection })}
+      onSubmit={() => { if (n.submit) {
+        ctx.run(n.submit);
+      } }}
+    />
+  );
+}
+
+function Node({ node, ctx, depth }: { node: ViewNode; ctx: Ctx; depth: number; }) {
+  const renderers: { [K in ViewNode['type']]: (n: NodeOf<K>) => React.ReactNode } = {
     section: (n) => <Section node={n} ctx={ctx} depth={depth} />,
     item: (n) => <Item node={n} ctx={ctx} depth={depth} />,
     input: (n) => <Input node={n} ctx={ctx} />,
-    select: (n) => (
-      <label className="flex items-center gap-2 px-3 py-1 text-[11.5px] text-muted">
-        {n.label && <span className="shrink-0">{n.label}</span>}
-        <select
-          value={String(ctx.inputs[n.id] ?? n.value)}
-          onChange={(e) => {
-            ctx.setInput(n.id, e.target.value)
-            if (n.change) ctx.run({ ...n.change, payload: n.change.payload ?? e.target.value })
-          }}
-          className="min-w-0 flex-1 rounded-lumen-sm border border-edge bg-input px-1.5 py-0.5 text-[11.5px] text-fg"
-        >
-          {n.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-        </select>
-      </label>
-    ),
-    toggle: (n) => (
-      <label className="flex cursor-pointer items-center gap-2 px-3 py-1 text-[11.5px] text-muted">
-        <input
-          type="checkbox"
-          className="accent-[var(--c-accent)]"
-          checked={Boolean(ctx.inputs[n.id] ?? n.value)}
-          onChange={(e) => {
-            ctx.setInput(n.id, e.target.checked)
-            if (n.change) ctx.run({ ...n.change, payload: n.change.payload ?? e.target.checked })
-          }}
-        />
-        {n.label}
-      </label>
-    ),
-    buttons: (n) => (
-      <div className="flex flex-wrap gap-1.5 px-3 py-1.5">
-        {n.buttons.map((button) => {
-          const Icon = button.icon ? namedIcon(button.icon) : null
-          const variants = { primary: 'solid', secondary: 'outline', danger: 'danger' } as const
-          return (
-            <Button key={button.action} size="sm" variant={variants[button.variant ?? 'secondary']} disabled={button.disabled} onClick={() => ctx.run(button)}>
-              {Icon && <Icon size={12} />}
-              {button.title}
-            </Button>
-          )
-        })}
-      </div>
-    ),
-    text: (n) => (
-      <p className={`px-3 py-1 whitespace-pre-wrap break-words ${n.small ? 'text-[11px]' : 'text-[12px]'} ${n.mono ? 'font-mono' : ''} ${toneText(n.tone)}`}>
-        {n.text}
-      </p>
-    ),
+    select: (n) => <SelectNode n={n} ctx={ctx} />,
+    toggle: (n) => <ToggleNode n={n} ctx={ctx} />,
+    buttons: (n) => <ButtonsNode n={n} ctx={ctx} />,
+    text: (n) => <TextNode n={n} />,
     markdown: (n) => <Markdown content={n.content} />,
-    keyValue: (n) => (
-      <dl className="space-y-0.5 px-3 py-1 text-[12px]">
-        {n.rows.map((row) => (
-          <div key={row.key} className="flex items-baseline justify-between gap-3">
-            <dt className="shrink-0 text-subtle">{row.key}</dt>
-            <dd className={`truncate text-right ${toneText(row.tone)}`} title={row.value}>{row.value}</dd>
-          </div>
-        ))}
-      </dl>
-    ),
-    empty: (n) => {
-      const Icon = n.icon ? namedIcon(n.icon) : null
-      const action = n.action
-      return (
-        <Empty
-          icon={Icon ? <Icon size={24} strokeWidth={1.4} /> : undefined}
-          title={n.title}
-          hint={n.hint}
-          action={action ? <Button size="sm" variant="solid" onClick={() => ctx.run(action)}>{action.title}</Button> : undefined}
-        />
-      )
-    },
+    keyValue: (n) => <KeyValueNode n={n} />,
+    empty: (n) => <EmptyNode n={n} ctx={ctx} />,
     progress: (n) => (
       <div className="flex items-center gap-2 px-3 py-1.5 text-[11.5px] text-subtle">
         <Loader2 size={12} className="lm-anim-spin" /> {n.label}
       </div>
     ),
     divider: () => <div className="mx-3 my-1.5 h-px bg-edge" />,
-    // Fields share the width; buttons, toggles and text keep theirs. The children's own padding goes.
-    row: (n) => (
-      <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 px-3 py-1">
-        {n.children.map((child, index) => (
-          <div
-            key={nodeKey(child, index)}
-            className={`[&>*]:px-0! [&>*]:py-0! ${GROWING_IN_ROW.has(child.type) ? 'min-w-[140px] flex-1' : 'shrink-0'}`}
-          >
-            <Node node={child} ctx={ctx} depth={depth} />
-          </div>
-        ))}
-      </div>
-    ),
+    row: (n) => <RowNode n={n} ctx={ctx} depth={depth} />,
     grid: (n) => (
       <GridView
         node={n}
@@ -284,59 +359,54 @@ function Node({ node, ctx, depth }: { node: ViewNode; ctx: Ctx; depth: number })
         run={ctx.run}
       />
     ),
-    code: (n) => (
-      <CodeInput
-        node={n}
-        value={String(ctx.inputs[n.id] ?? n.value ?? '')}
-        onChange={(value, selection) => ctx.setInputs({ [n.id]: value, [`${n.id}.selection`]: selection })}
-        onSubmit={() => { if (n.submit) ctx.run(n.submit) }}
-      />
-    ),
-  }
-  const render = renderers[node.type] as (n: ViewNode) => React.ReactNode
-  return <>{render(node)}</>
+    code: (n) => <CodeNode n={n} ctx={ctx} />,
+  };
+  const render = renderers[node.type] as (n: ViewNode) => React.ReactNode;
+  return <>{render(node)}</>;
 }
 
-const GROWING_IN_ROW = new Set<ViewNode['type']>(['input', 'select', 'code'])
+const GROWING_IN_ROW = new Set<ViewNode['type']>(['input', 'select', 'code']);
 
 function parseSelection(value: string | boolean | undefined): string[] {
-  if (typeof value !== 'string' || !value) return []
+  if (typeof value !== 'string' || !value) {
+    return [];
+  }
   try {
-    const ids = JSON.parse(value) as unknown
-    return Array.isArray(ids) ? ids.map(String) : []
+    const ids = JSON.parse(value) as unknown;
+    return Array.isArray(ids) ? ids.map(String) : [];
   } catch {
-    return []
+    return [];
   }
 }
 
-function Markdown({ content }: { content: string }) {
-  const html = renderMarkdown(content).innerHTML
-  return <div className="lm-markdown px-3 py-1 text-[12px] leading-relaxed text-muted" dangerouslySetInnerHTML={{ __html: html }} />
+function Markdown({ content }: { content: string; }) {
+  const html = renderMarkdown(content).innerHTML;
+  return <div className="lm-markdown px-3 py-1 text-[12px] leading-relaxed text-muted" dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-function ActionButtons({ actions, ctx }: { actions: ViewAction[]; ctx: Ctx }) {
+function ActionButtons({ actions, ctx }: { actions: ViewAction[]; ctx: Ctx; }) {
   return (
     <>
       {actions.map((action) => {
-        const Icon = namedIcon(action.icon)
+        const Icon = namedIcon(action.icon);
         return (
           <button
             key={action.action + JSON.stringify(action.payload ?? '')}
             title={action.title}
             disabled={action.disabled}
-            onClick={(e) => { e.stopPropagation(); ctx.run(action) }}
+            onClick={(e) => { e.stopPropagation(); ctx.run(action); }}
             className={`lm-transition rounded p-0.5 disabled:opacity-40 ${action.danger ? 'text-subtle hover:text-bad' : 'text-subtle hover:text-fg'}`}
           >
             <Icon size={12} />
           </button>
-        )
+        );
       })}
     </>
-  )
+  );
 }
 
-function Section({ node, ctx, depth }: { node: Extract<ViewNode, { type: 'section' }>; ctx: Ctx; depth: number }) {
-  const [open, setOpen] = useState(!node.collapsed)
+function Section({ node, ctx, depth }: { node: Extract<ViewNode, { type: 'section'; }>; ctx: Ctx; depth: number; }) {
+  const [open, setOpen] = useState(!node.collapsed);
   return (
     <section className="group/section">
       <div className="flex items-center gap-1 px-2 pt-1.5 pb-0.5">
@@ -354,32 +424,40 @@ function Section({ node, ctx, depth }: { node: Extract<ViewNode, { type: 'sectio
       </div>
       {open && <Nodes nodes={node.children} ctx={ctx} depth={depth} />}
     </section>
-  )
+  );
 }
 
-function Item({ node, ctx, depth }: { node: Extract<ViewNode, { type: 'item' }>; ctx: Ctx; depth: number }) {
-  const [open, setOpen] = useState(node.expanded ?? false)
+function Item({ node, ctx, depth }: { node: Extract<ViewNode, { type: 'item'; }>; ctx: Ctx; depth: number; }) {
+  const [open, setOpen] = useState(node.expanded ?? false);
   // The extension may open a row itself later (children loaded after a click).
   useEffect(() => {
-    if (node.expanded !== undefined) setOpen(node.expanded)
-  }, [node.expanded])
-  const hasChildren = Boolean(node.children?.length)
-  const Icon = node.icon ? namedIcon(node.icon) : null
+    if (node.expanded !== undefined) {
+      setOpen(node.expanded);
+    }
+  }, [node.expanded]);
+  const hasChildren = Boolean(node.children?.length);
+  const Icon = node.icon ? namedIcon(node.icon) : null;
   const click = () => {
     if (node.onClick) {
-      ctx.run(node.onClick)
-      return
+      ctx.run(node.onClick);
+      return;
     }
-    if (hasChildren) setOpen(!open)
-  }
+    if (hasChildren) {
+      setOpen(!open);
+    }
+  };
   return (
     <>
       <div
         role="button"
         tabIndex={0}
         onClick={click}
-        onKeyDown={(e) => { if (e.key === 'Enter') click() }}
-        onContextMenu={(e) => { if (node.menu?.length) ctx.openMenu(e, node.menu) }}
+        onKeyDown={(e) => { if (e.key === 'Enter') {
+          click();
+        } }}
+        onContextMenu={(e) => { if (node.menu?.length) {
+          ctx.openMenu(e, node.menu);
+        } }}
         title={node.tooltip ?? node.label}
         className="lm-row lm-transition group flex cursor-pointer items-center gap-1.5 text-[12.5px] hover:bg-hover"
         style={{ paddingLeft: 10 + depth * 12 }}
@@ -389,7 +467,7 @@ function Item({ node, ctx, depth }: { node: Extract<ViewNode, { type: 'item' }>;
             size={11}
             className="lm-transition shrink-0 text-subtle"
             style={{ transform: open ? 'rotate(90deg)' : 'none' }}
-            onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
+            onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
           />
         )}
         {node.fileIcon && <FileIcon name={node.fileIcon} size={13} />}
@@ -406,15 +484,17 @@ function Item({ node, ctx, depth }: { node: Extract<ViewNode, { type: 'item' }>;
       </div>
       {open && hasChildren && <Nodes nodes={node.children!} ctx={ctx} depth={depth + 1} />}
     </>
-  )
+  );
 }
 
-function Input({ node, ctx }: { node: Extract<ViewNode, { type: 'input' }>; ctx: Ctx }) {
-  const value = String(ctx.inputs[node.id] ?? node.value ?? '')
+function Input({ node, ctx }: { node: Extract<ViewNode, { type: 'input'; }>; ctx: Ctx; }) {
+  const value = String(ctx.inputs[node.id] ?? node.value ?? '');
   const submit = () => {
-    if (node.submit) ctx.run(node.submit)
-  }
-  const className = `lm-transition w-full rounded-lumen-sm border border-edge bg-input px-2 py-1 text-[12px] outline-none placeholder:text-subtle focus:border-accent ${node.mono ? 'font-mono' : ''}`
+    if (node.submit) {
+      ctx.run(node.submit);
+    }
+  };
+  const className = `lm-transition w-full rounded-lumen-sm border border-edge bg-input px-2 py-1 text-[12px] outline-none placeholder:text-subtle focus:border-accent ${node.mono ? 'font-mono' : ''}`;
   if (node.multiline) {
     return (
       <div className="px-3 py-1">
@@ -424,14 +504,16 @@ function Input({ node, ctx }: { node: Extract<ViewNode, { type: 'input' }>; ctx:
           placeholder={node.placeholder}
           onChange={(e) => ctx.setInput(node.id, e.target.value)}
           onKeyDown={(e) => {
-            if (e.key !== 'Enter' || !(e.ctrlKey || e.metaKey)) return
-            e.preventDefault()
-            submit()
+            if (e.key !== 'Enter' || !(e.ctrlKey || e.metaKey)) {
+              return;
+            }
+            e.preventDefault();
+            submit();
           }}
           className={`${className} resize-y`}
         />
       </div>
-    )
+    );
   }
   return (
     <div className="px-3 py-1">
@@ -441,12 +523,14 @@ function Input({ node, ctx }: { node: Extract<ViewNode, { type: 'input' }>; ctx:
         spellCheck={false}
         onChange={(e) => ctx.setInput(node.id, e.target.value)}
         onKeyDown={(e) => {
-          if (e.key !== 'Enter') return
-          e.preventDefault()
-          submit()
+          if (e.key !== 'Enter') {
+            return;
+          }
+          e.preventDefault();
+          submit();
         }}
         className={className}
       />
     </div>
-  )
+  );
 }

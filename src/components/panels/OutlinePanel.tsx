@@ -1,46 +1,68 @@
-import { useEffect, useMemo, useState } from 'react'
-import { ChevronRight, ListTree, Search } from 'lucide-react'
-import { useStore } from '@/state/store'
-import { lsp } from '@/core/lsp/manager'
-import { SYMBOL_GLYPH, symbolKindLabel } from '@/core/lsp/protocol'
-import { symbolStore, symbolPathAt, type OutlineNode } from '@/lib/symbols'
-import { t, useT } from '@/i18n'
-import { Empty } from '../ui'
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
+import { useEffect, useMemo, useState } from 'react';
+import { ChevronRight, ListTree, Search } from 'lucide-react';
+import { useStore } from '@/state/store';
+import { lsp } from '@/core/lsp/manager';
+import { SYMBOL_GLYPH, symbolKindLabel } from '@/core/lsp/protocol';
+import { symbolStore, symbolPathAt, type OutlineNode } from '@/lib/symbols';
+import { t, useT } from '@/i18n';
+import { Empty } from '../ui';
 
 /** Farbton je Symbolart — Klassen, Funktionen, Variablen unterscheidbar. */
 export function symbolTone(kind: number): string {
-  if ([5, 10, 11, 23, 26].includes(kind)) return 'var(--s-type, #e5c07b)'
-  if ([6, 9, 12].includes(kind)) return 'var(--s-function, #61afef)'
-  if ([2, 3, 4].includes(kind)) return 'var(--s-keyword, #c678dd)'
-  if ([7, 8, 13, 14, 22].includes(kind)) return 'var(--s-variable, #e06c75)'
-  return 'var(--c-text-subtle)'
+  if ([5, 10, 11, 23, 26].includes(kind)) {
+    return 'var(--s-type, #e5c07b)';
+  }
+  if ([6, 9, 12].includes(kind)) {
+    return 'var(--s-function, #61afef)';
+  }
+  if ([2, 3, 4].includes(kind)) {
+    return 'var(--s-keyword, #c678dd)';
+  }
+  if ([7, 8, 13, 14, 22].includes(kind)) {
+    return 'var(--s-variable, #e06c75)';
+  }
+  return 'var(--c-text-subtle)';
 }
 
 function useSymbols(path: string | null) {
-  const [version, setVersion] = useState(symbolStore.getVersion())
-  useEffect(() => symbolStore.subscribe(() => setVersion(symbolStore.getVersion())), [])
-  return useMemo(() => symbolStore.get(path), [path, version])
+  const [version, setVersion] = useState(symbolStore.getVersion());
+  useEffect(() => symbolStore.subscribe(() => setVersion(symbolStore.getVersion())), []);
+  return useMemo(() => symbolStore.get(path), [path, version]);
 }
 
 function matches(node: OutlineNode, needle: string): boolean {
-  if (!needle) return true
-  return node.name.toLowerCase().includes(needle) || node.children.some((c) => matches(c, needle))
+  if (!needle) {
+    return true;
+  }
+  return node.name.toLowerCase().includes(needle) || node.children.some((c) => matches(c, needle));
 }
 
 function Node({ node, depth, needle, activePath, onOpen }: {
-  node: OutlineNode
-  depth: number
-  needle: string
-  activePath: Set<OutlineNode>
-  onOpen: (node: OutlineNode) => void
+  node: OutlineNode;
+  depth: number;
+  needle: string;
+  activePath: Set<OutlineNode>;
+  onOpen: (node: OutlineNode) => void;
 }) {
-  const t = useT()
-  const [open, setOpen] = useState(depth < 2)
-  const visible = matches(node, needle)
-  if (!visible) return null
-  const expanded = open || needle.length > 0
-  const inPath = activePath.has(node)
-  const isLeaf = node.children.length === 0
+  const t = useT();
+  const [open, setOpen] = useState(depth < 2);
+  const visible = matches(node, needle);
+  if (!visible) {
+    return null;
+  }
+  const expanded = open || needle.length > 0;
+  const inPath = activePath.has(node);
+  const isLeaf = node.children.length === 0;
   return (
     <>
       <div
@@ -55,7 +77,7 @@ function Node({ node, depth, needle, activePath, onOpen }: {
         title={`${symbolKindLabel(node.kind)}${node.detail ? ` — ${node.detail}` : ''} · ${t('outline.line', { line: node.selectionRange.start.line + 1 })}`}
       >
         <button
-          onClick={(e) => { e.stopPropagation(); setOpen((v) => !v) }}
+          onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
           className={`flex size-4 shrink-0 items-center justify-center ${isLeaf ? 'invisible' : ''}`}
           aria-label={expanded ? t('outline.collapse') : t('outline.expand')}
         >
@@ -76,45 +98,55 @@ function Node({ node, depth, needle, activePath, onOpen }: {
         <Node key={`${child.name}-${child.range.start.line}-${i}`} node={child} depth={depth + 1} needle={needle} activePath={activePath} onOpen={onOpen} />
       ))}
     </>
-  )
+  );
 }
 
 function outlineHint(hasServer: boolean, status: string, label: string): string {
-  if (!hasServer) return t('outline.hintNoServer')
-  if (status === 'ready') return t('outline.hintNoSymbols')
-  if (status === 'unavailable') return t('outline.hintNotInstalled', { label })
-  return t('outline.hintWaiting')
+  if (!hasServer) {
+    return t('outline.hintNoServer');
+  }
+  if (status === 'ready') {
+    return t('outline.hintNoSymbols');
+  }
+  if (status === 'unavailable') {
+    return t('outline.hintNotInstalled', { label });
+  }
+  return t('outline.hintWaiting');
 }
 
 export function OutlinePanel() {
-  const t = useT()
-  const tab = useStore((s) => s.tabs.find((t) => t.id === s.activeTabId) ?? null)
-  const cursor = useStore((s) => s.cursor)
-  const openAt = useStore((s) => s.openAt)
-  const lspVersion = useStore((s) => s.lspVersion)
-  const language = useStore((s) => s.languageFor(tab))
-  const [query, setQuery] = useState('')
+  const t = useT();
+  const tab = useStore((s) => s.tabs.find((t) => t.id === s.activeTabId) ?? null);
+  const cursor = useStore((s) => s.cursor);
+  const openAt = useStore((s) => s.openAt);
+  const lspVersion = useStore((s) => s.lspVersion);
+  const language = useStore((s) => s.languageFor(tab));
+  const [query, setQuery] = useState('');
 
-  const symbols = useSymbols(tab?.path ?? null)
-  const activePath = useMemo(() => new Set(symbolPathAt(symbols, cursor)), [symbols, cursor])
-  const status = useMemo(() => lsp.status(language), [language, lspVersion])
-  const needle = query.trim().toLowerCase()
+  const symbols = useSymbols(tab?.path ?? null);
+  const activePath = useMemo(() => new Set(symbolPathAt(symbols, cursor)), [symbols, cursor]);
+  const status = useMemo(() => lsp.status(language), [language, lspVersion]);
+  const needle = query.trim().toLowerCase();
 
   const count = useMemo(() => {
-    const walk = (nodes: OutlineNode[]): number => nodes.reduce((n, node) => n + 1 + walk(node.children), 0)
-    return walk(symbols)
-  }, [symbols])
+    const walk = (nodes: OutlineNode[]): number => nodes.reduce((n, node) => n + 1 + walk(node.children), 0);
+    return walk(symbols);
+  }, [symbols]);
 
   const onOpen = (node: OutlineNode) => {
-    if (!tab?.path) return
+    if (!tab?.path) {
+      return;
+    }
     void openAt(
       tab.path,
       node.selectionRange.start.line, node.selectionRange.start.character,
       node.selectionRange.end.line, node.selectionRange.end.character,
-    )
-  }
+    );
+  };
 
-  if (!tab) return <Empty icon={<ListTree size={24} strokeWidth={1.4} />} title={t('outline.noFile')} />
+  if (!tab) {
+    return <Empty icon={<ListTree size={24} strokeWidth={1.4} />} title={t('outline.noFile')} />;
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -146,5 +178,5 @@ export function OutlinePanel() {
         ))}
       </div>
     </div>
-  )
+  );
 }

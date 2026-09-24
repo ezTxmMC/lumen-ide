@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2026 ezTxmMC
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * This file is part of Lumen IDE. It is free software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version. See the LICENSE file for details.
+ */
+
 /**
  * A small Markdown converter for the project pages.
  *
@@ -11,17 +21,19 @@
  * lands as visible text on the page rather than in the browser.
  */
 
-const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
+const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
 export function escapeHtml(text) {
-  return String(text).replace(/[&<>"']/g, (char) => ESCAPES[char])
+  return String(text).replace(/[&<>"']/g, (char) => ESCAPES[char]);
 }
 
 /** Only addresses harmless in a browser — no `javascript:`. */
 function safeUrl(url) {
-  const trimmed = url.trim()
-  if (/^(https?:|mailto:|#|\/)/i.test(trimmed)) return trimmed
-  return '#'
+  const trimmed = url.trim();
+  if (/^(https?:|mailto:|#|\/)/i.test(trimmed)) {
+    return trimmed;
+  }
+  return '#';
 }
 
 /** Markup within a line, on text already escaped. */
@@ -33,7 +45,15 @@ function inline(escaped) {
     .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_all, label, href) => `<a href="${escapeHtml(safeUrl(href))}" rel="noopener noreferrer">${label}</a>`)
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/(^|\W)_([^_]+)_(?=\W|$)/g, '$1<em>$2</em>')
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+}
+
+/** The `class` attribute naming the language of a fenced block, if it has one. */
+function languageClass(language) {
+  if (!language) {
+    return '';
+  }
+  return ` class="language-${escapeHtml(language)}"`;
 }
 
 /**
@@ -43,89 +63,97 @@ function inline(escaped) {
  * blocks, lists and tables without a real parser.
  */
 export function renderMarkdown(source) {
-  const lines = String(source ?? '').split(/\r?\n/)
-  const out = []
-  let inCode = false
-  let inList = null
-  let paragraph = []
+  const lines = String(source ?? '').split(/\r?\n/);
+  const out = [];
+  let inCode = false;
+  let inList = null;
+  let paragraph = [];
 
   const closeParagraph = () => {
-    if (!paragraph.length) return
-    out.push(`<p>${inline(paragraph.join(' '))}</p>`)
-    paragraph = []
-  }
+    if (!paragraph.length) {
+      return;
+    }
+    out.push(`<p>${inline(paragraph.join(' '))}</p>`);
+    paragraph = [];
+  };
   const closeList = () => {
-    if (!inList) return
-    out.push(`</${inList}>`)
-    inList = null
-  }
-  const closeAll = () => { closeParagraph(); closeList() }
+    if (!inList) {
+      return;
+    }
+    out.push(`</${inList}>`);
+    inList = null;
+  };
+  const closeAll = () => { closeParagraph(); closeList(); };
 
   for (const raw of lines) {
-    const line = raw.replace(/\s+$/, '')
+    const line = raw.replace(/\s+$/, '');
 
-    const fence = /^```(\w*)\s*$/.exec(line)
+    const fence = /^```(\w*)\s*$/.exec(line);
     if (fence) {
       if (inCode) {
-        out.push('</code></pre>')
-        inCode = false
-        continue
+        out.push('</code></pre>');
+        inCode = false;
+        continue;
       }
-      closeAll()
-      out.push(`<pre><code${fence[1] ? ` class="language-${escapeHtml(fence[1])}"` : ''}>`)
-      inCode = true
-      continue
+      closeAll();
+      out.push(`<pre><code${languageClass(fence[1])}>`);
+      inCode = true;
+      continue;
     }
     if (inCode) {
-      out.push(escapeHtml(raw))
-      continue
+      out.push(escapeHtml(raw));
+      continue;
     }
 
     if (!line.trim()) {
-      closeAll()
-      continue
+      closeAll();
+      continue;
     }
 
-    const heading = /^(#{1,6})\s+(.*)$/.exec(line)
+    const heading = /^(#{1,6})\s+(.*)$/.exec(line);
     if (heading) {
-      closeAll()
-      const level = heading[1].length
-      out.push(`<h${level}>${inline(escapeHtml(heading[2]))}</h${level}>`)
-      continue
+      closeAll();
+      const level = heading[1].length;
+      out.push(`<h${level}>${inline(escapeHtml(heading[2]))}</h${level}>`);
+      continue;
     }
 
     if (/^(?:---|\*\*\*|___)\s*$/.test(line)) {
-      closeAll()
-      out.push('<hr>')
-      continue
+      closeAll();
+      out.push('<hr>');
+      continue;
     }
 
-    const quote = /^>\s?(.*)$/.exec(line)
+    const quote = /^>\s?(.*)$/.exec(line);
     if (quote) {
-      closeAll()
-      out.push(`<blockquote>${inline(escapeHtml(quote[1]))}</blockquote>`)
-      continue
+      closeAll();
+      out.push(`<blockquote>${inline(escapeHtml(quote[1]))}</blockquote>`);
+      continue;
     }
 
-    const bullet = /^[-*+]\s+(.*)$/.exec(line)
-    const numbered = /^\d+[.)]\s+(.*)$/.exec(line)
-    const item = bullet ?? numbered
+    const bullet = /^[-*+]\s+(.*)$/.exec(line);
+    const numbered = /^\d+[.)]\s+(.*)$/.exec(line);
+    const item = bullet ?? numbered;
     if (item) {
-      closeParagraph()
-      const wanted = bullet ? 'ul' : 'ol'
-      if (inList && inList !== wanted) closeList()
-      if (!inList) {
-        out.push(`<${wanted}>`)
-        inList = wanted
+      closeParagraph();
+      const wanted = bullet ? 'ul' : 'ol';
+      if (inList && inList !== wanted) {
+        closeList();
       }
-      out.push(`<li>${inline(escapeHtml(item[1]))}</li>`)
-      continue
+      if (!inList) {
+        out.push(`<${wanted}>`);
+        inList = wanted;
+      }
+      out.push(`<li>${inline(escapeHtml(item[1]))}</li>`);
+      continue;
     }
-    closeList()
-    paragraph.push(escapeHtml(line.trim()))
+    closeList();
+    paragraph.push(escapeHtml(line.trim()));
   }
 
-  if (inCode) out.push('</code></pre>')
-  closeAll()
-  return out.join('\n')
+  if (inCode) {
+    out.push('</code></pre>');
+  }
+  closeAll();
+  return out.join('\n');
 }
