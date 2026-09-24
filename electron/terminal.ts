@@ -67,6 +67,32 @@ const require = createRequire(import.meta.url);
 let ptyModule: PtyModule | null = null;
 let ptyError: string | null = null;
 
+/**
+ * npm and electron-builder can drop the execute bit of node-pty's spawn-helper
+ * on macOS — every terminal then fails with "posix_spawnp failed".
+ */
+function ensureSpawnHelperExecutable() {
+  if (process.platform !== 'darwin') {
+    return;
+  }
+  try {
+    const root = path.dirname(require.resolve('node-pty/package.json')).replace('app.asar', 'app.asar.unpacked');
+    const dirs = [path.join(root, 'build', 'Release'), path.join(root, 'build', 'Debug')];
+    const prebuilds = path.join(root, 'prebuilds');
+    if (fs.existsSync(prebuilds)) {
+      dirs.push(...fs.readdirSync(prebuilds).map((d) => path.join(prebuilds, d)));
+    }
+    for (const dir of dirs) {
+      const helper = path.join(dir, 'spawn-helper');
+      if (fs.existsSync(helper)) {
+        fs.chmodSync(helper, 0o755);
+      }
+    }
+  } catch {
+    // Not resolvable: loading node-pty reports the real problem.
+  }
+}
+
 function loadPty(): PtyModule {
   if (ptyModule) {
     return ptyModule;
@@ -75,6 +101,7 @@ function loadPty(): PtyModule {
     throw new Error(ptyError);
   }
   try {
+    ensureSpawnHelperExecutable();
     ptyModule = require('node-pty') as PtyModule;
     return ptyModule;
   } catch (err) {
@@ -326,7 +353,7 @@ export function createTerminal(id: string, options: TerminalOptions, contents: W
   const shell = shells.find((s) => s.path === options.shell || s.id === options.shell)
     ?? shells.find((s) => s.isDefault)
     ?? shells[0];
-  const file = shell?.path ?? options.shell ?? (process.platform === 'win32' ? 'powershell.exe' : '/bin/sh');
+  const file = shell?.path ?? options.shell ?? (process.platform === 'win32' ? 'powershell.exe' : process.platform === 'darwin' ? '/bin/zsh' : '/bin/sh');
   const args = options.args ?? shell?.args ?? [];
   const cwd = options.cwd && fs.existsSync(options.cwd) ? options.cwd : os.homedir();
 
@@ -335,6 +362,8 @@ export function createTerminal(id: string, options: TerminalOptions, contents: W
     TERM: 'xterm-256color',
     COLORTERM: 'truecolor',
     TERM_PROGRAM: 'Lumen',
+    // Started from the Dock there is no locale: without one, shells garble non-ASCII text.
+    ...(process.platform === 'darwin' && !process.env.LANG ? { LANG: 'en_US.UTF-8' } : {}),
     ...(options.env ?? {}),
   };
 

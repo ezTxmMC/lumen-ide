@@ -13,6 +13,9 @@
  * waiting for a prompt that nobody can answer.
  */
 
+import os from 'node:os';
+import path from 'node:path';
+
 /** Raised when git exits with an error; `message` is what git printed. */
 export class GitError extends Error {
   constructor(message, result) {
@@ -23,7 +26,11 @@ export class GitError extends Error {
 }
 
 export function createGit(ctx, t) {
-  const binary = () => (ctx.settings.get('gitPath') ?? '').trim() || 'git';
+  const binary = () => {
+    const configured = (ctx.settings.get('gitPath') ?? '').trim();
+    // No shell runs the command, so `~/bin/git` needs expanding here.
+    return configured.startsWith('~/') ? path.join(os.homedir(), configured.slice(2)) : configured || 'git';
+  };
 
   /** An environment that makes git fail instead of asking in a terminal nobody sees. */
   function environment(readOnly) {
@@ -63,7 +70,12 @@ export function createGit(ctx, t) {
     if (result.code === 0 || options.allowFail) {
       return result;
     }
-    const message = (result.stderr || result.stdout).trim() || t('error.failed', { command: `git ${args[0]}`, code: String(result.code) });
+    const output = (result.stderr || result.stdout).trim();
+    // macOS: /usr/bin/git is a shim that fails until the Command Line Tools (or Xcode's license) are set up.
+    if (process.platform === 'darwin' && /xcode-select|xcodebuild -license|Xcode license/.test(output)) {
+      throw new GitError(`${output}\nInstall git with "xcode-select --install" or "brew install git", or set the path to git in the settings.`, result);
+    }
+    const message = output || t('error.failed', { command: `git ${args[0]}`, code: String(result.code) });
     throw new GitError(message, result);
   }
 
