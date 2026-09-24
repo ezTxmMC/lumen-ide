@@ -90,6 +90,9 @@ const REQUEST_TIMEOUT: Record<string, number> = {
 
 const MAX_LOG = 400
 
+/** The options of a formatting request: `tabSize`, `insertSpaces` and any extras the server understands. */
+export type FormattingOptions = { tabSize: number; insertSpaces: boolean } & Record<string, unknown>
+
 export class LspClient {
   readonly id: string
   readonly config: LspConfig
@@ -696,20 +699,20 @@ export class LspClient {
     return [...(provider?.triggerCharacters ?? []), ...(provider?.retriggerCharacters ?? [])]
   }
 
-  async formatting(filePath: string, tabSize: number) {
+  async formatting(filePath: string, options: FormattingOptions) {
     if (!this.supports('documentFormattingProvider')) return null
     return this.request<TextEdit[] | null>('textDocument/formatting', {
       ...this.doc(filePath),
-      options: { tabSize, insertSpaces: true, trimTrailingWhitespace: true },
+      options,
     }).catch(() => null)
   }
 
-  async rangeFormatting(filePath: string, range: Range, tabSize: number) {
+  async rangeFormatting(filePath: string, range: Range, options: FormattingOptions) {
     if (!this.supports('documentRangeFormattingProvider')) return null
     return this.request<TextEdit[] | null>('textDocument/rangeFormatting', {
       ...this.doc(filePath),
       range,
-      options: { tabSize, insertSpaces: true },
+      options,
     }).catch(() => null)
   }
 

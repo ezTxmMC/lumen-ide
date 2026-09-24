@@ -7,6 +7,7 @@
  * the outline — all of it through the `LspClient`.
  */
 
+import { formatFor, lspFormattingOptions } from '@/core/format-settings'
 import {
   Decoration, EditorView, hoverTooltip, keymap, showTooltip, ViewPlugin, WidgetType,
   type DecorationSet, type Tooltip, type ViewUpdate,
@@ -196,8 +197,11 @@ export function lspItemDeprecated(item: CompletionItem): boolean {
  */
 export function lspItemToCompletion(client: LspClient, item: CompletionItem): Completion {
   const label = lspItemLabel(item)
-  const insert = item.textEdit?.newText ?? item.insertText ?? label
-  const isSnippet = item.insertTextFormat === 2
+  const raw = item.textEdit?.newText ?? item.insertText ?? label
+  // Methods and constructors (kinds 2, 3, 4) that arrive without a call: add "()" with the cursor inside.
+  const needsCall = [2, 3, 4].includes(item.kind ?? 0) && !raw.includes('(')
+  const isSnippet = item.insertTextFormat === 2 || needsCall
+  const insert = needsCall ? `${raw}(\${})` : raw
   const detail = item.labelDetails?.description ?? item.detail?.split('\n')[0]
   const deprecated = lspItemDeprecated(item)
 
@@ -1123,11 +1127,11 @@ export async function formatDocument(view: EditorView, filePath: string): Promis
   if (!client) return false
 
   const spec = useStore.getState().languageFor(useStore.getState().activeTab())
-  const tabSize = spec?.indentUnit ?? 2
+  const options = lspFormattingOptions(formatFor(useStore.getState().formatSettings, spec?.id, spec?.indentUnit))
   const selection = view.state.selection.main
   const edits = selection.empty || !client.supports('documentRangeFormattingProvider')
-    ? await client.formatting(filePath, tabSize)
-    : await client.rangeFormatting(filePath, selectionRange(view), tabSize)
+    ? await client.formatting(filePath, options)
+    : await client.rangeFormatting(filePath, selectionRange(view), options)
   if (!edits?.length) return false
 
   const changes = textEditsToChanges(view.state.doc, edits)

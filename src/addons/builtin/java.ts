@@ -23,7 +23,7 @@ const JAVA_SETTINGS = {
     matchCase: 'off',
     chain: { enabled: true },
     postfix: { enabled: true },
-    lazyResolveTextEdit: { enabled: true },
+    lazyResolveTextEdit: { enabled: false },
     collapseCompletionItems: false,
     guessMethodArguments: true,
     importOrder: ['java', 'javax', 'jakarta', 'org', 'com', ''],

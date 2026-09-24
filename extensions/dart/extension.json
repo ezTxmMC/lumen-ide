@@ -1,0 +1,17 @@
+{
+  "id": "ext.dart",
+  "name": "Dart",
+  "version": "1.0.0",
+  "description": "Dart mit Raw-/Mehrzeilen-Strings, Null-Safety-Schlüsselwörtern, dart-run-Runner, Analysis Server und pub-Projekten mit Aufgaben und Vorlage.",
+  "author": "Lumen",
+  "icon": "Dt",
+  "color": "#00b4ab",
+  "category": "language",
+  "license": "MIT",
+  "keywords": [
+    "dart",
+    "pub",
+    "pubspec"
+  ],
+  "minAppVersion": "0.5.0"
+}

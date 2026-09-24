@@ -418,7 +418,25 @@
           ]
         }
       ],
-      "lsp": []
+      "lsp": [
+        {
+          "label": "autotools-language-server",
+          "command": "autotools-language-server",
+          "args": [],
+          "languageId": "make",
+          "rootMarkers": [
+            "Makefile",
+            "GNUmakefile",
+            ".git"
+          ],
+          "install": "pipx install autotools-language-server",
+          "package": {
+            "type": "pypi",
+            "package": "autotools-language-server"
+          },
+          "docs": "https://github.com/Freed-Wu/autotools-language-server"
+        }
+      ]
     },
     {
       "id": "xml",
@@ -491,6 +509,22 @@
             "pom.xml",
             ".git"
           ],
+          "settings": {
+            "xml": {
+              "format": {
+                "enabled": true,
+                "splitAttributes": "preserve",
+                "preserveAttributeLineBreaks": true,
+                "preserveEmptyContent": true,
+                "joinContentLines": false,
+                "joinCommentLines": false,
+                "joinCDATALines": false,
+                "preservedNewlines": 99,
+                "grammarAwareFormatting": false,
+                "emptyElements": "ignore"
+              }
+            }
+          },
           "install": "https://github.com/eclipse/lemminx (Binary „lemminx“ in den PATH)",
           "package": {
             "type": "github",
@@ -719,7 +753,24 @@
           ]
         }
       ],
-      "lsp": []
+      "lsp": [
+        {
+          "label": "groovy-language-server",
+          "command": "groovy-language-server",
+          "args": [],
+          "candidates": [
+            "~/.local/share/nvim/mason/bin/groovy-language-server"
+          ],
+          "languageId": "groovy",
+          "rootMarkers": [
+            "build.gradle",
+            "settings.gradle",
+            ".git"
+          ],
+          "install": "https://github.com/GroovyLanguageServer/groovy-language-server (Skript „groovy-language-server“ in den PATH; Mason: groovy-language-server)",
+          "docs": "https://github.com/GroovyLanguageServer/groovy-language-server"
+        }
+      ]
     },
     {
       "id": "properties",

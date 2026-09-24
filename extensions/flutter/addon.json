@@ -1,0 +1,403 @@
+{
+  "languages": [],
+  "themes": [],
+  "commands": [],
+  "events": [],
+  "templates": [
+    {
+      "id": "flutter-app",
+      "name": "Flutter (App)",
+      "description": "Flutter-App mit Material 3, Widget-Test und Lints.",
+      "category": "Flutter",
+      "languageId": "dart",
+      "kindId": "flutter",
+      "icon": "Fl",
+      "color": "#02569b",
+      "fields": [
+        {
+          "id": "description",
+          "label": "templates.fields.description",
+          "placeholder": "templates.fields.descriptionPlaceholder",
+          "required": false,
+          "section": "templates.sections.project"
+        },
+        {
+          "id": "org",
+          "label": "Organisation",
+          "default": "com.example",
+          "pattern": "[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*",
+          "mono": true,
+          "section": "templates.sections.project"
+        },
+        {
+          "id": "platforms",
+          "label": "Plattformen",
+          "type": "select",
+          "section": "templates.sections.build",
+          "choices": [
+            {
+              "value": "android,ios,web,linux,macos,windows",
+              "label": "Alle"
+            },
+            {
+              "value": "android,ios",
+              "label": "Mobil"
+            },
+            {
+              "value": "web",
+              "label": "Web"
+            },
+            {
+              "value": "linux,macos,windows",
+              "label": "Desktop"
+            }
+          ]
+        },
+        {
+          "id": "sdk",
+          "label": "Dart SDK",
+          "type": "select",
+          "section": "templates.sections.build",
+          "choices": [
+            {
+              "value": "^3.8.0",
+              "label": "3.8.0"
+            },
+            {
+              "value": "^3.7.0",
+              "label": "3.7.0"
+            },
+            {
+              "value": "^3.6.0",
+              "label": "3.6.0"
+            }
+          ]
+        }
+      ],
+      "open": "lib/main.dart",
+      "setup": [
+        {
+          "label": "flutter create",
+          "command": "flutter",
+          "args": [
+            "create",
+            "--project-name",
+            "{{slug|snake}}",
+            "--org",
+            "{{org}}",
+            "--platforms",
+            "{{platforms}}",
+            "."
+          ]
+        },
+        {
+          "label": "flutter pub get",
+          "command": "flutter",
+          "args": [
+            "pub",
+            "get"
+          ]
+        }
+      ],
+      "files": [
+        {
+          "path": "pubspec.yaml",
+          "content": "name: {{slug|snake}}\ndescription: {{description}}\npublish_to: none\nversion: 0.1.0+1\n\nenvironment:\n  sdk: {{sdk}}\n\ndependencies:\n  flutter:\n    sdk: flutter\n\ndev_dependencies:\n  flutter_test:\n    sdk: flutter\n  flutter_lints: ^5.0.0\n\nflutter:\n  uses-material-design: true\n"
+        },
+        {
+          "path": "analysis_options.yaml",
+          "content": "include: package:flutter_lints/flutter.yaml\n"
+        },
+        {
+          "path": "lib/main.dart",
+          "content": "import 'package:flutter/material.dart';\n\nvoid main() => runApp(const App());\n\nclass App extends StatelessWidget {\n  const App({super.key});\n\n  @override\n  Widget build(BuildContext context) {\n    return MaterialApp(\n      title: '{{name}}',\n      theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),\n      home: const HomePage(),\n    );\n  }\n}\n\nclass HomePage extends StatefulWidget {\n  const HomePage({super.key});\n\n  @override\n  State<HomePage> createState() => _HomePageState();\n}\n\nclass _HomePageState extends State<HomePage> {\n  int _count = 0;\n\n  @override\n  Widget build(BuildContext context) {\n    return Scaffold(\n      appBar: AppBar(title: const Text('{{name}}')),\n      body: Center(child: Text('$_count', style: Theme.of(context).textTheme.displayMedium)),\n      floatingActionButton: FloatingActionButton(\n        onPressed: () => setState(() => _count++),\n        child: const Icon(Icons.add),\n      ),\n    );\n  }\n}\n"
+        },
+        {
+          "path": "test/widget_test.dart",
+          "content": "import 'package:flutter/material.dart';\nimport 'package:flutter_test/flutter_test.dart';\nimport 'package:{{slug|snake}}/main.dart';\n\nvoid main() {\n  testWidgets('Zähler zählt hoch', (tester) async {\n    await tester.pumpWidget(const App());\n    expect(find.text('0'), findsOneWidget);\n\n    await tester.tap(find.byIcon(Icons.add));\n    await tester.pump();\n    expect(find.text('1'), findsOneWidget);\n  });\n}\n"
+        },
+        {
+          "path": "README.md",
+          "content": "# {{name}}\n\n```bash\nflutter run\nflutter test\n```\n"
+        },
+        {
+          "path": ".gitignore",
+          "content": ".dart_tool/\n.packages\nbuild/\npubspec.lock\n.lumen/\n.flutter-plugins\n.flutter-plugins-dependencies\n.idea/\n*.iml\n"
+        }
+      ]
+    }
+  ],
+  "projectKinds": [
+    {
+      "id": "flutter",
+      "name": "Flutter",
+      "icon": "Fl",
+      "color": "#02569b",
+      "markers": [
+        "pubspec.yaml"
+      ],
+      "rules": [
+        {
+          "file": "pubspec.yaml",
+          "pattern": "^\\s+sdk:\\s*flutter\\s*$"
+        }
+      ],
+      "priority": 20,
+      "languageIds": [
+        "dart"
+      ],
+      "dependencies": {
+        "manager": "pub",
+        "placeholder": "http",
+        "hint": "pub.dev",
+        "command": "flutter",
+        "args": [
+          "add",
+          "{spec}"
+        ],
+        "label": "flutter add {name}",
+        "id": "flutter:add"
+      },
+      "tasks": [
+        {
+          "id": "run",
+          "label": "flutter run",
+          "command": "flutter",
+          "args": [
+            "run"
+          ],
+          "group": "run"
+        },
+        {
+          "id": "run-chrome",
+          "label": "flutter run (Chrome)",
+          "command": "flutter",
+          "args": [
+            "run",
+            "-d",
+            "chrome"
+          ],
+          "group": "run"
+        },
+        {
+          "id": "run-linux",
+          "label": "flutter run (Linux)",
+          "command": "flutter",
+          "args": [
+            "run",
+            "-d",
+            "linux"
+          ],
+          "group": "run"
+        },
+        {
+          "id": "build-apk",
+          "label": "flutter build apk",
+          "command": "flutter",
+          "args": [
+            "build",
+            "apk"
+          ],
+          "group": "build"
+        },
+        {
+          "id": "build-web",
+          "label": "flutter build web",
+          "command": "flutter",
+          "args": [
+            "build",
+            "web"
+          ],
+          "group": "build"
+        },
+        {
+          "id": "build-linux",
+          "label": "flutter build linux",
+          "command": "flutter",
+          "args": [
+            "build",
+            "linux"
+          ],
+          "group": "build"
+        },
+        {
+          "id": "test",
+          "label": "templates.tasks.tests",
+          "command": "flutter",
+          "args": [
+            "test"
+          ],
+          "group": "test"
+        },
+        {
+          "id": "analyze",
+          "label": "flutter analyze",
+          "command": "flutter",
+          "args": [
+            "analyze"
+          ],
+          "group": "test"
+        },
+        {
+          "id": "pub-get",
+          "label": "flutter pub get",
+          "command": "flutter",
+          "args": [
+            "pub",
+            "get"
+          ],
+          "group": "build"
+        },
+        {
+          "id": "gen",
+          "label": "build_runner build",
+          "command": "dart",
+          "args": [
+            "run",
+            "build_runner",
+            "build",
+            "--delete-conflicting-outputs"
+          ],
+          "group": "build"
+        },
+        {
+          "id": "format",
+          "label": "dart format",
+          "command": "dart",
+          "args": [
+            "format",
+            "."
+          ],
+          "group": "other"
+        },
+        {
+          "id": "clean",
+          "label": "flutter clean",
+          "command": "flutter",
+          "args": [
+            "clean"
+          ],
+          "group": "other"
+        },
+        {
+          "id": "doctor",
+          "label": "flutter doctor",
+          "command": "flutter",
+          "args": [
+            "doctor",
+            "-v"
+          ],
+          "group": "other"
+        },
+        {
+          "id": "upgrade",
+          "label": "templates.tasks.updateDeps",
+          "command": "flutter",
+          "args": [
+            "pub",
+            "upgrade"
+          ],
+          "group": "other"
+        }
+      ],
+      "facts": [
+        {
+          "label": "Paket",
+          "file": "pubspec.yaml",
+          "pattern": "^name:\\s*(\\S+)",
+          "role": "name"
+        },
+        {
+          "label": "Version",
+          "file": "pubspec.yaml",
+          "pattern": "^version:\\s*(\\S+)"
+        },
+        {
+          "label": "SDK",
+          "file": "pubspec.yaml",
+          "pattern": "^\\s+sdk:\\s*['\"]?([^'\"\\n]+)"
+        }
+      ],
+      "buildFile": "pubspec.yaml",
+      "dependencyScan": [
+        {
+          "file": "pubspec.yaml",
+          "section": "dependencies",
+          "pattern": "^\\s{2}([a-z_][\\w]*):\\s*[\\^<>=~]*([\\d][^\\s#]*)?"
+        },
+        {
+          "file": "pubspec.yaml",
+          "section": "dev_dependencies",
+          "pattern": "^\\s{2}([a-z_][\\w]*):\\s*[\\^<>=~]*([\\d][^\\s#]*)?",
+          "scope": "dev"
+        }
+      ],
+      "sourceRoots": [
+        "lib",
+        "test"
+      ]
+    }
+  ],
+  "snippets": [
+    {
+      "languageId": "dart",
+      "label": "stless",
+      "detail": "StatelessWidget",
+      "body": "class ${Name} extends StatelessWidget {\n  const ${Name}({super.key});\n\n  @override\n  Widget build(BuildContext context) {\n    return $0;\n  }\n}"
+    },
+    {
+      "languageId": "dart",
+      "label": "stful",
+      "detail": "StatefulWidget",
+      "body": "class ${Name} extends StatefulWidget {\n  const ${Name}({super.key});\n\n  @override\n  State<${Name}> createState() => _${Name}State();\n}\n\nclass _${Name}State extends State<${Name}> {\n  @override\n  Widget build(BuildContext context) {\n    return $0;\n  }\n}"
+    },
+    {
+      "languageId": "dart",
+      "label": "setstate",
+      "detail": "setState",
+      "body": "setState(() {\n  $0\n});"
+    },
+    {
+      "languageId": "dart",
+      "label": "initstate",
+      "detail": "initState",
+      "body": "@override\nvoid initState() {\n  super.initState();\n  $0\n}"
+    },
+    {
+      "languageId": "dart",
+      "label": "dispose",
+      "detail": "dispose",
+      "body": "@override\nvoid dispose() {\n  $0\n  super.dispose();\n}"
+    },
+    {
+      "languageId": "dart",
+      "label": "scaffold",
+      "detail": "Scaffold",
+      "body": "Scaffold(\n  appBar: AppBar(title: const Text('${Titel}')),\n  body: $0,\n)"
+    },
+    {
+      "languageId": "dart",
+      "label": "listview",
+      "detail": "ListView.builder",
+      "body": "ListView.builder(\n  itemCount: ${items}.length,\n  itemBuilder: (context, index) {\n    return $0;\n  },\n)"
+    },
+    {
+      "languageId": "dart",
+      "label": "futurebuilder",
+      "detail": "FutureBuilder",
+      "body": "FutureBuilder<${String}>(\n  future: ${future},\n  builder: (context, snapshot) {\n    if (!snapshot.hasData) return const CircularProgressIndicator();\n    return $0;\n  },\n)"
+    },
+    {
+      "languageId": "dart",
+      "label": "streambuilder",
+      "detail": "StreamBuilder",
+      "body": "StreamBuilder<${String}>(\n  stream: ${stream},\n  builder: (context, snapshot) {\n    if (!snapshot.hasData) return const CircularProgressIndicator();\n    return $0;\n  },\n)"
+    },
+    {
+      "languageId": "dart",
+      "label": "widgettest",
+      "detail": "Widget-Test",
+      "body": "testWidgets('${sollte etwas tun}', (tester) async {\n  await tester.pumpWidget(const ${App}());\n  $0\n});"
+    }
+  ]
+}

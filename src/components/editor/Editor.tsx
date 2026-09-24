@@ -15,6 +15,7 @@ import { lintGutter } from '@codemirror/lint'
 import { useStore } from '@/state/store'
 import { registry } from '@/core/registry'
 import { editorExtensionFor } from '@/core/language'
+import { formatExtension, formatFor } from '@/core/format-settings'
 import { foldingFor, foldingUi } from '@/core/folding'
 import { editorTheme } from '@/core/theme'
 import { lsp } from '@/core/lsp/manager'
@@ -235,6 +236,7 @@ export function Editor({ groupId }: { groupId: string }) {
   const themeId = useStore((s) => s.themeId)
   const effects = useStore((s) => s.effects)
   const registryVersion = useStore((s) => s.registryVersion)
+  const formatSettings = useStore((s) => s.formatSettings)
   const updateContent = useStore((s) => s.updateContent)
   const setCursor = useStore((s) => s.setCursor)
   const reveal = useStore((s) => s.reveal)
@@ -289,9 +291,10 @@ export function Editor({ groupId }: { groupId: string }) {
     const state = useStore.getState()
     const tab = state.tabs.find((t) => t.id === activeTabId) ?? null
     const spec = tab ? state.languageFor(tab) : null
-    return [editorExtensionFor(spec), foldingFor(spec)]
+    const format = formatFor(state.formatSettings, spec?.id, spec?.indentUnit)
+    return [editorExtensionFor(spec), foldingFor(spec), formatExtension(format)]
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTabId, languageId, registryVersion])
+  }, [activeTabId, languageId, registryVersion, formatSettings])
 
   const featureExtension = useMemo<Extension>(() => {
     if (!activeTabId) return []

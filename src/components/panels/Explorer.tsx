@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
-  ChevronRight, ChevronsDownUp, Clipboard, ClipboardPaste, Copy, ExternalLink, FilePlus, FolderInput, FolderOpen, FolderPlus,
+  ChevronRight, ChevronsDownUp, Clipboard, ClipboardPaste, Copy, ExternalLink, FilePlus, Package, FolderInput, FolderOpen, FolderPlus,
   PenLine, RefreshCw, Scissors, SquareTerminal, Star, Trash2, X,
 } from 'lucide-react'
 import { useStore } from '@/state/store'
 import { fileGlyph, folderIcon, folderTint } from '@/lib/file-icon'
 import { FolderIcon, IconGlyph, useIconPackVersion } from '../icons/FileIcon'
 import { t, useT } from '@/i18n'
+import { openNewJvm } from '@/lib/new-jvm-class'
+import { NewJvmDialog } from '../dialogs/NewJvmDialog'
 import { formatBinding } from '@/core/keybindings'
 import { Button, Empty } from '../ui'
 import { ContextMenu as SharedContextMenu, type MenuItem } from '../ui/ContextMenu'
@@ -426,7 +428,14 @@ function ContextMenu({ menu, api, onClose }: { menu: MenuState; api: TreeApi; on
 
   const openTerminal = useStore.getState().openTerminal
   const openExternalTerminal = useStore.getState().openExternalTerminal
+  const jvmLanguages = useStore.getState().project?.languages ?? []
+  const isJvm = jvmLanguages.includes('java') || jvmLanguages.includes('kotlin')
   const items: MenuItem[] = [
+    ...(isJvm ? [
+      { label: t('explorer.jvmNewClass'), icon: FilePlus, run: () => openNewJvm(dir, 'class') },
+      { label: t('explorer.jvmNewPackage'), icon: Package, run: () => openNewJvm(dir, 'package') },
+      'sep' as const,
+    ] : []),
     { label: t('explorer.newFile'), icon: FilePlus, run: () => api.startCreate(false, dir) },
     { label: t('explorer.newFolder'), icon: FolderPlus, run: () => api.startCreate(true, dir) },
     'sep',
@@ -926,6 +935,7 @@ export function Explorer() {
       </div>
 
       {menu && <ContextMenu menu={menu} api={api} onClose={() => setMenu(null)} />}
+      <NewJvmDialog />
     </div>
   )
 }

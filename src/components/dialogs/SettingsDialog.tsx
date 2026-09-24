@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react'
 import {
-  AppWindow, Blocks, Code2, Coffee, Download, Info, Keyboard, Palette, RefreshCw, Settings, SlidersHorizontal, TerminalSquare, Type, Zap,
+  AlignLeft, AppWindow, Blocks, Code2, Coffee, Download, Info, Keyboard, Palette, RefreshCw, Settings, SlidersHorizontal, TerminalSquare, Type, Zap,
 } from 'lucide-react'
 import { useStore } from '@/state/store'
 import { useDialogVisible } from '@/hooks/usePresence'
@@ -12,6 +12,7 @@ import { LANGUAGES, getLanguage, systemLanguage, useT } from '@/i18n'
 import { localizeSetting } from '@/core/extensions/localize'
 import { checkForUpdates, downloadUpdate, installUpdate, useUpdater } from '@/features/updater'
 import { extensions as installedExtensions } from '@/core/extensions/manager'
+import { formatRows } from '../settings/format-rows'
 import { ExtensionSettingRow, settingVisible } from '../settings/ExtensionSettingRow'
 import { ExtensionSettingsPage } from '../settings/ExtensionSettingsPage'
 import { Button, Empty, Select, Slider, Toggle } from '../ui'
@@ -27,11 +28,12 @@ const FONT_STACKS = [
   { value: 'ui-monospace, monospace', label: 'settings.font.systemMono' },
 ]
 
-type SectionId = 'general' | 'editor' | 'font' | 'lsp' | 'terminal' | 'sdks' | 'extensions' | 'window' | 'updates' | 'about'
+type SectionId = 'general' | 'editor' | 'formatting' | 'font' | 'lsp' | 'terminal' | 'sdks' | 'extensions' | 'window' | 'updates' | 'about'
 
 const SECTIONS: { id: SectionId; icon: typeof Settings }[] = [
   { id: 'general', icon: SlidersHorizontal },
   { id: 'editor', icon: Code2 },
+  { id: 'formatting', icon: AlignLeft },
   { id: 'font', icon: Type },
   { id: 'lsp', icon: Zap },
   { id: 'terminal', icon: TerminalSquare },
@@ -78,6 +80,10 @@ export function SettingsDialog() {
 
   const [section, setSection] = useState<SectionId>('general')
   const [query, setQuery] = useState('')
+  const [formatLanguage, setFormatLanguage] = useState('typescript')
+  const formatSettings = useStore((s) => s.formatSettings)
+  const setFormat = useStore((s) => s.setFormat)
+  const resetFormat = useStore((s) => s.resetFormat)
   const [info, setInfo] = useState<AppInfo | null>(null)
   const [initialWindowSystem, setInitialWindowSystem] = useState(effects.windowSystem)
 
@@ -121,6 +127,15 @@ export function SettingsDialog() {
   })
 
   const rows: Row[] = [
+    ...formatRows({
+      t,
+      languages: registry.languages().map((l) => ({ id: l.id, name: l.name, indentUnit: l.indentUnit })),
+      languageId: formatLanguage,
+      onLanguage: setFormatLanguage,
+      settings: formatSettings,
+      onChange: (patch) => setFormat(formatLanguage, patch),
+      onReset: () => resetFormat(formatLanguage),
+    }),
     {
       section: 'general',
       text: `${t('settings.general.language')} ${t('settings.general.languageHint')} language sprache`,

@@ -1,0 +1,17 @@
+{
+  "id": "ext.flutter",
+  "name": "Flutter",
+  "version": "1.0.0",
+  "description": "Flutter-Projekte mit Aufgaben für run, build, test und analyze, Widget-Snippets und einer App-Vorlage. Bringt die Dart-Sprache mit.",
+  "author": "Lumen",
+  "icon": "Fl",
+  "color": "#02569b",
+  "category": "tool",
+  "license": "MIT",
+  "keywords": [
+    "flutter",
+    "dart",
+    "widget"
+  ],
+  "minAppVersion": "0.5.0"
+}

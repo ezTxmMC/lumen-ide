@@ -67,6 +67,8 @@ export function Home() {
       <Projects />
       <Themes />
       <Addons />
+      <Agents />
+      <Details />
       <GetIt version={release?.version} date={release?.releaseDate} notes={release?.notes} />
     </>
   );
@@ -272,6 +274,8 @@ const CATALOGUE = [
   { glyph: "⌘", bg: "#cbcb41", fg: "#1d1d05", name: "Essentials", detail: "ext.essentials · JSON, YAML, TOML, Markdown, Shell, SQL" },
   { glyph: "DB", bg: "#4f8fd8", fg: "#fff", name: "Database", detail: "ext.database · SQLite, H2, PostgreSQL, MariaDB, SQL Server, Redis, MongoDB" },
   { glyph: "MC", bg: "#5ba03c", fg: "#fff", name: "Minecraft", detail: "ext.minecraft · Fabric, NeoForge, Forge, Quilt, Paper, Spigot" },
+  { glyph: "Cc", bg: "#d97757", fg: "#fff", name: "Claude Code", detail: "ext.claude-code · chat agent, diffs, plans, MCP" },
+  { glyph: "Cx", bg: "#10a37f", fg: "#fff", name: "ChatGPT Codex", detail: "ext.codex · chat agent, sandbox modes" },
   { glyph: "Git", bg: "#f05133", fg: "#fff", name: "Git & GitHub", detail: "ext.git, ext.github · changes, history, merge conflicts, pull requests" },
 ];
 
@@ -321,6 +325,49 @@ function Addons() {
           </div>
         </div>
       </div>
+    </Section>
+  );
+}
+
+function Agents() {
+  return (
+    <Section id="agents">
+      <Head eyebrow="Agents" title="Your coding agent, docked beside the code.">
+        Claude Code and ChatGPT Codex run as chat views inside Lumen. They use the CLI you already have installed, so your sign-in, <code>CLAUDE.md</code> or <code>AGENTS.md</code>, settings and MCP servers apply unchanged.
+      </Head>
+      <div className="mt-10 grid gap-[22px] [grid-template-columns:repeat(auto-fit,minmax(250px,1fr))]">
+        <Tile title="See what it changes">Tool calls come with a preview: a diff for an edit, the command for a shell call, the file to open. Every action can be allowed, always allowed, or declined with a reason.</Tile>
+        <Tile title="Modes and models">Ask first, auto-accept edits, plan, or — only when you unlock it — no questions. Models and effort levels come from the installed CLI, so the list always fits your version and account.</Tile>
+        <Tile title="Sessions and cost">Several chats side by side, earlier sessions resumed, and each answer shows tokens, cache, steps, duration and price. Attach files with <code>@</code>, images with paste, and the open selection with one click.</Tile>
+        <Tile title="It is just a view">Agent chats dock like any other view — right, left or bottom, or in a window of their own. Files an agent writes appear in your open tabs as they change.</Tile>
+      </div>
+    </Section>
+  );
+}
+
+const DETAILS = [
+  ["Platforms", "Linux (AppImage, x64 and arm64), Windows 11 (installer and ZIP, x64 and arm64) and macOS on Apple Silicon (DMG and ZIP)."],
+  ["Built with", "Electron, React, TypeScript, Vite, Tailwind CSS and CodeMirror 6 — a codebase small enough to read in an afternoon."],
+  ["Updates", "Checked at start and every six hours, verified by SHA-512 checksum and applied on exit. Switch it off in Settings → Updates."],
+  ["Privacy", "No account needed. Extensions that ship code show a fingerprint and ask before they run."],
+  ["Interface", "Eight interface languages, editable key bindings with chords, six themes and a studio to make your own."],
+  ["Licence", "Open source under the GNU AGPL v3. The source, issues and releases live on GitHub."],
+];
+
+function Details() {
+  return (
+    <Section id="details">
+      <Head eyebrow="In short" title="The small print, up front.">
+        What runs where, how it updates, and what it costs.
+      </Head>
+      <dl className="mt-10 grid gap-x-16 gap-y-7 md:grid-cols-2">
+        {DETAILS.map(([term, text]) => (
+          <div key={term} className="grid max-w-[52ch] gap-1">
+            <dt className="eyebrow text-accent">{term}</dt>
+            <dd className="text-[15.5px] text-muted">{text}</dd>
+          </div>
+        ))}
+      </dl>
     </Section>
   );
 }

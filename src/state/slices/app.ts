@@ -6,6 +6,7 @@
  * part; `persist` writes all of it back.
  */
 
+import { createFormatDecorator } from '@/core/format-settings'
 import { registry } from '@/core/registry'
 import { lsp } from '@/core/lsp/manager'
 import { applyTheme, DEFAULT_EFFECTS, type Effects } from '@/core/theme'
@@ -94,6 +95,7 @@ export const createAppSlice: Slice<AppSlice> = (set, get) => ({
     // When the pack disappears with an add-on, the default pack applies again.
     registry.subscribe(() => applyIconPack(get().iconPackId))
     lsp.setEnabled(effects.lsp)
+    lsp.addConfigDecorator(createFormatDecorator(() => get().formatSettings))
 
     const themeId = stored.themeId ?? DEFAULT_THEME_ID
     const theme = registry.themes().find((entry) => entry.id === themeId)
@@ -112,6 +114,7 @@ export const createAppSlice: Slice<AppSlice> = (set, get) => ({
       lspInstallDeclined: stored.lspInstallDeclined ?? [],
       extensionServers: withOfficialServer(stored.extensionServers),
       extensionSettings: stored.extensionSettings ?? {},
+      formatSettings: stored.formatSettings ?? {},
       layout: normalizeLayout(stored.layout, { sidebarWidth: stored.sidebarWidth, panelHeight: stored.panelHeight }),
       splitRatio: stored.splitRatio ?? 0.5,
       language,
@@ -170,6 +173,7 @@ export const createAppSlice: Slice<AppSlice> = (set, get) => ({
       lspInstallDeclined: s.lspInstallDeclined,
       extensionServers: s.extensionServers,
       extensionSettings: s.extensionSettings,
+      formatSettings: s.formatSettings,
     }
     void window.lumen.settings.save(data as unknown as Record<string, unknown>)
   },

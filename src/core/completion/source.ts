@@ -224,7 +224,7 @@ function mergeServerList(
       label,
       filter: prepare(item.filterText?.trim() || label),
       origin: 'lsp',
-      boost: lspBoost(index, order.length, Boolean(item.preselect), lspItemDeprecated(item)),
+      boost: lspBoost(index, order.length, Boolean(item.preselect), lspItemDeprecated(item), item.kind),
       data,
     })
   })

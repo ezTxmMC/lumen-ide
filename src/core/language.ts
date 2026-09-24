@@ -68,7 +68,7 @@ function indentRules(spec: LanguageSpec) {
     const line = doc.lineAt(pos)
     if (line.number === 1) return 0
 
-    const unit = spec.indentUnit ?? getIndentUnit(context.state)
+    const unit = getIndentUnit(context.state)
     const tabSize = context.state.tabSize
 
     // Skip blank lines — otherwise the indentation slides back to 0.

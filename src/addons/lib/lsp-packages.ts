@@ -19,6 +19,8 @@ function rustTargets(prefix: string, suffix: string, windowsSuffix = suffix): Re
 
 export const LSP_PACKAGES = {
   typescriptLanguageServer: { type: 'npm', packages: ['typescript-language-server', 'typescript@6'] },
+  eslint: { type: 'npm', packages: ['vscode-langservers-extracted'] },
+  biome: { type: 'npm', packages: ['@biomejs/biome'] },
   vtsls: { type: 'npm', packages: ['@vtsls/language-server'] },
   langserversExtracted: { type: 'npm', packages: ['vscode-langservers-extracted'] },
   someSass: { type: 'npm', packages: ['some-sass-language-server'] },

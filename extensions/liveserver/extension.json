@@ -1,0 +1,222 @@
+{
+  "id": "ext.liveserver",
+  "name": "Live Server",
+  "version": "1.0.0",
+  "description": "Startet einen lokalen Server für HTML, PHP und statische Dateien im Projektordner und lädt die Seite im Browser neu, sobald sich eine Datei ändert (CSS ohne Neuladen). PHP läuft über php -S. Bringt Programmcode mit.",
+  "author": "Lumen",
+  "icon": "Lv",
+  "color": "#ff8a3d",
+  "category": "tool",
+  "license": "MIT",
+  "keywords": [
+    "live server",
+    "liveserver",
+    "live reload",
+    "html",
+    "php",
+    "preview",
+    "server",
+    "browser"
+  ],
+  "minAppVersion": "0.5.0",
+  "settings": [
+    {
+      "key": "port",
+      "label": "Port",
+      "type": "number",
+      "default": "5500",
+      "min": 1024,
+      "max": 65000,
+      "hint": "Ist er belegt, nimmt der Server den nächsten freien.",
+      "section": "Server",
+      "i18n": {
+        "en": {
+          "label": "Port",
+          "hint": "If it is taken, the server uses the next free one.",
+          "section": "Server"
+        }
+      }
+    },
+    {
+      "key": "host",
+      "label": "Adresse",
+      "type": "text",
+      "default": "127.0.0.1",
+      "hint": "127.0.0.1 = nur dieser Rechner; 0.0.0.0 = auch im Netzwerk (z. B. Handy).",
+      "section": "Server",
+      "i18n": {
+        "en": {
+          "label": "Address",
+          "hint": "127.0.0.1 = this machine only; 0.0.0.0 = the network too (a phone, say).",
+          "section": "Server"
+        }
+      }
+    },
+    {
+      "key": "subfolder",
+      "label": "Unterordner",
+      "type": "text",
+      "default": "",
+      "placeholder": "z. B. public oder dist",
+      "hint": "Relativ zum Projektordner. Leer = der Projektordner selbst.",
+      "section": "Server",
+      "i18n": {
+        "en": {
+          "label": "Subfolder",
+          "placeholder": "e.g. public or dist",
+          "hint": "Relative to the project folder. Empty = the project folder itself.",
+          "section": "Server"
+        }
+      }
+    },
+    {
+      "key": "openBrowser",
+      "label": "Browser beim Start öffnen",
+      "type": "toggle",
+      "default": "true",
+      "section": "Server",
+      "i18n": {
+        "en": {
+          "label": "Open the browser on start",
+          "section": "Server"
+        }
+      }
+    },
+    {
+      "key": "liveReload",
+      "label": "Automatisch neu laden",
+      "type": "toggle",
+      "default": "true",
+      "hint": "Fügt den Seiten ein kleines Skript hinzu; CSS-Änderungen tauschen nur die Stile aus.",
+      "section": "Neuladen",
+      "i18n": {
+        "en": {
+          "label": "Reload automatically",
+          "hint": "Adds a small script to pages; CSS changes swap the styles only.",
+          "section": "Reloading"
+        }
+      }
+    },
+    {
+      "key": "reloadOn",
+      "label": "Dateitypen, die neu laden",
+      "type": "text",
+      "default": "html,htm,php,js,mjs,json,svg,xml,md,txt,twig,phtml",
+      "hint": "Kommagetrennt, ohne Punkt. CSS wird immer live getauscht.",
+      "section": "Neuladen",
+      "i18n": {
+        "en": {
+          "label": "File types that reload",
+          "hint": "Comma-separated, without the dot. CSS is always swapped live.",
+          "section": "Reloading"
+        }
+      }
+    },
+    {
+      "key": "ignore",
+      "label": "Ordner ignorieren",
+      "type": "text",
+      "default": "node_modules,.git,vendor,.idea,.vscode",
+      "hint": "Kommagetrennte Ordnernamen, die nicht beobachtet werden.",
+      "section": "Neuladen",
+      "i18n": {
+        "en": {
+          "label": "Ignored folders",
+          "hint": "Comma-separated folder names that are not watched.",
+          "section": "Reloading"
+        }
+      }
+    },
+    {
+      "key": "php",
+      "label": "PHP ausführen",
+      "type": "toggle",
+      "default": "true",
+      "hint": "Startet php -S im Projektordner, sofern PHP gefunden wird.",
+      "section": "PHP",
+      "i18n": {
+        "en": {
+          "label": "Run PHP",
+          "hint": "Starts php -S in the project folder when PHP is found.",
+          "section": "PHP"
+        }
+      }
+    },
+    {
+      "key": "phpPath",
+      "label": "Pfad zu php",
+      "type": "path",
+      "pathKind": "file",
+      "default": "",
+      "placeholder": "php aus dem PATH",
+      "hint": "Leer lassen, um php im PATH zu verwenden.",
+      "section": "PHP",
+      "when": "php",
+      "i18n": {
+        "en": {
+          "label": "Path to php",
+          "placeholder": "php from PATH",
+          "hint": "Leave empty to use php from the PATH.",
+          "section": "PHP"
+        }
+      }
+    }
+  ],
+  "commands": [
+    {
+      "id": "liveserver.toggle",
+      "title": "Live Server: Starten / Stoppen",
+      "category": "Live Server",
+      "icon": "radio",
+      "i18n": {
+        "en": {
+          "title": "Live Server: Start / Stop"
+        }
+      }
+    },
+    {
+      "id": "liveserver.start",
+      "title": "Live Server: Starten",
+      "category": "Live Server",
+      "icon": "radio",
+      "i18n": {
+        "en": {
+          "title": "Live Server: Start"
+        }
+      }
+    },
+    {
+      "id": "liveserver.stop",
+      "title": "Live Server: Stoppen",
+      "category": "Live Server",
+      "icon": "square",
+      "i18n": {
+        "en": {
+          "title": "Live Server: Stop"
+        }
+      }
+    },
+    {
+      "id": "liveserver.open",
+      "title": "Live Server: Aktive Datei im Browser öffnen",
+      "category": "Live Server",
+      "icon": "globe",
+      "i18n": {
+        "en": {
+          "title": "Live Server: Open active file in browser"
+        }
+      }
+    },
+    {
+      "id": "liveserver.open-root",
+      "title": "Live Server: Startseite im Browser öffnen",
+      "category": "Live Server",
+      "icon": "globe",
+      "i18n": {
+        "en": {
+          "title": "Live Server: Open the site in the browser"
+        }
+      }
+    }
+  ]
+}

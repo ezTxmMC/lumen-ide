@@ -5,6 +5,18 @@ export default {
   de: {
     unsaved: 'Ungespeichert', newFileHere: 'Neue Datei hier', newFolderHere: 'Neuer Ordner hier',
     empty: 'leer', copied: 'In die Zwischenablage kopiert', clipboardUnavailable: 'Zwischenablage nicht verfügbar',
+    jvmNewClass: 'Neue Klasse …', jvmNewPackage: 'Neues Paket …', jvmCreate: 'Erstellen', jvmLanguage: 'Sprache', jvmType: 'Typ',
+    jvmClassPlaceholder: 'Name oder paket.Name', jvmPackagePlaceholder: 'paket.unterpaket',
+    jvmWillCreate: 'Erstellt: {path}', jvmExists: '{name} gibt es schon.', jvmPackageCreated: 'Paket {name} erstellt',
+    jvmTargets: '@Target', jvmTargetsHint: 'Ohne Auswahl fehlt @Target — die Annotation gilt dann überall.', jvmRetention: '@Retention',
+    jvmError: { empty: 'Name fehlt', invalid: 'Nur Buchstaben, Ziffern, _ und $; Teile mit . trennen', reserved: 'Reserviertes Schlüsselwort' },
+    jvmKind: {
+      java: { class: 'Klasse', abstractClass: 'Abstrakte Klasse', interface: 'Interface', enum: 'Enum', record: 'Record', annotation: 'Annotation' },
+      kotlin: {
+        class: 'Klasse', dataClass: 'Data class', openClass: 'Open class', abstractClass: 'Abstrakte Klasse', sealedClass: 'Sealed class',
+        sealedInterface: 'Sealed interface', interface: 'Interface', enum: 'Enum class', object: 'Object', valueClass: 'Value class', annotation: 'Annotation',
+      },
+    },
     newFile: 'Neue Datei', newFolder: 'Neuer Ordner', rename: 'Umbenennen',
     openInTerminal: 'Im Terminal öffnen', openInExternalTerminal: 'Im externen Terminal öffnen',
     copyRelativePath: 'Relativen Pfad kopieren', revealInFileManager: 'Im Dateimanager zeigen',
@@ -24,6 +36,18 @@ export default {
   en: {
     unsaved: 'Unsaved', newFileHere: 'New File Here', newFolderHere: 'New Folder Here',
     empty: 'empty', copied: 'Copied to clipboard', clipboardUnavailable: 'Clipboard not available',
+    jvmNewClass: 'New Class…', jvmNewPackage: 'New Package…', jvmCreate: 'Create', jvmLanguage: 'Language', jvmType: 'Type',
+    jvmClassPlaceholder: 'Name or package.Name', jvmPackagePlaceholder: 'package.subpackage',
+    jvmWillCreate: 'Creates: {path}', jvmExists: '{name} already exists.', jvmPackageCreated: 'Package {name} created',
+    jvmTargets: '@Target', jvmTargetsHint: 'With none selected there is no @Target — the annotation applies everywhere.', jvmRetention: '@Retention',
+    jvmError: { empty: 'Name missing', invalid: 'Letters, digits, _ and $ only; separate parts with .', reserved: 'Reserved keyword' },
+    jvmKind: {
+      java: { class: 'Class', abstractClass: 'Abstract class', interface: 'Interface', enum: 'Enum', record: 'Record', annotation: 'Annotation' },
+      kotlin: {
+        class: 'Class', dataClass: 'Data class', openClass: 'Open class', abstractClass: 'Abstract class', sealedClass: 'Sealed class',
+        sealedInterface: 'Sealed interface', interface: 'Interface', enum: 'Enum class', object: 'Object', valueClass: 'Value class', annotation: 'Annotation',
+      },
+    },
     newFile: 'New File', newFolder: 'New Folder', rename: 'Rename',
     openInTerminal: 'Open in Terminal', openInExternalTerminal: 'Open in External Terminal',
     copyRelativePath: 'Copy Relative Path', revealInFileManager: 'Reveal in File Manager',

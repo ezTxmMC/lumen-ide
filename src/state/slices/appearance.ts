@@ -61,6 +61,18 @@ export const createAppearanceSlice: Slice<AppearanceSlice> = (set, get) => {
     iconPackId: DEFAULT_ICON_PACK_ID,
     customIconPacks: [],
     iconStudio: null,
+    formatSettings: {},
+
+    setFormat(languageId, patch) {
+      set((s) => ({ formatSettings: { ...s.formatSettings, [languageId]: { ...s.formatSettings[languageId], ...patch } } }))
+      get().persist()
+    },
+
+    resetFormat(languageId) {
+      const { [languageId]: _removed, ...rest } = get().formatSettings
+      set({ formatSettings: rest })
+      get().persist()
+    },
 
     setTheme(id) {
       const theme = registry.themes().find((entry) => entry.id === id)

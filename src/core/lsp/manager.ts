@@ -61,7 +61,14 @@ export interface Paths {
 export type ConfigDecorator = (config: LspConfig, languageId: string, root: string, command: string) => LspConfig | Promise<LspConfig>
 
 /** The files that make a root a Gradle build. */
-const GRADLE_BUILD_FILES = ['settings.gradle', 'settings.gradle.kts', 'build.gradle', 'build.gradle.kts']
+/** tsserver parses JSX only for the `*react` language ids — a .tsx sent as "typescript" fails on every tag. */
+function jsxLanguageId(filePath: string): string | null {
+  if (filePath.endsWith('.tsx')) return 'typescriptreact'
+  if (filePath.endsWith('.jsx')) return 'javascriptreact'
+  return null
+}
+
+const GRADLE_BUILD_FILES =['settings.gradle', 'settings.gradle.kts', 'build.gradle', 'build.gradle.kts']
 
 const isJdtls = (config: LspConfig) => /jdtls|jdt\.ls/i.test(`${config.command} ${config.label}`)
 
@@ -446,7 +453,7 @@ class LspManager {
     const client = await this.ensure(spec, filePath)
     if (!client) return
     const own = (spec.lsp ?? []).find((c) => c.command === client.config.command)
-    const languageId = own?.languageId ?? spec.id
+    const languageId = jsxLanguageId(filePath) ?? own?.languageId ?? spec.id
     client.openDocument(filePath, text, languageId)
     this.owners.set(filePath, client.id)
   }

@@ -8,9 +8,10 @@
 
 import type { CSSProperties, ReactNode } from 'react'
 import {
-  Blocks, Bug, ChevronDown, ChevronRight, ChevronsDownUp, Command, FilePlus, Files, FlaskConical, FolderInput,
-  FolderKanban, FolderOpen, FolderPlus, Hammer, Keyboard, ListTree, Minus, Package, Palette, PanelLeft, Play,
-  RefreshCw, Save, Search, Settings, Square, SquareSplitHorizontal, SquareTerminal, TerminalSquare, X, Zap,
+  Blocks, Bug, ChevronDown, ChevronRight, ChevronsDownUp, CircleAlert, Command, Ellipsis, ExternalLink, FilePlus, Files,
+  FlaskConical, FolderGit2, FolderInput, FolderKanban, FolderPlus, Hammer, Keyboard, Link2, ListTree, Maximize2, Minus,
+  Package, Palette, PanelBottom, PanelLeft, PanelRight, Play, RefreshCw, Search, Settings, Square,
+  SquareSplitHorizontal, SquareTerminal, TerminalSquare, X, Zap,
 } from 'lucide-react'
 import { fileIcon, folderIcon, IconGlyph } from './icons'
 import { lumenScene, type Scene, type TabSpec, type TreeRow } from './scene'
@@ -24,6 +25,8 @@ const FONT_SIZE = 13
 const LINE_HEIGHT = 1.6
 const LINE_PX = FONT_SIZE * LINE_HEIGHT
 const SIDEBAR_WIDTH = 260
+const PANEL_HEIGHT = 176
+const MENUS = ['File', 'Edit', 'Selection', 'View', 'Go', 'Run', 'Terminal', 'Help']
 const MINIMAP_WIDTH = 96
 const CODE_FONT = "'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace"
 const UI_FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, 'Inter', sans-serif"
@@ -56,6 +59,7 @@ export function EditorWindow({ theme, scene = lumenScene, width = WINDOW_WIDTH, 
         <main className="flex min-w-0 flex-1 flex-col">
           <EditorTabs tabs={scene.tabs} />
           <CodeView theme={theme} scene={scene} />
+          <BottomPanel scene={scene} />
         </main>
       </div>
       <StatusBar scene={scene} />
@@ -80,26 +84,26 @@ function TitleBar({ scene }: { scene: Scene }) {
   const title = [active?.name, scene.workspace, 'Lumen'].filter(Boolean).join(' — ')
   return (
     <header className="flex h-9 shrink-0 items-center gap-1 border-b border-edge bg-surface px-2">
-      <div className="flex items-center gap-0.5">
-        <ToolButton><PanelLeft size={14} /></ToolButton>
-        <ToolButton><FolderOpen size={14} /></ToolButton>
-        <ToolButton><FolderPlus size={14} /></ToolButton>
-        <ToolButton><Save size={14} /></ToolButton>
-        <span className="mx-1 h-4 w-px bg-edge" />
-        <ToolButton><Hammer size={14} /></ToolButton>
-        <ToolButton><Play size={14} /></ToolButton>
-        <ToolButton><FlaskConical size={14} /></ToolButton>
-        <ToolButton><SquareTerminal size={14} /></ToolButton>
-        <ToolButton><TerminalSquare size={14} /></ToolButton>
+      <div className="flex shrink-0 items-center">
+        {MENUS.map((menu) => (
+          <span key={menu} className="flex h-6 items-center rounded-lumen-sm px-2 text-[12px] text-muted">{menu}</span>
+        ))}
       </div>
+      <span className="mx-1 h-4 w-px shrink-0 bg-edge" />
 
       <span className="flex h-6 max-w-[220px] items-center gap-1.5 rounded-lumen-sm border border-edge px-2 text-[11.5px] text-muted">
-        <span className="size-2 shrink-0 rounded-full" style={{ background: 'var(--c-text-subtle)' }} />
+        <FolderGit2 size={12} className="shrink-0 opacity-80" />
         <span className="truncate">{scene.workspace}</span>
         <ChevronDown size={11} className="shrink-0 opacity-70" />
       </span>
 
-      <div className="flex flex-1 items-center justify-center overflow-hidden px-2">
+      <div className="ml-1 flex items-center gap-0.5">
+        <ToolButton><Hammer size={14} /></ToolButton>
+        <ToolButton><Play size={14} /></ToolButton>
+        <ToolButton><FlaskConical size={14} /></ToolButton>
+      </div>
+
+      <div className="flex min-w-0 flex-1 items-center justify-center overflow-hidden px-2">
         <span className="flex h-6 max-w-[440px] min-w-0 flex-1 items-center gap-2 rounded-lumen-sm border border-transparent px-2 text-[12px] text-subtle">
           <Command size={11} className="shrink-0 opacity-60" />
           <span className="truncate">{title}</span>
@@ -110,7 +114,13 @@ function TitleBar({ scene }: { scene: Scene }) {
         </span>
       </div>
 
-      <div className="flex items-center">
+      <div className="flex items-center gap-0.5">
+        <ToolButton className="text-accent"><PanelLeft size={14} /></ToolButton>
+        <ToolButton className="text-accent"><PanelBottom size={14} /></ToolButton>
+        <ToolButton><PanelRight size={14} /></ToolButton>
+      </div>
+
+      <div className="ml-1 flex items-center">
         <span className="flex h-7 w-10 items-center justify-center rounded-lumen-sm text-muted"><Minus size={13} /></span>
         <span className="flex h-7 w-10 items-center justify-center rounded-lumen-sm text-muted"><Square size={11} /></span>
         <span className="flex h-7 w-10 items-center justify-center rounded-lumen-sm text-muted"><X size={14} /></span>
@@ -124,7 +134,7 @@ function TitleBar({ scene }: { scene: Scene }) {
  * ------------------------------------------------------------------ */
 
 const VIEWS = [Files, Search, FolderKanban, ListTree, Bug]
-const DIALOGS = [Blocks, Package, Settings, Keyboard, Palette]
+const DIALOGS = [Package, Palette, Keyboard, Settings]
 
 function ActivityButton({ Icon, active = false, badge = false }: { Icon: typeof Files; active?: boolean; badge?: boolean }) {
   return (
@@ -162,8 +172,11 @@ function Sidebar({ scene }: { scene: Scene }) {
   return (
     <aside className="flex shrink-0 border-r border-edge bg-surface" style={{ width: SIDEBAR_WIDTH }}>
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex h-8 shrink-0 items-center px-3 text-[10.5px] font-semibold tracking-[0.09em] text-subtle uppercase">
-          Explorer
+        <div className="flex h-8 shrink-0 items-center gap-1 pr-1 pl-3 text-[10.5px] font-semibold tracking-[0.09em] text-subtle uppercase">
+          <span className="flex-1">Explorer</span>
+          <ToolButton className="!px-1"><ExternalLink size={12} /></ToolButton>
+          <ToolButton className="!px-1"><Ellipsis size={13} /></ToolButton>
+          <ToolButton className="!px-1"><X size={13} /></ToolButton>
         </div>
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex items-center gap-1 border-b border-edge px-2 py-1.5">
@@ -268,7 +281,7 @@ function FoldMarker() {
 }
 
 function CodeView({ theme, scene }: { theme: Theme; scene: Scene }) {
-  const visible = Math.ceil((WINDOW_HEIGHT - 36 - 36 - 24) / LINE_PX) + 1
+  const visible = Math.ceil((WINDOW_HEIGHT - 36 - 36 - 24 - PANEL_HEIGHT) / LINE_PX) + 1
   const first = scene.firstLine
   const rows = scene.lines.slice(first - 1, first - 1 + visible)
   const digits = String(scene.lines.length).length
@@ -366,6 +379,61 @@ function Minimap({ theme, scene }: { theme: Theme; scene: Scene }) {
         <rect x={0} y={(scene.cursor.line - 1) * 2} width={MINIMAP_WIDTH} height={2} fill={theme.ui.accent} fillOpacity={0.22} />
         {rects}
       </svg>
+    </div>
+  )
+}
+
+
+/* ------------------------------------------------------------------ *
+ * The bottom dock
+ * ------------------------------------------------------------------ */
+
+const PANEL_TABS = [
+  { name: 'Output', Icon: TerminalSquare, active: true, badge: '•', tone: 'var(--c-accent)' },
+  { name: 'Terminal', Icon: SquareTerminal, badge: '2', tone: 'var(--c-success)' },
+  { name: 'Problems', Icon: CircleAlert },
+  { name: 'References', Icon: Link2 },
+  { name: 'Debug', Icon: Bug },
+  { name: 'LSP', Icon: Zap, badge: '3', tone: 'var(--c-success)' },
+]
+
+const OUTPUT: { text: string; tone?: string }[] = [
+  { text: '$ npm run build', tone: 'var(--c-text-muted)' },
+  { text: '> lumen@0.5.3 build' },
+  { text: '> tsc --noEmit && vite build' },
+  { text: 'vite v8 building for production…', tone: 'var(--c-text-muted)' },
+  { text: '✓ 1842 modules transformed.', tone: 'var(--c-success)' },
+  { text: 'dist/assets/index.js   1.92 MB │ gzip: 512 kB', tone: 'var(--c-text-muted)' },
+  { text: '✓ built in 6.4s', tone: 'var(--c-success)' },
+]
+
+function BottomPanel({ scene }: { scene: Scene }) {
+  return (
+    <div className="flex shrink-0 flex-col border-t border-edge bg-surface" style={{ height: PANEL_HEIGHT }}>
+      <div className="flex h-8 shrink-0 items-center gap-0.5 px-2">
+        {PANEL_TABS.map(({ name, Icon, active, badge, tone }) => (
+          <span
+            key={name}
+            className={[
+              'flex h-6 shrink-0 items-center gap-1.5 rounded-lumen-sm px-2 text-[11px] font-semibold tracking-[0.06em] uppercase',
+              active ? 'bg-active text-fg' : 'text-subtle',
+            ].join(' ')}
+          >
+            <Icon size={11} />
+            {name}
+            {badge && <span className="text-[10px] font-normal tracking-normal normal-case" style={{ color: tone }}>{badge}</span>}
+          </span>
+        ))}
+        <span className="flex-1" />
+        <ToolButton><ExternalLink size={12} /></ToolButton>
+        <ToolButton><Maximize2 size={12} /></ToolButton>
+        <ToolButton><X size={13} /></ToolButton>
+      </div>
+      <div className="min-h-0 flex-1 overflow-hidden px-3 py-1 text-[12px] leading-[1.7]" style={{ fontFamily: CODE_FONT }} aria-label={scene.workspace}>
+        {OUTPUT.map((line) => (
+          <div key={line.text} className="whitespace-pre" style={{ color: line.tone ?? 'var(--c-text)' }}>{line.text}</div>
+        ))}
+      </div>
     </div>
   )
 }

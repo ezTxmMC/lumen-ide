@@ -8,6 +8,7 @@
  * other through `get()` with full types.
  */
 
+import type { FormatSettings, LanguageFormat } from '@/core/format-settings'
 import type { StateCreator } from 'zustand'
 import type { ExtensionManifest, ExtensionServer } from '@/core/extensions/types'
 import type { ContentChange } from '@/core/lsp/client'
@@ -203,6 +204,8 @@ export interface PersistedSettings {
   extensionServers: ExtensionServer[]
   /** The values of the extension settings, per extension. */
   extensionSettings: Record<string, Record<string, string>>
+  /** Formatting settings per language id. */
+  formatSettings?: FormatSettings
   /** Before docks: the width of the one side bar and the height of the panel. */
   sidebarWidth?: number
   panelHeight?: number
@@ -435,7 +438,11 @@ export interface AppearanceSlice {
   customIconPacks: IconPack[]
   /** The open icon studio: a draft, saved only on “Save”. */
   iconStudio: { draft: IconPack; isNew: boolean } | null
+  /** Formatting settings per language id (tab width, quotes …). */
+  formatSettings: FormatSettings
 
+  setFormat(languageId: string, patch: Partial<LanguageFormat>): void
+  resetFormat(languageId: string): void
   setTheme(id: string): void
   setEffects(patch: Partial<Effects>): void
   resetEffects(): void

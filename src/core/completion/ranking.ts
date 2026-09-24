@@ -85,9 +85,16 @@ const HIDDEN_ON_MEMBER = new Set<Origin>(['snippet', 'control', 'keyword', 'type
 export const LSP_ORDER = 8
 export const PRESELECT = 10
 
-export function lspBoost(index: number, total: number, preselect: boolean, deprecated: boolean): number {
+/** Own variables, parameters and fields (LSP kinds Field 5, Variable 6, Property 10) rank above everything else. */
+const OWN_KINDS = new Set([5, 6, 10])
+export const OWN_VARIABLE = 14
+
+export function lspBoost(
+  index: number, total: number, preselect: boolean, deprecated: boolean, kind?: number,
+): number {
   const order = total > 1 ? LSP_ORDER * (1 - index / (total - 1)) : LSP_ORDER
-  return order + (preselect ? PRESELECT : 0) - (deprecated ? 6 : 0)
+  const own = kind !== undefined && OWN_KINDS.has(kind) ? OWN_VARIABLE : 0
+  return order + own + (preselect ? PRESELECT : 0) - (deprecated ? 6 : 0)
 }
 
 /** How often and how recently a suggestion was accepted → a bonus. */

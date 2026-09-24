@@ -12,6 +12,7 @@ import { editorBridge } from '@/lib/editor-bridge'
 import { symbolStore } from '@/lib/symbols'
 import { readText, toDisk, type LineEnding } from '@/lib/line-endings'
 import { t } from '@/i18n'
+import { applySaveRules, formatFor } from '@/core/format-settings'
 import { isSvgPath, mediaKindForPath, sniffMediaKind, type MediaKind } from '@/lib/media-kind'
 import {
   addTabToActiveGroup, commitGroups, currentGroup, FIRST_GROUP_ID, insertAt, nextGroupId, nextTabId,
@@ -486,7 +487,9 @@ export const createEditorSlice: Slice<EditorSlice> = (set, get) => {
       const fresh = get().tabs.find((open) => open.id === tab.id) ?? tab
 
       try {
-        await window.lumen.fs.writeFile(target, toDisk(fresh.content, fresh.eol))
+        const format = formatFor(get().formatSettings, matchLanguage(target, registry.languages())?.id ?? fresh.languageId ?? undefined)
+        const eol = format.endOfLine === 'keep' ? fresh.eol : (format.endOfLine === 'crlf' ? '\r\n' : '\n')
+        await window.lumen.fs.writeFile(target, toDisk(applySaveRules(fresh.content, format), eol))
       } catch (err) {
         get().notify(errorText(err), 'error')
         return
