@@ -1,7 +1,7 @@
 {
   "id": "ext.mdx",
   "name": "MDX",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Markdown with JSX: headings, lists and tables as in Markdown, plus import/export lines, { … } expressions and component tags.",
   "author": "Lumen",
   "icon": "M+",

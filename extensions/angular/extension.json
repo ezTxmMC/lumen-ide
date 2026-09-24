@@ -1,7 +1,7 @@
 {
   "id": "ext.angular",
   "name": "Angular",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Angular templates with the new control flow (@if, @for, @defer) and Angular TypeScript with signals, standalone components and ngserver.",
   "author": "Lumen",
   "icon": "A",

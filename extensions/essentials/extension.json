@@ -1,7 +1,7 @@
 {
   "id": "ext.essentials",
   "name": "Essentials",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "JSON, YAML, TOML, Markdown, Shell and SQL — the usual companion files.",
   "author": "Lumen",
   "icon": "⌘",

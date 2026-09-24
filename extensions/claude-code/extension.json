@@ -1,7 +1,7 @@
 {
   "id": "ext.claude-code",
   "name": "Claude Code",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "Claude Code as a chat agent: models straight from the Claude Code CLI, effort per model, streaming, modes, resumable sessions, images, plan and cost — with allow/deny for every action. Ships executable code.",
   "author": "Lumen",
   "icon": "Cc",

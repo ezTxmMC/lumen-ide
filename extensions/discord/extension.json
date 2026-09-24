@@ -1,7 +1,7 @@
 {
   "id": "ext.discord",
   "name": "Discord Rich Presence",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Shows in Discord what you are working on: file, project, language and duration, with idle detection, private projects and a repository button. Ships with program code.",
   "author": "Lumen",
   "icon": "DC",

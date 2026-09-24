@@ -1,7 +1,7 @@
 {
   "id": "ext.c",
   "name": "C",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "C99 to C23 with preprocessor highlighting, gcc/clang runner and clangd. Make projects are detected by the “Essentials” extension.",
   "author": "Lumen",
   "icon": "C",

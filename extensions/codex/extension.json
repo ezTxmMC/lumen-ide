@@ -1,7 +1,7 @@
 {
   "id": "ext.codex",
   "name": "ChatGPT Codex",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "OpenAI Codex as a chat agent: models from the Codex CLI or its model cache, reasoning effort per model, sandbox modes, web search, resumable sessions, images and plan. Plus tasks and an AGENTS.md template. Ships executable code.",
   "author": "Lumen",
   "icon": "Cx",

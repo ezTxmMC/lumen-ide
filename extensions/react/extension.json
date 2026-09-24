@@ -1,7 +1,7 @@
 {
   "id": "ext.react",
   "name": "React",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "JSX and TSX highlighting with component color instead of element color, all hooks as completions and 16 snippets from useState to Context.",
   "author": "Lumen",
   "icon": "⚛",

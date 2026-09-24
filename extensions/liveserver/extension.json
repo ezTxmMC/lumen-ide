@@ -1,7 +1,7 @@
 {
   "id": "ext.liveserver",
   "name": "Live Server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Starts a local server for HTML, PHP and static files in the project folder and reloads the page in the browser as soon as a file changes (CSS without a reload). PHP runs through php -S. Ships with program code.",
   "author": "Lumen",
   "icon": "Lv",

@@ -1,7 +1,7 @@
 {
   "id": "ext.dart",
   "name": "Dart",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Dart with raw/multiline strings, null-safety keywords, a dart run runner, analysis server and pub projects with tasks and template.",
   "author": "Lumen",
   "icon": "Dt",

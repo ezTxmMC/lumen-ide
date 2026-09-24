@@ -1,7 +1,7 @@
 {
   "id": "ext.github",
   "name": "GitHub",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Pull requests, issues and GitHub Actions of the open repository: check out, review, merge, create, re-run workflows and the CI status in the status bar. Ships with program code.",
   "author": "Lumen",
   "icon": "GH",

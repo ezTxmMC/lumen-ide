@@ -1,7 +1,7 @@
 {
   "id": "ext.minecraft",
   "name": "Minecraft Development",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Plugins (Spigot, Paper, Folia, Purpur, Leaf, Velocity, BungeeCord) and mods (Fabric, NeoForge, Forge, Quilt, Architectury) for every Minecraft version from 1.7.10 — with live-loaded versions, build and run tasks, and snippets. Ships program code.",
   "author": "Lumen",
   "icon": "MC",
