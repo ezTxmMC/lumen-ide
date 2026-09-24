@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [24.x, 26.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -29,5 +29,5 @@ jobs:
       with:
         bun-version: latest
     - run: bun install
-    - run: bun run build --if-present
+    - run: bun run dist:linux
     - run: bun test
