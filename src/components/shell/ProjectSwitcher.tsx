@@ -15,20 +15,33 @@
  * `openProject` — this window, a new one, or the question which.
  */
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { AppWindow, Check, ChevronDown, FolderGit2, FolderOpen, FolderPlus, Search } from 'lucide-react';
-import { useStore, type RecentProject } from '@/state/store';
-import { useT } from '@/i18n';
-import { formatBindingsFor } from '@/core/keybindings';
-import { openFolderAsProject, openProject, useProjectSwitcher } from '@/lib/open-project';
-import { LAYER } from '../ui/layers';
-import { OpenProjectChoice } from './OpenProjectChoice';
-import { useMissingFolders } from './useMissingFolders';
+import { formatBindingsFor } from "@/core/keybindings";
+import { useT } from "@/i18n";
+import {
+  openFolderAsProject,
+  openProject,
+  useProjectSwitcher,
+} from "@/lib/open-project";
+import { type RecentProject, useStore } from "@/state/store";
+import {
+  AppWindow,
+  Check,
+  ChevronDown,
+  FolderGit2,
+  FolderOpen,
+  FolderPlus,
+  Search,
+} from "lucide-react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { LAYER } from "../ui/layers";
+import { OpenProjectChoice } from "./OpenProjectChoice";
+import { useMissingFolders } from "./useMissingFolders";
 
 const closeSwitcher = () => useProjectSwitcher.setState({ open: false });
 
-const baseName = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
+const baseName = (path: string) =>
+  path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 
 function matches(project: RecentProject, query: string): boolean {
   const needle = query.trim().toLowerCase();
@@ -45,112 +58,157 @@ export function ProjectSwitcher() {
   const open = useProjectSwitcher((s) => s.open);
   const button = useRef<HTMLButtonElement>(null);
 
-  const label = project?.name ?? (workspace ? baseName(workspace) : t('projectSwitcher.noProject'));
+  const label = project?.name ??
+    (workspace ? baseName(workspace) : t("projectSwitcher.noProject"));
 
   return (
-    <div style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+    <div style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}>
       <button
         ref={button}
         onClick={() => useProjectSwitcher.setState({ open: !open })}
-        title={t('projectSwitcher.title')}
+        title={t("projectSwitcher.title")}
         aria-haspopup="dialog"
         aria-expanded={open}
         data-project-switcher=""
         className={[
-          'lm-transition lm-press flex h-6 max-w-[220px] items-center gap-1.5 rounded-lumen-sm border px-2 text-[11.5px]',
-          open ? 'border-edge-strong bg-hover text-fg' : 'border-edge text-muted hover:border-edge-strong hover:bg-hover hover:text-fg',
-        ].join(' ')}
+          "lm-transition lm-press flex h-6 max-w-[220px] items-center gap-1.5 rounded-lumen-sm border px-2 text-[11.5px]",
+          open
+            ? "border-edge-strong bg-hover text-fg"
+            : "border-edge text-muted hover:border-edge-strong hover:bg-hover hover:text-fg",
+        ].join(" ")}
       >
         <FolderGit2 size={12} className="shrink-0 opacity-80" />
         <span className="truncate">{label}</span>
         <ChevronDown size={11} className="shrink-0 opacity-70" />
       </button>
-      {open && <SwitcherPopup anchor={button.current} onClose={closeSwitcher} />}
+      {open && (
+        <SwitcherPopup
+          anchor={button.current}
+          onClose={closeSwitcher}
+        />
+      )}
       <OpenProjectChoice />
     </div>
   );
 }
 
 /** Where the popup sits: under its button, or centred under the title bar when opened by command. */
-function usePopupPosition(anchor: HTMLElement | null, panel: React.RefObject<HTMLDivElement>) {
-  const [position, setPosition] = useState<{ left: number; top: number; }>({ left: 0, top: 0 });
+function usePopupPosition(
+  anchor: HTMLElement | null,
+  panel: React.RefObject<HTMLDivElement>,
+) {
+  const [position, setPosition] = useState<{ left: number; top: number }>({
+    left: 0,
+    top: 0,
+  });
   useLayoutEffect(() => {
     const rect = anchor?.getBoundingClientRect();
     const width = panel.current?.offsetWidth ?? 380;
     const left = rect ? rect.left : (window.innerWidth - width) / 2;
-    setPosition({ left: Math.max(6, Math.min(left, window.innerWidth - width - 6)), top: (rect?.bottom ?? 36) + 4 });
+    setPosition({
+      left: Math.max(6, Math.min(left, window.innerWidth - width - 6)),
+      top: (rect?.bottom ?? 36) + 4,
+    });
   }, [anchor, panel]);
   return position;
 }
 
 /** A click beside the popup, or the window losing focus, closes it. */
-function useOutsideClose(panel: React.RefObject<HTMLDivElement>, onClose: () => void) {
+function useOutsideClose(
+  panel: React.RefObject<HTMLDivElement>,
+  onClose: () => void,
+) {
   useEffect(() => {
     const onPointer = (event: MouseEvent) => {
       const target = event.target as Element | null;
       if (panel.current?.contains(target)) {
         return;
       }
-      if (target?.closest('[data-project-switcher]')) {
+      if (target?.closest("[data-project-switcher]")) {
         return;
       }
       onClose();
     };
-    document.addEventListener('mousedown', onPointer, true);
-    window.addEventListener('blur', onClose);
+    document.addEventListener("mousedown", onPointer, true);
+    window.addEventListener("blur", onClose);
     return () => {
-      document.removeEventListener('mousedown', onPointer, true);
-      window.removeEventListener('blur', onClose);
+      document.removeEventListener("mousedown", onPointer, true);
+      window.removeEventListener("blur", onClose);
     };
   }, [onClose, panel]);
 }
 
-function SwitcherEntries({ list, index, workspace, missing, onHover, onChoose }: {
-  list: RecentProject[];
-  index: number;
-  workspace: string | null;
-  missing: Set<string>;
-  onHover(index: number): void;
-  onChoose(entry: RecentProject): void;
-}) {
+function SwitcherEntries(
+  { list, index, workspace, missing, onHover, onChoose }: {
+    list: RecentProject[];
+    index: number;
+    workspace: string | null;
+    missing: Set<string>;
+    onHover(index: number): void;
+    onChoose(entry: RecentProject): void;
+  },
+) {
   const t = useT();
   return (
-      <>
-    {list.map((entry, i) => {
-      const current = entry.path === workspace;
-      const gone = missing.has(entry.path);
-      return (
-        <button
-          key={entry.path}
-          data-project-path={entry.path}
-          onMouseEnter={() => onHover(i)}
-          onClick={() => onChoose(entry)}
-          disabled={gone}
-          title={gone ? t('projectSwitcher.missing') : entry.path}
-          className={[
-            'lm-transition flex w-full items-center gap-2 rounded-lumen-sm px-2 py-1.5 text-left disabled:opacity-40',
-            i === index ? 'bg-hover text-fg' : 'text-muted',
-          ].join(' ')}
-        >
-          <span className="w-3 shrink-0 text-accent">{current && <Check size={12} />}</span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[12.5px]">{entry.name}</span>
-            <span className="block truncate font-mono text-[10px] text-subtle">{entry.path}</span>
-          </span>
-          {current && <span className="shrink-0 text-[10.5px] text-subtle">{t('projectSwitcher.current')}</span>}
-        </button>
-      );
-    })}
-      </>
+    <>
+      {list.map((entry, i) => {
+        const current = entry.path === workspace;
+        const gone = missing.has(entry.path);
+        return (
+          <button
+            key={entry.path}
+            data-project-path={entry.path}
+            onMouseEnter={() => onHover(i)}
+            onClick={() => onChoose(entry)}
+            disabled={gone}
+            title={gone ? t("projectSwitcher.missing") : entry.path}
+            className={[
+              "lm-transition flex w-full items-center gap-2 rounded-lumen-sm px-2 py-1.5 text-left disabled:opacity-40",
+              i === index ? "bg-hover text-fg" : "text-muted",
+            ].join(" ")}
+          >
+            <span className="w-3 shrink-0 text-accent">
+              {current && <Check size={12} />}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[12.5px]">{entry.name}</span>
+              <span className="block truncate font-mono text-[10px] text-subtle">
+                {entry.path}
+              </span>
+            </span>
+            {current && (
+              <span className="shrink-0 text-[10.5px] text-subtle">
+                {t("projectSwitcher.current")}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </>
   );
 }
 
-function SwitcherActions({ onRun }: { onRun(fn: () => void): () => void; }) {
+function SwitcherActions({ onRun }: { onRun(fn: () => void): () => void }) {
   const t = useT();
   const actions = [
-    { icon: FolderOpen, label: t('projectSwitcher.openFolder'), keys: formatBindingsFor('file.open'), run: () => void openFolderAsProject() },
-    { icon: FolderPlus, label: t('projectSwitcher.newProject'), keys: formatBindingsFor('project.new'), run: () => useStore.getState().setNewProjectOpen(true) },
-    { icon: AppWindow, label: t('projectSwitcher.newWindow'), keys: formatBindingsFor('window.new'), run: () => void window.lumen.window.openProject() },
+    {
+      icon: FolderOpen,
+      label: t("projectSwitcher.openFolder"),
+      keys: formatBindingsFor("file.open"),
+      run: () => void openFolderAsProject(),
+    },
+    {
+      icon: FolderPlus,
+      label: t("projectSwitcher.newProject"),
+      keys: formatBindingsFor("project.new"),
+      run: () => useStore.getState().setNewProjectOpen(true),
+    },
+    {
+      icon: AppWindow,
+      label: t("projectSwitcher.newWindow"),
+      keys: formatBindingsFor("window.new"),
+      run: () => void window.lumen.window.openProject(),
+    },
   ];
 
   return (
@@ -163,31 +221,40 @@ function SwitcherActions({ onRun }: { onRun(fn: () => void): () => void; }) {
         >
           <Icon size={12} className="shrink-0 opacity-80" />
           <span className="flex-1 truncate">{label}</span>
-          {keys && <span className="shrink-0 text-[10.5px] text-subtle">{keys}</span>}
+          {keys && (
+            <span className="shrink-0 text-[10.5px] text-subtle">{keys}</span>
+          )}
         </button>
       ))}
     </div>
   );
 }
 
-function SwitcherPopup({ anchor, onClose }: { anchor: HTMLElement | null; onClose: () => void; }) {
+function SwitcherPopup(
+  { anchor, onClose }: { anchor: HTMLElement | null; onClose: () => void },
+) {
   const t = useT();
   const recent = useStore((s) => s.recentProjects);
   const workspace = useStore((s) => s.workspace);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
   const panel = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const position = usePopupPosition(anchor, panel);
 
-  useEffect(() => { input.current?.focus(); }, []);
+  useEffect(() => {
+    input.current?.focus();
+  }, []);
 
   const missing = useMissingFolders(recent);
 
   useOutsideClose(panel, onClose);
 
   const list = useMemo(
-    () => [...recent].sort((a, b) => b.openedAt - a.openedAt).filter((entry) => matches(entry, query)),
+    () =>
+      [...recent].sort((a, b) => b.openedAt - a.openedAt).filter((entry) =>
+        matches(entry, query)
+      ),
     [recent, query],
   );
   const index = Math.min(selected, Math.max(0, list.length - 1));
@@ -224,32 +291,50 @@ function SwitcherPopup({ anchor, onClose }: { anchor: HTMLElement | null; onClos
     <div
       ref={panel}
       role="dialog"
-      aria-label={t('projectSwitcher.title')}
+      aria-label={t("projectSwitcher.title")}
       data-project-switcher-popup=""
       onKeyDown={onKey}
       className={`lm-glass lm-shadow lm-anim-pop fixed ${LAYER.menu} flex w-[min(400px,calc(100vw-12px))] flex-col overflow-hidden rounded-lumen border border-edge`}
-      style={{ left: position.left, top: position.top, maxHeight: 'min(520px, calc(100vh - 60px))' }}
+      style={{
+        left: position.left,
+        top: position.top,
+        maxHeight: "min(520px, calc(100vh - 60px))",
+      }}
     >
       <label className="flex items-center gap-2 border-b border-edge px-2.5 py-2">
         <Search size={13} className="shrink-0 text-subtle" />
         <input
           ref={input}
           value={query}
-          onChange={(event) => { setQuery(event.target.value); setSelected(0); }}
-          placeholder={t('projectSwitcher.search')}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setSelected(0);
+          }}
+          placeholder={t("projectSwitcher.search")}
           spellCheck={false}
           className="min-w-0 flex-1 bg-transparent text-[12.5px] text-fg outline-none placeholder:text-subtle"
         />
       </label>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-1">
-        <div className="px-2 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-subtle">{t('projectSwitcher.recent')}</div>
+        <div className="px-2 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-subtle">
+          {t("projectSwitcher.recent")}
+        </div>
         {!list.length && (
           <p className="px-2 py-3 text-[12px] text-subtle">
-            {query.trim() ? t('projectSwitcher.noMatch', { query: query.trim() }) : t('projectSwitcher.empty')}
+            {query.trim()
+              ? t("projectSwitcher.noMatch", { query: query.trim() })
+              : t("projectSwitcher.empty")}
           </p>
         )}
-        <SwitcherEntries list={list} index={index} workspace={workspace} missing={missing} onHover={setSelected} onChoose={choose} />
+        <SwitcherEntries
+          list={list}
+          index={index}
+          workspace={workspace}
+          missing={missing}
+          onHover={setSelected}
+          onChoose={choose}
+        />
       </div>
 
       <SwitcherActions onRun={run} />

@@ -449,6 +449,7 @@ export function KeybindingsDialog() {
   }, [open]);
 
   const rows = useMemo(() => buildRows(commands, overrides, preset), [commands, overrides, preset]);
+  const { exportKeys, importKeys } = useKeymapFile(preset, overrides, setPreset, setKeybinding);
 
   if (!open) {
     return null;
@@ -478,8 +479,6 @@ export function KeybindingsDialog() {
     }
     setKeybinding(id, [...without, binding]);
   };
-
-  const { exportKeys, importKeys } = useKeymapFile(preset, overrides, setPreset, setKeybinding);
 
   return (
     <DialogShell

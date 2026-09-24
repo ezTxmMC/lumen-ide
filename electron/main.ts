@@ -49,6 +49,11 @@ process.env.APP_ROOT = path.join(__dirname, '..');
 const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
 const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist');
 
+// Own profile in development: sharing the installed app's userData would lose the single-instance lock to it.
+if (!app.isPackaged) {
+  app.setPath('userData', `${app.getPath('userData')}-dev`);
+}
+
 /**
  * Every window holds a project of its own: its folders, the watchers on them,
  * and the processes it started. Events go back to the window that owns them —

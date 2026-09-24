@@ -6,3 +6,4 @@ release
 .DS_Store
 extensions/dist
 extension-server/data
+*alerts.json

@@ -8,19 +8,30 @@
  * or (at your option) any later version. See the LICENSE file for details.
  */
 
-import { useEffect, useState } from 'react';
+import { formatBindingsFor } from "@/core/keybindings";
+import { useT } from "@/i18n";
+import { defaultTask, runDefault, stopRun } from "@/lib/run";
+import { isProjectsWindow } from "@/lib/window-mode";
+import { useStore } from "@/state/store";
 import {
-  Minus, Square, Copy, X, Play, Square as StopIcon,
-  PanelLeft, PanelRight, PanelBottom, Command, Hammer, FlaskConical, Search,
-} from 'lucide-react';
-import { useStore } from '@/state/store';
-import { runDefault, stopRun, defaultTask } from '@/lib/run';
-import { useT } from '@/i18n';
-import { formatBindingsFor } from '@/core/keybindings';
-import { Button } from '../ui';
-import { MenuBar } from './menubar/MenuBar';
-import { ProjectSwitcher } from './ProjectSwitcher';
-import { isProjectsWindow } from '@/lib/window-mode';
+  Command,
+  Copy,
+  FlaskConical,
+  Hammer,
+  Minus,
+  PanelBottom,
+  PanelLeft,
+  PanelRight,
+  Play,
+  Search,
+  Square,
+  Square as StopIcon,
+  X,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Button } from "../ui";
+import { MenuBar } from "./menubar/MenuBar";
+import { ProjectSwitcher } from "./ProjectSwitcher";
 
 /** A label with the command's shortcut, when it has one. */
 function withKeys(label: string, commandId: string) {
@@ -45,11 +56,11 @@ export function TitleBar() {
 
 /** The small project-screen window: a name to drag by, and minimize and close. */
 function ProjectsTitleBar() {
-  const isMac = useStore((s) => s.platform) === 'darwin';
+  const isMac = useStore((s) => s.platform) === "darwin";
   return (
     <header
       className="lm-transition flex h-9 shrink-0 items-center gap-1 border-b border-edge bg-surface px-2"
-      style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
+      style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
     >
       {isMac && <div className="w-16 shrink-0" />}
       <span className="flex-1 px-2 text-[12px] text-subtle">Lumen</span>
@@ -61,38 +72,35 @@ function ProjectsTitleBar() {
 function MainTitleBar() {
   const [maximized, setMaximized] = useState(false);
   const platform = useStore((s) => s.platform);
-  const workspace = useStore((s) => s.workspace);
-  const project = useStore((s) => s.project);
-  const tab = useStore((s) => s.tabs.find((t) => t.id === s.activeTabId) ?? null);
 
   useEffect(() => {
     void window.lumen.window.isMaximized().then(setMaximized);
     return window.lumen.window.onState((s) => {
-      if (typeof s.maximized === 'boolean') {
+      if (typeof s.maximized === "boolean") {
         setMaximized(s.maximized);
       }
     });
   }, []);
 
-  const projectName = project?.name ?? workspace?.split(/[\\/]/).filter(Boolean).pop();
-  const title = [tab?.name, projectName, 'Lumen'].filter(Boolean).join(' — ');
-  const isMac = platform === 'darwin';
+  const isMac = platform === "darwin";
 
   return (
     <header
       className="lm-transition flex h-9 shrink-0 items-center gap-1 border-b border-edge bg-surface px-2"
-      style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
+      style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
     >
-      {isMac && <div className="w-16 shrink-0" />}
+      {isMac && <div className="w-18 shrink-0" />}
 
       {!isMac && <MenuBar />}
       {!isMac && <span className="mx-1 h-4 w-px shrink-0 bg-edge" />}
 
       <ProjectSwitcher />
 
+      <span className="flex-1"></span>
+
       <RunButtons />
 
-      <TitleSearch title={title} />
+      <span className="mx-1 h-4 w-px shrink-0 bg-edge" />
 
       <DockToggles />
 
@@ -108,68 +116,90 @@ function RunButtons() {
   // The labels depend on the project and its configuration.
   useStore((s) => s.project);
   useStore((s) => s.projectConfig);
-  const build = defaultTask('build');
-  const run = defaultTask('run');
-  const test = defaultTask('test');
+  const build = defaultTask("build");
+  const run = defaultTask("run");
+  const test = defaultTask("test");
   return (
     <div
       className="ml-1 flex items-center gap-0.5"
-      style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+      style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
     >
-      {running ? (
-        <Button onClick={stopRun} title={t('titlebar.stop', { label: runningLabel ?? '' })} size="sm" variant="danger">
-          <StopIcon size={13} className="fill-current" />
-        </Button>
-      ) : (
-        <>
+      {running
+        ? (
           <Button
-            onClick={() => runDefault('build')}
-            title={build ? withKeys(t('titlebar.build', { label: build.label }), 'project.build') : t('titlebar.noBuild')}
+            onClick={stopRun}
+            title={t("titlebar.stop", { label: runningLabel ?? "" })}
             size="sm"
-            disabled={!build}
+            variant="danger"
           >
-            <Hammer size={14} />
+            <StopIcon size={13} className="fill-current" />
           </Button>
-          <Button
-            onClick={() => runDefault('run')}
-            title={withKeys(run ? t('titlebar.run', { label: run.label }) : t('titlebar.runFile'), 'project.run')}
-            size="sm"
-          >
-            <Play size={14} />
-          </Button>
-          <Button
-            onClick={() => runDefault('test')}
-            title={test ? withKeys(t('titlebar.test', { label: test.label }), 'project.test') : t('titlebar.noTest')}
-            size="sm"
-            disabled={!test}
-          >
-            <FlaskConical size={14} />
-          </Button>
-        </>
-      )}
+        )
+        : (
+          <>
+            <Button
+              onClick={() => runDefault("run")}
+              title={withKeys(
+                run
+                  ? t("titlebar.run", { label: run.label })
+                  : t("titlebar.runFile"),
+                "project.run",
+              )}
+              size="sm"
+            >
+              <Play size={14} />
+            </Button>
+            <Button
+              onClick={() => runDefault("test")}
+              title={test
+                ? withKeys(
+                  t("titlebar.test", { label: test.label }),
+                  "project.test",
+                )
+                : t("titlebar.noTest")}
+              size="sm"
+              disabled={!test}
+            >
+              <FlaskConical size={14} />
+            </Button>
+            <Button
+              onClick={() => runDefault("build")}
+              title={build
+                ? withKeys(
+                  t("titlebar.build", { label: build.label }),
+                  "project.build",
+                )
+                : t("titlebar.noBuild")}
+              size="sm"
+              disabled={!build}
+            >
+              <Hammer size={14} />
+            </Button>
+          </>
+        )}
     </div>
   );
 }
 
-function TitleSearch({ title }: { title: string; }) {
+function TitleSearch({ title }: { title: string }) {
   const t = useT();
   const setPalette = useStore((s) => s.setPalette);
   return (
     <div className="flex min-w-0 flex-1 items-center justify-center overflow-hidden px-2">
       <button
-        onClick={() => setPalette('commands')}
-        style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        onClick={() => setPalette("commands")}
+        style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         className="lm-transition group flex h-6 max-w-[440px] min-w-0 flex-1 items-center gap-2 rounded-lumen-sm border border-transparent px-2 text-[12px] text-subtle hover:border-edge hover:bg-hover"
-        title={withKeys(t('titlebar.commandPalette'), 'view.commandPalette')}
+        title={withKeys(t("titlebar.commandPalette"), "view.commandPalette")}
       >
         <Command size={11} className="shrink-0 opacity-60" />
         <span className="truncate">{title}</span>
       </button>
       <button
-        onClick={() => useStore.getState().openEverywhere('all')}
-        style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        onClick={() => useStore.getState().openEverywhere("all")}
+        style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         className="lm-transition ml-1 flex h-6 shrink-0 items-center gap-1 rounded-lumen-sm px-1.5 text-[11px] text-subtle hover:bg-hover hover:text-fg"
-        title={withKeys(t('titlebar.searchEverywhere'), 'search.everywhere')}
+        title={withKeys(t("titlebar.searchEverywhere"), "search.everywhere")}
       >
         <Search size={12} />
         <span className="font-mono text-[10px] opacity-70">⇧⇧</span>
@@ -182,62 +212,70 @@ function DockToggles() {
   const t = useT();
   const layout = useStore((s) => s.layout);
   const toggleDock = useStore((s) => s.toggleDock);
-  const secondary = layout.navSide === 'left' ? 'right' : 'left';
+  const secondary = layout.navSide === "left" ? "right" : "left";
   return (
     <div
       className="flex items-center gap-0.5"
-      style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+      style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
     >
       <Button
         onClick={() => toggleDock(layout.navSide)}
-        className={layout[layout.navSide].open ? 'text-accent' : ''}
-        title={withKeys(t('titlebar.toggleSidebar'), 'view.sidebar')}
+        className={layout[layout.navSide].open ? "text-accent" : ""}
+        title={withKeys(t("titlebar.toggleSidebar"), "view.sidebar")}
         size="sm"
       >
-        {layout.navSide === 'left' ? <PanelLeft size={14} /> : <PanelRight size={14} />}
+        {layout.navSide === "left"
+          ? <PanelLeft size={14} />
+          : <PanelRight size={14} />}
       </Button>
       <Button
-        onClick={() => toggleDock('bottom')}
-        title={withKeys(t('titlebar.togglePanel'), 'view.panel')}
+        onClick={() => toggleDock("bottom")}
+        title={withKeys(t("titlebar.togglePanel"), "view.panel")}
         size="sm"
-        className={layout.bottom.open ? 'text-accent' : ''}
+        className={layout.bottom.open ? "text-accent" : ""}
       >
         <PanelBottom size={14} />
       </Button>
       <Button
         onClick={() => toggleDock(secondary)}
-        title={withKeys(t('titlebar.toggleSecondary'), 'view.secondarySidebar')}
+        title={withKeys(t("titlebar.toggleSecondary"), "view.secondarySidebar")}
         size="sm"
-        className={layout[secondary].open ? 'text-accent' : ''}
+        className={layout[secondary].open ? "text-accent" : ""}
       >
-        {secondary === 'right' ? <PanelRight size={14} /> : <PanelLeft size={14} />}
+        {secondary === "right"
+          ? <PanelRight size={14} />
+          : <PanelLeft size={14} />}
       </Button>
     </div>
   );
 }
 
-function WindowControls({ maximized, resizable = true }: { maximized: boolean; resizable?: boolean; }) {
+function WindowControls(
+  { maximized, resizable = true }: { maximized: boolean; resizable?: boolean },
+) {
   const t = useT();
   return (
-
     <div
       className="ml-1 flex items-center"
-      style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+      style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
     >
-      <WindowButton onClick={() => void window.lumen.window.minimize()} label={t('titlebar.minimize')}>
+      <WindowButton
+        onClick={() => void window.lumen.window.minimize()}
+        label={t("titlebar.minimize")}
+      >
         <Minus size={13} />
       </WindowButton>
       {resizable && (
         <WindowButton
           onClick={() => void window.lumen.window.toggleMaximize()}
-          label={t(maximized ? 'titlebar.restore' : 'titlebar.maximize')}
+          label={t(maximized ? "titlebar.restore" : "titlebar.maximize")}
         >
           {maximized ? <Copy size={11} /> : <Square size={11} />}
         </WindowButton>
       )}
       <WindowButton
         onClick={() => void window.lumen.window.close()}
-        label={t('common.close')}
+        label={t("common.close")}
         danger
       >
         <X size={14} />
@@ -247,7 +285,10 @@ function WindowControls({ maximized, resizable = true }: { maximized: boolean; r
 }
 
 function WindowButton({
-  children, onClick, label, danger,
+  children,
+  onClick,
+  label,
+  danger,
 }: {
   children: React.ReactNode;
   onClick: () => void;
@@ -260,9 +301,11 @@ function WindowButton({
       aria-label={label}
       title={label}
       className={[
-        'lm-transition flex h-7 w-10 items-center justify-center rounded-lumen-sm text-muted',
-        danger ? 'hover:bg-bad hover:text-white' : 'hover:bg-hover hover:text-fg',
-      ].join(' ')}
+        "lm-transition flex h-7 w-10 items-center justify-center rounded-lumen-sm text-muted",
+        danger
+          ? "hover:bg-bad hover:text-white"
+          : "hover:bg-hover hover:text-fg",
+      ].join(" ")}
     >
       {children}
     </button>
