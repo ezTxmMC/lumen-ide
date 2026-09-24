@@ -3,7 +3,7 @@ import type { NamespaceMessages } from '@/i18n'
 /** Completion in the editor: the abbreviations and the origin of the suggestions. */
 export default {
   de: {
-    snippet: 'Snippet',
+    snippet: 'Snippet', nameSuggestion: 'Namensvorschlag',
     badge: { lsp: 'LSP', snippet: 'Snip', document: 'Dok', tab: 'Tab' },
     origin: {
       lsp: 'Vorschlag des Language-Servers',
@@ -13,7 +13,7 @@ export default {
     },
   },
   en: {
-    snippet: 'Snippet',
+    snippet: 'Snippet', nameSuggestion: 'Name suggestion',
     badge: { lsp: 'LSP', snippet: 'Snip', document: 'Doc', tab: 'Tab' },
     origin: {
       lsp: 'Language server suggestion',

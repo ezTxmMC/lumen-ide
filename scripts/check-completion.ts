@@ -7,6 +7,7 @@ import { matchText, prepare, Query, rawScore, score, NO_MATCH, matchRanges } fro
 import { rank, RankCache, lspBoost, proximityBonus, type Candidate, type Origin } from '@/core/completion/ranking'
 import { scanWords, wordRulesFor, languageCandidates } from '@/core/completion/words'
 import { isMemberAccess, triggerBefore } from '@/core/completion/context'
+import { declaredTypeBefore, nameSuggestions } from '@/core/completion/naming'
 import { ALL_ADDONS } from '@/addons'
 import type { LanguageSpec } from '@/core/types'
 
@@ -341,6 +342,39 @@ console.log('\n— Laufzeit —')
     const fresh = rank(word, [big], {}, 20).map((r) => r.candidate.label).join()
     ok(same === fresh, 'Cache liefert dieselben Ergebnisse')
   }
+}
+
+
+/* ------------------------------------------------------------------ *
+ * Variable names
+ * ------------------------------------------------------------------ */
+
+{
+  const names = (type: string) => nameSuggestions(type).join(',')
+  ok(nameSuggestions('UserService')[0] === 'userService', 'Name: UserService → userService zuerst')
+  ok(nameSuggestions('UserService')[1] === 'service', 'Name: letztes Wort als zweiter Vorschlag')
+  ok(nameSuggestions('URLConnection')[0] === 'urlConnection', 'Name: Akronym URLConnection → urlConnection')
+  ok(nameSuggestions('Class')[0] === 'clazz', 'Name: Class → clazz')
+  ok(names('List<User>').startsWith('list,users'), `Name: List<User> → ${names('List<User>')}`)
+  ok(nameSuggestions('User[]')[0] === 'users', 'Name: User[] → users')
+  ok(nameSuggestions('Map<String, User>').includes('stringToUser'), 'Name: Map<String, User> → stringToUser')
+  ok(nameSuggestions('java.util.List<Entry>').includes('entries'), 'Name: entry → entries')
+  ok(nameSuggestions('int').length === 0, 'Name: primitive → nichts')
+
+  ok(declaredTypeBefore('    UserService ', 'java') === 'UserService', 'Kontext: Deklaration am Zeilenanfang')
+  ok(declaredTypeBefore('    private final List<User> ', 'java') === 'List<User>', 'Kontext: nach Modifikatoren, Generics')
+  ok(declaredTypeBefore('  void run(int a, Foo ', 'java') === 'Foo', 'Kontext: Parameter')
+  ok(declaredTypeBefore('    @Inject UserService ', 'java') === 'UserService', 'Kontext: nach Annotation')
+  ok(declaredTypeBefore('    return Foo ', 'java') === null, 'Kontext: return Foo → keiner')
+  ok(declaredTypeBefore('    new Foo ', 'java') === null, 'Kontext: new Foo → keiner')
+  ok(declaredTypeBefore('    // the Foo ', 'java') === null, 'Kontext: Kommentar → keiner')
+  ok(declaredTypeBefore('    Foo ', 'kotlin') === null, 'Kontext: Kotlin schreibt den Namen vor dem Typ')
+
+  const cand = (label: string, kind?: 'variable' | 'type'): Candidate => ({ label, filter: prepare(label), origin: 'lsp', boost: 0, kind, data: null })
+  const pool = [cand('UserService', 'type'), cand('userService', 'variable'), cand('userSession', undefined)]
+  ok(rank('user', [pool])[0].candidate.label === 'userService', 'Ranking: kleingeschrieben → Variable vor Typ')
+  const upper = rank('User', [pool])
+  ok(upper[0].candidate.label === 'UserService', 'Ranking: Großschreibung → Typ bleibt vorn')
 }
 
 console.log(`\n${failures} error(s)`)

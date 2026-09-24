@@ -37,9 +37,10 @@ import { useStore } from '@/state/store'
 import { t } from '@/i18n'
 import type { LanguageSpec } from '@/core/types'
 import { Query, matchRanges, prepare, type Prepared } from './matcher'
-import { RankCache, lspBoost, proximityBonus, rank, type Origin } from './ranking'
+import { RankCache, kindClass, lspBoost, proximityBonus, rank, type Origin } from './ranking'
 import { recencySignal, recordAccepted } from './recent'
 import { isMemberAccess, triggerBefore } from './context'
+import { declaredTypeBefore, nameSuggestions } from './naming'
 import {
   languageCandidates, scanWords, snippetCandidates, wordRulesFor,
   type CompletionCandidate, type TextScan, type WordRules,
@@ -224,6 +225,7 @@ function mergeServerList(
       label,
       filter: prepare(item.filterText?.trim() || label),
       origin: 'lsp',
+      kind: kindClass(item.kind),
       boost: lspBoost(index, order.length, Boolean(item.preselect), lspItemDeprecated(item), item.kind),
       data,
     })
@@ -234,6 +236,28 @@ function mergeServerList(
     entries.push({ ...entry, boost: Math.max(entry.boost - 4, -12) })
   }
   return { key, entries, isIncomplete: list.isIncomplete, pattern }
+}
+
+/** Name suggestions for the type in front of the cursor — cached per line start, they only depend on it. */
+const nameCache = new Map<string, CompletionCandidate[]>()
+
+function nameCandidates(lineBefore: string, languageId: string | undefined): CompletionCandidate[] {
+  const type = declaredTypeBefore(lineBefore, languageId)
+  if (!type) return []
+  const hit = nameCache.get(type)
+  if (hit) return hit
+  const names = nameSuggestions(type)
+  const pool = names.map((name, index): CompletionCandidate => ({
+    label: name,
+    filter: prepare(name),
+    origin: 'name',
+    // The first name is the best fit — the later ones follow in order.
+    boost: 8 - index * 1.5,
+    data: { label: name, type: 'variable', detail: t('completion.nameSuggestion') },
+  }))
+  if (nameCache.size > 200) nameCache.clear()
+  nameCache.set(type, pool)
+  return pool
 }
 
 /* ------------------------------------------------------------------ *
@@ -250,6 +274,8 @@ interface Session {
   key: string
   memberAccess: boolean
   statementStart: boolean
+  /** Names that fit the type just written — a declaration's variable name. */
+  names: CompletionCandidate[]
   scan: TextScan
   tabs: CompletionCandidate[][]
   cache: RankCache
@@ -367,6 +393,7 @@ export function createCompletionSource(options: CompletionSourceOptions): Merged
       key: word.key,
       memberAccess: isMemberAccess(word.lineBefore),
       statementStart: word.lineBefore.trim() === '',
+      names: nameCandidates(word.lineBefore, spec?.id),
       scan,
       tabs: spec ? tabPools(spec, rules) : [],
       cache: new RankCache(),
@@ -386,6 +413,8 @@ export function createCompletionSource(options: CompletionSourceOptions): Merged
       if (spec && !s.memberAccess) pools.push(snippetsFor(spec), languageCandidates(spec))
       pools.push(s.scan.pool, ...s.tabs)
     }
+
+    if (s.names.length && !s.memberAccess) pools.unshift(s.names)
 
     for (const pool of pools) registerPool(pool)
 
@@ -446,7 +475,8 @@ export function createCompletionSource(options: CompletionSourceOptions): Merged
     // CodeMirror passes `explicit` down to follow-up queries. After we opened
     // the list ourselves it should not hold at a new word start — after a space, say.
     const explicit = context.explicit && (autoOpenKey === null || autoOpenKey === word.key)
-    if (!text && !explicit && !trigger) return null
+    const names = !text ? nameCandidates(word.lineBefore, spec?.id) : []
+    if (!text && !explicit && !trigger && !names.length) return null
     // Do not complete numbers.
     if (/^\p{N}/u.test(text) && !explicit) return null
 

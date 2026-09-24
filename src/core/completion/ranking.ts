@@ -10,7 +10,7 @@ import { NO_MATCH, Query, accepts, errorsOfLastMatch, rawScore, type Prepared } 
 
 export type Origin =
   | 'lsp' | 'snippet' | 'control' | 'keyword' | 'type' | 'builtin' | 'constant'
-  | 'word' | 'document' | 'tab'
+  | 'word' | 'document' | 'tab' | 'name'
 
 export interface Candidate<T = unknown> {
   /** Text used to merge duplicates, without decoration such as “⊘”. */
@@ -20,6 +20,8 @@ export interface Candidate<T = unknown> {
   readonly origin: Origin
   /** Bonus worked out in advance (the server's order, preselect …). */
   readonly boost: number
+  /** What a server entry is, when it says: variables rank up, types down while a lowerCamelCase word is typed. */
+  readonly kind?: 'variable' | 'type'
   readonly data: T
 }
 
@@ -55,6 +57,7 @@ const ORIGIN_BOOST: Record<Origin, number> = {
   word: 2,
   document: 0,
   tab: -3,
+  name: 14,
 }
 
 /** Who wins when merging (higher keeps its docs, import and apply). */
@@ -69,6 +72,7 @@ const ORIGIN_PRIORITY: Record<Origin, number> = {
   word: 2,
   document: 1,
   tab: 0,
+  name: 6,
 }
 
 /** Bonus at the start of a statement. */
@@ -88,6 +92,17 @@ export const PRESELECT = 10
 /** Own variables, parameters and fields (LSP kinds Field 5, Variable 6, Property 10) rank above everything else. */
 const OWN_KINDS = new Set([5, 6, 10])
 export const OWN_VARIABLE = 14
+/** Extra while the word being typed starts in lowercase: a variable is more likely than a type. */
+export const VARIABLE_ON_LOWER = 8
+export const TYPE_ON_LOWER = -5
+const TYPE_KINDS = new Set([7, 8, 9, 13, 22, 25])
+
+/** Whether an LSP completion kind counts as a variable (own or field) or a type. */
+export function kindClass(kind: number | undefined): 'variable' | 'type' | undefined {
+  if (kind === undefined) return undefined
+  if (OWN_KINDS.has(kind)) return 'variable'
+  return TYPE_KINDS.has(kind) ? 'type' : undefined
+}
 
 export function lspBoost(
   index: number, total: number, preselect: boolean, deprecated: boolean, kind?: number,
@@ -163,6 +178,7 @@ export function rank<T>(
 ): Ranked<T>[] {
   const q = new Query(pattern)
   const best = new Map<string, Ranked<T>>()
+  const lowerStart = /^\p{Ll}/u.test(pattern)
 
   for (const pool of pools) {
     if (!pool.length) continue
@@ -183,6 +199,8 @@ export function rank<T>(
 
       let value = raw + ORIGIN_BOOST[candidate.origin] + candidate.boost
       if (signals.statementStart) value += STATEMENT_BOOST[candidate.origin] ?? 0
+      if (lowerStart && candidate.kind === 'variable') value += VARIABLE_ON_LOWER
+      if (lowerStart && candidate.kind === 'type') value += TYPE_ON_LOWER
       value += signals.recency?.(candidate.label) ?? 0
       value += signals.proximity?.(candidate.label) ?? 0
       value -= lengthPenalty(candidate.label.length, q.n)
