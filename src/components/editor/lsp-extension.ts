@@ -21,6 +21,7 @@ import { diffChanges, needsResolve, offsetToPos, planCompletion, posToOffset } f
 import { snippetToCm } from '@/core/completion/snippet';
 import { ensureSnippetSession, startSnippetSession } from './snippet-session';
 import { formatFor, lspFormattingOptions } from '@/core/format-settings';
+import { pomBlockGaps } from '@/core/xml-format';
 import {
   Decoration, EditorView, hoverTooltip, keymap, showTooltip, ViewPlugin, WidgetType,
   type DecorationSet, type Tooltip, type ViewUpdate,
@@ -1335,17 +1336,28 @@ export async function formatDocument(view: EditorView, filePath: string): Promis
   const edits = selection.empty || !client.supports('documentRangeFormattingProvider')
     ? await client.formatting(filePath, options)
     : await client.rangeFormatting(filePath, selectionRange(view), options);
-  if (!edits?.length) {
-    return false;
-  }
+  const formatted = edits?.length ? applyFormatEdits(view, edits, selection.head) : false;
+  // The server never adds blank lines; a POM gets them between its blocks.
+  const spaced = spec?.id === 'xml' && selection.empty && separatePomBlocks(view);
+  return formatted || spaced;
+}
 
+function applyFormatEdits(view: EditorView, edits: TextEdit[], head: number): boolean {
   const changes = textEditsToChanges(view.state.doc, edits);
-  const head = selection.head;
-  const spec2: TransactionSpec = { changes, userEvent: 'lsp.format' };
-  const tr = view.state.update(spec2);
+  const spec: TransactionSpec = { changes, userEvent: 'lsp.format' };
+  const tr = view.state.update(spec);
   view.dispatch(tr);
   const mapped = tr.changes.mapPos(head);
   view.dispatch({ selection: EditorSelection.cursor(Math.min(mapped, view.state.doc.length)) });
+  return true;
+}
+
+function separatePomBlocks(view: EditorView): boolean {
+  const gaps = pomBlockGaps(view.state.doc.toString());
+  if (!gaps.length) {
+    return false;
+  }
+  view.dispatch({ changes: gaps.map((at) => ({ from: at, insert: '\n' })), userEvent: 'lsp.format' });
   return true;
 }
 

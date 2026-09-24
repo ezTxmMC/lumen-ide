@@ -513,8 +513,8 @@
             "xml": {
               "format": {
                 "enabled": true,
-                "splitAttributes": "preserve",
-                "preserveAttributeLineBreaks": true,
+                "splitAttributes": "alignWithFirstAttr",
+                "preserveAttributeLineBreaks": false,
                 "preserveEmptyContent": true,
                 "joinContentLines": false,
                 "joinCommentLines": false,

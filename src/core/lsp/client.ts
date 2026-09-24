@@ -257,7 +257,9 @@ export class LspClient {
       this.serverInfo = result?.serverInfo ?? {};
       this.notify('initialized', {});
       if (this.config.settings !== undefined) {
-        this.notify('workspace/didChangeConfiguration', { settings: this.config.settings });
+        // Straight through `send`: `notify` drops everything before the status is `ready`, and
+        // that only happens below — the settings would never reach the server.
+        this.send({ jsonrpc: '2.0', method: 'workspace/didChangeConfiguration', params: { settings: this.config.settings } });
       }
       this.setStatus('ready');
       this.addLog('client', 3, t('lsp.ready', { name: `${this.serverInfo.name ?? this.config.label}${this.serverInfo.version ? ` ${this.serverInfo.version}` : ''}` }));
