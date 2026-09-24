@@ -13,7 +13,17 @@ const JAVA_SETTINGS = {
   import: {
     gradle: { enabled: true, wrapper: { enabled: true }, annotationProcessing: { enabled: true } },
     maven: { enabled: true },
+    // Generated trees and Minecraft's `run` folders are no projects; jdtls would import
+    // every pom.xml / build.gradle it finds there (its defaults are node_modules and friends).
+    exclusions: [
+      '**/node_modules/**', '**/.metadata/**', '**/archetype-resources/**', '**/META-INF/maven/**',
+      '**/build/**', '**/.gradle/**', '**/run/**', '**/out/**',
+    ],
   },
+  // Jars of a project without a build file (jdtls' invisible project) — the default, spelled out.
+  project: { referencedLibraries: ['lib/**/*.jar', 'libs/**/*.jar'] },
+  // Types from decompiled dependency classes count for references and searches.
+  references: { includeDecompiledSources: true },
   format: { enabled: true, comments: { enabled: true } },
   // Completion without a cap: jdtls otherwise delivers 50 entries only and
   // hides classes from dependencies whose first letter is written differently.
@@ -23,9 +33,15 @@ const JAVA_SETTINGS = {
     matchCase: 'off',
     chain: { enabled: true },
     postfix: { enabled: true },
-    lazyResolveTextEdit: { enabled: false },
+    // Imports (`additionalTextEdits`) come with `completionItem/resolve`, not with the list — jdtls
+    // decides that by the client's `resolveSupport` (which names them), whatever this says; set
+    // to the truth (measured with jdtls 1.61: false and true deliver the same). Consumers apply
+    // the resolved item (`LspClient.resolveCompletion`).
+    lazyResolveTextEdit: { enabled: true },
     collapseCompletionItems: false,
-    guessMethodArguments: true,
+    // The string form (jdtls 1.3x+): parameter names as placeholders. The old `true` meant
+    // best-guess *values* (`substring(0)`); `'auto'` is the same as this one.
+    guessMethodArguments: 'insertParameterNames',
     importOrder: ['java', 'javax', 'jakarta', 'org', 'com', ''],
     favoriteStaticMembers: [
       'org.junit.jupiter.api.Assertions.*',
@@ -170,7 +186,11 @@ export const javaSpec: LanguageSpec = {
           skipTextEventPropagation: false,
           generateToStringPromptSupport: false,
           hashCodeEqualsPromptSupport: false,
+          // Both: jdtls sends the import chooser (`java.action.organizeImports.chooseImports`) as a
+          // client command only with executeClientCommandSupport — with the one alone, the
+          // `source.organizeImports` action comes back empty. `LspClient` answers the chooser.
           advancedOrganizeImportsSupport: true,
+          executeClientCommandSupport: true,
           overrideMethodsPromptSupport: false,
           advancedGenerateAccessorsSupport: false,
           resolveAdditionalTextEditsSupport: true,

@@ -76,6 +76,7 @@ const lumen = {
       const body = Buffer.from(JSON.stringify(message), 'utf8')
       s.child.stdin.write(`Content-Length: ${body.length}\r\n\r\n`); s.child.stdin.write(body); return true
     },
+    javaCleanMetadata: async () => ({ removed: [] as string[], kept: [] as string[] }),
     stop: async (id: string) => { const s = servers.get(id); if (!s) return; servers.delete(id); s.child.stdin?.end(); s.child.kill('SIGTERM') },
     onMessage: (cb: Listener<{ id: string; message: Record<string, unknown> }>) => { msgListeners.add(cb); return () => msgListeners.delete(cb) },
     onStderr: (cb: Listener<{ id: string; text: string }>) => { errListeners.add(cb); return () => errListeners.delete(cb) },
@@ -148,6 +149,282 @@ const lumen = {
 
   if (bad) {
     console.log(`\n${bad} install check(s) failed`)
+    process.exit(1)
+  }
+}
+
+/* Java / jdtls client behaviour — a scripted server answers, no process. */
+{
+  const { CLIENT_CAPABILITIES, LspClient } = await import('@/core/lsp/client')
+  const { applyItemDefaults, pickImportCandidate, isRetryable, LspError } = await import('@/core/lsp/protocol')
+  const { javaSpec } = await import('@/addons/builtin/java')
+  const { safeImportExclusions, withSourcePaths } = await import('@/core/sdk/lsp')
+  const { isJavaBuildFile, JAVA_BUILD_WATCH_GLOBS, globToRegExp, lsp: manager } = await import('@/core/lsp/manager')
+  let bad = 0
+  const expect = (cond: boolean, label: string) => { console.log(`  ${cond ? '✓' : '✗'}  ${label}`); if (!cond) bad++ }
+  const pos = (line: number, character: number) => ({ line, character })
+  const range = (line: number, from: number, to: number) => ({ start: pos(line, from), end: pos(line, to) })
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+  console.log('\nJava client capabilities:')
+  const completionCaps = CLIENT_CAPABILITIES.textDocument.completion as Record<string, any>
+  const itemCaps = completionCaps.completionItem
+  expect(itemCaps.commitCharactersSupport === true, 'commit characters are declared (the editor accepts on them)')
+  expect(itemCaps.insertReplaceSupport === true && itemCaps.labelDetailsSupport === true && itemCaps.snippetSupport === true, 'insert/replace, label details and snippets are declared')
+  expect(JSON.stringify(itemCaps.insertTextModeSupport) === '{"valueSet":[1]}', 'insertTextMode: only "as is" — nothing re-indents')
+  expect(JSON.stringify(completionCaps.completionList.itemDefaults) === '["commitCharacters","editRange","insertTextFormat","insertTextMode","data"]', 'itemDefaults: exactly the fields applyItemDefaults handles')
+  expect(itemCaps.resolveSupport.properties.includes('additionalTextEdits'), 'resolveSupport names additionalTextEdits (jdtls defers imports to resolve)')
+
+  console.log('\nitemDefaults:')
+  const jdtlsList = {
+    isIncomplete: false,
+    itemDefaults: { editRange: { insert: range(3, 4, 7), replace: range(3, 4, 9) }, insertTextFormat: 2 as const, insertTextMode: 2 as const, commitCharacters: ['.', ';'], data: { completionKinds: [2] } },
+    items: [
+      { label: 'substring', kind: 2, insertText: 'substring', textEditText: 'substring(${1:beginIndex})' },
+      { label: 'ArrayList', kind: 7, insertText: 'ArrayList' },
+      { label: 'own', textEdit: { range: range(3, 4, 7), newText: 'own' }, insertTextFormat: 1 as const, commitCharacters: [], data: 'mine' },
+    ],
+  }
+  const applied = applyItemDefaults(jdtlsList)
+  const [sub, arr, own] = applied.items
+  expect(sub.textEdit?.newText === 'substring(${1:beginIndex})' && sub.textEdit.replace?.end.character === 9 && sub.textEdit.insert?.end.character === 7, 'textEditText becomes the edit, with insert and replace ranges')
+  expect(arr.textEdit?.newText === 'ArrayList', 'without textEditText the insertText is the edit text')
+  expect(sub.insertTextFormat === 2 && sub.insertTextMode === 2 && sub.commitCharacters?.[0] === '.' && (sub.data as any).completionKinds[0] === 2, 'format, mode, commit characters and data reach every item')
+  expect(own.textEdit?.range?.end.character === 7 && own.insertTextFormat === 1 && own.commitCharacters?.length === 0 && own.data === 'mine', 'what an item carries itself wins')
+  expect(applied.itemDefaults === undefined && sub.textEditText === undefined, 'defaults are consumed, not applied twice')
+  const single = applyItemDefaults({ isIncomplete: true, itemDefaults: { editRange: range(0, 1, 2) }, items: [{ label: 'x' }] })
+  expect(single.items[0].textEdit?.range?.start.character === 1 && single.items[0].textEdit?.newText === 'x' && single.isIncomplete, 'a plain Range gives a plain TextEdit; isIncomplete survives')
+  const plain = { isIncomplete: false, items: [{ label: 'a' }] }
+  expect(applyItemDefaults(plain) === plain, 'a list without defaults is returned untouched')
+
+  console.log('\nClient requests (scripted server):')
+  const sent: any[] = []
+  let responder: (message: any) => unknown = () => ({ result: null })
+  const realSend = lumen.lsp.send
+  lumen.lsp.send = async (_id: string, message: any) => {
+    sent.push(message)
+    if (message.id === undefined) return true
+    const reply = responder(message) as { result?: unknown; error?: { code: number; message: string } } | 'silent'
+    if (reply === 'silent') return true
+    setTimeout(() => (client as any).receive({ jsonrpc: '2.0', id: message.id, ...reply }), 0)
+    return true
+  }
+  const client = new LspClient({ label: 'jdtls', command: 'jdtls' } as never, 'jdtls', '/proj')
+  client.status = 'ready'
+  client.capabilities = { completionProvider: { resolveProvider: true }, executeCommandProvider: { commands: [] } }
+  const requests = (method: string) => sent.filter((m) => m.method === method && m.id !== undefined)
+  const reset = () => { sent.length = 0 }
+  const at = pos(3, 6)
+
+  // A retryable error, then the answer.
+  reset()
+  let attempts = 0
+  responder = () => (++attempts === 1 ? { error: { code: -32801, message: 'ContentModified' } } : { result: jdtlsList })
+  const retried = await client.completionResult('/proj/A.java', at)
+  expect(retried.ok && retried.list.items[0].textEdit?.newText.startsWith('substring(') === true && requests('textDocument/completion').length === 2, 'ContentModified (-32801) is asked again and the answer gets its defaults')
+  expect(isRetryable(new LspError('x', -32800)) && isRetryable(new LspError('x', -32802)) && !isRetryable(new LspError('x', -32603)) && !isRetryable(new Error('x')), 'only -32800/-32801/-32802 count as retryable')
+
+  reset()
+  responder = () => ({ error: { code: -32802, message: 'ServerCancelled' } })
+  const exhausted = await client.completionResult('/proj/A.java', at, { retries: 1 })
+  expect(!exhausted.ok && !exhausted.cancelled && requests('textDocument/completion').length === 2, 'the retries are bounded (1 retry = 2 requests) and then it fails')
+
+  reset()
+  responder = () => ({ error: { code: -32603, message: 'internal' } })
+  const failed = await client.completion('/proj/A.java', at)
+  expect(failed.failed === true && failed.isIncomplete === true && failed.items.length === 0 && requests('textDocument/completion').length === 1, 'a real error is a failed, incomplete list — not a cacheable empty answer')
+  expect(client.log.some((l) => l.text.includes('completion: internal')), 'the failure is logged')
+
+  reset()
+  responder = () => ({ result: null })
+  const empty = await client.completionResult('/proj/A.java', at)
+  expect(empty.ok && empty.list.items.length === 0 && !empty.list.failed, 'null from the server is a real, empty answer')
+
+  reset()
+  responder = () => 'silent'
+  const controller = new AbortController()
+  const cancelling = client.completionResult('/proj/A.java', at, { signal: controller.signal })
+  await wait(5)
+  controller.abort()
+  const cancelled = await cancelling
+  expect(!cancelled.ok && cancelled.cancelled && sent.some((m) => m.method === '$/cancelRequest'), 'a cancelled request sends $/cancelRequest and is reported as cancelled')
+  reset()
+  const pre = new AbortController()
+  pre.abort()
+  const before = await client.completion('/proj/A.java', at, undefined, pre.signal)
+  expect(before.failed === true && sent.length === 0, 'an already aborted signal sends nothing')
+
+  reset()
+  responder = () => ({ result: { isIncomplete: false, items: [] } })
+  await client.completion('/proj/A.java', at)
+  await client.completion('/proj/A.java', at, '.')
+  await client.completion('/proj/A.java', at, undefined, undefined, 3)
+  await client.completion('/proj/A.java', at, '.', undefined, 3)
+  const kinds = requests('textDocument/completion').map((m) => m.params.context)
+  expect(JSON.stringify(kinds) === JSON.stringify([{ triggerKind: 1 }, { triggerKind: 2, triggerCharacter: '.' }, { triggerKind: 3 }, { triggerKind: 3 }]), `triggerKind: invoked, character, incomplete (${JSON.stringify(kinds)})`)
+
+  // resolve: one request for concurrent calls, a cache for successes, none for failures.
+  reset()
+  responder = () => ({ result: { label: 'ArrayList', detail: 'java.util.ArrayList', additionalTextEdits: [{ range: range(0, 0, 0), newText: 'import java.util.ArrayList;\n' }] } })
+  const item = { label: 'ArrayList', kind: 7, data: { pid: '0', rid: '1' } }
+  const [first, second] = await Promise.all([client.resolveCompletion(item), client.resolveCompletion({ ...item })])
+  const third = await client.resolveCompletion(item)
+  expect(requests('completionItem/resolve').length === 1 && first.additionalTextEdits?.length === 1 && second === first && third === first, 'resolve: concurrent and repeated calls share one request')
+  expect(first.kind === 7 && first.data === item.data, 'the resolved item keeps what the answer did not repeat')
+  reset()
+  responder = () => ({ error: { code: -32603, message: 'boom' } })
+  const other = { label: 'Other', data: { pid: '0', rid: '2' } }
+  const lost = await client.resolveCompletionResult(other)
+  expect(!lost.ok && lost.item === other && (await client.resolveCompletion(other)) === other && requests('completionItem/resolve').length === 2, 'a failed resolve returns the original, is not cached, and is asked again')
+  reset()
+  let resolves = 0
+  responder = () => (++resolves === 1 ? { error: { code: -32801, message: 'ContentModified' } } : { result: { label: 'Third', detail: 'ok' } })
+  const overtaken = await client.resolveCompletionResult({ label: 'Third', data: 3 })
+  expect(overtaken.ok && overtaken.item.detail === 'ok' && requests('completionItem/resolve').length === 2, 'an overtaken resolve is retried once')
+
+  console.log('\nJava commands and client commands:')
+  const answers: any[] = []
+  const answer = async (method: string, params: unknown) => {
+    reset()
+    await (client as any).receive({ jsonrpc: '2.0', id: 900 + answers.length, method, params })
+    await wait(5)
+    answers.push(sent.at(-1))
+    return sent.at(-1)?.result
+  }
+  const chooser = ['file:///proj/A.java', [
+    { range: range(1, 10, 14), candidates: [{ fullyQualifiedName: 'com.sun.tools.javac.util.List', id: 'a' }, { fullyQualifiedName: 'java.util.List', id: 'b' }, { fullyQualifiedName: 'java.awt.List', id: 'c' }] },
+    { range: range(1, 2, 6), candidates: [{ fullyQualifiedName: 'java.sql.Date', id: 'd' }, { fullyQualifiedName: 'sun.util.calendar.BaseCalendar.Date', id: 'e' }, { fullyQualifiedName: 'java.util.Date', id: 'f' }] },
+    { range: range(2, 2, 6), candidates: [{ fullyQualifiedName: 'org.x.Thing', id: 'g' }, { fullyQualifiedName: 'jdk.internal.Thing', id: 'h' }] },
+  ]]
+  const messages: string[] = []
+  client.onMessage = (p) => messages.push(p.message)
+  const picked = (await answer('workspace/executeClientCommand', { command: 'java.action.organizeImports.chooseImports', arguments: chooser })) as { id: string }[]
+  expect(JSON.stringify(picked.map((c) => c.id)) === '["b","f","g"]', `the import chooser is answered, one pick per selection: java.util first, library before JDK internals (${picked?.map((c) => c.id)})`)
+  expect(messages.length === 1 && messages[0].includes('java.util.List') && messages[0].includes('java.awt.List'), 'the picks are reported, with the alternatives')
+  expect(JSON.stringify(await answer('workspace/executeClientCommand', { command: '_java.reloadBundles.command', arguments: [] })) === '[]', '_java.reloadBundles.command: no bundles')
+  expect((await answer('workspace/executeClientCommand', { command: 'java.something.new' })) === null && sent.at(-1)?.error === undefined, 'an unknown client command is answered with null, not an error')
+  expect(pickImportCandidate([]) === null && pickImportCandidate([{ fullyQualifiedName: 'a.B' }, { fullyQualifiedName: 'c.B' }])?.fullyQualifiedName === 'a.B', 'ties keep the server order')
+
+  reset()
+  responder = () => ({ result: 2 })
+  await client.javaReimport(['/proj/build.gradle'])
+  await client.javaReimport(['/proj/pom.xml'], { full: true })
+  const builds = requests('java/buildWorkspace').map((m) => m.params)
+  expect(JSON.stringify(builds) === '[false,true]' && sent.filter((m) => m.method === 'java/projectConfigurationUpdate').length === 2, 're-import builds incrementally unless a full build is asked for')
+  reset()
+  responder = () => ({ result: { projectRoot: 'file:///proj', classpaths: ['/a.jar'] } })
+  const classpath = await client.javaClasspaths('/proj/A.java', 'test')
+  const cpRequest = requests('workspace/executeCommand')[0]?.params
+  expect(cpRequest?.command === 'java.project.getClasspaths' && cpRequest.arguments[0] === 'file:///proj/A.java' && cpRequest.arguments[1] === '{"scope":"test"}' && classpath?.classpaths[0] === '/a.jar', 'getClasspaths: [uri, JSON options]')
+  await client.javaRefreshDiagnostics('/proj/A.java')
+  await client.javaImportProjects()
+  const cmds = requests('workspace/executeCommand').map((m) => m.params)
+  expect(cmds[1].command === 'java.project.refreshDiagnostics' && JSON.stringify(cmds[1].arguments) === '["file:///proj/A.java","thisFile",false,false]' && cmds[2].command === 'java.project.import', 'refreshDiagnostics and project.import wrappers')
+  lumen.lsp.send = realSend
+
+  console.log('\nJava settings:')
+  const jdtls = javaSpec.lsp?.[0]
+  const settings = (jdtls?.settings as any)?.java
+  const extended = (jdtls?.initializationOptions as any)?.extendedClientCapabilities
+  expect(settings.completion.lazyResolveTextEdit.enabled === true && extended.resolveAdditionalTextEditsSupport === true && itemCaps.resolveSupport.properties.includes('additionalTextEdits'), 'lazy import edits: setting, extended capability and resolveSupport agree')
+  expect(['auto', 'insertParameterNames', 'insertBestGuessedArguments', 'off'].includes(settings.completion.guessMethodArguments), `guessMethodArguments is the string form (${settings.completion.guessMethodArguments})`)
+  expect(extended.advancedOrganizeImportsSupport === true && extended.executeClientCommandSupport === true, 'the import chooser is declared together with executeClientCommand (one without the other empties organize imports)')
+  expect(['**/build/**', '**/.gradle/**', '**/run/**', '**/out/**', '**/node_modules/**'].every((g) => settings.import.exclusions.includes(g)), 'import.exclusions: build, .gradle, run, out, node_modules')
+  expect(settings.project.referencedLibraries.includes('lib/**/*.jar') && settings.references.includeDecompiledSources === true && settings.completion.maxResults === 0, 'referencedLibraries, decompiled sources and unlimited completion')
+  expect(settings.completion.filteredTypes.every((g: string) => /^(sun|com\.sun|jdk)/.test(g)), 'filteredTypes hide JDK internals only')
+  expect(settings.eclipse.downloadSources === true && settings.maven.downloadSources === true, 'sources are downloaded (Maven, Gradle through the init script)')
+  expect(((jdtls?.args ?? []) as string[]).includes('--jvm-arg=-Djava.import.generatesMetadataFilesAtProjectRoot=false') && (jdtls?.args ?? []).includes('${dataDir}'), 'metadata stays out of the project (JVM property) and -data is outside it')
+  const safe = safeImportExclusions({ java: { import: { exclusions: ['**/run/**', '**/build/**', '**/node_modules/**', 'plain'] } } }, '/home/u/run/proj') as any
+  expect(JSON.stringify(safe.java.import.exclusions) === '["**/build/**","**/node_modules/**","plain"]', 'a project below a "run" folder keeps its modules: that pattern is dropped')
+  const rooted = withSourcePaths({ java: { project: { referencedLibraries: ['lib/**/*.jar'] } } }, ['src']) as any
+  expect(JSON.stringify(rooted.java.project.sourcePaths) === '["src"]' && rooted.java.project.referencedLibraries.length === 1, 'a project without a build file gets its source root named, other project settings stay')
+  const named = { java: { project: { sourcePaths: ['app'] } } }
+  expect(withSourcePaths(named, ['src']) === named && withSourcePaths(null, ['src']) === null, 'source paths the user named are kept')
+  const untouched = { java: { import: { exclusions: ['**/run/**'] } } }
+  expect(safeImportExclusions(untouched, '/home/u/proj') === untouched && safeImportExclusions(null, '/x') === null, 'nothing to drop: settings come back as they were')
+
+  console.log('\nJava build-file watching:')
+  const cases: [string, boolean][] = [
+    ['/p/gradle.properties', true], ['/p/gradle/libs.versions.toml', true], ['/p/settings.gradle.kts', true], ['/p/buildSrc/src/main/kotlin/x.kt', true],
+    ['/p/pom.xml', true], ['/p/lib/dep.jar', true], ['/p/sub/build.gradle', true], ['/p/build/libs/app.jar', false], ['/p/.gradle/x/y.jar', false],
+    ['/p/buildSrc/build/classes/A.class', false], ['/p/src/Main.java', false], ['C:\\p\\gradle.properties', true],
+  ]
+  for (const [file, expected] of cases) expect(isJavaBuildFile(file, '/p') === expected, `${file}: ${expected ? 'changes the classpath' : 'is ignored'}`)
+  expect(isJavaBuildFile('/home/u/run/proj/pom.xml', '/home/u/run/proj') && !isJavaBuildFile('/home/u/run/proj/target/x.jar', '/home/u/run/proj'), 'the folders above the project root do not count as noise')
+  expect(JAVA_BUILD_WATCH_GLOBS.includes('**/gradle.properties') && JAVA_BUILD_WATCH_GLOBS.includes('**/*.versions.toml') && JAVA_BUILD_WATCH_GLOBS.includes('**/buildSrc/**') && globToRegExp('**/buildSrc/**').test('/p/buildSrc/a/b.kts'), 'the watcher globs cover gradle.properties, version catalogs and buildSrc')
+
+  // The manager: unwatched build files go to the server anyway and trigger one debounced re-import.
+  const forwarded: { uri: string; type: number }[][] = []
+  const reimports: string[][] = []
+  const fake = {
+    status: 'ready', root: '/proj', config: { command: 'jdtls', label: 'jdtls' }, watchedPatterns: ['**/pom.xml', '**/*.java'],
+    openPaths: () => ['/proj/src/Open.java'], addLog: () => {},
+    didChangeWatchedFiles: (changes: { uri: string; type: number }[]) => { forwarded.push(changes) },
+    javaReimport: async (files: string[]) => { reimports.push(files) },
+  }
+  ;(manager as any).clients.set('fake-jdtls', fake)
+  await window.lumen.fs.writeFile('/tmp/lumen-check-proj/build.gradle', '')
+  fake.root = '/tmp/lumen-check-proj'
+  manager.notifyFsChanges([
+    { path: '/tmp/lumen-check-proj/gradle.properties', type: 2 }, { path: '/tmp/lumen-check-proj/gradle.properties', type: 2 },
+    { path: '/tmp/lumen-check-proj/pom.xml', type: 2 }, { path: '/tmp/lumen-check-proj/notes.txt', type: 2 },
+    { path: '/tmp/lumen-check-proj/build/out.jar', type: 1 },
+  ] as never)
+  const uris = forwarded.flat().map((c) => c.uri.replace('file://', ''))
+  expect(uris.includes('/tmp/lumen-check-proj/gradle.properties') && uris.includes('/tmp/lumen-check-proj/pom.xml') && !uris.some((u) => u.endsWith('notes.txt') || u.endsWith('out.jar')), `unwatched and watched build files are forwarded, noise is not (${uris.length} changes)`)
+  await wait(2400)
+  expect(reimports.length === 1 && reimports[0].some((f) => f.endsWith('build.gradle')), `one debounced re-import for the burst (${reimports.length})`)
+  reimports.length = 0
+  manager.notifyFsChanges([{ path: '/tmp/lumen-check-proj/pom.xml', type: 2 }] as never)
+  await wait(2400)
+  expect(reimports.length === 0, 'pom.xml is watched by the server itself: no second re-import')
+  ;(manager as any).clients.delete('fake-jdtls')
+  await fs.rm('/tmp/lumen-check-proj', { recursive: true, force: true })
+
+  console.log('\nEclipse metadata in the project:')
+  const meta = await import('../electron/features/jdtls-metadata')
+  const { execFileSync } = await import('node:child_process')
+  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'lumen-meta-'))
+  const put = async (rel: string, text = '') => { await fs.mkdir(path.dirname(path.join(tmp, rel)), { recursive: true }); await fs.writeFile(path.join(tmp, rel), text) }
+  const there = (rel: string) => fs.access(path.join(tmp, rel)).then(() => true, () => false)
+  const buildshipProject = '<projectDescription><name>x</name><natures><nature>org.eclipse.buildship.core.gradleprojectnature</nature></natures></projectDescription>'
+  const factory = '<?xml version="1.0" encoding="UTF-8"?>\n<factorypath>\n<factorypathentry kind="EXTJAR" id="/x/lombok.jar" enabled="true" runInBatchMode="false"/>\n</factorypath>\n'
+  execFileSync('git', ['init', '-q'], { cwd: tmp })
+  await put('build.gradle', ''); await put('.project', buildshipProject); await put('.classpath', '<classpath/>'); await put('.settings/org.eclipse.buildship.core.prefs', 'x=1')
+  await put('sub/build.gradle', ''); await put('sub/.factorypath', factory)                                  // lone .factorypath in a module
+  await put('lone/.factorypath', factory)                                                                   // lone, no build file
+  await put('mod/src/.project', buildshipProject)                                                           // below "src"
+  await put('run/data/.settings/org.eclipse.jdt.core.prefs', 'x=1')                                          // below "run"
+  await put('gen/build.gradle', ''); await put('gen/bin/main/A.class', 'x'); await put('gen/bin/test/B.class', 'x')
+  await put('hand/build.gradle', ''); await put('hand/bin/tool.sh', '#!/bin/sh')                            // a hand-made bin
+  await put('nobuild/bin/main/A.class', 'x')                                                                // no build file: not ours
+  await put('kept/.project', '<projectDescription><name>mine</name></projectDescription>'); await put('kept/.classpath', '<classpath/>')  // Eclipse's own
+  await put('tracked/build.gradle', ''); await put('tracked/.factorypath', factory)
+  execFileSync('git', ['add', 'tracked/.factorypath'], { cwd: tmp })
+  await put('mdg/.eclipse/configurations/run.launch', '<x/>')
+  const found = (await meta.findMetadata(tmp)).map((f) => path.relative(tmp, f)).sort()
+  const has = (rel: string) => found.includes(rel)
+  expect(has('.project') && has('.classpath') && has('.settings'), 'root: generated .project, .classpath, .settings')
+  expect(has('sub/.factorypath') && has('lone/.factorypath'), 'a lone .factorypath (annotation processing) is found')
+  expect(has('mod/src/.project'), 'a module below src/ is searched')
+  expect(has('run/data/.settings'), 'a generated .settings below run/ is found')
+  expect(has('gen/bin') && !has('hand/bin') && !has('nobuild/bin'), 'bin/ counts only when it holds nothing but .class files in a Gradle/Maven module')
+  expect(has('mdg/.eclipse'), 'ModDevGradle .eclipse launches')
+  expect(!has('kept/.project') && !has('kept/.classpath'), 'a .project that is not Buildship/m2e/jdtls output stays with its .classpath')
+  const cleaned = await meta.cleanMetadata(tmp)
+  expect(cleaned.kept.some((f) => f.endsWith('tracked/.factorypath')) && await there('tracked/.factorypath'), 'git-tracked metadata stays and is reported')
+  expect(!(await there('.project')) && !(await there('sub/.factorypath')) && !(await there('gen/bin')) && (await there('hand/bin/tool.sh')) && (await there('kept/.project')), 'clean removes the generated files and only those')
+  expect((await meta.findMetadata(tmp)).map((f) => path.relative(tmp, f)).join() === 'tracked/.factorypath', 'a second pass finds only the tracked file')
+  await fs.rm(tmp, { recursive: true, force: true })
+
+  console.log('\nGradle init script:')
+  const support = await fs.readFile('electron/features/jdtls-support.ts', 'utf8')
+  const version = Number(/INIT_SCRIPT_VERSION = (\d+)/.exec(support)?.[1])
+  expect(version >= 4 && support.includes('// lumen-jdtls-init v${INIT_SCRIPT_VERSION}'), `init script version ${version} is stamped in the script (bumped for the new content)`)
+  expect(support.includes('downloadSources = true') && support.includes('downloadJavadoc = true') && support.includes('baseSourceOutputDir') && support.includes('defaultOutputDir'), 'the script downloads sources and javadoc and moves Buildship output out of bin/')
+
+  if (bad) {
+    console.log(`\n${bad} java check(s) failed`)
     process.exit(1)
   }
 }

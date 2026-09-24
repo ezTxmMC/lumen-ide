@@ -60,26 +60,71 @@ function withRuntimes(settings: unknown, runtimes: Runtime[], gradleJavaHome: st
   return clone
 }
 
+/**
+ * `java.import.exclusions` without the patterns that would swallow the project
+ * itself: jdtls matches them against absolute paths, so `**\/run/**` hides every
+ * module of a project that lives below a folder called `run` (measured: no
+ * completion at all). `**\/<name>/**` goes when the root path has that segment.
+ */
+export function safeImportExclusions(settings: unknown, root: string): unknown {
+  const java = (settings as { java?: { import?: { exclusions?: string[] } } } | null)?.java
+  const exclusions = java?.import?.exclusions
+  if (!Array.isArray(exclusions)) return settings
+  const segments = new Set(root.split(/[\\/]/).filter(Boolean))
+  const kept = exclusions.filter((pattern) => {
+    const name = /^\*\*\/([^*/]+)\/\*\*$/.exec(pattern)?.[1]
+    return !name || !segments.has(name)
+  })
+  if (kept.length === exclusions.length) return settings
+  const clone = JSON.parse(JSON.stringify(settings)) as { java: { import: { exclusions: string[] } } }
+  clone.java.import.exclusions = kept
+  return clone
+}
+
+/**
+ * `java.project.sourcePaths` for a project without a build file. Left alone,
+ * jdtls guesses the source roots of such an "invisible project" from the
+ * files it sees first — measured: `src/app/Main.java` (package `app`) became
+ * the roots `src/app` and `src/other`, the package check failed, same-package
+ * classes were offered with an import and postfix templates resolved to
+ * garbage. Naming the root fixes all of it.
+ */
+export function withSourcePaths(settings: unknown, paths: string[]): unknown {
+  if (!settings || typeof settings !== 'object' || !paths.length) return settings
+  const clone = JSON.parse(JSON.stringify(settings)) as { java?: { project?: Record<string, unknown> } }
+  if (!clone.java) return settings
+  if (Array.isArray(clone.java.project?.sourcePaths)) return settings
+  clone.java.project = { ...(clone.java.project ?? {}), sourcePaths: paths }
+  return clone
+}
+
 /** A decorator for `lsp.addConfigDecorator`; `installed` supplies the detected JDKs. */
 export function createJvmServerDecorator(installed: () => InstalledSdk[]) {
-  return (config: LspConfig, languageId: string): LspConfig => {
-    if (!JVM_LANGUAGES.has(languageId)) return config
+  return (given: LspConfig, languageId: string, root?: string): LspConfig => {
+    if (!JVM_LANGUAGES.has(languageId)) return given
+    const isJdtls = /jdtls|jdt\.ls/i.test(`${given.command} ${given.label}`)
+    const init0 = given.initializationOptions as { settings?: unknown } | undefined
+    const config: LspConfig = !isJdtls ? given : {
+      ...given,
+      settings: safeImportExclusions(given.settings, root ?? ''),
+      initializationOptions: init0 && typeof init0 === 'object' ? { ...init0, settings: safeImportExclusions(init0.settings, root ?? '') } : init0,
+    }
     const java = activeSdk('java')
     if (!java) return config
 
-    const isJdtls = /jdtls|jdt\.ls/i.test(`${config.command} ${config.label}`)
     const canRunServer = !isJdtls || java.major === 0 || java.major >= JDTLS_MIN_RUNTIME
     const env = canRunServer ? { ...sdkEnvironment(), ...(config.env ?? {}) } : config.env
     if (!isJdtls) return { ...config, env }
 
     const runtimes = runtimesFor(installed(), java.home, java.major)
     const init = config.initializationOptions as { settings?: unknown } | undefined
+    const settingsFor = (settings: unknown) => withRuntimes(settings, runtimes, java.home)
     return {
       ...config,
       env,
-      settings: withRuntimes(config.settings, runtimes, java.home),
+      settings: settingsFor(config.settings),
       initializationOptions: init && typeof init === 'object'
-        ? { ...init, settings: withRuntimes(init.settings, runtimes, java.home) }
+        ? { ...init, settings: settingsFor(init.settings) }
         : init,
     }
   }

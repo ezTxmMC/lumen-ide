@@ -6,6 +6,7 @@
 
 import type { LanguageSpec, LspConfig, LspPackage } from '@/core/types'
 import { t } from '@/i18n'
+import { withSourcePaths } from '@/core/sdk/lsp'
 import { LspClient, type ClientStatus, type ContentChange, type LogLine } from './client'
 import {
   installPlans, managedPackage, packageFits, platformCommand, type InstallPlan, type SystemInfo,
@@ -70,6 +71,31 @@ function jsxLanguageId(filePath: string): string | null {
 
 const GRADLE_BUILD_FILES =['settings.gradle', 'settings.gradle.kts', 'build.gradle', 'build.gradle.kts']
 
+/**
+ * What changes a Java classpath but that jdtls does not always register a
+ * watcher for: Gradle properties, the version catalog, settings and build
+ * scripts (also of `buildSrc`), poms and jars.
+ */
+export const JAVA_BUILD_WATCH_GLOBS = [
+  '**/gradle.properties', '**/*.versions.toml', '**/settings.gradle', '**/settings.gradle.kts',
+  '**/build.gradle', '**/build.gradle.kts', '**/buildSrc/**', '**/pom.xml', '**/*.jar',
+]
+const JAVA_BUILD_WATCH = JAVA_BUILD_WATCH_GLOBS.map(globToRegExp)
+/** Build outputs and caches: their jars and scripts are not the project's inputs. */
+const JAVA_BUILD_NOISE = /(^|\/)(build|\.gradle|node_modules|target|out|run|\.git)\//
+
+/** Does a change to this file alter the classpath of a Java project? */
+export function isJavaBuildFile(path: string, root = ''): boolean {
+  const normal = path.replace(/\\/g, '/')
+  const base = root.replace(/\\/g, '/').replace(/\/$/, '')
+  const inside = base && normal.startsWith(`${base}/`) ? normal.slice(base.length) : `/${normal}`
+  if (JAVA_BUILD_NOISE.test(inside)) return false
+  return JAVA_BUILD_WATCH.some((re) => re.test(path))
+}
+
+/** Files that make jdtls import a project as Maven or Gradle rather than as an invisible project. */
+const BUILD_FILES = ['pom.xml', 'build.gradle', 'build.gradle.kts', 'settings.gradle', 'settings.gradle.kts', '.project', '.classpath']
+
 const isJdtls = (config: LspConfig) => /jdtls|jdt\.ls/i.test(`${config.command} ${config.label}`)
 
 class LspManager {
@@ -93,6 +119,9 @@ class LspManager {
   private resyncTimers = new Map<LspClient, ReturnType<typeof setTimeout>>()
   /** Clients whose import problems were already reported — once per server is enough. */
   private importWarned = new WeakSet<LspClient>()
+  /** Build-file changes waiting for their (debounced) re-import, per jdtls. */
+  private buildChanges = new Map<LspClient, ReturnType<typeof setTimeout>>()
+  private metadataTimers = new Map<LspClient, ReturnType<typeof setTimeout>>()
   /** jdtls servers whose workspace was imported with an older Gradle init script — re-imported once ready. */
   private staleImports = new WeakSet<LspClient>()
 
@@ -229,6 +258,23 @@ class LspManager {
     return null
   }
 
+  /**
+   * A project without a build file gets its source root named: jdtls guesses
+   * it otherwise, and guesses wrong (see `withSourcePaths`). Only `src` — a
+   * project laid out differently keeps jdtls' own guess.
+   */
+  private async withInvisibleProjectRoots(config: LspConfig, root: string): Promise<LspConfig> {
+    const has = (name: string) => window.lumen.fs.exists(`${root}/${name}`).catch(() => false)
+    const builds = await Promise.all(BUILD_FILES.map(has))
+    if (builds.some(Boolean) || !(await has('src'))) return config
+    const init = config.initializationOptions as { settings?: unknown } | undefined
+    return {
+      ...config,
+      settings: withSourcePaths(config.settings, ['src']),
+      initializationOptions: init && typeof init === 'object' ? { ...init, settings: withSourcePaths(init.settings, ['src']) } : init,
+    }
+  }
+
   /** Forgets the resolution results — useful after an install. */
   rescan() {
     this.resolved.clear()
@@ -291,6 +337,7 @@ class LspManager {
       }
       let decorated = substituted
       for (const decorate of this.decorators) decorated = await decorate(decorated, spec.id, actualRoot, command)
+      if (isJdtls(decorated)) decorated = await this.withInvisibleProjectRoots(decorated, actualRoot)
       const client = new LspClient(decorated, command, actualRoot)
       this.wire(client)
       this.clients.set(key, client)
@@ -328,6 +375,8 @@ class LspManager {
     client.onJavaEvent = (event) => {
       if (event.kind === 'projects') {
         this.scheduleResync(client)
+        // The import may have written .project/.classpath/bin somewhere anyway.
+        this.scheduleMetadataCleanup(client, 3000)
         if (this.staleImports.has(client)) void this.reimportStale(client)
         return
       }
@@ -357,6 +406,43 @@ class LspManager {
         if (doc) client.reopenDocument(path, doc.text)
       }
     }, 1200))
+  }
+
+  /**
+   * Take the Eclipse metadata a running jdtls left in the project out again —
+   * once its import settled, and again after a build-file change. Unlike the
+   * clean before the start this leaves the workspace alone: jdtls is running
+   * on it.
+   */
+  private scheduleMetadataCleanup(client: LspClient, delay: number) {
+    const pending = this.metadataTimers.get(client)
+    if (pending) clearTimeout(pending)
+    this.metadataTimers.set(client, setTimeout(() => {
+      this.metadataTimers.delete(client)
+      if (client.status !== 'ready') return
+      void window.lumen.lsp.javaCleanMetadata(client.root).then((cleaned) => {
+        if (cleaned.removed.length) client.addLog('client', 3, t('lsp.java.metadataRemoved', { count: cleaned.removed.length }))
+      }).catch(() => {})
+    }, delay))
+  }
+
+  /**
+   * A build file changed: re-import once things have been quiet for two
+   * seconds (a Gradle sync rewrites several files), build incrementally, and
+   * clean up after the import.
+   */
+  private scheduleJavaReimport(client: LspClient) {
+    const pending = this.buildChanges.get(client)
+    if (pending) clearTimeout(pending)
+    this.buildChanges.set(client, setTimeout(() => {
+      this.buildChanges.delete(client)
+      if (client.status !== 'ready') return
+      void this.buildFiles(client, [...GRADLE_BUILD_FILES, 'pom.xml']).then(async (files) => {
+        await client.javaReimport(files)
+        this.scheduleResync(client)
+        this.scheduleMetadataCleanup(client, 5000)
+      }).catch(() => {})
+    }, 2000))
   }
 
   /**
@@ -540,7 +626,9 @@ class LspManager {
   notifyFsChanges(changes: FsChange[]) {
     if (!changes.length) return
     for (const client of this.clients.values()) {
-      if (client.status !== 'ready' || !client.watchedPatterns.length) continue
+      if (client.status !== 'ready') continue
+      const java = isJdtls(client.config)
+      if (!client.watchedPatterns.length && !java) continue
       const matchers = client.watchedPatterns.map(globToRegExp)
       // A file open in the server belongs to the editor: its changes arrive as
       // didChange. Reporting the disk change as well makes jdtls reload the
@@ -549,12 +637,17 @@ class LspManager {
       // write (temp file, then rename over it — how agents and many tools
       // save) arrives as "created" and is the same case.
       const open = new Set(client.openPaths())
-      const relevant = changes
-        .filter((c) => !(c.type !== 3 && open.has(c.path)))
-        .filter((c) => matchers.some((re) => re.test(c.path)))
+      const closed = changes.filter((c) => !(c.type !== 3 && open.has(c.path)))
+      // jdtls registers watchers for some build files only; the ones it skips
+      // (gradle.properties, the version catalog, buildSrc, jars) are sent
+      // anyway, and — since jdtls does not act on them — followed by a re-import.
+      const unwatched = (c: FsChange) => java && isJavaBuildFile(c.path, client.root) && !matchers.some((re) => re.test(c.path))
+      if (changes.some(unwatched)) this.scheduleJavaReimport(client)
+      const relevant = closed
+        .filter((c) => unwatched(c) || matchers.some((re) => re.test(c.path)))
         .map((c) => ({ uri: pathToUri(c.path), type: c.type }))
       if (!relevant.length) continue
-      client.didChangeWatchedFiles(relevant)
+      client.didChangeWatchedFiles(relevant, java)
     }
   }
 

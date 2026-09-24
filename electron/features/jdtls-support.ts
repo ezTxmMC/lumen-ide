@@ -24,17 +24,16 @@
  */
 
 import { app, ipcMain } from 'electron'
-import { execFile } from 'node:child_process'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { promisify } from 'node:util'
 import { javacBackendRange, zipEntry, type JavacBackend } from './javac-backend'
 import { ensureJdtlsAgent } from './jdtls-agent'
+import { cleanMetadata } from './jdtls-metadata'
 
 /** Raise with every change to the script — workspaces imported with an older one are re-imported. */
-export const INIT_SCRIPT_VERSION = 3
+export const INIT_SCRIPT_VERSION = 4
 
-const INIT_SCRIPT = `// lumen-jdtls-init v${INIT_SCRIPT_VERSION}
+export const INIT_SCRIPT = `// lumen-jdtls-init v${INIT_SCRIPT_VERSION}
 // Written by Lumen for the Java language server's Gradle import — see
 // electron/features/jdtls-support.ts. Modules a project depends on are added
 // to its Eclipse classpath as project references where Gradle's model lacks them.
@@ -53,6 +52,23 @@ allprojects { p ->
         if (p.tasks.names.contains('neoForgeIdeSync')) p.eclipse.synchronizationTasks(p.tasks.named('neoForgeIdeSync'))
       }
     }
+  }
+}
+
+// Sources and javadoc of the dependencies for hover and go-to-definition, and
+// the compiled classes of Buildship's model out of the project: without a
+// directory of its own, every module gets a \`bin/\` next to its sources.
+// Set before the build script runs, so a build that configures its own wins.
+allprojects { p ->
+  p.apply plugin: 'eclipse'
+  p.eclipse.classpath {
+    downloadSources = true
+    downloadJavadoc = true
+    try {
+      def out = new File(p.layout.buildDirectory.get().asFile, 'eclipse')
+      defaultOutputDir = new File(out, 'default')
+      baseSourceOutputDir = out
+    } catch (Throwable ignored) {}
   }
 }
 
@@ -201,90 +217,6 @@ async function javacBackend(command: string): Promise<JavacBackend | null> {
   const manifest = archive ? zipEntry(archive, 'META-INF/MANIFEST.MF') : null
   if (!manifest) return null
   return javacBackendRange(manifest.toString('utf8'))
-}
-
-/* ------------------------------------------------------------------ *
- * Eclipse metadata in the project
- * ------------------------------------------------------------------ */
-
-/** Folders never searched for module metadata. */
-const METADATA_SKIP = new Set(['.git', '.gradle', '.idea', 'build', 'bin', 'out', 'target', 'node_modules', 'run', 'src'])
-
-/** A `.project` that Buildship, m2e or jdtls wrote — not one somebody keeps for Eclipse on purpose. */
-const GENERATED_PROJECT = /buildship|__CREATED_BY_JAVA_LANGUAGE_SERVER__|org\.eclipse\.m2e\.core/
-
-async function isGeneratedSettings(dir: string): Promise<boolean> {
-  const names = await fs.readdir(dir).catch(() => null)
-  if (!names?.length) return false
-  return names.every((name) => /^org\.eclipse\.[\w.]+\.prefs$/.test(name))
-}
-
-/** ModDevGradle's `.eclipse/configurations/*.launch` — the launch files it writes when it thinks it runs in Eclipse. */
-async function isGeneratedLaunches(dir: string): Promise<boolean> {
-  const names = await fs.readdir(dir).catch(() => null)
-  if (!names || names.some((name) => name !== 'configurations')) return false
-  const launches = await fs.readdir(path.join(dir, 'configurations')).catch(() => [] as string[])
-  return launches.every((name) => name.endsWith('.launch'))
-}
-
-/**
- * The metadata jdtls and its Gradle/Maven import left in a module folder:
- * `.project` (when generated), with it `.classpath`, `.factorypath` and a
- * `.settings` of Eclipse preferences only, and ModDevGradle's `.eclipse`.
- */
-async function moduleMetadata(dir: string): Promise<string[]> {
-  const found: string[] = []
-  const project = await fs.readFile(path.join(dir, '.project'), 'utf8').catch(() => null)
-  if (project !== null && GENERATED_PROJECT.test(project)) {
-    found.push(path.join(dir, '.project'))
-    for (const name of ['.classpath', '.factorypath']) {
-      if (await exists(path.join(dir, name))) found.push(path.join(dir, name))
-    }
-    if (await isGeneratedSettings(path.join(dir, '.settings'))) found.push(path.join(dir, '.settings'))
-  }
-  if (await isGeneratedLaunches(path.join(dir, '.eclipse'))) found.push(path.join(dir, '.eclipse'))
-  return found
-}
-
-/** Generated metadata in the root and in module folders up to three levels down. */
-async function findMetadata(root: string, depth = 0): Promise<string[]> {
-  const found = await moduleMetadata(root)
-  if (depth >= 3) return found
-  const entries = await fs.readdir(root, { withFileTypes: true }).catch(() => [])
-  for (const entry of entries) {
-    if (!entry.isDirectory() || entry.name.startsWith('.') || METADATA_SKIP.has(entry.name)) continue
-    found.push(...await findMetadata(path.join(root, entry.name), depth + 1))
-  }
-  return found
-}
-
-/** Of `files`, those git tracks — they are part of the project and stay. */
-async function trackedByGit(root: string, files: string[]): Promise<Set<string>> {
-  if (!files.length) return new Set()
-  const relative = files.map((file) => path.relative(root, file))
-  const result = await promisify(execFile)('git', ['-C', root, 'ls-files', '-z', '--', ...relative], { timeout: 10_000 })
-    .catch(() => ({ stdout: '' }))
-  const listed = String(result.stdout).split('\0').filter(Boolean)
-  return new Set(files.filter((_file, index) => listed.some((entry) => entry === relative[index] || entry.startsWith(`${relative[index]}/`))))
-}
-
-/**
- * Remove what jdtls generated in the project, before it starts. jdtls now
- * keeps these files in its own workspace
- * (`-Djava.import.generatesMetadataFilesAtProjectRoot=false`), but files
- * already on disk win over that — so the old ones have to go once. Files git
- * tracks stay, and are reported.
- */
-async function cleanMetadata(root: string): Promise<{ removed: string[]; kept: string[] }> {
-  const found = await findMetadata(path.resolve(String(root)))
-  const tracked = await trackedByGit(root, found)
-  const removed: string[] = []
-  for (const file of found) {
-    if (tracked.has(file)) continue
-    await fs.rm(file, { recursive: true, force: true })
-    removed.push(file)
-  }
-  return { removed, kept: [...tracked] }
 }
 
 export function registerJdtlsIpc() {

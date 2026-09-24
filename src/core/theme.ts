@@ -356,6 +356,7 @@ function completionPopupStyles(theme: Theme, effects: Effects): Record<string, R
       backgroundColor: ui.bgActive,
     },
     '.cm-completionIcon-snippet': { '&:after': { content: "'{}'" } },
+    '.cm-completionIcon-deprecated': { opacity: 0.5, textDecoration: 'line-through' },
     '.cm-completionIcon-operator': { '&:after': { content: "'±'" } },
     '&.cm-editor .cm-tooltip.cm-completionInfo': {
       padding: '8px 10px',

@@ -8,8 +8,11 @@
  *
  * How it runs:
  * - Local results arrive synchronously, so the list is there immediately.
- * - The server is asked in parallel. Its answer is cached per word start;
- *   once complete, further typing filters locally only.
+ * - The server is asked in parallel. Its answer is cached per word start and
+ *   reused only while it is complete AND the new word extends the one it was
+ *   requested for — a server that filters by prefix (jdtls) gets asked again
+ *   after a backspace. A failed or empty answer is never kept as “complete”:
+ *   the next keystroke asks again, local sources fill in meanwhile.
  * - When the answer arrives, an empty typing transaction refreshes the open
  *   list through `CompletionResult.update` — no new query, the selection
  *   stays. With the list closed, `startCompletion` opens it.
@@ -31,15 +34,18 @@ import { registry } from '@/core/registry'
 import type { LspClient } from '@/core/lsp/client'
 import type { CompletionItem, CompletionList } from '@/core/lsp/protocol'
 import {
-  completionClient, lspItemDeprecated, lspItemLabel, lspItemToCompletion, offsetToPos,
+  completionClient, lspItemDeprecated, lspItemLabel, lspItemToCompletion, offsetToPos, posToOffset,
 } from '@/components/editor/lsp-extension'
 import { useStore } from '@/state/store'
 import { t } from '@/i18n'
 import type { LanguageSpec } from '@/core/types'
 import { Query, matchRanges, prepare, type Prepared } from './matcher'
-import { RankCache, kindClass, lspBoost, proximityBonus, rank, type Origin } from './ranking'
+import { RankCache, kindClass, lspBoost, proximityBonus, rank, type Origin, type Ranked } from './ranking'
 import { recencySignal, recordAccepted } from './recent'
-import { isMemberAccess, triggerBefore } from './context'
+import {
+  contextKind, importScope, isTypedContext, listReusable, leadInBefore, localityOf, triggerBefore,
+  type ContextKind, type ImportScope,
+} from './context'
 import { declaredTypeBefore, nameSuggestions } from './naming'
 import {
   languageCandidates, scanWords, snippetCandidates, wordRulesFor,
@@ -197,17 +203,58 @@ interface ServerList {
   isIncomplete: boolean
   /** What had been typed when the request went out. */
   pattern: string
+  /** Where the filter text starts: the earliest `textEdit` start (`@`, `list.` of a postfix item) or the word start. */
+  from: number
 }
 
 function sortKey(item: CompletionItem): string {
   return item.sortText ?? item.label
 }
 
-/** Take a new answer; known entries now missing stay on, demoted. */
+/** What tells same-label entries apart: package or detail, signature, kind. */
+function identityOf(item: CompletionItem, qualifier: string | undefined): string {
+  return `${qualifier ?? ''}\0${item.labelDetails?.detail ?? ''}\0${item.kind ?? 0}`
+}
+
+function editStart(item: CompletionItem, doc: Text, lineFrom: number, wordFrom: number): number | null {
+  const range = item.textEdit?.range ?? item.textEdit?.replace ?? item.textEdit?.insert
+  if (!range) return null
+  const start = posToOffset(doc, range.start)
+  if (start < lineFrom || start > wordFrom) return null
+  return start
+}
+
+/** Where a server answer sits in the document. */
+interface AnswerSite {
+  doc: Text
+  wordFrom: number
+  scope: ImportScope
+  filePath: string
+}
+
+/**
+ * Take a new answer. Only when the answer is empty (a typo, an error) the
+ * last suggestions stay, demoted, and the list counts as incomplete so the
+ * next keystroke asks again.
+ */
 function mergeServerList(
   previous: ServerList | null, list: CompletionList, key: string, pattern: string, client: LspClient,
+  site: AnswerSite,
 ): ServerList {
   const items = list.items
+  if (!items.length) {
+    const kept = (previous?.entries ?? []).map((entry) => ({ ...entry, boost: Math.max(entry.boost - 4, -12) }))
+    return { key, entries: kept, isIncomplete: true, pattern, from: previous?.from ?? site.wordFrom }
+  }
+  const { doc, wordFrom, scope, filePath } = site
+  const lineFrom = doc.lineAt(wordFrom).from
+  const starts = items.map((item) => editStart(item, doc, lineFrom, wordFrom))
+  let from = wordFrom
+  for (const start of starts) {
+    if (start !== null && start < from) from = start
+  }
+  const defaults = (list as { itemDefaults?: { commitCharacters?: string[] } }).itemDefaults?.commitCharacters
+
   const order = items.map((item, index) => ({ item, index }))
   order.sort((a, b) => {
     const ka = sortKey(a.item)
@@ -216,26 +263,28 @@ function mergeServerList(
     return ka < kb ? -1 : 1
   })
   const entries: CompletionCandidate[] = []
-  const labels = new Set<string>()
-  order.forEach(({ item }, index) => {
+  order.forEach(({ item, index: original }, index) => {
     const label = lspItemLabel(item)
-    const data = lspItemToCompletion(client, item)
-    labels.add(label)
+    let data = lspItemToCompletion(client, item, filePath)
+    const commit = item.commitCharacters ?? defaults
+    if (commit?.length && !data.commitCharacters) data = { ...data, commitCharacters: commit }
+    const qualifier = item.labelDetails?.description ?? item.detail?.split('\n')[0]
+    const start = starts[original] ?? wordFrom
+    const lead = from < wordFrom ? doc.sliceString(from, start) : ''
+    const filter = item.filterText?.trim() || label
     entries.push({
       label,
-      filter: prepare(item.filterText?.trim() || label),
+      filter: prepare(lead && !filter.startsWith(lead) ? lead + filter : filter),
       origin: 'lsp',
       kind: kindClass(item.kind),
       boost: lspBoost(index, order.length, Boolean(item.preselect), lspItemDeprecated(item), item.kind),
+      identity: identityOf(item, qualifier),
+      deprecated: lspItemDeprecated(item),
+      locality: localityOf(scope, label, qualifier),
       data,
     })
   })
-  for (const entry of previous?.entries ?? []) {
-    if (labels.has(entry.label)) continue
-    labels.add(entry.label)
-    entries.push({ ...entry, boost: Math.max(entry.boost - 4, -12) })
-  }
-  return { key, entries, isIncomplete: list.isIncomplete, pattern }
+  return { key, entries, isIncomplete: list.isIncomplete, pattern, from }
 }
 
 /** Name suggestions for the type in front of the cursor — cached per line start, they only depend on it. */
@@ -273,6 +322,7 @@ interface Session {
   from: number
   key: string
   memberAccess: boolean
+  kind: ContextKind
   statementStart: boolean
   /** Names that fit the type just written — a declaration's variable name. */
   names: CompletionCandidate[]
@@ -298,6 +348,7 @@ export function createCompletionSource(options: CompletionSourceOptions): Merged
   let session: Session | null = null
   let server: ServerList | null = null
   let pendingKey: string | null = null
+  let pendingPattern: string | null = null
   let awaitingKey: string | null = null
   /** Opened by us rather than the user — `explicit` then holds only for this word start. */
   let autoOpenKey: string | null = null
@@ -325,24 +376,30 @@ export function createCompletionSource(options: CompletionSourceOptions): Merged
     return completionClient(filePath)
   }
 
-  function request(c: LspClient, state: EditorState, word: CursorWord, trigger: string | undefined) {
+  function request(c: LspClient, state: EditorState, word: CursorWord, trigger: string | undefined, kind?: 1 | 2 | 3) {
     const id = ++seq
     pendingKey = word.key
     const pattern = state.sliceDoc(word.from, word.pos)
+    pendingPattern = pattern
     inflight?.abort()
     const controller = new AbortController()
     inflight = controller
-    void c.completion(filePath!, offsetToPos(state.doc, word.pos), trigger, controller.signal).then((list) => {
-      if (inflight === controller) inflight = null
-      if (id !== seq) return
-      pendingKey = null
-      const v = view
-      if (!v || !v.plugin(plugin)) return
-      const current = cursorWord(v.state, v.state.selection.main.head, before)
-      if (current.key !== word.key) return
-      server = mergeServerList(server?.key === word.key ? server : null, list, word.key, pattern, c)
-      refresh(v, word.key)
-    })
+    void c.completion(filePath!, offsetToPos(state.doc, word.pos), trigger, controller.signal, kind).then((list) => (list.failed ? null : list), () => null)
+      .then((list) => {
+        if (inflight === controller) inflight = null
+        if (id !== seq) return
+        pendingKey = null
+        pendingPattern = null
+        const v = view
+        if (!v || !v.plugin(plugin)) return
+        // An error is not an answer: nothing is cached, the next keystroke asks again.
+        if (!list) return
+        const current = cursorWord(v.state, v.state.selection.main.head, before)
+        if (current.key !== word.key) return
+        const site: AnswerSite = { doc: v.state.doc, wordFrom: word.from, scope: importScope(v.state.doc.toString()), filePath: filePath! }
+        server = mergeServerList(server?.key === word.key ? server : null, list, word.key, pattern, c, site)
+        refresh(v, word.key)
+      })
   }
 
   function scheduleRequest() {
@@ -352,17 +409,19 @@ export function createCompletionSource(options: CompletionSourceOptions): Merged
       const v = view
       const c = client()
       if (!v || !c || !v.plugin(plugin)) return
-      request(c, v.state, cursorWord(v.state, v.state.selection.main.head, before), undefined)
+      request(c, v.state, cursorWord(v.state, v.state.selection.main.head, before), undefined, 3)
     }, INCOMPLETE_DEBOUNCE)
   }
 
-  /** Ask the server unless something valid is already on hand for this word start. */
+  /** Ask the server unless something valid is already on hand for this word start and pattern. */
   function ensureServer(state: EditorState, word: CursorWord, trigger: string | undefined) {
     const c = client()
     if (!c) return
+    const pattern = state.sliceDoc(word.from, word.pos)
     if (server?.key === word.key) {
-      if (!server.isIncomplete) return
-      if (server.pattern === state.sliceDoc(word.from, word.pos)) return
+      if (listReusable(server, pattern)) return
+      if (server.pattern === pattern) return
+      if (pendingKey === word.key && pendingPattern === pattern) return
       scheduleRequest()
       return
     }
@@ -388,42 +447,52 @@ export function createCompletionSource(options: CompletionSourceOptions): Merged
 
   function openSession(state: EditorState, word: CursorWord): Session {
     const scan = documentScan(state, word.from, word.pos, rules)
+    const kind = contextKind(word.lineBefore)
     return {
       from: word.from,
       key: word.key,
-      memberAccess: isMemberAccess(word.lineBefore),
+      memberAccess: kind === 'member',
+      kind,
       statementStart: word.lineBefore.trim() === '',
       names: nameCandidates(word.lineBefore, spec?.id),
       scan,
       tabs: spec ? tabPools(spec, rules) : [],
       cache: new RankCache(),
-      recency: recencySignal(languageKey),
+      recency: recencySignal(languageKey, kind),
     }
+  }
+
+  /** Where the filter text starts — the server may reach back past the word (`@`, a postfix receiver). */
+  function filterFrom(s: Session): number {
+    return server?.key === s.key ? Math.min(server.from, s.from) : s.from
   }
 
   function build(state: EditorState, pos: number): CompletionResult | null {
     const s = session
     if (!s) return null
-    const pattern = state.sliceDoc(s.from, pos)
+    const from = filterFrom(s)
+    const local = from === s.from
+    const pattern = state.sliceDoc(from, pos)
     const serverPool = server?.key === s.key ? server.entries : null
     const pools: CompletionCandidate[][] = []
     if (serverPool) pools.push(serverPool)
     const bareMember = s.memberAccess && !pattern && Boolean(client())
-    if (!bareMember) {
+    if (!bareMember && local) {
       if (spec && !s.memberAccess) pools.push(snippetsFor(spec), languageCandidates(spec))
       pools.push(s.scan.pool, ...s.tabs)
     }
 
-    if (s.names.length && !s.memberAccess) pools.unshift(s.names)
+    if (s.names.length && !s.memberAccess && local) pools.unshift(s.names)
 
     for (const pool of pools) registerPool(pool)
 
-    const ranked = rank(pattern, pools, {
+    const all = rank(pattern, pools, {
       recency: s.recency,
       proximity: (label) => proximityBonus(s.scan.nearest.get(label) ?? -1),
       memberAccess: s.memberAccess,
       statementStart: s.statementStart,
     }, RESULT_LIMIT, s.cache)
+    const ranked = withoutWords(all, isTypedContext(s.kind))
 
     if (!ranked.length) {
       awaitingKey = pendingKey === s.key ? s.key : null
@@ -436,7 +505,7 @@ export function createCompletionSource(options: CompletionSourceOptions): Merged
     const query = new Query(pattern)
     const ranges = new Map<Completion, readonly number[]>()
     return {
-      from: s.from,
+      from,
       to: pos,
       options,
       filter: false,
@@ -452,14 +521,21 @@ export function createCompletionSource(options: CompletionSourceOptions): Merged
     }
   }
 
+  /** Typed context (member access, `new`, `import` …) with server entries: plain document and tab words are noise. */
+  function withoutWords(ranked: Ranked<Completion>[], typed: boolean): Ranked<Completion>[] {
+    if (!typed) return ranked
+    if (!ranked.some((r) => r.candidate.origin === 'lsp')) return ranked
+    return ranked.filter((r) => r.candidate.origin !== 'document' && r.candidate.origin !== 'tab')
+  }
+
   /** Typing on: re-rank synchronously for as long as the word start holds. */
   function update(
     _current: CompletionResult, from: number, _to: number, context: CompletionContext,
   ): CompletionResult | null {
     const s = session
-    if (!s || from !== s.from) return null
+    if (!s || from !== filterFrom(s)) return null
     const word = cursorWord(context.state, context.pos, before)
-    if (word.from !== from || word.key !== s.key) return null
+    if (word.from !== s.from || word.key !== s.key) return null
     ensureServer(context.state, word, undefined)
     return build(context.state, context.pos)
   }
@@ -471,12 +547,14 @@ export function createCompletionSource(options: CompletionSourceOptions): Merged
     const text = state.sliceDoc(word.from, pos)
     const c = client()
     const trigger = text ? null : triggerBefore(word.lineBefore, c?.triggerCharacters ?? [])
+    // `new `, `import `, `@`, `extends `, `throws ` open the list by themselves when a server can answer.
+    const leadIn = !text && c ? leadInBefore(word.lineBefore) : null
 
     // CodeMirror passes `explicit` down to follow-up queries. After we opened
     // the list ourselves it should not hold at a new word start — after a space, say.
     const explicit = context.explicit && (autoOpenKey === null || autoOpenKey === word.key)
     const names = !text ? nameCandidates(word.lineBefore, spec?.id) : []
-    if (!text && !explicit && !trigger && !names.length) return null
+    if (!text && !explicit && !trigger && !leadIn && !names.length) return null
     // Do not complete numbers.
     if (/^\p{N}/u.test(text) && !explicit) return null
 
@@ -492,7 +570,7 @@ export function createCompletionSource(options: CompletionSourceOptions): Merged
       for (const tr of u.transactions) {
         const picked = tr.annotation(pickedCompletion)
         if (!picked) continue
-        recordAccepted(languageKey, labelOf.get(picked) ?? picked.label)
+        recordAccepted(languageKey, labelOf.get(picked) ?? picked.label, session?.kind)
       }
     }),
   ]

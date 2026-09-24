@@ -7,17 +7,20 @@
  * the outline — all of it through the `LspClient`.
  */
 
+import { diffChanges, needsResolve, offsetToPos, planCompletion, posToOffset } from '@/core/completion/apply'
+import { snippetToCm } from '@/core/completion/snippet'
+import { ensureSnippetSession, startSnippetSession } from './snippet-session'
 import { formatFor, lspFormattingOptions } from '@/core/format-settings'
 import {
   Decoration, EditorView, hoverTooltip, keymap, showTooltip, ViewPlugin, WidgetType,
   type DecorationSet, type Tooltip, type ViewUpdate,
 } from '@codemirror/view'
 import {
-  EditorSelection, Prec, StateEffect, StateField,
+  ChangeSet, EditorSelection, Prec, StateEffect, StateField,
   type Extension, type Text, type TransactionSpec,
 } from '@codemirror/state'
 import {
-  pickedCompletion, snippet, type Completion, type CompletionContext, type CompletionResult,
+  pickedCompletion, type Completion, type CompletionContext, type CompletionResult,
 } from '@codemirror/autocomplete'
 import { setDiagnostics, type Diagnostic as CmDiagnostic } from '@codemirror/lint'
 import { lsp } from '@/core/lsp/manager'
@@ -25,7 +28,7 @@ import type { LspClient } from '@/core/lsp/client'
 import {
   COMPLETION_ICON, plainText, toMarkdown, uriToPath,
   type CodeAction, type CompletionItem, type Diagnostic, type DocumentHighlight,
-  type InlayHint, type Location, type LspCommand, type Position, type Range,
+  type InlayHint, type Location, type LspCommand, type Range,
   type SignatureHelp, type TextEdit,
 } from '@/core/lsp/protocol'
 import { renderMarkdown, markdownToText } from '@/lib/markdown'
@@ -43,16 +46,7 @@ export { markdownToText }
  * Positions
  * ------------------------------------------------------------------ */
 
-export function posToOffset(doc: Text, pos: Position): number {
-  const lineNumber = Math.min(Math.max(pos.line + 1, 1), doc.lines)
-  const line = doc.line(lineNumber)
-  return Math.min(line.from + Math.max(pos.character, 0), line.to)
-}
-
-export function offsetToPos(doc: Text, offset: number): Position {
-  const line = doc.lineAt(Math.min(Math.max(offset, 0), doc.length))
-  return { line: line.number - 1, character: offset - line.from }
-}
+export { posToOffset, offsetToPos }
 
 function rangeToOffsets(doc: Text, range: Range) {
   const from = posToOffset(doc, range.start)
@@ -136,15 +130,9 @@ export function applyDiagnostics(view: EditorView, diagnostics: Diagnostic[], fi
  * Snippets
  * ------------------------------------------------------------------ */
 
-/** LSP snippet syntax (`${1:name}`, `$0`) → CodeMirror syntax (`${name}`). */
+/** LSP snippet syntax → CodeMirror template syntax (`${1:name}` → `${1:name}` fields, `$0` → `${}`). */
 export function lspSnippetToCm(body: string): string {
-  return body
-    .replace(/\\([$}\\])/g, '$1')
-    .replace(/\$\{(\d+):([^}]*)\}/g, (_m, _n, label: string) => `\${${label}}`)
-    .replace(/\$\{(\d+)\|([^|]*)\|\}/g, (_m, _n, choices: string) =>
-      `\${${choices.split(',')[0]}}`)
-    .replace(/\$\{(\d+)\}/g, '${}')
-    .replace(/\$(\d+)/g, '${}')
+  return snippetToCm(body)
 }
 
 /* ------------------------------------------------------------------ *
@@ -156,25 +144,6 @@ function textEditsToChanges(doc: Text, edits: TextEdit[]) {
     const { from, to } = rangeToOffsets(doc, e.range)
     return { from, to, insert: e.newText }
   })
-}
-
-/**
- * Apply additional edits (auto-imports) that are still expressed in the
- * coordinates from *before* the suggestion was inserted: positions after the
- * insertion point shift by the difference in length.
- */
-function applyAdditionalEdits(
-  view: EditorView, edits: TextEdit[], insertedAt: number, delta: number,
-) {
-  if (!edits.length) return
-  const doc = view.state.doc
-  const changes = edits.map((e) => {
-    let from = posToOffset(doc, e.range.start)
-    let to = posToOffset(doc, e.range.end)
-    if (from >= insertedAt) { from += delta; to += delta }
-    return { from, to: Math.max(from, to), insert: e.newText }
-  })
-  view.dispatch({ changes, userEvent: 'lsp.import' })
 }
 
 /** The file's language server, when ready — for the merged completion. */
@@ -191,25 +160,100 @@ export function lspItemDeprecated(item: CompletionItem): boolean {
   return Boolean(item.deprecated || item.tags?.includes(1))
 }
 
+/** How long accepting waits for `completionItem/resolve` before applying what it has. */
+const RESOLVE_TIMEOUT_MS = 2500
+
+function warn(message: string) {
+  console.warn(`[lsp] ${message}`)
+  useStore.getState().notify(message, 'warning')
+}
+
+async function resolveWithTimeout(client: LspClient, item: CompletionItem): Promise<CompletionItem | undefined> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), RESOLVE_TIMEOUT_MS) })
+  try {
+    const result = await Promise.race([client.resolveCompletion(item), timeout])
+    if (!result) warn(`Auto-Import für „${item.label}“ nicht rechtzeitig geladen — Vorschlag ohne Import eingefügt`)
+    return result ?? undefined
+  } catch (err) {
+    warn(`Auto-Import für „${item.label}“ fehlgeschlagen: ${(err as Error).message}`)
+    return undefined
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+/**
+ * Accepts a suggestion: resolves it when it may still carry auto-imports, then
+ * applies main edit, additional edits and snippet in ONE transaction (one undo
+ * step). Changes made while resolving are mapped through; a moved cursor aborts.
+ */
+async function acceptCompletion(
+  view: EditorView, client: LspClient, item: CompletionItem, completion: Completion,
+  applyFrom: number, applyTo: number, filePath: string | undefined,
+) {
+  const baseDoc = view.state.doc
+  const baseHead = view.state.selection.main.head
+  const resolved = needsResolve(item) ? await resolveWithTimeout(client, item) : undefined
+
+  let changes: ChangeSet | undefined
+  if (view.state.doc !== baseDoc) {
+    changes = diffChanges(baseDoc, view.state.doc)
+    if (view.state.selection.main.head !== changes.mapPos(baseHead, 1)) {
+      warn(`Einfügen von „${item.label}“ abgebrochen: Cursor wurde verschoben`)
+      return
+    }
+  }
+  const state = view.state
+  const sel = state.selection.main
+  const plan = planCompletion({
+    doc: state.doc, head: sel.head,
+    from: changes ? changes.mapPos(applyFrom, -1) : applyFrom,
+    to: changes ? changes.mapPos(applyTo, 1) : applyTo,
+    item, resolved, baseDoc: changes ? baseDoc : undefined, changes,
+    filePath, selected: sel.empty ? undefined : state.sliceDoc(sel.from, sel.to),
+  })
+  for (const w of plan.warnings) console.warn(`[lsp] ${w}`)
+  if (plan.dropped.length) {
+    warn(`${plan.dropped.length} Zusatzänderung(en) von „${item.label}“ verworfen: ${plan.dropped[0].reason}`)
+  }
+
+  if (plan.stops) ensureSnippetSession(view)
+  try {
+    view.dispatch({
+      changes: plan.changes,
+      selection: EditorSelection.create(
+        plan.selection.map((r) => EditorSelection.range(r.anchor, r.head)), 0,
+      ),
+      effects: plan.stops ? [startSnippetSession(plan.stops)] : [],
+      userEvent: 'input.complete',
+      annotations: pickedCompletion.of(completion),
+      scrollIntoView: true,
+    })
+  } catch (err) {
+    warn(`Einfügen von „${item.label}“ fehlgeschlagen: ${(err as Error).message}`)
+    return
+  }
+  const command = resolved?.command ?? item.command
+  if (command) await runCommand(view, client, command, filePath)
+}
+
 /**
  * One server suggestion as a CodeMirror option: documentation (fetched later),
  * snippets, the replacement range from `textEdit`, auto-imports and commands.
+ * `filePath` lets a `triggerParameterHints` command open the signature help.
  */
-export function lspItemToCompletion(client: LspClient, item: CompletionItem): Completion {
+export function lspItemToCompletion(client: LspClient, item: CompletionItem, filePath?: string): Completion {
   const label = lspItemLabel(item)
-  const raw = item.textEdit?.newText ?? item.insertText ?? label
-  // Methods and constructors (kinds 2, 3, 4) that arrive without a call: add "()" with the cursor inside.
-  const needsCall = [2, 3, 4].includes(item.kind ?? 0) && !raw.includes('(')
-  const isSnippet = item.insertTextFormat === 2 || needsCall
-  const insert = needsCall ? `${raw}(\${})` : raw
   const detail = item.labelDetails?.description ?? item.detail?.split('\n')[0]
-  const deprecated = lspItemDeprecated(item)
+  const icon = COMPLETION_ICON[item.kind ?? 1] ?? 'text'
 
   return {
-    label: deprecated ? `${label} ⊘` : label,
+    label,
     displayLabel: label + (item.labelDetails?.detail ?? ''),
     detail: detail && detail !== label ? detail : undefined,
-    type: COMPLETION_ICON[item.kind ?? 1] ?? 'text',
+    // A second type class marks deprecated items (styled as strike-through).
+    type: lspItemDeprecated(item) ? `${icon} deprecated` : icon,
     info: async () => {
       const resolved = item.documentation ? item : await client.resolveCompletion(item)
       const md = toMarkdown(resolved.documentation)
@@ -222,39 +266,7 @@ export function lspItemToCompletion(client: LspClient, item: CompletionItem): Co
       return node
     },
     apply: (view, completion, applyFrom, applyTo) => {
-      const doc = view.state.doc
-      let start = applyFrom
-      let end = applyTo
-      const range = item.textEdit?.range ?? item.textEdit?.replace ?? item.textEdit?.insert
-      if (range) {
-        start = posToOffset(doc, range.start)
-        end = Math.max(posToOffset(doc, range.end), view.state.selection.main.head)
-      }
-
-      const lengthBefore = doc.length
-      if (isSnippet) snippet(lspSnippetToCm(insert))(view, completion, start, end)
-      if (!isSnippet) {
-        view.dispatch({
-          changes: { from: start, to: end, insert },
-          selection: { anchor: start + insert.length },
-          userEvent: 'input.complete',
-          annotations: pickedCompletion.of(completion),
-        })
-      }
-      const delta = view.state.doc.length - lengthBefore
-
-      // Auto-imports: at once when they came along, otherwise after resolving.
-      if (item.additionalTextEdits?.length) {
-        applyAdditionalEdits(view, item.additionalTextEdits, start, delta)
-        if (item.command) void runCommand(client, item.command)
-        return
-      }
-      void client.resolveCompletion(item).then((resolved) => {
-        if (resolved.additionalTextEdits?.length) {
-          applyAdditionalEdits(view, resolved.additionalTextEdits, start, delta)
-        }
-        if (resolved.command) void runCommand(client, resolved.command)
-      })
+      void acceptCompletion(view, client, item, completion, applyFrom, applyTo, filePath ?? shownFor.get(view))
     },
   }
 }
@@ -287,7 +299,7 @@ export function lspCompletionSource(filePath: string) {
     if (plain) from = plain.from
 
     const options = items.map((item, index) => ({
-      ...lspItemToCompletion(client, item),
+      ...lspItemToCompletion(client, item, filePath),
       boost: (item.preselect ? 30 : 0) - index / items.length,
     }))
 
@@ -300,8 +312,11 @@ export function lspCompletionSource(filePath: string) {
   }
 }
 
-async function runCommand(client: LspClient, command: LspCommand) {
-  if (command.command === 'editor.action.triggerParameterHints') return
+async function runCommand(view: EditorView, client: LspClient, command: LspCommand, filePath?: string) {
+  if (command.command === 'editor.action.triggerParameterHints') {
+    if (filePath) await triggerSignatureHelp(view, filePath, undefined, false)
+    return
+  }
   try {
     await client.executeCommand(command)
   } catch (err) {

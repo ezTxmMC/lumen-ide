@@ -6,9 +6,11 @@
 import { recencyBonus } from './ranking'
 
 const STORAGE_PREFIX = 'lumen.completion.recent.'
-const LIMIT = 300
+const LIMIT = 600
+/** A choice in another context of the same label still counts a little. */
+const GLOBAL_WEIGHT = 0.3
 
-/** label → [count, timestamp] */
+/** `context\0label` (or plain `label`) → [count, timestamp] */
 type Table = Map<string, [number, number]>
 
 const tables = new Map<string, Table>()
@@ -54,12 +56,18 @@ function persist(language: string) {
   }, 500))
 }
 
-export function recordAccepted(language: string, label: string, now = Date.now()) {
+function bump(table: Table, key: string, now: number) {
+  const entry = table.get(key)
+  table.delete(key)
+  table.set(key, [(entry?.[0] ?? 0) + 1, now])
+}
+
+/** `context` is the kind of place it was chosen at (member access, `new`, …), see `contextKind`. */
+export function recordAccepted(language: string, label: string, context = '', now = Date.now()) {
   if (!label) return
   const table = load(language)
-  const entry = table.get(label)
-  table.delete(label)
-  table.set(label, [(entry?.[0] ?? 0) + 1, now])
+  bump(table, label, now)
+  if (context) bump(table, contextKey(context, label), now)
   // Discard the oldest entries first, in insertion order.
   while (table.size > LIMIT) {
     const oldest = table.keys().next().value
@@ -69,13 +77,23 @@ export function recordAccepted(language: string, label: string, now = Date.now()
   persist(language)
 }
 
-/** The bonus function for `rank`, bound to a language and a point in time. */
-export function recencySignal(language: string, now = Date.now()): (label: string) => number {
+function contextKey(context: string, label: string): string {
+  return `${context}\0${label}`
+}
+
+/**
+ * The bonus function for `rank`, bound to a language, a context and a point
+ * in time. A choice made in the same context counts in full, one made
+ * elsewhere only a little.
+ */
+export function recencySignal(language: string, context = '', now = Date.now()): (label: string) => number {
   const table = load(language)
   if (!table.size) return () => 0
   return (label) => {
-    const entry = table.get(label)
-    if (!entry) return 0
-    return recencyBonus(entry[0], now - entry[1])
+    const local = context ? table.get(contextKey(context, label)) : undefined
+    const global = table.get(label)
+    const here = local ? recencyBonus(local[0], now - local[1]) : 0
+    const elsewhere = global ? recencyBonus(global[0], now - global[1]) * GLOBAL_WEIGHT : 0
+    return Math.max(here, elsewhere)
   }
 }

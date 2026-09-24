@@ -4,9 +4,12 @@
  */
 
 import { matchText, prepare, Query, rawScore, score, NO_MATCH, matchRanges } from '@/core/completion/matcher'
-import { rank, RankCache, lspBoost, proximityBonus, type Candidate, type Origin } from '@/core/completion/ranking'
+import { rank, RankCache, lspBoost, proximityBonus, matchTier, type Candidate, type Origin } from '@/core/completion/ranking'
 import { scanWords, wordRulesFor, languageCandidates } from '@/core/completion/words'
-import { isMemberAccess, triggerBefore } from '@/core/completion/context'
+import {
+  isMemberAccess, triggerBefore, leadInBefore, contextKind, isTypedContext, importScope, localityOf, listReusable,
+} from '@/core/completion/context'
+import { recordAccepted, recencySignal } from '@/core/completion/recent'
 import { declaredTypeBefore, nameSuggestions } from '@/core/completion/naming'
 import { ALL_ADDONS } from '@/addons'
 import type { LanguageSpec } from '@/core/types'
@@ -344,6 +347,257 @@ console.log('\n— Laufzeit —')
   }
 }
 
+
+/* ------------------------------------------------------------------ *
+ * Tiers, identity, imports, contexts
+ * ------------------------------------------------------------------ */
+
+console.log('\n— Tiers and identity —')
+
+interface Spec {
+  label: string
+  origin?: Origin
+  identity?: string
+  deprecated?: boolean
+  locality?: number
+  boost?: number
+  kind?: 'variable' | 'type'
+}
+
+function cands(specs: Spec[]): Candidate<string>[] {
+  return specs.map((sp) => ({
+    label: sp.label, filter: prepare(sp.label), origin: sp.origin ?? 'lsp', boost: sp.boost ?? 0,
+    identity: sp.identity, deprecated: sp.deprecated, locality: sp.locality, kind: sp.kind, data: sp.identity ?? sp.label,
+  }))
+}
+
+function order(pattern: string, specs: Spec[], signals = {}): string[] {
+  return rank(pattern, [cands(specs)], signals).map((r) => `${r.candidate.label}${r.candidate.identity ? `@${r.candidate.identity}` : ''}`)
+}
+
+// 1. Same label, different packages
+{
+  const list = order('List', [
+    { label: 'List', identity: 'java.util' }, { label: 'List', identity: 'java.awt' },
+    { label: 'List', identity: 'java.util' },
+  ])
+  ok(list.length === 2, `List aus java.util und java.awt bleiben zwei Einträge (${list.join(', ')})`)
+  const many = order('Date', [
+    { label: 'Date', identity: 'java.util' }, { label: 'Date', identity: 'java.sql' },
+    { label: 'Date', identity: 'java.time' }, { label: 'Date', identity: 'java.util' },
+  ])
+  ok(many.length === 3, `drei Date-Pakete, echtes Duplikat verschmolzen (${many.length})`)
+  const keep = rank('List', [cands([{ label: 'List', identity: 'a' }, { label: 'List', identity: 'b' }])])
+  ok(new Set(keep.map((r) => r.candidate.data)).size === 2, 'jeder Eintrag behält seine eigenen Daten')
+  const withWord = rank('List', [cands([{ label: 'List', identity: 'java.util' }, { label: 'List', identity: 'java.awt' }]),
+    cands([{ label: 'List', origin: 'document' }])])
+  ok(withWord.length === 2 && withWord.every((r) => r.candidate.origin === 'lsp'), 'Dokumentwort gleichen Namens verschmilzt in die Server-Einträge')
+  const withSnippet = rank('for', [cands([{ label: 'for', identity: 'x' }]), cands([{ label: 'for', origin: 'snippet' }])])
+  ok(withSnippet.length === 1 && withSnippet[0].candidate.origin === 'lsp', 'Snippet und LSP-Eintrag gleichen Namens verschmelzen, LSP gewinnt')
+  const wordOnly = rank('foo', [cands([{ label: 'foo', origin: 'document' }]), cands([{ label: 'foo', origin: 'tab' }])])
+  ok(wordOnly.length === 1, 'Dokument- und Tab-Wort gleichen Namens: ein Eintrag')
+  const overloads = order('add', [
+    { label: 'add', identity: '\0(int)\x002' }, { label: 'add', identity: '\0(int, E)\x002' },
+  ])
+  ok(overloads.length === 2, 'Überladungen mit anderer Signatur bleiben getrennt')
+  const kinds = order('Foo', [{ label: 'Foo', identity: '\0\x007' }, { label: 'Foo', identity: '\0\x006' }])
+  ok(kinds.length === 2, 'Klasse und Variable gleichen Namens bleiben getrennt')
+}
+
+// 2. Match tiers
+{
+  const q = (p: string, t: string) => matchTier(new Query(p), prepare(t), matchText(p, t)?.errors ?? 0)
+  ok(q('Arr', 'ArrayList') === 0, 'Stufe 0: Präfix mit Groß/Klein')
+  ok(q('arr', 'ArrayList') === 1, 'Stufe 1: Präfix ohne Groß/Klein')
+  ok(q('NPE', 'NullPointerException') === 2, 'Stufe 2: Camel-Hump NPE')
+  ok(q('ArLi', 'ArrayList') === 2, 'Stufe 2: Camel-Hump ArLi')
+  ok(q('gSC', 'getSurfaceCapabilities') === 2, 'Stufe 2: gSC')
+  ok(q('gsf', 'get_some_foo') === 2, 'Stufe 2: Unterstrich-Wortgrenzen gsf')
+  ok(q('list', 'ArrayList') === 3 || q('list', 'ArrayList') === 2, `Stufe ≥ 2: „list“ mitten im Wort (${q('list', 'ArrayList')})`)
+  ok(q('cosnole', 'console') === 4, 'Stufe 4: Tippfehler')
+  ok(q('', 'x') === 0, 'leere Eingabe: Stufe 0')
+  const all = order('arr', [
+    { label: 'tarrget' }, { label: 'ArrayList' }, { label: 'arr' }, { label: 'arraycopy' }, { label: 'aRxRx' },
+  ])
+  ok(all[0] === 'arr' || all[0] === 'arraycopy', `Präfix mit gleicher Schreibung vor Groß/Klein-Präfix (${all.join(', ')})`)
+  ok(all.indexOf('ArrayList') > all.indexOf('arraycopy'), 'Groß/Klein-Präfix nach exaktem Präfix')
+}
+
+// 3. Tier ordering matrix: quality first, whatever else is attached
+{
+  const strong: Spec = { label: 'NullPointerException', origin: 'document' }
+  const good = order('Nu', [
+    { label: 'NullPointerException', boost: 0 }, { label: 'aNuller', boost: 30, locality: 1 }, { label: 'xNyzu', boost: 30 },
+  ])
+  ok(good[0] === 'NullPointerException', `Präfix schlägt Substring trotz Server-Vorsprung (${good.join(', ')})`)
+  const rec = order('Nu', [{ label: 'NullPointerException' }, { label: 'bigNumber' }], { recency: (l: string) => (l === 'bigNumber' ? 40 : 0), proximity: () => 12 })
+  ok(rec[0] === 'NullPointerException', 'Recency und Nähe heben keinen schwächeren Treffer über einen Präfix')
+  const hump = order('NPE', [{ label: 'NullPointerException' }, { label: 'NPEHelper', boost: -5 }, { label: 'nope' }])
+  ok(hump[0] === 'NPEHelper' && hump.indexOf('NullPointerException') === 1, `NPE: exakter Präfix vor Hump (${hump.join(', ')})`)
+  ok(order('NPE', [{ label: 'NullPointerException' }])[0] === 'NullPointerException', 'NPE → NullPointerException')
+  ok(order('ArLi', [{ label: 'ArrayList' }, { label: 'ArrayDeque' }, { label: 'LinkedList' }])[0] === 'ArrayList', 'ArLi → ArrayList zuerst')
+  ok(order('hM', [{ label: 'hashMap', origin: 'document' }, { label: 'hMac', origin: 'document' }])[0] === 'hMac', 'hM: Präfix vor Hump')
+  void strong
+  // Deprecated last within a tier, not across tiers
+  const dep = order('Dat', [{ label: 'Date', deprecated: true, boost: 20 }, { label: 'DateTime' }, { label: 'Dates', boost: -3 }])
+  ok(dep[dep.length - 1] === 'Date', `Deprecated am Ende der Stufe (${dep.join(', ')})`)
+  const depTier = order('date', [{ label: 'date', deprecated: true }, { label: 'Datestamp' }])
+  ok(depTier[0] === 'date', 'Deprecated mit besserer Stufe steht vor schlechterer Stufe')
+  const depAll = order('', [{ label: 'a', deprecated: true, boost: 40 }, { label: 'b' }, { label: 'c', deprecated: true }, { label: 'd', boost: -8 }])
+  ok(depAll.slice(0, 2).every((l) => l === 'b' || l === 'd'), `leere Eingabe: Deprecated hinten (${depAll.join(', ')})`)
+  // Fit: preselect, server order
+  const fit = order('get', [{ label: 'getA', boost: 0 }, { label: 'getB', boost: 10 }, { label: 'getC', boost: 4 }])
+  ok(fit.join() === 'getB,getC,getA', `Server-Reihenfolge/Preselect in der Stufe (${fit.join()})`)
+  // Locality
+  const loc = order('Li', [
+    { label: 'List', identity: 'java.awt', locality: -1, boost: 5 }, { label: 'List', identity: 'java.util', locality: 1, boost: 5 },
+    { label: 'LinkedList', identity: 'java.util', locality: 1, boost: 5 },
+  ])
+  ok(loc[0] === 'List@java.util' && loc.indexOf('List@java.awt') > loc.indexOf('List@java.util'), `importiert vor nicht importiert (${loc.join(', ')})`)
+  const locRec = order('Li', [
+    { label: 'List', identity: 'java.awt', locality: -1 }, { label: 'List', identity: 'java.util', locality: 1 },
+  ], { recency: (l: string) => (l === 'List' ? 5 : 0) })
+  ok(locRec[0] === 'List@java.util', 'Locality steht vor Recency')
+  // Recency decides within same fit and locality
+  const recIn = order('pri', [{ label: 'print' }, { label: 'println' }, { label: 'printf' }], { recency: (l: string) => (l === 'printf' ? 9 : 0) })
+  ok(recIn[0] === 'printf', 'Recency innerhalb gleicher Stufe und Passung')
+  // Loose tiers: match quality before source
+  const loose = order('sfc', [{ label: 'xsfxxc', boost: 40, origin: 'lsp' }, { label: 'surface_caps', origin: 'document' }])
+  ok(loose[0] === 'surface_caps', `schwacher Treffer gewinnt nicht durch Herkunft (${loose.join(', ')})`)
+  const typo = order('cosnole', [{ label: 'cxxsxnxle', boost: 30 }, { label: 'console' }])
+  ok(typo[0] === 'console', 'Tippfehler: bester Treffer zuerst')
+  // Prefix beats typo whatever the boost
+  const pvt = order('pri', [{ label: 'prnit', boost: 40 }, { label: 'print' }])
+  ok(pvt[0] === 'print', 'Präfix vor Tippfehler-Treffer')
+  // Names / own variables still lead within the tier
+  const own = order('user', [{ label: 'UserService', kind: 'type' }, { label: 'userService', kind: 'variable', boost: 14 }])
+  ok(own[0] === 'userService', 'eigene Variable vor Typ bei Kleinschreibung')
+  // Alphabetical + length tie break
+  const tie = order('a', [{ label: 'abc' }, { label: 'ab' }, { label: 'aa' }, { label: 'ac' }])
+  ok(tie.join() === 'aa,ab,ac,abc', `Gleichstand: kürzer, dann alphabetisch (${tie.join()})`)
+}
+
+// 4. Case handling
+{
+  ok(order('str', [{ label: 'String' }, { label: 'str' }])[0] === 'str', 'kleingeschrieben: exakte Schreibung zuerst')
+  ok(order('Str', [{ label: 'str' }, { label: 'String' }])[0] === 'String', 'Großschreibung: String zuerst')
+  ok(order('STR', [{ label: 'String' }, { label: 'STRICT' }])[0] === 'STRICT', 'STR → STRICT (exakter Präfix)')
+  ok(order('nullp', [{ label: 'NullPointerException' }]).length === 1, 'nullp findet NullPointerException')
+  ok(order('ÖFF', [{ label: 'Öffnen' }, { label: 'öffentlich' }]).length === 2, 'Umlaute in Großschreibung')
+}
+
+// 5. Unicode identifiers
+{
+  ok(order('größ', [{ label: 'Größe' }, { label: 'größer' }])[0] === 'größer', 'Unicode: größ → größer zuerst')
+  ok(order('日本', [{ label: '日本語' }, { label: 'x日本' }])[0] === '日本語', 'Unicode: CJK-Präfix')
+  ok(order('şeh', [{ label: 'şehir' }, { label: 'Şehir' }]).length === 2, 'Unicode: türkische Buchstaben')
+  ok(order('naïve', [{ label: 'naïveté' }]).length === 1, 'Unicode: Akzente')
+  ok(order('π', [{ label: 'π2' }, { label: 'pi' }])[0] === 'π2', 'Unicode: griechisch')
+}
+
+// 6. Postfix on member access, keywords hidden
+{
+  const list = rank('for', [cands([{ label: 'for', identity: 'postfix' }, { label: 'format' }]), cands([{ label: 'for', origin: 'snippet' }, { label: 'forEach', origin: 'keyword' }])],
+    { memberAccess: true })
+  const labels = list.map((r) => r.candidate.label)
+  ok(labels.includes('for') && labels.includes('format'), `Postfix-Eintrag des Servers bleibt bei Memberzugriff (${labels.join(', ')})`)
+  ok(!list.some((r) => r.candidate.origin === 'snippet' || r.candidate.origin === 'keyword'), 'lokale Snippets und Schlüsselwörter bei Memberzugriff verborgen')
+  const dot = rank('list.for', [[{ label: 'for', filter: prepare('list.for'), origin: 'lsp', boost: 0, identity: 'p', data: 'x' }]], { memberAccess: true })
+  ok(dot.length === 1, 'Filtertext mit Empfänger (list.for) passt auf list.for')
+  const at = rank('@Over', [[{ label: 'Override', filter: prepare('@Override'), origin: 'lsp', boost: 0, data: 'x' }]])
+  ok(at.length === 1 && at[0].tier === 0, '@Over passt auf @Override als Präfix')
+}
+
+// 7. Import scope, locality
+{
+  const scope = importScope('package com.acme.app;\n\nimport java.util.List;\nimport java.io.*;\nimport static org.junit.Assert.assertEquals;\n\nclass A {}')
+  ok(scope.packageName === 'com.acme.app', 'Package erkannt')
+  ok(localityOf(scope, 'List', 'java.util') === 1, 'importierte Klasse: 1')
+  ok(localityOf(scope, 'File', 'java.io') === 1, 'Wildcard-Import: 1')
+  ok(localityOf(scope, 'List', 'java.awt') === -1, 'nicht importiert: -1')
+  ok(localityOf(scope, 'String', 'java.lang') === 1, 'java.lang: 1')
+  ok(localityOf(scope, 'Helper', 'com.acme.app') === 1, 'gleiches Package: 1')
+  ok(localityOf(scope, 'List', 'java.util.List') === 1, 'voll qualifizierter Detailtext')
+  ok(localityOf(scope, 'x', 'int') === 0, 'kein Package: 0')
+  ok(localityOf(scope, 'x', undefined) === 0, 'ohne Detail: 0')
+  ok(localityOf(scope, 'assertEquals', 'org.junit.Assert') === 1, 'statischer Import (Klasse.*) über Name')
+}
+
+// 8. Triggers and contexts
+{
+  const cases: [string, string | null][] = [
+    ['    new ', 'new'], ['x = new ', 'new'], ['import ', 'import'], ['import static ', 'import'], ['    @', 'annotation'],
+    ['class A extends ', 'extends'], ['class A implements ', 'extends'], ['void f() throws ', 'throws'],
+    ['renew ', null], ['foo.@', null], ['x = 1', null], ['newValue ', null], ['a @', 'annotation'], ['important ', null],
+  ]
+  const wrong = cases.filter(([b, e]) => leadInBefore(b) !== e)
+  ok(!wrong.length, `Auslöser-Kontexte (${cases.length})${wrong.length ? `: falsch ${wrong.map(([b]) => JSON.stringify(b)).join(', ')}` : ''}`)
+  ok(contextKind('list.') === 'member' && contextKind('    ') === 'statement' && contextKind('x = ') === 'expression', 'Kontextart')
+  ok(isTypedContext('member') && isTypedContext('new') && !isTypedContext('statement'), 'typisierte Kontexte')
+}
+
+// 9. Server lists: reuse rules
+{
+  ok(listReusable({ isIncomplete: false, pattern: 'Li' }, 'Lis'), 'vollständige Liste, Muster verlängert: wiederverwenden')
+  ok(listReusable({ isIncomplete: false, pattern: '' }, 'abc'), 'vollständige Liste ab leerem Muster: wiederverwenden')
+  ok(!listReusable({ isIncomplete: false, pattern: 'Lis' }, 'Li'), 'Backspace: neu anfragen')
+  ok(!listReusable({ isIncomplete: false, pattern: 'Lis' }, 'Lix'), 'nicht verlängertes Muster: neu anfragen')
+  ok(!listReusable({ isIncomplete: true, pattern: 'Li' }, 'Lis'), 'unvollständige Liste: neu anfragen')
+  ok(listReusable({ isIncomplete: false, pattern: 'li' }, 'LIS'), 'Groß/Klein beim Verlängern egal')
+  // a stale list stays correctly filtered by the local matcher
+  const stale = cands([{ label: 'List' }, { label: 'ListIterator' }, { label: 'Lis' }])
+  ok(order('Lisx', []).length === 0 && rank('Li', [stale]).length === 3, 'veraltete Liste wird lokal weiter korrekt gefiltert')
+  ok(rank('Lis', [stale]).every((r) => r.tier === 0), 'Filter nach Backspace: Stufen stimmen')
+}
+
+// 10. Recency per context
+{
+  recordAccepted('java', 'get', 'member')
+  recordAccepted('java', 'get', 'member')
+  recordAccepted('java', 'print', 'statement')
+  const member = recencySignal('java', 'member')
+  const stmt = recencySignal('java', 'statement')
+  ok(member('get') > stmt('get'), 'Recency: get zählt am Memberzugriff mehr als am Anweisungsanfang')
+  ok(stmt('get') > 0, 'Recency: anderer Kontext zählt noch ein wenig')
+  ok(stmt('print') > member('print'), 'Recency: print am Anweisungsanfang')
+  ok(recencySignal('java', 'new')('never') === 0, 'Recency: unbekanntes Label 0')
+  ok(recencySignal('rust', 'member')('get') === 0, 'Recency: andere Sprache getrennt')
+  const boosted = order('g', [{ label: 'getA' }, { label: 'get' }, { label: 'getB' }], { recency: recencySignal('java', 'member') })
+  ok(boosted[0] === 'get', 'Recency hebt get im Memberkontext')
+}
+
+// 11. Huge lists
+{
+  const labels: string[] = []
+  let seed = 11
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff)
+  const syll = ['Array', 'List', 'Map', 'Node', 'Stream', 'Buffer', 'Reader', 'Writer', 'Event', 'Handler', 'Factory', 'Null', 'Pointer', 'Exception']
+  for (let k = 0; k < 100_000; k++) {
+    let word = ''
+    for (let p = 0, n = 2 + Math.floor(rnd() * 3); p < n; p++) word += syll[Math.floor(rnd() * syll.length)]
+    labels.push(word + (k % 7 === 0 ? String(k) : ''))
+  }
+  const big: Candidate<string>[] = labels.map((label, k) => ({
+    label, filter: prepare(label), origin: 'lsp', boost: 0, identity: `pkg${k % 40}`, data: label,
+  }))
+  for (const p of ['Arr', 'NPE', 'ArLi', '']) rank(p, [big], {}, 150)
+  let worst = 0
+  for (const p of ['Arr', 'NPE', 'ArLi', 'nullp', 'HandlrFactory']) {
+    const start = performance.now()
+    const runs = 5
+    for (let r = 0; r < runs; r++) rank(p, [big], {}, 150)
+    worst = Math.max(worst, (performance.now() - start) / runs)
+  }
+  ok(worst <= 120, `100 000 Kandidaten mit Identität, schlechtester Fall ${worst.toFixed(1)} ms (Budget 120 ms)`)
+  const whole = rank('', [big], {})
+  ok(whole.length > 50_000, `100 000 Kandidaten ohne Muster: ${whole.length} verschiedene Einträge (Identität)`)
+  const cache = new RankCache()
+  const start = performance.now()
+  for (const p of ['A', 'Ar', 'Arr', 'Arra', 'Array']) rank(p, [big], {}, 150, cache)
+  ok(performance.now() - start < 600, `Weitertippen mit Cache auf 100 000: ${(performance.now() - start).toFixed(0)} ms`)
+  const top3 = rank('Arr', [big], {}, 5).map((r) => r.tier)
+  ok(top3.every((tr) => tr === 0), 'große Liste: oben nur Präfix-Treffer')
+}
 
 /* ------------------------------------------------------------------ *
  * Variable names

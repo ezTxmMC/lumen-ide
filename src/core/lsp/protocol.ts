@@ -64,7 +64,11 @@ export interface CompletionItem {
   insertText?: string
   /** 1 = plain text, 2 = a snippet with `$1` placeholders */
   insertTextFormat?: 1 | 2
+  /** 1 = the editor adjusts the indentation of continuation lines, 2 = it keeps them as sent */
+  insertTextMode?: 1 | 2
   textEdit?: { range?: Range; insert?: Range; replace?: Range; newText: string }
+  /** With `itemDefaults.editRange`: the text of the edit — `LspClient` folds it into `textEdit`. */
+  textEditText?: string
   additionalTextEdits?: TextEdit[]
   commitCharacters?: string[]
   command?: LspCommand
@@ -74,9 +78,91 @@ export interface CompletionItem {
   data?: unknown
 }
 
+/** What `completionList.itemDefaults` may carry — the fields the client declares. */
+export interface CompletionItemDefaults {
+  commitCharacters?: string[]
+  editRange?: Range | { insert: Range; replace: Range }
+  insertTextFormat?: 1 | 2
+  insertTextMode?: 1 | 2
+  data?: unknown
+}
+
 export interface CompletionList {
   isIncomplete: boolean
   items: CompletionItem[]
+  itemDefaults?: CompletionItemDefaults
+  /**
+   * Set by `LspClient.completion` when the request failed: the empty list is
+   * no answer — `isIncomplete` is true so nothing caches it as final.
+   */
+  failed?: boolean
+}
+
+/**
+ * The list with its `itemDefaults` written into every item, so consumers never
+ * see an undefined default. jdtls relies on it: with `editRange` the items
+ * carry no `textEdit` and the real text (`substring(${1:beginIndex})`) sits in
+ * `textEditText`. A field the item has itself wins.
+ */
+export function applyItemDefaults(list: CompletionList): CompletionList {
+  const defaults = list.itemDefaults
+  if (!defaults) return list
+  const range = defaults.editRange
+  const items = list.items.map((item) => {
+    const out: CompletionItem = { ...item }
+    out.commitCharacters ??= defaults.commitCharacters
+    out.insertTextFormat ??= defaults.insertTextFormat
+    out.insertTextMode ??= defaults.insertTextMode
+    out.data ??= defaults.data
+    if (out.textEdit || !range) return out
+    const newText = out.textEditText ?? out.insertText ?? out.label
+    out.textEdit = 'start' in range ? { range, newText } : { insert: range.insert, replace: range.replace, newText }
+    delete out.textEditText
+    return out
+  })
+  return { ...list, items, itemDefaults: undefined }
+}
+
+/** A JSON-RPC error answer — the `code` decides whether asking again makes sense. */
+export class LspError extends Error {
+  readonly code: number | undefined
+
+  constructor(message: string, code?: number) {
+    super(message)
+    this.name = 'LspError'
+    this.code = code
+  }
+}
+
+/**
+ * -32800 RequestCancelled, -32801 ContentModified (the document moved on while
+ * the server worked), -32802 ServerCancelled: the server did not fail, the
+ * answer was overtaken — the same request usually succeeds a moment later.
+ */
+export const RETRYABLE_CODES: ReadonlySet<number> = new Set([-32800, -32801, -32802])
+
+export function isRetryable(error: unknown): boolean {
+  return error instanceof LspError && error.code !== undefined && RETRYABLE_CODES.has(error.code)
+}
+
+/**
+ * The candidate `organizeImports` takes for an ambiguous simple name (jdtls
+ * `java.action.organizeImports.chooseImports`): java.util first (List, Date,
+ * Map), then the rest of java/javax, then library types, JDK internals last;
+ * ties keep the server's order, so the choice is deterministic.
+ */
+export function pickImportCandidate<T extends { fullyQualifiedName: string }>(candidates: T[]): T | null {
+  const rank = (name: string): number => {
+    if (/^java\.util\.[A-Z]/.test(name)) return 0
+    if (/^javax?\./.test(name)) return 1
+    if (/^(sun|com\.sun|jdk|org\.w3c|org\.xml)\./.test(name)) return 3
+    return 2
+  }
+  let best: T | null = null
+  for (const candidate of candidates) {
+    if (!best || rank(candidate.fullyQualifiedName) < rank(best.fullyQualifiedName)) best = candidate
+  }
+  return best
 }
 
 export interface ParameterInformation {

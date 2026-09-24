@@ -13,7 +13,7 @@
 import type { LspConfig } from '@/core/types'
 import { locale, t } from '@/i18n'
 import {
-  pathToUri, toLocations,
+  applyItemDefaults, isRetryable, LspError, pathToUri, pickImportCandidate, toLocations,
   type CodeAction,
   type CompletionItem,
   type CompletionList,
@@ -89,6 +89,22 @@ const REQUEST_TIMEOUT: Record<string, number> = {
 }
 
 const MAX_LOG = 400
+
+/** How often an overtaken completion request (-32800/-32801/-32802) is asked again, and the pause before. */
+const COMPLETION_RETRIES = 2
+const RETRY_DELAY = 60
+/** jdtls reconciles a change asynchronously: a resolve before this has passed can answer from stale imports (measured: 4 of 4 within 30 ms). */
+const SETTLE_AFTER_CHANGE = 120
+/** Resolved completion items kept per client. */
+const RESOLVE_CACHE = 64
+
+export type CompletionOutcome =
+  | { ok: true; list: CompletionList }
+  | { ok: false; error: Error; cancelled: boolean }
+
+export type CompletionOutcomeResolve =
+  | { ok: true; item: CompletionItem }
+  | { ok: false; error: Error; item: CompletionItem }
 
 /** The options of a formatting request: `tabSize`, `insertSpaces` and any extras the server understands. */
 export type FormattingOptions = { tabSize: number; insertSpaces: boolean } & Record<string, unknown>
@@ -268,7 +284,7 @@ export class LspClient {
       this.pending.delete(id as number)
       const error = message.error as { message?: string; code?: number } | undefined
       if (error) {
-        entry.reject(new Error(error.message ?? t('lsp.error')))
+        entry.reject(new LspError(error.message ?? t('lsp.error'), error.code))
         return
       }
       entry.resolve(message.result)
@@ -442,11 +458,46 @@ export class LspClient {
       case 'workspace/diagnostic/refresh':
         this.onRefresh(method.split('/')[1])
         return null
+      case 'workspace/executeClientCommand':
       case 'java/executeClientCommand':
-        return null
+        return this.executeClientCommand(params as { command: string; arguments?: unknown[] })
       default:
         throw new Error(`Not supported: ${method}`)
     }
+  }
+
+  /**
+   * jdtls asks the client to run a command (`workspace/executeClientCommand`,
+   * sent when `executeClientCommandSupport` is declared). Anything unknown is
+   * answered with null — a refusal would fail the server's own request.
+   */
+  private executeClientCommand(params: { command: string; arguments?: unknown[] }): unknown {
+    if (params.command === 'java.action.organizeImports.chooseImports') return this.chooseImports(params.arguments ?? [])
+    // No extra bundles: the list vscode-java would answer with its extensions' jars.
+    if (params.command === '_java.reloadBundles.command') return []
+    return null
+  }
+
+  /**
+   * Organize imports met simple names with several candidates (`List`: java.util,
+   * java.awt, javac internals). One answer per selection, in order — a missing
+   * one leaves the name unimported. The pick is deterministic
+   * (`pickImportCandidate`) and reported, so the user can correct it.
+   */
+  private chooseImports(args: unknown[]): unknown[] {
+    const selections = (args[1] ?? []) as { candidates: { fullyQualifiedName: string; id?: string }[] }[]
+    const picks = selections.map((selection) => pickImportCandidate(selection.candidates ?? []))
+    const notes = picks.flatMap((pick, index) => {
+      if (!pick) return []
+      const others = selections[index].candidates.filter((c) => c !== pick).map((c) => c.fullyQualifiedName)
+      return [`${pick.fullyQualifiedName} (${others.slice(0, 3).join(', ')}${others.length > 3 ? ', …' : ''})`]
+    })
+    if (notes.length) {
+      const text = `Organize imports, ambiguous names: ${notes.join('; ')}`
+      this.addLog('client', 3, text)
+      this.onMessage({ type: 3, message: text })
+    }
+    return picks.filter((pick) => pick !== null)
   }
 
   private send(message: unknown) {
@@ -539,6 +590,9 @@ export class LspClient {
     const fits = Boolean(changes?.length) && applyContentChanges(doc.text, changes!) === text
     doc.text = text
     doc.version++
+    // Import edits depend on the text: what was resolved before no longer holds.
+    this.resolved.clear()
+    this.changedAt = Date.now()
     const incremental = fits && this.incrementalSync
     this.notify('textDocument/didChange', {
       textDocument: { uri: pathToUri(filePath), version: doc.version },
@@ -575,10 +629,38 @@ export class LspClient {
     return [...this.openDocs.keys()]
   }
 
-  /** jdtls: import the given build files afresh, then rebuild the workspace. */
-  async javaReimport(buildFiles: string[]) {
+  /**
+   * jdtls: import the given build files afresh, then build. The build is
+   * incremental — `full` (a clean rebuild of everything) is for the explicit
+   * "clean workspace" case only.
+   */
+  async javaReimport(buildFiles: string[], options: { full?: boolean } = {}) {
     for (const file of buildFiles) this.notify('java/projectConfigurationUpdate', { uri: pathToUri(file) })
-    await this.request('java/buildWorkspace', true).catch(() => null)
+    await this.request('java/buildWorkspace', options.full === true).catch(() => null)
+  }
+
+  /** jdtls: `java.project.import` — look for projects not imported yet. */
+  javaImportProjects(): Promise<unknown> {
+    return this.executeCommand({ title: '', command: 'java.project.import' }).catch(() => null)
+  }
+
+  /** jdtls: `java.project.refreshDiagnostics` — recompute the problems of a file. */
+  javaRefreshDiagnostics(filePath: string): Promise<unknown> {
+    return this.executeCommand({
+      title: '',
+      command: 'java.project.refreshDiagnostics',
+      arguments: [pathToUri(filePath), 'thisFile', false, false],
+    }).catch(() => null)
+  }
+
+  /** jdtls: the classpath (folders and jars) of the project a file belongs to — for "why is this type missing?". */
+  async javaClasspaths(filePath: string, scope: 'runtime' | 'test' = 'runtime'): Promise<{ projectRoot: string; classpaths: string[]; modulepaths?: string[] } | null> {
+    const result = await this.executeCommand({
+      title: '',
+      command: 'java.project.getClasspaths',
+      arguments: [pathToUri(filePath), JSON.stringify({ scope })],
+    }).catch(() => null)
+    return (result as { projectRoot: string; classpaths: string[]; modulepaths?: string[] } | null) ?? null
   }
 
   closeDocument(filePath: string) {
@@ -589,8 +671,8 @@ export class LspClient {
   }
 
   /** File changes in the workspace (created, changed, deleted). */
-  didChangeWatchedFiles(changes: { uri: string; type: 1 | 2 | 3 }[]) {
-    if (!changes.length || !this.watchedPatterns.length) return
+  didChangeWatchedFiles(changes: { uri: string; type: 1 | 2 | 3 }[], force = false) {
+    if (!changes.length || (!force && !this.watchedPatterns.length)) return
     this.notify('workspace/didChangeWatchedFiles', { changes })
   }
 
@@ -606,28 +688,100 @@ export class LspClient {
     return { textDocument: { uri: pathToUri(filePath) } }
   }
 
-  async completion(filePath: string, position: Position, trigger?: string, signal?: AbortSignal): Promise<CompletionList> {
-    if (!this.supports('completionProvider')) return { isIncomplete: false, items: [] }
-    const result = await this.request<CompletionList | CompletionItem[] | null>(
-      'textDocument/completion',
-      {
-        ...this.doc(filePath),
-        position,
-        context: trigger
-          ? { triggerKind: 2, triggerCharacter: trigger }
-          : { triggerKind: 1 },
-      },
-      signal,
-    ).catch(() => null)
-    if (!result) return { isIncomplete: false, items: [] }
-    return Array.isArray(result) ? { isIncomplete: false, items: result } : result
+  /**
+   * `textDocument/completion` with a verdict. A failed request is never an
+   * empty list: `ok: false` tells the caller to keep what it had and ask
+   * again. -32800/-32801/-32802 (the answer was overtaken) are retried up to
+   * `retries` times (default 2) before giving up; a cancelled `signal` is
+   * `cancelled: true`. `triggerKind`: 1 invoked, 2 trigger character
+   * (default when `trigger` is set), 3 re-query of an incomplete list.
+   */
+  async completionResult(
+    filePath: string,
+    position: Position,
+    options: { trigger?: string; triggerKind?: 1 | 2 | 3; signal?: AbortSignal; retries?: number } = {},
+  ): Promise<CompletionOutcome> {
+    if (!this.supports('completionProvider')) return { ok: true, list: { isIncomplete: false, items: [] } }
+    const kind = options.triggerKind ?? (options.trigger ? 2 : 1)
+    const context = kind === 2 && options.trigger ? { triggerKind: 2, triggerCharacter: options.trigger } : { triggerKind: kind }
+    const params = { ...this.doc(filePath), position, context }
+    const retries = options.retries ?? COMPLETION_RETRIES
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const result = await this.request<CompletionList | CompletionItem[] | null>('textDocument/completion', params, options.signal)
+        if (!result) return { ok: true, list: { isIncomplete: false, items: [] } }
+        const list = Array.isArray(result) ? { isIncomplete: false, items: result } : result
+        return { ok: true, list: applyItemDefaults(list) }
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err))
+        if (options.signal?.aborted || (error as { name?: string }).name === 'AbortError') return { ok: false, error, cancelled: true }
+        if (!isRetryable(error) || attempt >= retries) return { ok: false, error, cancelled: false }
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY * (attempt + 1)))
+      }
+    }
   }
 
-  async resolveCompletion(item: CompletionItem): Promise<CompletionItem> {
+  /**
+   * The list as before — `itemDefaults` applied to every item. A failure comes
+   * back as `{ isIncomplete: true, items: [], failed: true }`, which no cache
+   * may treat as the final answer; use `completionResult` for the reason.
+   */
+  async completion(filePath: string, position: Position, trigger?: string, signal?: AbortSignal, triggerKind?: 1 | 2 | 3): Promise<CompletionList> {
+    const outcome = await this.completionResult(filePath, position, { trigger, triggerKind, signal })
+    if (outcome.ok) return outcome.list
+    if (!outcome.cancelled) this.addLog('client', 2, `completion: ${outcome.error.message}`)
+    return { isIncomplete: true, items: [], failed: true }
+  }
+
+  /** Resolved items by identity — a second hover over the same entry costs no request. */
+  private resolved = new Map<string, CompletionItem>()
+  private resolving = new Map<string, Promise<CompletionOutcomeResolve>>()
+
+  /**
+   * `completionItem/resolve` with a verdict. Concurrent resolves of one item
+   * share a request, successes are cached (failures never are), and an
+   * overtaken request (-32801 …) is retried once.
+   */
+  resolveCompletionResult(item: CompletionItem): Promise<CompletionOutcomeResolve> {
     const provider = this.capabilities.completionProvider as { resolveProvider?: boolean } | undefined
-    if (!provider?.resolveProvider) return item
-    const resolved = await this.request<CompletionItem | null>('completionItem/resolve', item).catch(() => null)
-    return resolved ?? item
+    if (!provider?.resolveProvider) return Promise.resolve({ ok: true, item })
+    const key = `${item.label}|${item.kind ?? ''}|${item.sortText ?? ''}|${JSON.stringify(item.data ?? null)}`
+    const cached = this.resolved.get(key)
+    if (cached) return Promise.resolve({ ok: true, item: cached })
+    const running = this.resolving.get(key)
+    if (running) return running
+    const job = this.resolveOnce(item, key).finally(() => this.resolving.delete(key))
+    this.resolving.set(key, job)
+    return job
+  }
+
+  /** When the last `didChange` went out. */
+  private changedAt = 0
+
+  private async resolveOnce(item: CompletionItem, key: string): Promise<CompletionOutcomeResolve> {
+    const wait = this.changedAt + SETTLE_AFTER_CHANGE - Date.now()
+    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait))
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const answer = await this.request<CompletionItem | null>('completionItem/resolve', item)
+        const merged = answer ? { ...item, ...answer } : item
+        this.resolved.set(key, merged)
+        if (this.resolved.size > RESOLVE_CACHE) this.resolved.delete(this.resolved.keys().next().value as string)
+        return { ok: true, item: merged }
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err))
+        if (!isRetryable(error) || attempt >= 1) {
+          this.addLog('client', 2, `completionItem/resolve: ${error.message}`)
+          return { ok: false, error, item }
+        }
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY))
+      }
+    }
+  }
+
+  /** The resolved item, or the original one when resolving failed (nothing is cached then). */
+  async resolveCompletion(item: CompletionItem): Promise<CompletionItem> {
+    return (await this.resolveCompletionResult(item)).item
   }
 
   async hover(filePath: string, position: Position) {
@@ -811,7 +965,7 @@ function sectionOf(settings: unknown, section: string | undefined): unknown {
   return node ?? null
 }
 
-const CLIENT_CAPABILITIES = {
+export const CLIENT_CAPABILITIES = {
   textDocument: {
     synchronization: { dynamicRegistration: false, didSave: true, willSave: false },
     publishDiagnostics: {
@@ -826,15 +980,19 @@ const CLIENT_CAPABILITIES = {
       contextSupport: true,
       completionItem: {
         snippetSupport: true,
-        commitCharactersSupport: false,
+        commitCharactersSupport: true,
+        insertTextModeSupport: { valueSet: [1] },
         documentationFormat: ['markdown', 'plaintext'],
         insertReplaceSupport: true,
         deprecatedSupport: true,
         preselectSupport: true,
         labelDetailsSupport: true,
         tagSupport: { valueSet: [1] },
-        resolveSupport: { properties: ['documentation', 'detail', 'additionalTextEdits'] },
+        resolveSupport: { properties: ['documentation', 'detail', 'additionalTextEdits', 'textEdit'] },
       },
+      // `applyItemDefaults` writes them into every item as it arrives. Text goes in as sent (mode 1) — nothing re-indents it.
+      completionList: { itemDefaults: ['commitCharacters', 'editRange', 'insertTextFormat', 'insertTextMode', 'data'] },
+      insertTextMode: 1,
       completionItemKind: { valueSet: Array.from({ length: 25 }, (_, i) => i + 1) },
     },
     hover: { dynamicRegistration: false, contentFormat: ['markdown', 'plaintext'] },

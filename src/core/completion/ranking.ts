@@ -1,7 +1,23 @@
 /**
- * Ordering the suggestions: the match score plus the source and kind, the
- * server's own order, recently used suggestions, proximity to the cursor and
- * length.
+ * Ordering the suggestions. The order is tiered (compared top to bottom, the
+ * first difference decides), not one summed score:
+ *
+ *  1. Match tier: exact-case prefix > case-insensitive prefix > camel-hump /
+ *     word-boundary (`NPE` → NullPointerException) > substring / fuzzy
+ *     subsequence > typo-tolerant match.
+ *  2. Deprecated entries after all others of the same tier.
+ *  3. Fit: the source, the kind (own variables, lower-case bias), the
+ *     server's preselect and sortText order, in coarse buckets.
+ *  4. Locality: already imported / same package before not imported
+ *     (`Candidate.locality`, from the server's package detail).
+ *  5. Recency / frequency per context, plus proximity to the cursor.
+ *  6. The finer server order, the raw match score, shorter, alphabetical.
+ *
+ * Within the two loosest tiers the raw match score comes before step 3, so a
+ * sloppy match never wins on the strength of its source alone.
+ *
+ * Duplicates merge only when label AND identity agree (`Candidate.identity`,
+ * e.g. the package): java.util.List and java.awt.List stay two entries.
  *
  * No DOM involved — `scripts/check-completion.ts` tests it directly.
  */
@@ -22,6 +38,15 @@ export interface Candidate<T = unknown> {
   readonly boost: number
   /** What a server entry is, when it says: variables rank up, types down while a lowerCamelCase word is typed. */
   readonly kind?: 'variable' | 'type'
+  /**
+   * What tells same-label entries apart (package, signature, kind). Entries
+   * without one merge into every entry of the same label; entries with
+   * different identities never merge.
+   */
+  readonly identity?: string
+  readonly deprecated?: boolean
+  /** 1 imported / same package, 0 unknown, -1 known not imported. */
+  readonly locality?: number
   readonly data: T
 }
 
@@ -43,6 +68,47 @@ export interface Ranked<T = unknown> {
   /** The match score on its own. */
   match: number
   errors: number
+  /** Match tier, 0 (exact-case prefix) … 4 (typo). */
+  tier: number
+  /** Source, kind and server order together. */
+  group: number
+  locality: number
+  /** Recency plus proximity. */
+  signal: number
+  deprecated: boolean
+}
+
+export const TIER_HUMP = 2
+export const TIER_FUZZY = 3
+export const TIER_TYPO = 4
+
+/** Which kind of match `p` is for the query (see the tiers above). */
+export function matchTier(q: Query, p: Prepared, errors: number): number {
+  if (!q.n) return 0
+  if (errors > 0) return TIER_TYPO
+  if (p.text.length >= q.n) {
+    if (p.text.startsWith(q.text)) return 0
+    let i = 0
+    while (i < q.n && p.lower[i] === q.lower[i]) i++
+    if (i === q.n) return 1
+  }
+  return isHump(q, p) ? TIER_HUMP : TIER_FUZZY
+}
+
+/** Every query character continues a run or sits on a word boundary. */
+function isHump(q: Query, p: Prepared): boolean {
+  let at = -1
+  for (let i = 0; i < q.n; i++) {
+    if (at + 1 < p.lower.length && p.lower[at + 1] === q.lower[i]) {
+      at++
+      continue
+    }
+    let k = at + 1
+    while (k < p.lower.length && !(p.flags[k] & 3 && p.lower[k] === q.lower[i])) k++
+    if (k >= p.lower.length) return false
+    at = k
+  }
+  return true
 }
 
 /** Base weight per source. */
@@ -162,7 +228,7 @@ export class RankCache {
 }
 
 function dedupeKey(candidate: Candidate): string {
-  return (candidate.origin === 'snippet' ? 's:' : 'w:') + candidate.label
+  return (candidate.origin === 'snippet' ? 's:' : 'w:') + candidate.label + '\0' + (candidate.identity ?? '')
 }
 
 /**
@@ -197,21 +263,48 @@ export function rank<T>(
       if (signals.memberAccess && HIDDEN_ON_MEMBER.has(candidate.origin)) continue
       if (!accepts(q, raw, errors)) continue
 
-      let value = raw + ORIGIN_BOOST[candidate.origin] + candidate.boost
-      if (signals.statementStart) value += STATEMENT_BOOST[candidate.origin] ?? 0
-      if (lowerStart && candidate.kind === 'variable') value += VARIABLE_ON_LOWER
-      if (lowerStart && candidate.kind === 'type') value += TYPE_ON_LOWER
-      value += signals.recency?.(candidate.label) ?? 0
-      value += signals.proximity?.(candidate.label) ?? 0
-      value -= lengthPenalty(candidate.label.length, q.n)
-      merge(best, { candidate, score: value, match: raw, errors })
+      let group = ORIGIN_BOOST[candidate.origin] + candidate.boost
+      if (signals.statementStart) group += STATEMENT_BOOST[candidate.origin] ?? 0
+      if (lowerStart && candidate.kind === 'variable') group += VARIABLE_ON_LOWER
+      if (lowerStart && candidate.kind === 'type') group += TYPE_ON_LOWER
+      const signal = (signals.recency?.(candidate.label) ?? 0) + (signals.proximity?.(candidate.label) ?? 0)
+      const value = raw + group + signal - lengthPenalty(candidate.label.length, q.n)
+      merge(best, {
+        candidate, score: value, match: raw, errors,
+        tier: matchTier(q, candidate.filter, errors),
+        group, signal,
+        locality: candidate.locality ?? 0,
+        deprecated: Boolean(candidate.deprecated),
+      })
     }
     cache?.store(pool, q, passed, passedCount)
   }
 
-  const out = [...best.values()]
+  const out = dropShadowed(best)
   out.sort(compareRanked)
   return out.length > limit ? out.slice(0, limit) : out
+}
+
+/**
+ * Entries without identity (words, snippets, keywords) merge into the
+ * identified entries of the same label, unless they outrank all of them.
+ */
+function dropShadowed<T>(best: Map<string, Ranked<T>>): Ranked<T>[] {
+  const identified = new Map<string, number>()
+  for (const entry of best.values()) {
+    if (entry.candidate.identity === undefined) continue
+    const top = identified.get(entry.candidate.label) ?? -1
+    identified.set(entry.candidate.label, Math.max(top, ORIGIN_PRIORITY[entry.candidate.origin]))
+  }
+  if (!identified.size) return [...best.values()]
+  const out: Ranked<T>[] = []
+  for (const entry of best.values()) {
+    const top = identified.get(entry.candidate.label)
+    const shadowed = entry.candidate.identity === undefined && top !== undefined
+      && ORIGIN_PRIORITY[entry.candidate.origin] <= top
+    if (!shadowed) out.push(entry)
+  }
+  return out
 }
 
 function merge<T>(best: Map<string, Ranked<T>>, entry: Ranked<T>) {
@@ -224,11 +317,24 @@ function merge<T>(best: Map<string, Ranked<T>>, entry: Ranked<T>) {
   const winner = ORIGIN_PRIORITY[entry.candidate.origin] > ORIGIN_PRIORITY[current.candidate.origin]
     ? entry : current
   const score = Math.max(entry.score, current.score)
-  best.set(key, { ...winner, score })
+  best.set(key, { ...winner, score, signal: Math.max(entry.signal, current.signal) })
 }
 
+/** Width of a fit bucket: the server's fine order only decides after recency. */
+const GROUP_BUCKET = 2
+
 function compareRanked(a: Ranked, b: Ranked): number {
-  if (b.score !== a.score) return b.score - a.score
+  if (a.tier !== b.tier) return a.tier - b.tier
+  if (a.deprecated !== b.deprecated) return a.deprecated ? 1 : -1
+  const loose = a.tier >= TIER_FUZZY
+  if (loose && a.match !== b.match) return b.match - a.match
+  const bucketA = Math.floor(a.group / GROUP_BUCKET)
+  const bucketB = Math.floor(b.group / GROUP_BUCKET)
+  if (bucketA !== bucketB) return bucketB - bucketA
+  if (a.locality !== b.locality) return b.locality - a.locality
+  if (a.signal !== b.signal) return b.signal - a.signal
+  if (a.group !== b.group) return b.group - a.group
+  if (a.match !== b.match) return b.match - a.match
   if (a.candidate.label.length !== b.candidate.label.length) {
     return a.candidate.label.length - b.candidate.label.length
   }
