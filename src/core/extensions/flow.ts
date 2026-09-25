@@ -20,6 +20,7 @@
 import { useStore } from '@/state/store';
 import { t } from '@/i18n';
 import { CodeApprovalRequired, extensions } from './manager';
+import { warnAboutMissingSdks } from '@/core/sdk/requirements';
 import { hostOf } from './trust';
 import type { ExtensionManifest } from './types';
 
@@ -38,7 +39,7 @@ export async function installExtension(
   const finished = (manifest: ExtensionManifest) => {
     done(manifest);
     // An SDK the add-on works with may be missing — say so right away.
-    void import('@/core/sdk').then((sdk) => sdk.warnAboutMissingSdks(manifest)).catch(() => {});
+    void warnAboutMissingSdks(manifest).catch(() => {});
     // A new agent should not have to be hunted for: show its chat.
     const agent = manifest.agents?.[0];
     if (agent) {

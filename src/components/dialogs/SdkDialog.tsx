@@ -8,15 +8,15 @@
  * or (at your option) any later version. See the LICENSE file for details.
  */
 
-import { useEffect, useState } from 'react';
-import { Coffee, Download, HardDrive, ListChecks, RefreshCw, Wrench } from 'lucide-react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { Coffee, Download, HardDrive, RefreshCw, Wrench } from 'lucide-react';
 import { useStore } from '@/state/store';
 import { useT } from '@/i18n';
 import { TOOLS, detectInstalled, isFinished, loadCatalog, requirementRows, toolInfo, useSdk } from '@/core/sdk';
+import { extensions } from '@/core/extensions/manager';
 import { Button } from '../ui';
 import { InstalledList } from '../sdk/InstalledList';
 import { DownloadCatalog } from '../sdk/DownloadCatalog';
-import { RequiredView } from '../sdk/RequiredView';
 import { ToolDownloads, ToolInstalled } from '../sdk/ToolViews';
 import { DialogShell, type DialogSection } from './DialogShell';
 
@@ -26,10 +26,10 @@ const asTab = (value: string | null | undefined): Tab => (value === 'download' ?
 
 const PROVIDERS = ['java', ...TOOLS.map((tool) => tool.id)];
 
-/** `openDialog('sdks', …)`: `installed` / `download` (Java), `node`, `node:download`, or `required`. */
+/** `openDialog('sdks', …)`: `installed` / `download` (Java), `node`, or `node:download`. */
 function parseRequest(value: string | null | undefined): { section: string; tab: Tab; } {
   const [first, second] = (value ?? '').split(':');
-  if (first === 'required' || PROVIDERS.includes(first)) {
+  if (PROVIDERS.includes(first)) {
     return { section: first, tab: asTab(second) };
   }
   return { section: 'java', tab: asTab(first) };
@@ -47,7 +47,12 @@ export function SdkDialog() {
   const running = useSdk((s) => Object.values(s.jobs).filter((job) => !isFinished(job.progress.phase)).length);
   const busy = useSdk((s) => (tab === 'installed' ? s.detecting : s.catalogLoading));
   const tool = toolInfo(section);
-  const isRequired = section === 'required';
+  const defaults = useSdk((s) => s.settings.defaults);
+  useSyncExternalStore(extensions.subscribe, extensions.getVersion);
+  // Only the SDKs that matter here: Java, those the installed add-ons ask for, and any that already has something
+  // installed by Lumen or chosen as default — not all of them.
+  const wanted = new Set(['java', ...requirementRows().map((row) => row.sdk)]);
+  const shown = TOOLS.filter((entry) => wanted.has(entry.id) || defaults[entry.id] || installed[entry.id]?.some((sdk) => sdk.managed) || entry.id === section);
 
   // Opening the dialog (or a command that names a section) picks where to start — changing the SDK afterwards keeps the tab.
   useEffect(() => {
@@ -61,10 +66,10 @@ export function SdkDialog() {
   }, [open, requested]);
 
   useEffect(() => {
-    if (open && !isRequired) {
+    if (open) {
       void detectInstalled(section);
     }
-  }, [open, section, isRequired]);
+  }, [open, section]);
 
   const refresh = () => {
     if (tab === 'installed') {
@@ -75,9 +80,8 @@ export function SdkDialog() {
   };
 
   const sections: DialogSection[] = [
-    { id: 'required', label: t('sdk.required.section'), icon: ListChecks, badge: requirementRows().length ? String(requirementRows().length) : undefined },
     { id: 'java', label: 'Java', icon: Coffee, badge: installed.java?.length ? String(installed.java.length) : undefined },
-    ...TOOLS.map((entry) => ({ id: entry.id, label: entry.name, icon: Wrench, badge: installed[entry.id]?.length ? String(installed[entry.id].length) : undefined })),
+    ...shown.map((entry) => ({ id: entry.id, label: entry.name, icon: Wrench, badge: installed[entry.id]?.length ? String(installed[entry.id].length) : undefined })),
   ];
 
   return (
@@ -89,26 +93,21 @@ export function SdkDialog() {
       sections={sections}
       section={section}
       onSection={(id) => { setSection(id); setSearch(''); }}
-      search={isRequired ? undefined : search}
-      onSearch={isRequired ? undefined : setSearch}
+      search={search}
+      onSearch={setSearch}
       searchPlaceholder={t('sdk.searchPlaceholder')}
-      headerExtra={isRequired ? undefined : (
+      headerExtra={(
         <Button size="sm" title={tab === 'installed' ? t('sdk.command.detect') : t('sdk.refresh')} onClick={refresh} disabled={busy}>
           <RefreshCw size={12} className={busy ? 'lm-anim-spin' : ''} />
           <span>{tab === 'installed' ? t('sdk.detect') : t('sdk.refresh')}</span>
         </Button>
       )}
     >
-      {isRequired && <RequiredView onOpen={(sdk, next) => { setSection(sdk); setTab(next); }} />}
-      {!isRequired && (
-        <>
-          <TabBar tab={tab} onTab={setTab} installedCount={installed[section]?.length ?? 0} running={running} />
-          {tab === 'installed' && !tool && <InstalledList search={search} onDownload={() => setTab('download')} />}
-          {tab === 'installed' && tool && <ToolInstalled tool={tool} search={search} onDownload={() => setTab('download')} />}
-          {tab === 'download' && !tool && <DownloadCatalog search={search} />}
-          {tab === 'download' && tool && <ToolDownloads tool={tool} search={search} />}
-        </>
-      )}
+      <TabBar tab={tab} onTab={setTab} installedCount={installed[section]?.length ?? 0} running={running} />
+      {tab === 'installed' && !tool && <InstalledList search={search} onDownload={() => setTab('download')} />}
+      {tab === 'installed' && tool && <ToolInstalled tool={tool} search={search} onDownload={() => setTab('download')} />}
+      {tab === 'download' && !tool && <DownloadCatalog search={search} />}
+      {tab === 'download' && tool && <ToolDownloads tool={tool} search={search} />}
     </DialogShell>
   );
 }

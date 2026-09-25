@@ -62,6 +62,7 @@ import { ExtensionSettingsPage } from "../settings/ExtensionSettingsPage";
 import { Button, Empty } from "../ui";
 import { type DialogSection, DialogShell } from "./DialogShell";
 import { InstalledView } from "./InstalledView";
+import { AddonSdks } from "../sdk/AddonSdks";
 
 /** How a server's standing reads in the list. */
 function trustLabel(official: boolean, trusted: boolean): string {
@@ -615,6 +616,7 @@ function AddonDetail({ entry: { summary, server }, busy, providesText, onBack, o
           </div>
         </div>
       </div>
+      {summary.requires?.length ? <div className="-mx-5"><AddonSdks requires={summary.requires} /></div> : null}
       {summary.description && <p className="whitespace-pre-line text-[12.5px] leading-relaxed text-muted">{summary.description}</p>}
       <div>
         <div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.09em] text-subtle">{t("extensions.versions")}</div>

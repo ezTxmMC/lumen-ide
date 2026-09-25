@@ -30,20 +30,18 @@ export interface ToolInfo {
   variables(home: string): Record<string, string>;
   /** The folder with the executable, relative to the home; `bin` when left out. */
   binSubdir?(platform: string): string;
-  /** Part of the basic setup most people want (shown under “Essentials”). */
-  essential?: boolean;
 }
 
 export const TOOLS: ToolInfo[] = [
-  { id: 'node', name: 'Node.js', essential: true, color: '#5fa04e', purpose: 'JavaScript runtime', addon: 'JavaScript · TypeScript', variables: () => ({}), binSubdir: (platform) => (platform === 'win32' ? '' : 'bin') },
+  { id: 'node', name: 'Node.js', color: '#5fa04e', purpose: 'JavaScript runtime', addon: 'JavaScript · TypeScript', variables: () => ({}), binSubdir: (platform) => (platform === 'win32' ? '' : 'bin') },
   { id: 'go', name: 'Go', color: '#00add8', purpose: 'Go toolchain', addon: 'Go', variables: (home) => ({ GOROOT: home }) },
-  { id: 'gradle', name: 'Gradle', essential: true, color: '#02303a', purpose: 'Build tool for Java, Kotlin and Android', addon: 'Java · Kotlin', variables: (home) => ({ GRADLE_HOME: home }) },
-  { id: 'maven', name: 'Apache Maven', essential: true, color: '#c71a36', purpose: 'Build tool for Java', addon: 'Java', variables: (home) => ({ MAVEN_HOME: home, M2_HOME: home }) },
+  { id: 'gradle', name: 'Gradle', color: '#02303a', purpose: 'Build tool for Java, Kotlin and Android', addon: 'Java · Kotlin', variables: (home) => ({ GRADLE_HOME: home }) },
+  { id: 'maven', name: 'Apache Maven', color: '#c71a36', purpose: 'Build tool for Java', addon: 'Java', variables: (home) => ({ MAVEN_HOME: home, M2_HOME: home }) },
   { id: 'deno', name: 'Deno', color: '#70ffaf', purpose: 'JavaScript and TypeScript runtime', addon: 'TypeScript', variables: () => ({}), binSubdir: () => '' },
   { id: 'bun', name: 'Bun', color: '#fbf0df', purpose: 'JavaScript runtime and package manager', addon: 'JavaScript · TypeScript', variables: () => ({}), binSubdir: () => '' },
   { id: 'kotlin', name: 'Kotlin compiler', color: '#a97bff', purpose: 'kotlinc, the command-line compiler', addon: 'Kotlin', variables: (home) => ({ KOTLIN_HOME: home }) },
   { id: 'zig', name: 'Zig', color: '#f7a41d', purpose: 'Zig compiler and build system', addon: 'Zig', variables: () => ({}), binSubdir: () => '' },
-  { id: 'python', name: 'Python', color: '#3776ab', purpose: 'Python interpreter (standalone builds)', addon: 'Python', essential: true, variables: () => ({}), binSubdir: (platform) => (platform === 'win32' ? '' : 'bin') },
+  { id: 'python', name: 'Python', color: '#3776ab', purpose: 'Python interpreter (standalone builds)', addon: 'Python', variables: () => ({}), binSubdir: (platform) => (platform === 'win32' ? '' : 'bin') },
   { id: 'dotnet', name: '.NET SDK', color: '#512bd4', purpose: 'Build and run C#, F# and Visual Basic', addon: 'C#', variables: (home) => ({ DOTNET_ROOT: home }), binSubdir: () => '' },
   { id: 'rust', name: 'Rust', color: '#dea584', purpose: 'rustc and cargo', addon: 'Rust', variables: () => ({}) },
   { id: 'dart', name: 'Dart SDK', color: '#0175c2', purpose: 'Dart compiler and pub', addon: 'Dart', variables: (home) => ({ DART_SDK: home }) },

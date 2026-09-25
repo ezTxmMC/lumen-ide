@@ -26,9 +26,9 @@
     "dist:mac": "vite build && electron-builder --publish never --mac zip --arm64",
     "dist:mac:dmg": "vite build && electron-builder --publish never --mac --arm64",
     "publish:cdn": "node scripts/publish-cdn.mjs",
-    "build:ext": "node extensions/build.mjs",
+    "build:ext": "node addons/build.mjs",
     "test:extensions": "node scripts/test-extensions.mjs",
-    "publish:ext": "node extensions/publish.mjs",
+    "publish:ext": "node addons/publish.mjs",
     "server:ext": "node extension-server/src/main.js",
     "test:server": "node extension-server/test/run.js",
     "check:languages": "esbuild scripts/check-languages.ts --bundle --platform=node --format=esm --alias:@=./src --outfile=node_modules/.cache/check-languages.mjs --log-level=error && node node_modules/.cache/check-languages.mjs",
@@ -111,7 +111,7 @@
     },
     "deb": {
       "maintainer": "ezTxmMC <contact@eztxm.de>",
-      "homepage": "https://github.com/ezTxmMC/lumen-ide",
+      "artifactName": "lumen-ide_${version}_${arch}.${ext}",
       "synopsis": "Modern, lightweight & add-on based customizable IDE",
       "description": "Modern, lightweight and add-on based coding IDE with broad customizability."
     },

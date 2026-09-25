@@ -30,6 +30,7 @@ import { hostOf } from '@/core/extensions/trust';
 import { installExtension } from '@/core/extensions/flow';
 import type { Addon } from '@/core/types';
 import { Button, Empty } from '../ui';
+import { AddonSdks } from '../sdk/AddonSdks';
 import {
   Badge, CommandsSection, DetailSection, KindsSection, LanguagesSection, TemplatesSection, ThemesSection,
 } from './AddonSections';
@@ -550,6 +551,7 @@ function AddonDetails({ addon, update, onSelect }: { addon: Addon; update?: Avai
         </div>
       )}
       <AddonActions addon={addon} update={update} onSelect={onSelect} />
+      <AddonSdks requires={extension?.manifest.requires} />
 
       {languages.length > 0 && <LanguagesSection languages={languages} />}
 

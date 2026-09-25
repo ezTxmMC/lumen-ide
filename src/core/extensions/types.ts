@@ -245,6 +245,7 @@ export interface ExtensionSummary {
   repository?: string;
   minAppVersion?: string;
   provides?: Record<string, number>;
+  requires?: ExtensionRequirement[];
   versions?: string[];
 /** A newer prerelease, when there is one. */
   preview?: string;

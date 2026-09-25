@@ -91,7 +91,9 @@ async function start() {
   await detectInstalled('java').catch(() => {});
   recompute();
   markDetected();
-  await Promise.all(SDK_PROVIDERS.filter((provider) => provider.id !== 'java').map((provider) => detectInstalled(provider.id).catch(() => {})));
+  // The rest are looked at only where an add-on needs them (its page, the SDK dialog) — unless one is chosen as default.
+  const chosen = useSdk.getState().settings.defaults;
+  await Promise.all(SDK_PROVIDERS.filter((provider) => provider.id !== 'java' && chosen[provider.id]).map((provider) => detectInstalled(provider.id).catch(() => {})));
   recompute();
   markDetected();
 }

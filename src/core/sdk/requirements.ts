@@ -20,7 +20,7 @@ import type { ExtensionManifest, ExtensionRequirement } from '@/core/extensions/
 import { useStore } from '@/state/store';
 import { t } from '@/i18n';
 import { detectInstalled, useSdk } from './state';
-import { sdkTitle, TOOLS } from './tools';
+import { sdkTitle } from './tools';
 
 export interface RequirementRow {
   sdk: string;
@@ -39,11 +39,6 @@ export function requirementRows(): RequirementRow[] {
     }
   }
   return [...rows.values()].sort((a, b) => sdkTitle(a.sdk).name.localeCompare(sdkTitle(b.sdk).name));
-}
-
-/** SDKs in the basic setup that no add-on asks for on its own: Java and the tools marked essential. */
-export function essentialIds(): string[] {
-  return ['java', ...TOOLS.filter((tool) => tool.essential).map((tool) => tool.id)];
 }
 
 /** Whether at least one SDK of that kind is installed — found on the machine or installed by Lumen. */

@@ -48,6 +48,8 @@ function summarize(manifest, meta) {
     minAppVersion: manifest.minAppVersion,
     /** What the extension contributes — for the list, without loading it. */
     provides: provides(manifest),
+    /** SDKs the extension works with, so the list can say so before it is installed. */
+    requires: manifest.requires,
     versions: meta.versions,
     preview: meta.preview,
     publishedAt: meta.publishedAt,
