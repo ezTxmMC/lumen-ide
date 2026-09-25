@@ -52,13 +52,19 @@ const PUBLIC_URL = (process.env.LUMEN_CDN_URL ?? 'https://cdn.eztxm.de/download/
  * The files per platform; `update` is what the updater installs. `{v}` is the
  * version. The names follow `artifactName` in package.json.
  */
+// Older builds are named `Lumen-…`, later ones `Lumen IDE-…` (the product name) — both are taken.
+const APP = 'Lumen(?:[ -]IDE)?';
+
 const PLATFORMS = {
-  linux_amd64: { update: /^Lumen-{v}-linux-x86_64\.AppImage$/, extra: [] },
-  linux_aarch64: { update: /^Lumen-{v}-linux-(?:arm64|aarch64)\.AppImage$/, extra: [] },
-  macos_arm64: { update: /^Lumen-{v}-mac-arm64\.zip$/, extra: [/^Lumen-{v}-mac-arm64\.dmg$/] },
-  windows_x86_64: { update: /^Lumen-{v}-win-x64-setup\.exe$/, extra: [/^Lumen-{v}-win-x64\.zip$/] },
-  windows_arm64: { update: /^Lumen-{v}-win-arm64-setup\.exe$/, extra: [/^Lumen-{v}-win-arm64\.zip$/] },
+  linux_amd64: { update: new RegExp(`^${APP}-{v}-linux-x86_64\\.AppImage$`), extra: [/^(?:lumen-ide_{v}_amd64|Lumen(?:[ -]IDE)?-{v}-linux-amd64)\.deb$/] },
+  linux_aarch64: { update: new RegExp(`^${APP}-{v}-linux-(?:arm64|aarch64)\\.AppImage$`), extra: [/^(?:lumen-ide_{v}_arm64|Lumen(?:[ -]IDE)?-{v}-linux-arm64)\.deb$/] },
+  macos_arm64: { update: new RegExp(`^${APP}-{v}-mac-arm64\\.zip$`), extra: [new RegExp(`^${APP}-{v}-mac-arm64\\.dmg$`)] },
+  windows_x86_64: { update: new RegExp(`^${APP}-{v}-win-x64-setup\\.exe$`), extra: [new RegExp(`^${APP}-{v}-win-x64\\.zip$`)] },
+  windows_arm64: { update: new RegExp(`^${APP}-{v}-win-arm64-setup\\.exe$`), extra: [new RegExp(`^${APP}-{v}-win-arm64\\.zip$`)] },
 };
+
+/** The name a file gets on the CDN: no spaces, so download links and the updater need no escaping. */
+const remoteName = (file) => path.basename(file).replace(/^Lumen[ -]IDE-/, 'Lumen-').replace(/\s+/g, '-');
 
 function parseArgs(argv) {
   const options = { dir: 'release', version: pkg.version, only: null, notes: '', dryRun: false, archive: true };
@@ -127,7 +133,7 @@ function describe(file) {
     hash.update(buffer.subarray(0, read));
   }
   fs.closeSync(fd);
-  return { name: path.basename(file), size: fs.statSync(file).size, sha512: hash.digest('base64') };
+  return { name: remoteName(file), size: fs.statSync(file).size, sha512: hash.digest('base64') };
 }
 
 function findRelease(files, platform, version) {
@@ -172,7 +178,7 @@ function sftpBatch({ releases, version, manifestFile, previous, archive }) {
     for (const target of targets) {
       lines.push(`-mkdir ${quote(target)}`);
       for (const file of release.local) {
-        lines.push(`put ${quote(file)} ${quote(`${target}/${path.basename(file)}`)}`);
+        lines.push(`put ${quote(file)} ${quote(`${target}/${remoteName(file)}`)}`);
       }
     }
   }
@@ -181,7 +187,7 @@ function sftpBatch({ releases, version, manifestFile, previous, archive }) {
   lines.push(`-rm ${quote(`${REMOTE_ROOT}/latest/latest.json`)}`);
   lines.push(`rename ${quote(`${REMOTE_ROOT}/latest/latest.json.part`)} ${quote(`${REMOTE_ROOT}/latest/latest.json`)}`);
   for (const release of releases) {
-    const keep = new Set(release.local.map((file) => path.basename(file)));
+    const keep = new Set(release.local.map((file) => remoteName(file)));
     const old = previous?.platforms?.[release.platform]?.files ?? [];
     for (const file of old) {
       if (keep.has(file.name)) {

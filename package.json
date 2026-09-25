@@ -169,12 +169,12 @@
       "node_modules/node-pty/**"
     ],
     "npmRebuild": false,
-    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "artifactName": "Lumen-${version}-${os}-${arch}.${ext}",
     "nsis": {
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "${productName}-${version}-win-${arch}-setup.${ext}"
+      "artifactName": "Lumen-${version}-win-${arch}-setup.${ext}"
     }
   },
   "allowScripts": {
