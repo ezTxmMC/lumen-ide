@@ -30,6 +30,8 @@ import path from 'node:path';
 
 const DISCO = 'https://api.foojay.io/disco/v3.0';
 const JDK_ROOT = path.join(os.homedir(), '.lumen', 'jdks');
+/** Where the other SDKs (Node, Go, Gradle …) are installed — see `sdk-tools.ts`. */
+export const TOOL_ROOT = path.join(os.homedir(), '.lumen', 'sdks');
 const IS_WINDOWS = process.platform === 'win32';
 const JAVA_EXE = IS_WINDOWS ? 'java.exe' : 'java';
 const PROGRESS_INTERVAL_MS = 150;
@@ -97,7 +99,8 @@ export interface Job {
   cancelled: boolean;
 }
 
-const jobs = new Map<string, Job>();
+/** Running installations, of JDKs and of the other SDKs. */
+export const jobs = new Map<string, Job>();
 
 /* ------------------------------------------------------------------ *
  * Helpers
@@ -112,10 +115,10 @@ const exists = (target: string) => fs.access(target).then(() => true, () => fals
 
 /** Our own write access: only below ~/.lumen/jdks. */
 function assertJdkPath(target: string) {
-  if (isInside(JDK_ROOT, path.resolve(target))) {
+  if (isInside(JDK_ROOT, path.resolve(target)) || isInside(TOOL_ROOT, path.resolve(target))) {
     return;
   }
-  throw new Error('Path lies outside ~/.lumen/jdks');
+  throw new Error('Path lies outside ~/.lumen/jdks and ~/.lumen/sdks');
 }
 
 /** A folder name from the distribution and the version, without special characters. */
@@ -408,7 +411,7 @@ function archiveKind(filename: string): 'zip' | 'tar.gz' | 'tar' {
 }
 
 /** Runs an unpacking program; remembers the process so it can be cancelled. */
-function runTool(job: Job, command: string, args: string[]): Promise<void> {
+export function runTool(job: Job, command: string, args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true });
     job.child = child;

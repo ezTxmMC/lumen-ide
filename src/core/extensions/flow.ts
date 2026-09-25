@@ -20,6 +20,7 @@
 import { useStore } from '@/state/store';
 import { t } from '@/i18n';
 import { CodeApprovalRequired, extensions } from './manager';
+import { warnAboutMissingSdks } from '@/core/sdk/requirements';
 import { hostOf } from './trust';
 import type { ExtensionManifest } from './types';
 
@@ -37,6 +38,8 @@ export async function installExtension(
 ): Promise<void> {
   const finished = (manifest: ExtensionManifest) => {
     done(manifest);
+    // An SDK the add-on works with may be missing — say so right away.
+    void warnAboutMissingSdks(manifest).catch(() => {});
     // A new agent should not have to be hunted for: show its chat.
     const agent = manifest.agents?.[0];
     if (agent) {
@@ -51,12 +54,12 @@ export async function installExtension(
     }
     const { manifest, hash } = err;
     useStore.getState().openForm({
-      title: t('extensions.codeTitle'),
+      title: t('extensions.codeTitle', { name: manifest.name }),
       description: t('extensions.codeBody', {
         name: manifest.name,
         host: hostOf(server) ?? server,
-        hash: hash.slice(0, 12),
       }),
+      detail: { label: t('extensions.codeChecksum'), value: hash },
       submitLabel: t('extensions.codeApprove'),
       fields: [],
       onSubmit: async () => {

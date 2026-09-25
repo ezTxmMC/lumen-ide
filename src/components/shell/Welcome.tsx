@@ -12,11 +12,11 @@ import { Blocks, Command, FolderOpen, FolderPlus, Layers, Palette, Sparkles, X }
 import { useT } from '@/i18n';
 import { formatBindingsFor } from '@/core/keybindings';
 import { useStore } from '@/state/store';
+import { openFolderAsProject, openProject } from '@/lib/open-project';
 import { Kbd } from '../ui';
 
 function WelcomeActions() {
   const t = useT();
-  const openFolder = useStore((s) => s.openFolder);
   const newFile = useStore((s) => s.newFile);
   const setPalette = useStore((s) => s.setPalette);
   const openDialog = useStore((s) => s.openDialog);
@@ -24,7 +24,7 @@ function WelcomeActions() {
 
   const actions = [
     { icon: FolderPlus, label: t('welcome.newProject'), keys: formatBindingsFor('project.new'), run: () => setNewProjectOpen(true) },
-    { icon: FolderOpen, label: t('welcome.openFolder'), keys: formatBindingsFor('file.open'), run: () => void openFolder() },
+    { icon: FolderOpen, label: t('welcome.openFolder'), keys: formatBindingsFor('file.open'), run: () => void openFolderAsProject({ ask: true }) },
     { icon: Sparkles, label: t('welcome.newFile'), keys: formatBindingsFor('file.new'), run: newFile },
     { icon: Command, label: t('welcome.commandPalette'), keys: formatBindingsFor('view.commandPalette'), run: () => setPalette('commands') },
     { icon: Palette, label: t('welcome.themes'), keys: formatBindingsFor('view.themes'), run: () => openDialog('themes') },
@@ -58,7 +58,7 @@ function WelcomeWorkspaces() {
   return (
     <div className="mt-8">
       <div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.09em] text-subtle">
-        {t('shell.dialog.workspaces')}
+        {t('workspaces.recent')}
       </div>
       <div className="lm-stagger grid grid-cols-2 gap-1.5">
         {[...workspaces].sort((a, b) => b.openedAt - a.openedAt).slice(0, 4).map((ws) => (
@@ -83,7 +83,6 @@ function WelcomeWorkspaces() {
 function WelcomeRecent() {
   const t = useT();
   const recent = useStore((s) => s.recentProjects);
-  const setWorkspace = useStore((s) => s.setWorkspace);
   const removeRecent = useStore((s) => s.removeRecent);
   const workspace = useStore((s) => s.workspace);
   if (recent.length === 0) {
@@ -98,7 +97,7 @@ function WelcomeRecent() {
         {recent.slice(0, 6).map((p) => (
           <div key={p.path} className="group flex items-center gap-1">
             <button
-              onClick={() => void setWorkspace(p.path)}
+              onClick={() => void openProject(p.path, { ask: true })}
               className="lm-transition flex min-w-0 flex-1 items-center gap-2.5 rounded-lumen-sm px-3 py-1.5 text-left hover:bg-hover"
               title={p.path}
             >

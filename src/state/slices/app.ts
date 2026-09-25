@@ -275,7 +275,7 @@ export const createAppSlice: Slice<AppSlice> = (set, get) => {
 
     persist() {
       const data = settingsSnapshot(get());
-      void window.lumen.settings.save(data as unknown as Record<string, unknown>);
+      return window.lumen.settings.save(data as unknown as Record<string, unknown>).catch(() => {});
     },
 
     openDialog(id, section) {

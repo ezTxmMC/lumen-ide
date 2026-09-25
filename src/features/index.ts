@@ -19,7 +19,7 @@ import { init as initUserAddons } from './userAddons';
 import { init as initUpdater } from './updater';
 import { init as initRecentProjects } from './recentProjects';
 import { init as initLspInstall } from './lspInstall';
-import { init as initExtensions } from './extensions';
+import { init as initExtensions, initInstalled as initInstalledExtensions } from './extensions';
 import { init as initAgents } from './agents';
 import { init as initGradleTasks } from './gradleTasks';
 import { init as initMerge } from './merge';
@@ -34,6 +34,23 @@ export function initFeatures() {
   }
   started = true;
   for (const [name, init] of [['sdk', initSdk], ['debug', initDebug], ['userAddons', initUserAddons], ['updater', initUpdater], ['recentProjects', initRecentProjects], ['lspInstall', initLspInstall], ['extensions', initExtensions], ['agents', initAgents], ['gradleTasks', initGradleTasks], ['merge', initMerge], ['menubar', initMenubar], ['nativeMenu', initNativeMenu]] as const) {
+    try {
+      void init();
+    } catch (err) {
+      console.error(`[lumen] Feature "${name}" failed to start:`, err);
+    }
+  }
+}
+
+let projectsStarted = false;
+
+/** The project screen's window has no editor or docks — only what its add-ons dialog and updater notices read. */
+export function initProjectsFeatures() {
+  if (projectsStarted) {
+    return;
+  }
+  projectsStarted = true;
+  for (const [name, init] of [['userAddons', initUserAddons], ['updater', initUpdater], ['extensions', initInstalledExtensions]] as const) {
     try {
       void init();
     } catch (err) {

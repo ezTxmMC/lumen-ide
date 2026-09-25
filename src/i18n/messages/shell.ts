@@ -37,6 +37,7 @@ export default {
     },
     view: {
       explorer: 'Explorer', search: 'Suchen', project: 'Projekt', outline: 'Gliederung', debug: 'Ausführen & Debuggen',
+      projects: 'Projekte',
     },
     dialog: {
       addons: 'Add-ons', settings: 'Einstellungen', keybindings: 'Tastenkürzel', themes: 'Themes & Effekte',
@@ -75,6 +76,7 @@ export default {
     },
     view: {
       explorer: 'Explorer', search: 'Search', project: 'Project', outline: 'Outline', debug: 'Run & Debug',
+      projects: 'Projects',
     },
     dialog: {
       addons: 'Add-ons', settings: 'Settings', keybindings: 'Keyboard Shortcuts', themes: 'Themes & Effects',
@@ -113,6 +115,7 @@ export default {
     },
     view: {
       explorer: 'Explorador', search: 'Buscar', project: 'Proyecto', outline: 'Esquema', debug: 'Ejecutar y depurar',
+      projects: 'Proyectos',
     },
     dialog: {
       addons: 'Complementos', settings: 'Configuración', keybindings: 'Métodos abreviados de teclado', themes: 'Temas y efectos',
@@ -151,6 +154,7 @@ export default {
     },
     view: {
       explorer: 'Explorateur', search: 'Rechercher', project: 'Projet', outline: 'Structure', debug: 'Exécuter et déboguer',
+      projects: 'Projets',
     },
     dialog: {
       addons: 'Modules complémentaires', settings: 'Paramètres', keybindings: 'Raccourcis clavier', themes: 'Thèmes et effets',
@@ -189,6 +193,7 @@ export default {
     },
     view: {
       explorer: 'Eksplorator', search: 'Szukaj', project: 'Projekt', outline: 'Konspekt', debug: 'Uruchom i debuguj',
+      projects: 'Projekty',
     },
     dialog: {
       addons: 'Dodatki', settings: 'Ustawienia', keybindings: 'Skróty klawiaturowe', themes: 'Motywy i efekty',
@@ -227,6 +232,7 @@ export default {
     },
     view: {
       explorer: 'Esplora risorse', search: 'Cerca', project: 'Progetto', outline: 'Struttura', debug: 'Esegui e debug',
+      projects: 'Progetti',
     },
     dialog: {
       addons: 'Componenti aggiuntivi', settings: 'Impostazioni', keybindings: 'Tasti di scelta rapida', themes: 'Temi ed effetti',
@@ -265,6 +271,7 @@ export default {
     },
     view: {
       explorer: 'Explorador', search: 'Pesquisar', project: 'Projeto', outline: 'Estrutura', debug: 'Executar e depurar',
+      projects: 'Projetos',
     },
     dialog: {
       addons: 'Complementos', settings: 'Configurações', keybindings: 'Atalhos de teclado', themes: 'Temas e efeitos',
@@ -303,6 +310,7 @@ export default {
     },
     view: {
       explorer: 'Verkenner', search: 'Zoeken', project: 'Project', outline: 'Overzicht', debug: 'Uitvoeren en fouten opsporen',
+      projects: 'Projecten',
     },
     dialog: {
       addons: 'Add-ons', settings: 'Instellingen', keybindings: 'Sneltoetsen', themes: 'Thema’s en effecten',

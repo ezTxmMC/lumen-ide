@@ -133,7 +133,8 @@ function quoteArg(arg: string, platform: string) {
     return arg;
   }
   if (platform === 'win32') {
-    return `"${arg.replace(/"/g, '\\"')}"`;
+    // Backslashes only matter before a quote (or the closing one): double those, then escape the quotes.
+    return `"${arg.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/, '$1$1')}"`;
   }
   return `'${arg.replace(/'/g, `'\\''`)}'`;
 }

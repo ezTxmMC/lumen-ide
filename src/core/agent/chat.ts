@@ -392,7 +392,7 @@ export const agentChat = {
 
   /** Every agent the installed extensions declare. */
   agents(): AgentInfo[] {
-    return extensions.list().flatMap(({ manifest }) =>
+    return extensions.listActive().flatMap(({ manifest }) =>
       (manifest.agents ?? []).map((agent) => ({ key: `${manifest.id}/${agent.id}`, extensionId: manifest.id, agent })));
   },
 
@@ -664,13 +664,13 @@ export const agentChat = {
     await window.lumen.agent.interrupt(key, chatOf(key).id);
   },
 
-  async answer(key: string, requestId: string, allow: boolean, remember = false, message?: string) {
+  async answer(key: string, requestId: string, allow: boolean, remember = false, message?: string, answers?: Record<string, string>) {
     const isRequest = (item: ChatItem) => item.role === 'permission' && item.requestId === requestId;
     const chat = stateOf(key).chats.find((entry) => entry.items.some(isRequest));
     if (chat) {
       patch(chat, isRequest, (item) => ({ ...item, state: allow ? 'allowed' : 'denied' }) as ChatItem);
     }
     emit();
-    await window.lumen.agent.answer({ agent: key, requestId, allow, remember, message });
+    await window.lumen.agent.answer({ agent: key, requestId, allow, remember, message, answers });
   },
 };

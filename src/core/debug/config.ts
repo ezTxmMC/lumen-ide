@@ -76,7 +76,7 @@ export async function loadLaunchConfigs(root: string | null): Promise<LaunchConf
   if (!root) {
     return [];
   }
-  const raw = await window.lumen.fs.readFile(await launchConfigPath(root)).catch(() => null);
+  const raw = await window.lumen.fs.readFileIfExists(await launchConfigPath(root)).catch(() => null);
   if (!raw) {
     return [];
   }

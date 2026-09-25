@@ -1,11 +1,15 @@
 {
   "name": "lumen-ide",
-  "version": "0.6.2",
-  "description": "Lumen — eine moderne, leichtgewichtige IDE mit einfachem Add-on-System",
+  "version": "0.6.3",
+  "description": "Modern, lightweight and add-on based coding IDE with broad customizability.",
   "private": true,
   "type": "module",
   "main": "dist-electron/main.js",
-  "author": "ezTxmMC",
+  "homepage": "https://github.com/ezTxmMC/lumen-ide",
+  "author": {
+    "name": "ezTxmMC",
+    "email": "contact@eztxm.de"
+  },
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "dev": "vite",
@@ -14,6 +18,7 @@
     "typecheck": "tsc --noEmit",
     "dist": "vite build && electron-builder --publish never",
     "dist:linux": "vite build && electron-builder --publish never --linux --x64",
+    "dist:linux:deb": "vite build && electron-builder --linux deb --x64 --publish never",
     "dist:linux:arm64": "vite build && electron-builder --publish never --linux --arm64",
     "dist:win": "vite build && electron-builder --publish never --win --x64 --arm64",
     "dist:win:x64": "vite build && electron-builder --publish never --win --x64",
@@ -21,9 +26,9 @@
     "dist:mac": "vite build && electron-builder --publish never --mac zip --arm64",
     "dist:mac:dmg": "vite build && electron-builder --publish never --mac --arm64",
     "publish:cdn": "node scripts/publish-cdn.mjs",
-    "build:ext": "node extensions/build.mjs",
+    "build:ext": "node addons/build.mjs",
     "test:extensions": "node scripts/test-extensions.mjs",
-    "publish:ext": "node extensions/publish.mjs",
+    "publish:ext": "node addons/publish.mjs",
     "server:ext": "node extension-server/src/main.js",
     "test:server": "node extension-server/test/run.js",
     "check:languages": "esbuild scripts/check-languages.ts --bundle --platform=node --format=esm --alias:@=./src --outfile=node_modules/.cache/check-languages.mjs --log-level=error && node node_modules/.cache/check-languages.mjs",
@@ -65,16 +70,16 @@
     "esbuild": "^0.28.2",
     "lucide-react": "^1.47.0",
     "node-pty": "^1.1.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.3.278",
     "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^26.6.2",
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "electron": "^44.4.3",
     "electron-builder": "^26.15.3",
@@ -85,8 +90,8 @@
     "vite-plugin-electron-renderer": "^1.0.0"
   },
   "build": {
-    "appId": "de.lumen.ide",
-    "productName": "Lumen",
+    "appId": "de.eztxm.lumen-ide",
+    "productName": "Lumen IDE",
     "directories": {
       "output": "release"
     },
@@ -96,7 +101,8 @@
     ],
     "linux": {
       "target": [
-        "AppImage"
+        "AppImage",
+        "deb"
       ],
       "category": "Development",
       "executableArgs": [
@@ -106,6 +112,12 @@
         "--enable-wayland-ime",
         "--wayland-text-input-version=3"
       ]
+    },
+    "deb": {
+      "maintainer": "ezTxmMC <contact@eztxm.de>",
+      "artifactName": "lumen-ide_${version}_${arch}.${ext}",
+      "synopsis": "Modern, lightweight & add-on based customizable IDE",
+      "description": "Modern, lightweight and add-on based coding IDE with broad customizability."
     },
     "win": {
       "target": [

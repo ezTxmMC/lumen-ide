@@ -162,7 +162,7 @@ async function scenariosPart2(c: Ctx) {
 
   await scenario('second file: completion in Util.java for a class of Main.java and other.Helper', async () => {
     const utilText = 'package app;\n\npublic class Util {\n    public static int twice(int x) { return x * 2; }\n    String f() {\n        Hel|\n    }\n}\n';
-    await lsp.openDocument((await import('@/addons/builtin/java')).javaSpec, utilFile, utilText.replace('|', ''));
+    await lsp.openDocument((await import('@/addons/builtin/java')).javaSpec, utilFile, utilText.replace(/\|/, ''));
     const req = await requestAt(utilText, { file: utilFile });
     const item = findType(req, 'Helper', 'other');
     ok(Boolean(item), 'Helper offered in the second file', summary(req, 15));
@@ -690,7 +690,7 @@ async function scenariosPart15(c: Ctx) {
     const pending: Promise<any>[] = [];
     for (const p of prefixes) {
       const marked = body(`${p}|`);
-      const text = marked.replace('|', '');
+      const text = marked.replace(/\|/, '');
       lsp.changeDocument(cur().file, text);
       const doc = Text.of(text.split('\n'));
       const head = marked.indexOf('|');

@@ -23,7 +23,8 @@ import { createElement } from 'react';
 import { useStore } from '@/state/store';
 import { registerCommandProvider } from '@/core/commands';
 import { extensions } from '@/core/extensions/manager';
-import { extensionHost } from '@/core/extensions/host';
+import { registry } from '@/core/registry';
+import { extensionHost, parseViewTabPath } from '@/core/extensions/host';
 import { migrateMovedAddons } from '@/core/extensions/migrations';
 import { loadAppVersion } from '@/core/extensions/app-version';
 import { initRendererCode } from '@/core/extensions/renderer-code';
@@ -88,15 +89,45 @@ function codeViews(entry: InstalledExtension, index: number): ViewDef[] {
   }]));
 }
 
+/** What the main process was last told about each extension's code, so only changes cross over. */
+const hostState = new Map<string, string>();
+
+/** An add-on that is off is treated as not installed: its code stops, its open view tabs close. */
+function syncActivation() {
+  const activeIds = new Set(extensions.listActive().map(({ manifest }) => manifest.id));
+  for (const { manifest, codeHash } of extensions.list()) {
+    const on = activeIds.has(manifest.id);
+    if (!codeHash) {
+      continue;
+    }
+    // The hash is part of the key: an update starts the code anew, even for an add-on that is off.
+    const key = `${on}:${codeHash}`;
+    const known = hostState.get(manifest.id);
+    hostState.set(manifest.id, key);
+    // Everything starts at launch, so an add-on that is on needs no message the first time.
+    if (known === key || (on && known === undefined)) {
+      continue;
+    }
+    void window.lumen.extensions.setCodeEnabled(manifest.id, on).catch(() => {});
+  }
+  const state = useStore.getState();
+  for (const tab of state.tabs) {
+    const view = parseViewTabPath(tab.path);
+    if (view && !activeIds.has(view.extensionId)) {
+      state.closeTabEverywhere(tab.id);
+    }
+  }
+}
+
 /** Hand the pages and views of every installed extension to the docks. */
 function syncViews() {
-  const list = extensions.list();
+  const list = extensions.listActive();
   viewRegistry.sync('ext:', list.flatMap(pageViews));
   viewRegistry.sync('view:', list.flatMap(codeViews));
 }
 
 function manifestCommands(): Command[] {
-  return extensions.list().flatMap(({ manifest }) => (manifest.commands ?? []).map((declared) => localizeCommand(declared, getLanguage())).map((command) => ({
+  return extensions.listActive().flatMap(({ manifest }) => (manifest.commands ?? []).map((declared) => localizeCommand(declared, getLanguage())).map((command) => ({
     id: `ext.${manifest.id}.${command.id}`,
     title: command.title,
     category: command.category ?? manifest.name,
@@ -136,6 +167,12 @@ function extensionCommands(): Command[] {
   ];
 }
 
+/** What the project screen's window needs for its add-ons dialog: the installed list, without pages, views or code. */
+export async function initInstalled() {
+  await loadAppVersion();
+  await extensions.init();
+}
+
 export async function init() {
   if (started) {
     return;
@@ -149,6 +186,15 @@ export async function init() {
   installOpenWith();
   syncViews();
   extensions.subscribe(syncViews);
+  // Switching an add-on on or off shows or hides its pages, views and commands.
+  registry.subscribe(syncViews);
+  registry.subscribe(syncActivation);
+  extensions.subscribe(syncActivation);
+  syncActivation();
+  // Badges on the dock icons need the views' content before a panel is ever opened.
+  extensionHost.prefetchDocked();
+  extensions.subscribe(() => extensionHost.prefetchDocked());
+  registry.subscribe(() => extensionHost.prefetchDocked());
   registerCommandProvider(extensionCommands);
   registerCommandProvider(manifestCommands);
 

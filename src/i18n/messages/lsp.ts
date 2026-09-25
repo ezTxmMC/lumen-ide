@@ -290,7 +290,7 @@ export default {
       kindSystem: 'Gestionnaire de paquets ({manager})',
       kindSystemHint: 'Via le gestionnaire de paquets de votre système.',
       kindCommand: 'Commande d’installation',
-      kindCommandHint: 'La commande de l’extension pour ce système — vous pouvez l’adapter.',
+      kindCommandHint: 'La commande du module pour ce système — vous pouvez l’adapter.',
       needsRoot: 'Droits administrateur requis',
       method: 'Méthode d’installation',
       command: 'Sera exécuté',

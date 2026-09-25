@@ -223,7 +223,8 @@ function MapEditor({ section, draft, onChange }: { section: MapKey; draft: IconP
   const setMap = (next: Record<string, IconDef>) => onChange({ ...draft, [section]: next });
 
   const add = () => {
-    const key = newKey.trim().toLowerCase().replace(section === 'extensions' ? /^\.+/ : /^$/, '');
+    const typed = newKey.trim().toLowerCase();
+    const key = section === 'extensions' ? typed.replace(/^\.+/, '') : typed;
     if (!key) {
       return;
     }

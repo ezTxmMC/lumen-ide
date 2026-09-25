@@ -77,7 +77,7 @@ function CategoryRail({ templates, categories, category, recentCount, onCategory
 }
 
 function SearchBar({ searchRef, query, count, layout, onQuery, onLayout, onKeyDown }: {
-  searchRef: RefObject<HTMLInputElement>;
+  searchRef: RefObject<HTMLInputElement | null>;
   query: string;
   count: number;
   layout: 'grid' | 'list';
@@ -136,7 +136,7 @@ function HintBar() {
 
 interface KeysEnv {
   grid: RefObject<HTMLDivElement | null>;
-  searchRef: RefObject<HTMLInputElement>;
+  searchRef: RefObject<HTMLInputElement | null>;
   visible: ProjectTemplate[];
   index: number;
   cols: number;
@@ -224,7 +224,7 @@ export function TemplateBrowser({
   layout: 'grid' | 'list';
   onLayout: (layout: 'grid' | 'list') => void;
   languages: LanguageSpec[];
-  searchRef: RefObject<HTMLInputElement>;
+  searchRef: RefObject<HTMLInputElement | null>;
 }) {
   const t = useT();
   const grid = useRef<HTMLDivElement>(null);

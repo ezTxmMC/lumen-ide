@@ -22,7 +22,7 @@
  * else in the program starts counting on it.
  */
 
-import { EXTENSION_ID_PATTERN, EXTENSION_SCHEMA, type ExtensionIndex, type ExtensionManifest, type ExtensionSummary } from './types';
+import { EXTENSION_ID_PATTERN, EXTENSION_SCHEMA, type ExtensionIndex, type ExtensionManifest, type ExtensionRequirement, type ExtensionSummary } from './types';
 import { normalizeServerUrl } from './trust';
 
 export interface ServerInfo {
@@ -86,6 +86,9 @@ function toSummary(raw: unknown): ExtensionSummary | null {
     repository: asString(entry.repository) || undefined,
     minAppVersion: asString(entry.minAppVersion) || undefined,
     provides: entry.provides && typeof entry.provides === 'object' ? entry.provides as Record<string, number> : undefined,
+    requires: Array.isArray(entry.requires)
+      ? entry.requires.filter((item): item is ExtensionRequirement => Boolean(item) && typeof (item as ExtensionRequirement).sdk === 'string')
+      : undefined,
     versions: Array.isArray(entry.versions) ? entry.versions.filter((v): v is string => typeof v === 'string') : [version],
     preview: asString(entry.preview) || undefined,
     publishedAt: asString(entry.publishedAt) || undefined,

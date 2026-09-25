@@ -28,8 +28,14 @@ import type { AgentModel } from '../../../electron/features/extension-host/contr
 /** Version of the manifest format Lumen understands. */
 export const EXTENSION_SCHEMA = 1;
 
-/** Ids of server extensions: `ext.` from the official catalogue, `user.` from users who publish their Studio add-ons. */
-export const EXTENSION_ID_PATTERN = /^(?:ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/;
+/**
+ * Ids of server add-ons: `addon.` from the official catalogue, `user.` from users who publish their Studio add-ons.
+ * `ext.` is the old prefix of the catalogue — still accepted, but deprecated.
+ */
+export const EXTENSION_ID_PATTERN = /^(?:addon|ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/;
+
+/** Whether an id still uses the deprecated `ext.` prefix. */
+export const isDeprecatedId = (id: string) => id.startsWith('ext.');
 
 /** The one server Lumen installs from without asking. */
 export const OFFICIAL_HOST = 'lumen-extensions.eztxm.de';
@@ -185,6 +191,16 @@ export interface ExtensionCode {
 }
 
 /** The full manifest, as a server delivers it. */
+/** An SDK an extension needs — Lumen offers to download it when it is missing. */
+export interface ExtensionRequirement {
+  /** `java`, `node`, `python` … the ids of the SDK settings. */
+  sdk: string;
+  /** The oldest version that works (`17`, `3.9`). */
+  version?: string;
+  /** Why — shown next to the SDK. */
+  reason?: string;
+}
+
 export interface ExtensionManifest {
   schema: number;
   id: string;
@@ -207,6 +223,7 @@ export interface ExtensionManifest {
   views?: ExtensionView[];
   commands?: ExtensionCommand[];
   openWith?: ExtensionOpenWith[];
+  requires?: ExtensionRequirement[];
   /** Not kept in the installed record — the code lives in its own file. */
   code?: ExtensionCode;
   addon: UserAddonModel;
@@ -228,6 +245,7 @@ export interface ExtensionSummary {
   repository?: string;
   minAppVersion?: string;
   provides?: Record<string, number>;
+  requires?: ExtensionRequirement[];
   versions?: string[];
 /** A newer prerelease, when there is one. */
   preview?: string;

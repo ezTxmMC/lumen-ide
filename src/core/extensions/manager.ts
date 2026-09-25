@@ -25,13 +25,14 @@
 
 import { useStore } from '@/state/store';
 import { userAddons } from '@/core/user-addons/manager';
+import { registry } from '@/core/registry';
 import { blockingIssues } from '@/core/user-addons/validate';
 import { normalizeModel } from '@/core/user-addons/schema';
 import { t } from '@/i18n';
 import { fetchManifest } from './client';
 import { normalizeServerUrl } from './trust';
 import { isNewer } from './version';
-import { EXTENSION_ID_PATTERN, type ExtensionManifest, type ExtensionPage, type InstalledExtension } from './types';
+import { EXTENSION_ID_PATTERN, isDeprecatedId, type ExtensionManifest, type ExtensionPage, type InstalledExtension } from './types';
 import { appVersion } from './app-version';
 import { fitsApp } from './compat';
 import { codeHashInput } from '../../../electron/features/extension-host/code-hash';
@@ -92,6 +93,10 @@ export const extensions = {
   list: (): InstalledExtension[] =>
     [...installed.values()].sort((a, b) => a.manifest.name.localeCompare(b.manifest.name)),
 
+  /** The ones switched on: an extension's contributions follow its add-on, as its languages and themes do. */
+  listActive: (): InstalledExtension[] =>
+    extensions.list().filter(({ manifest }) => !registry.get(manifest.id) || registry.isActive(manifest.id)),
+
   get: (id: string | null | undefined) => (id ? installed.get(id) : undefined),
   has: (id: string) => installed.has(id),
 
@@ -135,6 +140,9 @@ export const extensions = {
   async install(manifest: ExtensionManifest, server: string, options: { approveCode?: boolean; } = {}): Promise<void> {
     if (!fitsApp(manifest.minAppVersion, appVersion())) {
       throw new Error(t('extensions.needsNewerApp', { name: manifest.name, required: manifest.minAppVersion ?? '', current: appVersion() }));
+    }
+    if (isDeprecatedId(manifest.id)) {
+      console.warn(`[lumen] ${manifest.id}: the "ext." id prefix is deprecated — add-ons should use "addon."`);
     }
     const { code, ...stored } = manifest;
     const known = installed.get(manifest.id)?.codeHash;

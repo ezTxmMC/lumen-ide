@@ -87,7 +87,13 @@ async function start() {
   } catch (err) {
     console.error('[lumen] SDK-Einstellungen:', err);
   }
+  // Java first (the language servers wait for it), then the other SDKs — their defaults go into PATH.
   await detectInstalled('java').catch(() => {});
+  recompute();
+  markDetected();
+  // The rest are looked at only where an add-on needs them (its page, the SDK dialog) — unless one is chosen as default.
+  const chosen = useSdk.getState().settings.defaults;
+  await Promise.all(SDK_PROVIDERS.filter((provider) => provider.id !== 'java' && chosen[provider.id]).map((provider) => detectInstalled(provider.id).catch(() => {})));
   recompute();
   markDetected();
 }
@@ -111,6 +117,7 @@ function recompute() {
       major: chosen.major,
       origin: fromProject ? 'project' : 'default',
       variables: provider.variables(chosen),
+      bin: provider.binDir?.(chosen.home, sdk.environment?.platform ?? 'linux'),
     });
   }
   const nextSignature = JSON.stringify(next.map((entry) => [entry.providerId, entry.home, entry.origin]));

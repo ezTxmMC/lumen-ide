@@ -75,6 +75,8 @@ export interface FsChange {
 export interface FormDialogSpec {
   title: string;
   description?: string;
+  /** A value to read out in full below the description — a checksum, say — selectable in one click. */
+  detail?: { label: string; value: string; };
   fields: FormField[];
   initial?: FormValues;
   submitLabel?: string;
@@ -250,7 +252,8 @@ export interface AppSlice {
   lspLogVersion: number;
 
   init(): Promise<void>;
-  persist(): void;
+  /** Writes the settings; resolves once they are on disk — a window opened next reads them from there. */
+  persist(): Promise<void>;
   openDialog(id: DialogId, section?: string): void;
   closeDialog(): void;
   setChordHint(hint: string | null): void;
@@ -281,6 +284,10 @@ export interface WorkspaceSlice {
   /** Artefacts from the local Maven and Gradle stores — suggestions when adding one. */
   localDependencies: LocalDependency[];
   project: ProjectInfo | null;
+  /** The projects of the workspace's other folders, by folder — the open one is `project`. */
+  extraProjects: Record<string, ProjectInfo>;
+  /** What each module folder of the projects is (by absolute path) — a Paper plugin next to a Velocity one. */
+  moduleProjects: Record<string, ProjectInfo>;
   projectConfig: ProjectConfig;
   projectLoading: boolean;
 
@@ -300,6 +307,8 @@ export interface WorkspaceSlice {
   setActiveFolder(path: string): Promise<void>;
   exportWorkspace(id: string): Promise<void>;
   importWorkspace(): Promise<void>;
+  /** Pick a folder and save it as a workspace with every project found below it. */
+  importWorkspaceFolder(): Promise<void>;
   removeRecent(path: string): void;
   /** Read the local Maven and Gradle stores (once per session). */
   loadLocalDependencies(): Promise<void>;

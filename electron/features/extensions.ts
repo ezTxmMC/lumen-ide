@@ -31,7 +31,7 @@ import path from 'node:path';
 
 const TIMEOUT_MS = 20_000;
 const MAX_RESPONSE_BYTES = 8 * 1024 * 1024;
-const EXTENSION_ID = /^(?:ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/;
+const EXTENSION_ID = /^(?:addon|ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/;
 
 const extensionsDir = () => path.join(app.getPath('userData'), 'extensions');
 
@@ -54,8 +54,8 @@ function serverBase(raw: string): string {
 }
 
 /** Fetch JSON from an extension server. */
-async function fetchJson(base: string, route: string): Promise<unknown> {
-  const target = `${serverBase(base)}${route}`;
+/** One request, with a time limit. A server that does not answer in time is a plain, readable error. */
+async function fetchOnce(target: string): Promise<unknown> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
@@ -71,8 +71,26 @@ async function fetchJson(base: string, route: string): Promise<unknown> {
       throw new Error(`Response larger than ${Math.round(MAX_RESPONSE_BYTES / 1024 / 1024)} MB`);
     }
     return JSON.parse(Buffer.from(body).toString('utf8'));
+  } catch (err) {
+    if (controller.signal.aborted) {
+      throw new Error(`No answer from ${new URL(target).host} within ${TIMEOUT_MS / 1000} s`);
+    }
+    throw err;
   } finally {
     clearTimeout(timer);
+  }
+}
+
+/** A slow or sleeping server gets a second try before it counts as unreachable. */
+async function fetchJson(base: string, route: string): Promise<unknown> {
+  const target = `${serverBase(base)}${route}`;
+  try {
+    return await fetchOnce(target);
+  } catch (err) {
+    if (!/^No answer from/.test((err as Error).message)) {
+      throw err;
+    }
+    return fetchOnce(target);
   }
 }
 

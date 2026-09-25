@@ -41,7 +41,7 @@ import { WorkspacesDialog } from '@/components/dialogs/WorkspacesDialog';
 import { MergeEditor } from '@/components/merge/MergeEditor';
 import { AddonStudio } from '@/components/addon-studio/AddonStudio';
 import { DebugToolbar } from '@/components/debug/DebugToolbar';
-import { initFeatures } from '@/features';
+import { initFeatures, initProjectsFeatures } from '@/features';
 import { isProjectsWindow, startsEmpty } from '@/lib/window-mode';
 
 export default function App() {
@@ -76,6 +76,7 @@ export default function App() {
       setOpeningProject(false);
       // The project screen's window has no editor, terminals or run bridge to feed.
       if (isProjectsWindow) {
+        initProjectsFeatures();
         return;
       }
       initRunBridge();
@@ -101,6 +102,31 @@ export default function App() {
       }
       timer = setTimeout(() => void useStore.getState().refreshProject(), 600);
     });
+  }, []);
+
+  // Project kinds arrive late: an extension's code registers its own (Paper, Leaf, Velocity …) only once it
+  // has loaded, which is after the project was first looked at. Look again when the set of kinds changes.
+  useEffect(() => {
+    const kindKey = () => registry.projectKinds().map((kind) => kind.id).join(',');
+    let known = kindKey();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const off = registry.subscribe(() => {
+      const now = kindKey();
+      if (now === known) {
+        return;
+      }
+      known = now;
+      if (timer) {
+        clearTimeout(timer);
+      }
+      timer = setTimeout(() => void useStore.getState().refreshProject(), 300);
+    });
+    return () => {
+      off();
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
   }, []);
 
   // Open files are watched one by one as well — the workspace watcher skips

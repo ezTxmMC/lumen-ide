@@ -24,8 +24,8 @@ import os from 'node:os';
 import path from 'node:path';
 
 const EXTENSION = '.lumen-addon.json';
-/** `user.` from the add-on studio, `ext.` from an extension server. */
-const ID_PATTERN = /^(?:user|ext)\.[a-z0-9][a-z0-9._-]*$/;
+/** `user.` from the add-on studio, `addon.` from an add-on server; `ext.` is the deprecated old prefix. */
+const ID_PATTERN = /^(?:user|addon|ext)\.[a-z0-9][a-z0-9._-]*$/;
 const MAX_ADDON_BYTES = 4 * 1024 * 1024;
 const MAX_OUTPUT = 512 * 1024;
 const SHELL_TIMEOUT_MS = 60_000;

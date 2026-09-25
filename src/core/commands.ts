@@ -226,6 +226,7 @@ function viewCommands({ s, effects, cat }: Ctx): Command[] {
 function workspaceCommands({ s, cat }: Ctx): Command[] {
   return [
     { id: 'workspace.manage', title: c('workspace.manage'), category: cat.workspace, run: () => s().openDialog('workspaces') },
+    { id: 'workspace.importFolder', title: t('workspaces.importDir'), category: cat.workspace, run: () => s().importWorkspaceFolder() },
     { id: 'workspace.addFolder', title: c('workspace.addFolder'), category: cat.workspace, run: () => s().addFolderToWorkspace() },
     { id: 'workspace.save', title: c('workspace.save'), category: cat.workspace, run: () => { s().saveWorkspace(); }, when: () => Boolean(s().workspace) },
     ...s().workspaces.map<Command>((ws) => ({
@@ -233,12 +234,6 @@ function workspaceCommands({ s, cat }: Ctx): Command[] {
       title: `${c('workspace.openPrefix')}: ${ws.name}${ws.id === s().currentWorkspaceId ? '  ✓' : ''}`,
       category: cat.workspace,
       run: () => s().openWorkspace(ws.id),
-    })),
-    ...s().extraFolders.map<Command>((folder) => ({
-      id: `workspace.activate.${folder}`,
-      title: `${c('workspace.activatePrefix')}: ${folder.split(/[\\/]/).filter(Boolean).pop() ?? folder}`,
-      category: cat.workspace,
-      run: () => s().setActiveFolder(folder),
     })),
   ];
 }

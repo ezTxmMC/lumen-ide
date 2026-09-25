@@ -26,8 +26,8 @@
 /** The version of the manifest format this server understands. */
 export const MANIFEST_SCHEMA = 1;
 
-/** Ids: `ext.` for server extensions, `user.` for ones built by hand. */
-export const ID_PATTERN = /^(?:ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/;
+/** Ids: `addon.` for server add-ons, `user.` for ones built by hand. `ext.` is the old prefix — deprecated, still accepted. */
+export const ID_PATTERN = /^(?:addon|ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/;
 
 /** A semantic version, optionally with a prerelease tag (`1.2.0-beta.1`). */
 export const VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
@@ -351,6 +351,32 @@ function checkOpenWith(entry, index, commandIds) {
   return { command, title, patterns, ...(entry.i18n ? { i18n: entry.i18n } : {}) };
 }
 
+/** SDKs the extension needs — `java`, `node`, `python` … as Lumen's SDK settings know them. */
+function checkRequires(value) {
+  const entries = list(value, 'requires', { max: 16 });
+  const seen = new Set();
+  return entries.map((entry, index) => {
+    const where = `requires[${index}]`;
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      fail(`${where} must be an object`, where);
+    }
+    const sdk = text(entry.sdk, `${where}.sdk`, { max: 32, required: true });
+    if (!/^[a-z][a-z0-9-]*$/.test(sdk)) {
+      fail(`${where}.sdk must be an SDK id such as "java" or "node"`, `${where}.sdk`);
+    }
+    if (seen.has(sdk)) {
+      fail(`${where}.sdk "${sdk}" is listed twice`, `${where}.sdk`);
+    }
+    seen.add(sdk);
+    const version = text(entry.version, `${where}.version`, { max: 32 });
+    if (version && !/^\d+(\.\d+){0,2}$/.test(version)) {
+      fail(`${where}.version must be a number such as 17 or 3.9`, `${where}.version`);
+    }
+    const reason = text(entry.reason, `${where}.reason`, { max: 160 });
+    return { sdk, ...(version ? { version } : {}), ...(reason ? { reason } : {}) };
+  });
+}
+
 /** The oldest Lumen the extension needs: a version number such as `0.5.0`. */
 function checkMinAppVersion(value) {
   const version = text(value, 'minAppVersion', { max: 32 });
@@ -387,7 +413,11 @@ export function checkManifest(raw) {
 
   const id = text(raw.id, 'id', { max: 64, required: true });
   if (!ID_PATTERN.test(id)) {
-    fail('id must start with "ext." or "user." and contain only lowercase letters, digits, dots, hyphens and underscores', 'id');
+    fail('id must start with "addon." or "user." ("ext." is deprecated) and contain only lowercase letters, digits, dots, hyphens and underscores', 'id');
+  }
+
+  if (id.startsWith('ext.')) {
+    console.warn(`[deprecated] ${id}: the "ext." id prefix is deprecated — new add-ons should use "addon."`);
   }
 
   const version = text(raw.version, 'version', { max: 64, required: true });
@@ -437,6 +467,7 @@ export function checkManifest(raw) {
     fail('commands needs code.main — without code a command does nothing', 'code');
   }
 
+  const requires = checkRequires(raw.requires);
   const keywords = list(raw.keywords, 'keywords', { max: 16 });
   keywords.forEach((word, i) => text(word, `keywords[${i}]`, { max: 40, required: true }));
 
@@ -462,6 +493,7 @@ export function checkManifest(raw) {
     views,
     commands,
     ...(openWith.length ? { openWith } : {}),
+    ...(requires.length ? { requires } : {}),
     ...(code ? { code } : {}),
     addon,
   };

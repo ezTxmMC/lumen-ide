@@ -204,7 +204,7 @@ function ChoiceGroups({ groups, value, active, mono, onActive, onPick }: {
 }
 
 function ComboSearchBar({ inputRef, query, onQuery, onKeyDown, activeId, loading, count }: {
-  inputRef: React.RefObject<HTMLInputElement>;
+  inputRef: React.RefObject<HTMLInputElement | null>;
   query: string;
   onQuery(query: string): void;
   onKeyDown(event: ReactKeyboardEvent): void;

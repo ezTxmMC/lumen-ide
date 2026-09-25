@@ -18,9 +18,10 @@ import { create } from 'zustand';
 import { useStore } from '@/state/store';
 import { t } from '@/i18n';
 import { javaProvider } from './java';
+import { toolProviders } from './tools';
 import type { InstallProgress, InstalledSdk, SdkEnvironment, SdkPackage, SdkProvider } from './types';
 
-export const SDK_PROVIDERS: SdkProvider[] = [javaProvider];
+export const SDK_PROVIDERS: SdkProvider[] = [javaProvider, ...toolProviders];
 
 export function sdkProvider(id: string): SdkProvider | null {
   return SDK_PROVIDERS.find((p) => p.id === id) ?? null;
@@ -163,7 +164,8 @@ export async function detectInstalled(providerId = 'java') {
   }
 }
 
-let catalogRequest: Promise<void> | null = null;
+/** The catalogue request running for each provider. */
+const catalogRequests = new Map<string, Promise<void>>();
 
 export function loadCatalog(providerId = 'java', force = false): Promise<void> {
   const provider = sdkProvider(providerId);
@@ -177,8 +179,9 @@ export function loadCatalog(providerId = 'java', force = false): Promise<void> {
   if (fresh && !force) {
     return Promise.resolve();
   }
-  if (catalogRequest && !force) {
-    return catalogRequest;
+  const running = catalogRequests.get(providerId);
+  if (running && !force) {
+    return running;
   }
 
   useSdk.setState({ catalogLoading: true, catalogError: null });
@@ -192,13 +195,13 @@ export function loadCatalog(providerId = 'java', force = false): Promise<void> {
     } catch (err) {
       useSdk.setState({ catalogError: (err as Error).message });
     } finally {
-      if (catalogRequest === request) {
-        catalogRequest = null;
+      if (catalogRequests.get(providerId) === request) {
+        catalogRequests.delete(providerId);
       }
       useSdk.setState({ catalogLoading: false });
     }
   })();
-  catalogRequest = request;
+  catalogRequests.set(providerId, request);
   return request;
 }
 

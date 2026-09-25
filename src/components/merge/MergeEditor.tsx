@@ -307,7 +307,7 @@ function Pane({ title, label, tone, host, className = '' }: {
   label?: string;
   /** Tailwind class of the dot beside the title. */
   tone: string;
-  host: React.RefObject<HTMLDivElement>;
+  host: React.RefObject<HTMLDivElement | null>;
   className?: string;
 }) {
   return (

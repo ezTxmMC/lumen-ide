@@ -22,7 +22,7 @@ import {
   openProject,
   useProjectSwitcher,
 } from "@/lib/open-project";
-import { type RecentProject, useStore } from "@/state/store";
+import { type RecentProject, useStore, type WorkspaceDef } from "@/state/store";
 import {
   AppWindow,
   Check,
@@ -30,6 +30,7 @@ import {
   FolderGit2,
   FolderOpen,
   FolderPlus,
+  Layers,
   Search,
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -58,7 +59,9 @@ export function ProjectSwitcher() {
   const open = useProjectSwitcher((s) => s.open);
   const button = useRef<HTMLButtonElement>(null);
 
-  const label = project?.name ??
+  // In a workspace the button names the workspace, not whichever project happens to be its first folder.
+  const workspaceName = useStore((s) => s.workspaces.find((w) => w.id === s.currentWorkspaceId)?.name ?? null);
+  const label = workspaceName ?? project?.name ??
     (workspace ? baseName(workspace) : t("projectSwitcher.noProject"));
 
   return (
@@ -95,7 +98,7 @@ export function ProjectSwitcher() {
 /** Where the popup sits: under its button, or centred under the title bar when opened by command. */
 function usePopupPosition(
   anchor: HTMLElement | null,
-  panel: React.RefObject<HTMLDivElement>,
+  panel: React.RefObject<HTMLDivElement | null>,
 ) {
   const [position, setPosition] = useState<{ left: number; top: number }>({
     left: 0,
@@ -115,7 +118,7 @@ function usePopupPosition(
 
 /** A click beside the popup, or the window losing focus, closes it. */
 function useOutsideClose(
-  panel: React.RefObject<HTMLDivElement>,
+  panel: React.RefObject<HTMLDivElement | null>,
   onClose: () => void,
 ) {
   useEffect(() => {
@@ -188,6 +191,45 @@ function SwitcherEntries(
   );
 }
 
+/** Saved workspaces (several folders together), one click to open. */
+function SwitcherWorkspaces({ list, index, onHover, onOpen }: {
+  list: WorkspaceDef[];
+  index: number;
+  onHover(index: number): void;
+  onOpen(id: string): void;
+}) {
+  const t = useT();
+  const currentId = useStore((s) => s.currentWorkspaceId);
+  if (!list.length) {
+    return null;
+  }
+  return (
+    <div className="mb-1">
+      <div className="px-2 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-subtle">
+        {t("workspaces.recent")}
+      </div>
+      {list.map((ws, i) => (
+        <button
+          key={ws.id}
+          onClick={() => onOpen(ws.id)}
+          onMouseEnter={() => onHover(i)}
+          title={ws.folders.join("\n")}
+          className={[
+            "lm-transition relative flex w-full items-center gap-2 rounded-lumen-sm px-2 py-1.5 text-left",
+            i === index ? "bg-hover text-fg" : "text-muted",
+          ].join(" ")}
+        >
+          <span className="absolute inset-y-1 left-0 w-[3px] rounded" style={{ background: ws.color }} />
+          <span className="w-3 shrink-0 text-accent">{ws.id === currentId && <Check size={12} />}</span>
+          <Layers size={12} className="shrink-0 opacity-80" />
+          <span className="min-w-0 flex-1 truncate text-[12.5px]">{ws.name}</span>
+          <span className="shrink-0 text-[10.5px] text-subtle">{t("workspaces.folders", { count: ws.folders.length })}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function SwitcherActions({ onRun }: { onRun(fn: () => void): () => void }) {
   const t = useT();
   const actions = [
@@ -202,6 +244,12 @@ function SwitcherActions({ onRun }: { onRun(fn: () => void): () => void }) {
       label: t("projectSwitcher.newProject"),
       keys: formatBindingsFor("project.new"),
       run: () => useStore.getState().setNewProjectOpen(true),
+    },
+    {
+      icon: Layers,
+      label: t("shell.dialog.workspaces"),
+      keys: formatBindingsFor("workspace.manage"),
+      run: () => useStore.getState().openDialog("workspaces"),
     },
     {
       icon: AppWindow,
@@ -257,7 +305,22 @@ function SwitcherPopup(
       ),
     [recent, query],
   );
-  const index = Math.min(selected, Math.max(0, list.length - 1));
+  const workspaces = useStore((s) => s.workspaces);
+  const inWorkspace = useStore((s) => s.currentWorkspaceId !== null);
+  const wsList = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return [...workspaces]
+      .sort((a, b) => b.openedAt - a.openedAt)
+      .filter((ws) => !needle || `${ws.name} ${ws.folders.join(" ")}`.toLowerCase().includes(needle))
+      .slice(0, 6);
+  }, [workspaces, query]);
+  // One row cursor over both lists: the workspaces first, then the recent projects.
+  const total = wsList.length + list.length;
+  const index = Math.min(selected, Math.max(0, total - 1));
+  const openWs = (id: string) => {
+    onClose();
+    void useStore.getState().openWorkspace(id);
+  };
 
   const choose = (entry: RecentProject | undefined) => {
     if (!entry || missing.has(entry.path)) {
@@ -273,9 +336,15 @@ function SwitcherPopup(
 
   const onKey = (event: React.KeyboardEvent) => {
     const keys: Record<string, () => void> = {
-      ArrowDown: () => setSelected(Math.min(index + 1, list.length - 1)),
+      ArrowDown: () => setSelected(Math.min(index + 1, total - 1)),
       ArrowUp: () => setSelected(Math.max(index - 1, 0)),
-      Enter: () => choose(list[index]),
+      Enter: () => {
+        if (index < wsList.length) {
+          openWs(wsList[index].id);
+          return;
+        }
+        choose(list[index - wsList.length]);
+      },
       Escape: onClose,
     };
     const handler = keys[event.key];
@@ -317,10 +386,11 @@ function SwitcherPopup(
       </label>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-1">
+        <SwitcherWorkspaces list={wsList} index={index} onHover={setSelected} onOpen={openWs} />
         <div className="px-2 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-subtle">
           {t("projectSwitcher.recent")}
         </div>
-        {!list.length && (
+        {!list.length && !wsList.length && (
           <p className="px-2 py-3 text-[12px] text-subtle">
             {query.trim()
               ? t("projectSwitcher.noMatch", { query: query.trim() })
@@ -329,10 +399,10 @@ function SwitcherPopup(
         )}
         <SwitcherEntries
           list={list}
-          index={index}
-          workspace={workspace}
+          index={index - wsList.length}
+          workspace={inWorkspace ? null : workspace}
           missing={missing}
-          onHover={setSelected}
+          onHover={(i) => setSelected(wsList.length + i)}
           onChoose={choose}
         />
       </div>

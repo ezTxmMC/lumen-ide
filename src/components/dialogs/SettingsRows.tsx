@@ -15,20 +15,17 @@
 
 import { useState, type ReactNode } from 'react';
 import {
-  Blocks, Coffee, Download, Keyboard, Palette, RefreshCw, type Settings,
+  Coffee, Download, Keyboard, Palette, RefreshCw, type Settings,
 } from 'lucide-react';
 import { useStore } from '@/state/store';
 import { statusDot } from '@/lib/status';
-import { LANGUAGES, getLanguage, useT } from '@/i18n';
-import { localizeSetting } from '@/core/extensions/localize';
+import { LANGUAGES, useT } from '@/i18n';
 import { checkForUpdates, downloadUpdate, installUpdate, useUpdater } from '@/features/updater';
-import { extensions as installedExtensions } from '@/core/extensions/manager';
-import { ExtensionSettingRow, settingVisible } from '../settings/ExtensionSettingRow';
 import { Button, Empty, Select, Slider, Toggle } from '../ui';
 import type { lsp } from '@/core/lsp/manager';
 import type { terminals } from '@/lib/terminals';
 
-export type SectionId = 'general' | 'editor' | 'formatting' | 'font' | 'lsp' | 'terminal' | 'sdks' | 'extensions' | 'window' | 'updates' | 'about';
+export type SectionId = 'general' | 'editor' | 'formatting' | 'font' | 'lsp' | 'terminal' | 'sdks' | 'window' | 'updates' | 'about';
 
 export interface Row {
   section: SectionId;
@@ -59,7 +56,6 @@ export interface SettingsData {
   language: State['language'];
   setLanguage: State['setLanguage'];
   navSide: State['layout']['navSide'];
-  extensionSettings: State['extensionSettings'];
   workspace: State['workspace'];
   system: string;
   stats: { addons: number; active: number; languages: number; lspLanguages: number; themes: number; kinds: number; templates: number; };
@@ -499,55 +495,6 @@ export function updateRows(d: SettingsData): Row[] {
       node: <UpdateStatus />,
     },
     toggle(d, 'updates', 'autoUpdate', t('updater.auto'), t('updater.autoHint')),
-  ];
-}
-
-export function extensionRows(d: SettingsData): Row[] {
-  const { t, extensionSettings, openDialog } = d;
-  return [
-    ...installedExtensions.list().flatMap(({ manifest }) => {
-      const settings = (manifest.settings ?? []).map((setting) => localizeSetting(setting, getLanguage()));
-      const values = extensionSettings[manifest.id];
-      const visible = settings.filter((setting) => settingVisible(setting, settings, values));
-      return visible.flatMap((setting, index): Row[] => {
-        // The extension's name belongs in the search text: typing “Go” should
-        // find its settings, not merely match a label.
-        const text = `${manifest.name} ${setting.section ?? ''} ${setting.label} ${setting.hint ?? ''} ${setting.key}`;
-        const row: Row = {
-          section: 'extensions',
-          text,
-          node: <ExtensionSettingRow extensionId={manifest.id} extensionName={manifest.name} setting={setting} />,
-        };
-        const opensGroup = index === 0 || visible[index - 1].section !== setting.section;
-        if (!opensGroup) {
-          return [row];
-        }
-        const heading = setting.section ? `${manifest.name} — ${setting.section}` : manifest.name;
-        return [{
-          section: 'extensions',
-          text,
-          node: <h4 className="mt-3 border-b border-edge pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-subtle">{heading}</h4>,
-        }, row];
-      });
-    }),
-    ...(installedExtensions.list().some(({ manifest }) => manifest.settings?.length)
-      ? []
-      : [{
-          section: 'extensions' as SectionId,
-          text: 'extensions',
-          node: (
-            <Empty
-              icon={<Blocks size={22} />}
-              title={t('extensions.noServers')}
-              hint={t('extensions.subtitle')}
-              action={(
-                <Button size="sm" onClick={() => openDialog('extensions', 'servers')}>
-                  {t('extensions.servers')}
-                </Button>
-              )}
-            />
-          ),
-        }]),
   ];
 }
 

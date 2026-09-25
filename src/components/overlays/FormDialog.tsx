@@ -142,6 +142,12 @@ export function FormDialog() {
         </div>
         <div className="max-h-[60vh] overflow-y-auto px-4 py-3">
           {spec.description && <p className="mb-3 text-[12px] text-subtle">{tr(spec.description)}</p>}
+          {spec.detail && (
+            <div className="mb-3">
+              <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-[0.09em] text-subtle">{tr(spec.detail.label)}</div>
+              <code className="block select-all break-all rounded-lumen-sm border border-edge bg-input px-2.5 py-1.5 font-mono text-[11px] text-muted">{spec.detail.value}</code>
+            </div>
+          )}
           <FormFields
             fields={spec.fields}
             values={values}

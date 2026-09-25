@@ -105,7 +105,7 @@ function WorkspaceTiles({ workspaces }: { workspaces: WorkspaceDef[]; }) {
   const t = useT();
   return (
     <div className="mb-4">
-      <Heading>{t('welcome.screen.workspaces')}</Heading>
+      <Heading>{t('workspaces.recent')}</Heading>
       <div className="grid grid-cols-2 gap-1.5">
         {[...workspaces].sort((a, b) => b.openedAt - a.openedAt).slice(0, 4).map((ws) => (
           <button

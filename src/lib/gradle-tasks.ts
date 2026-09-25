@@ -102,7 +102,7 @@ export async function restoreGradleTasks(root: string): Promise<boolean> {
   if (lists.get(root)) {
     return true;
   }
-  const raw = await window.lumen.fs.readFile(await projectDataFile(root, CACHE_FILE)).catch(() => null);
+  const raw = await window.lumen.fs.readFileIfExists(await projectDataFile(root, CACHE_FILE)).catch(() => null);
   if (!raw) {
     return false;
   }

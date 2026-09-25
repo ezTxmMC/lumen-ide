@@ -51,6 +51,7 @@ function drain(id: string, s: { child: ChildProcess; buffer: Buffer; }) {
 const lumen = {
   fs: {
     readFile: (p: string) => fs.readFile(p, 'utf8'),
+    readFileIfExists: (p: string) => fs.readFile(p, 'utf8').catch(() => null),
     writeFile: async (p: string, c: string) => { await fs.mkdir(path.dirname(p), { recursive: true }); await fs.writeFile(p, c); return true; },
     create: async (p: string, dir: boolean) => {
       if (dir) {
