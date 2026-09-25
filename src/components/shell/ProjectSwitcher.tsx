@@ -98,7 +98,7 @@ export function ProjectSwitcher() {
 /** Where the popup sits: under its button, or centred under the title bar when opened by command. */
 function usePopupPosition(
   anchor: HTMLElement | null,
-  panel: React.RefObject<HTMLDivElement>,
+  panel: React.RefObject<HTMLDivElement | null>,
 ) {
   const [position, setPosition] = useState<{ left: number; top: number }>({
     left: 0,
@@ -118,7 +118,7 @@ function usePopupPosition(
 
 /** A click beside the popup, or the window losing focus, closes it. */
 function useOutsideClose(
-  panel: React.RefObject<HTMLDivElement>,
+  panel: React.RefObject<HTMLDivElement | null>,
   onClose: () => void,
 ) {
   useEffect(() => {

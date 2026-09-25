@@ -797,7 +797,7 @@ function useTreeCallbacks(d: TreeCallbackDeps) {
 
 function TreeBody({ api, containerRef, entries, extraFolders, collapsedRoots, onToggleRoot, onKeyDown, focusOnly, endDrag }: {
   api: TreeApi;
-  containerRef: React.RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
   entries: DirEntry[] | null;
   extraFolders: string[];
   collapsedRoots: Set<string>;

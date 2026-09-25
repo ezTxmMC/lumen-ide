@@ -162,7 +162,7 @@ function relativeTarget(fileName: string, packageName: string, basePackage: stri
 }
 
 function NameField({ input, name, isClass, problem, relative, onName }: {
-  input: RefObject<HTMLInputElement>;
+  input: RefObject<HTMLInputElement | null>;
   name: string;
   isClass: boolean;
   problem: string | null;

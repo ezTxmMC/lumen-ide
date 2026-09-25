@@ -193,7 +193,7 @@ function ComposerBar({ info, running, canSend, canAttach, picker, onFiles, onSen
   running: boolean;
   canSend: boolean;
   canAttach: boolean;
-  picker: RefObject<HTMLInputElement>;
+  picker: RefObject<HTMLInputElement | null>;
   onFiles: (list: File[]) => void;
   onSend: () => void;
 }) {

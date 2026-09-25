@@ -285,7 +285,7 @@ function EverywhereTabs({ tab, onTab }: { tab: EverywhereTab; onTab(id: Everywhe
 }
 
 function EverywhereSearchBar({ inputRef, loading, query, onQuery, onKeyDown, placeholder, line }: {
-  inputRef: React.RefObject<HTMLInputElement>;
+  inputRef: React.RefObject<HTMLInputElement | null>;
   loading: boolean;
   query: string;
   onQuery(query: string): void;

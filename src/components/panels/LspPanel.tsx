@@ -127,7 +127,7 @@ function LogPane({ servers, logs, filter, stderr, onStderr, bottom }: {
   filter: string | null;
   stderr: boolean;
   onStderr(value: boolean): void;
-  bottom: React.RefObject<HTMLDivElement>;
+  bottom: React.RefObject<HTMLDivElement | null>;
 }) {
   const t = useT();
   return (
