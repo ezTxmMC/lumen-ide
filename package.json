@@ -1,10 +1,11 @@
 {
   "name": "lumen-ide",
   "version": "0.6.3",
-  "description": "Lumen — eine moderne, leichtgewichtige IDE mit einfachem Add-on-System",
+  "description": "Modern, lightweight and add-on based coding IDE with broad customizability.",
   "private": true,
   "type": "module",
   "main": "dist-electron/main.js",
+  "homepage": "https://github.com/ezTxmMC/lumen-ide",
   "author": {
     "name": "ezTxmMC",
     "email": "contact@eztxm.de"
@@ -85,8 +86,8 @@
     "vite-plugin-electron-renderer": "^1.0.0"
   },
   "build": {
-    "appId": "de.lumen.ide",
-    "productName": "Lumen",
+    "appId": "de.eztxm.lumen-ide",
+    "productName": "Lumen IDE",
     "directories": {
       "output": "release"
     },
@@ -107,6 +108,12 @@
         "--enable-wayland-ime",
         "--wayland-text-input-version=3"
       ]
+    },
+    "deb": {
+      "maintainer": "ezTxmMC <contact@eztxm.de>",
+      "homepage": "https://github.com/ezTxmMC/lumen-ide",
+      "synopsis": "Modern, lightweight & add-on based customizable IDE",
+      "description": "Modern, lightweight and add-on based coding IDE with broad customizability."
     },
     "win": {
       "target": [

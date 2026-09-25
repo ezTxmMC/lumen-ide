@@ -84,4 +84,6 @@ export interface SdkProvider {
   detect(): Promise<InstalledSdk[]>;
   /** Environment variables for an SDK, excluding PATH. */
   variables(sdk: Pick<InstalledSdk, 'home'>): Record<string, string>;
+  /** The folder with the executables, when it is not `<home>/bin`. */
+  binDir?(home: string, platform: string): string;
 }

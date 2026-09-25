@@ -112,7 +112,8 @@ function tokenizeFront(options: MarkupOptions, stream: StringStream, state: Mark
 
 function tokenizeComment(stream: StringStream, state: MarkupState): TokenKind {
   while (!stream.eol()) {
-    if (stream.match('-->')) { state.mode = 'text'; break; }
+    // `--!>` ends a comment as well (HTML spec: incorrectly closed comment).
+    if (stream.match('-->') || stream.match('--!>')) { state.mode = 'text'; break; }
     stream.next();
   }
   if (state.mode === 'comment') {

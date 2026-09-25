@@ -60,7 +60,10 @@ export function isProjectConfigPath(path: string): boolean {
 
 export async function loadProjectConfig(root: string): Promise<ProjectConfig> {
   try {
-    const raw = await window.lumen.fs.readFile(await projectConfigFile(root));
+    const raw = await window.lumen.fs.readFileIfExists(await projectConfigFile(root));
+    if (raw === null) {
+      return structuredClone(EMPTY_PROJECT_CONFIG);
+    }
     const parsed = JSON.parse(raw) as Partial<ProjectConfig>;
     return {
       name: typeof parsed.name === 'string' ? parsed.name : undefined,

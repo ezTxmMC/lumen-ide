@@ -60,7 +60,7 @@ export function projectContext(root: string, platform: string): ProjectContext {
       if (hit) {
         return hit;
       }
-      const read = window.lumen.fs.readFile(join(root, relative)).catch(() => null);
+      const read = window.lumen.fs.readFileIfExists(join(root, relative)).catch(() => null);
       readCache.set(relative, read);
       return read;
     },
@@ -293,7 +293,7 @@ export function indentUnitOf(text: string, fallback = '    '): string {
 
 /** Every line belonging to a TOML section (`[dependencies]`). */
 export function tomlSection(text: string, section: string): string {
-  const escaped = section.replace(/[.[\]]/g, '\\$&');
+  const escaped = section.replace(/[.[\]\\]/g, '\\$&');
   const m = new RegExp(`^\\[${escaped}\\]\\s*$`, 'm').exec(text);
   if (!m) {
     return '';

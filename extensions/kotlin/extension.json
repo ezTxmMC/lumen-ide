@@ -11,5 +11,9 @@
   "keywords": [
     "kotlin"
   ],
+  "requires": [
+    {"sdk": "java", "reason": "Kotlin compiles for the JVM"},
+    {"sdk": "gradle"}
+  ],
   "minAppVersion": "0.5.0"
 }

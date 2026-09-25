@@ -11,13 +11,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import {
   ChevronRight, ChevronsDownUp, Clipboard, ClipboardPaste, Copy, ExternalLink, FilePlus, Package, FolderInput, FolderOpen, FolderPlus,
-  PenLine, RefreshCw, Scissors, SquareTerminal, Star, Trash2, X,
+  PenLine, RefreshCw, Scissors, SquareTerminal, Trash2, Boxes, X,
 } from 'lucide-react';
 import { useStore } from '@/state/store';
 import { fileGlyph, folderIcon, folderTint } from '@/lib/file-icon';
 import { FolderIcon, IconGlyph, useIconPackVersion } from '../icons/FileIcon';
+import { useMinecraftFolderIcon } from '@/lib/minecraft-icon';
 import { useT } from '@/i18n';
 import { openNewJvm } from '@/lib/new-jvm-class';
+import { openNewModule } from '@/lib/new-module';
 import { NewJvmDialog } from '../dialogs/NewJvmDialog';
 import { formatBinding } from '@/core/keybindings';
 import { Button, Empty } from '../ui';
@@ -213,6 +215,7 @@ function RowIcon({ entry, open, glyph, folderShape }: {
   glyph: ReturnType<typeof fileGlyph> | null;
   folderShape: boolean;
 }) {
+  const image = useMinecraftFolderIcon(entry.isDirectory ? entry.path : '');
   if (!entry.isDirectory) {
     return (
       <span className="flex w-[15px] shrink-0 justify-center">
@@ -225,9 +228,9 @@ function RowIcon({ entry, open, glyph, folderShape }: {
       <ChevronRight
         size={13}
         className="lm-transition shrink-0 opacity-70"
-        style={{ transform: open ? 'rotate(90deg)' : 'none', color: folderShape ? undefined : folderTint(entry.name) }}
+        style={{ transform: open ? 'rotate(90deg)' : 'none', color: folderShape || image ? undefined : folderTint(entry.name) }}
       />
-      <FolderIcon name={entry.name} open={open} size={14} />
+      {image ? <img src={image} width={14} height={14} alt="" className="shrink-0" draggable={false} /> : <FolderIcon name={entry.name} open={open} size={14} />}
     </>
   );
 }
@@ -482,6 +485,7 @@ function ContextMenu({ menu, api, onClose }: { menu: MenuState; api: TreeApi; on
     ...(isJvm ? [
       { label: t('explorer.jvmNewClass'), icon: FilePlus, run: () => openNewJvm(dir, 'class') },
       { label: t('explorer.jvmNewPackage'), icon: Package, run: () => openNewJvm(dir, 'package') },
+      { label: t('explorer.moduleNew'), icon: Boxes, run: () => void openNewModule(dir) },
       'sep' as const,
     ] : []),
     { label: t('explorer.newFile'), icon: FilePlus, run: () => api.startCreate(false, dir) },
@@ -578,8 +582,10 @@ function ExplorerHeader({ workspace, extraFolders, onCreate, onRefresh, onCollap
   const workspaceName = useStore((s) => s.workspaces.find((w) => w.id === s.currentWorkspaceId)?.name ?? null);
   const multiRoot = extraFolders.length > 0;
   const baseName = workspace.split(/[\\/]/).filter(Boolean).pop();
+  const image = useMinecraftFolderIcon(multiRoot ? '' : workspace);
   return (
     <div className="flex items-center gap-1 border-b border-edge px-2 py-1.5">
+      {image && <img src={image} width={14} height={14} alt="" className="shrink-0" draggable={false} />}
       <span
         className="flex-1 truncate text-[11px] font-semibold uppercase tracking-[0.07em] text-muted"
         title={multiRoot ? [workspace, ...extraFolders].join('\n') : workspace}
@@ -822,11 +828,11 @@ function TreeBody({ api, containerRef, entries, extraFolders, collapsedRoots, on
         endDrag();
       } }}
     >
-      {multiRoot && <RootHeader path={root} active api={api} />}
-      {creating?.dir === root && <CreateRow depth={0} api={api} />}
-      {entries && (!multiRoot || !collapsedRoots.has(root)) && <Children entries={entries} depth={0} api={api} parent={null} />}
-      {entries?.length === 0 && !creating && <Empty title={t('explorer.folderEmpty')} hint={t('explorer.folderEmptyHint')} />}
-      {extraFolders.map((folder) => (
+      {!multiRoot && creating?.dir === root && <CreateRow depth={0} api={api} />}
+      {!multiRoot && entries && <Children entries={entries} depth={0} api={api} parent={null} />}
+      {!multiRoot && entries?.length === 0 && !creating && <Empty title={t('explorer.folderEmpty')} hint={t('explorer.folderEmptyHint')} />}
+      {/* Several folders: all alike, each collapsible, in the order of their names. */}
+      {multiRoot && sortedByName([root, ...extraFolders]).map((folder) => (
         <ExtraRoot
           key={folder}
           path={folder}
@@ -961,14 +967,14 @@ export function Explorer() {
  * Several folders (a workspace)
  * ------------------------------------------------------------------ */
 
-function RootHeader({ path, active, api, collapsed, onToggle }: {
+function RootHeader({ path, api, collapsed, onToggle }: {
   path: string;
-  active?: boolean;
   api: TreeApi;
   collapsed?: boolean;
   onToggle?: () => void;
 }) {
   const t = useT();
+  const image = useMinecraftFolderIcon(path);
   const name = path.split(/[\\/]/).filter(Boolean).pop() ?? path;
   const [menu, setMenu] = useState<{ x: number; y: number; } | null>(null);
   return (
@@ -979,14 +985,11 @@ function RootHeader({ path, active, api, collapsed, onToggle }: {
       onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setMenu({ x: e.clientX, y: e.clientY }); }}
     >
       <ChevronRight size={12} className={`lm-transition shrink-0 ${collapsed ? '' : 'rotate-90'}`} />
+      {image && <img src={image} width={13} height={13} alt="" className="shrink-0" draggable={false} />}
       <span className="truncate">{name}</span>
-      {active && <span className="rounded-full bg-accent/15 px-1.5 text-[9.5px] normal-case tracking-normal text-accent">{t('workspaces.active')}</span>}
       <span className="flex-1" />
       <span className="hidden items-center gap-0.5 group-hover:flex" onClick={(e) => e.stopPropagation()}>
         <Button size="sm" title={t('common.add')} onClick={() => api.startCreate(false, path)}><FilePlus size={11} /></Button>
-        {!active && (
-          <Button size="sm" title={t('workspaces.setActive')} onClick={() => void useStore.getState().setActiveFolder(path)}><Star size={11} /></Button>
-        )}
       </span>
       {menu && (
         <SharedContextMenu
@@ -994,7 +997,6 @@ function RootHeader({ path, active, api, collapsed, onToggle }: {
           y={menu.y}
           onClose={() => setMenu(null)}
           items={[
-            { label: t('workspaces.setActive'), icon: Star, disabled: active, run: () => void useStore.getState().setActiveFolder(path) },
             { label: t('workspaces.removeFolder'), icon: X, run: () => void useStore.getState().removeFolderFromWorkspace(path) },
             'sep',
             { label: t('workspaces.addFolder'), icon: FolderInput, run: () => void useStore.getState().addFolderToWorkspace() },
@@ -1003,6 +1005,12 @@ function RootHeader({ path, active, api, collapsed, onToggle }: {
       )}
     </div>
   );
+}
+
+/** Folder paths in the order of their names, ascending; digits count as numbers (`app2` before `app10`). */
+export function sortedByName(folders: string[]): string[] {
+  const name = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
+  return [...folders].sort((a, b) => name(a).localeCompare(name(b), undefined, { sensitivity: 'base', numeric: true }));
 }
 
 function ExtraRoot({ path, api, collapsed, onToggle }: {

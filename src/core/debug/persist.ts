@@ -71,7 +71,7 @@ function cleanBreakpoint(value: unknown): StoredBreakpoint | null {
 }
 
 export async function loadDebugState(root: string): Promise<DebugState> {
-  const raw = await window.lumen.fs.readFile(await statePath(root)).catch(() => null);
+  const raw = await window.lumen.fs.readFileIfExists(await statePath(root)).catch(() => null);
   if (!raw) {
     return structuredClone(EMPTY_DEBUG_STATE);
   }

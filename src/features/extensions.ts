@@ -191,6 +191,10 @@ export async function init() {
   registry.subscribe(syncActivation);
   extensions.subscribe(syncActivation);
   syncActivation();
+  // Badges on the dock icons need the views' content before a panel is ever opened.
+  extensionHost.prefetchDocked();
+  extensions.subscribe(() => extensionHost.prefetchDocked());
+  registry.subscribe(() => extensionHost.prefetchDocked());
   registerCommandProvider(extensionCommands);
   registerCommandProvider(manifestCommands);
 

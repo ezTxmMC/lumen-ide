@@ -19,6 +19,9 @@
     "browser"
   ],
   "minAppVersion": "0.5.0",
+  "requires": [
+    {"sdk": "node"}
+  ],
   "settings": [
     {
       "key": "port",

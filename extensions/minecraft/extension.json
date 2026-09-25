@@ -25,6 +25,11 @@
     "plugin"
   ],
   "minAppVersion": "0.5.0",
+  "requires": [
+    {"sdk": "java", "reason": "Plugins and mods are built with Java"},
+    {"sdk": "gradle", "reason": "Most templates build with Gradle"},
+    {"sdk": "maven", "reason": "Bukkit and Velocity templates can build with Maven"}
+  ],
   "settings": [
     {
       "key": "cacheHours",

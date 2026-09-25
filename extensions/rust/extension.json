@@ -11,5 +11,8 @@
   "keywords": [
     "rust"
   ],
+  "requires": [
+    {"sdk": "rust", "reason": "The Rust toolchain: rustc and cargo"}
+  ],
   "minAppVersion": "0.5.0"
 }

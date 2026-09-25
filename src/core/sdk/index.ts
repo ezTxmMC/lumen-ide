@@ -13,6 +13,8 @@
 export * from './types';
 export * from './env';
 export * from './state';
+export { TOOLS, toolInfo, sdkTitle, type ToolInfo } from './tools';
+export * from './requirements';
 export { javaProvider, javaDistribution, JAVA_DISTRIBUTIONS, compareVersions, normalizeJavaVersion } from './java';
 export {
   createGradleImportDecorator, createJavacBackendDecorator, createJvmServerDecorator, createNetBeansDecorator, javacBackendArgs, javacBackendRuntime,

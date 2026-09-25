@@ -135,8 +135,98 @@ function ToolRow({ item }: { item: ItemOf<'tool'>; }) {
   );
 }
 
+interface AskQuestion {
+  question: string;
+  header?: string;
+  multiSelect?: boolean;
+  options: { label: string; description?: string; }[];
+}
+
+/** The questions of an `AskUserQuestion` call, when its input has the expected shape. */
+function questionsOf(input: Record<string, unknown>): AskQuestion[] {
+  if (!Array.isArray(input.questions)) {
+    return [];
+  }
+  return (input.questions as AskQuestion[]).filter((entry) => entry && typeof entry.question === 'string' && Array.isArray(entry.options));
+}
+
+/** The agent asks the user to choose — one answer per question, or free text under “Other”. */
+function QuestionCard({ agentKey, item, questions }: { agentKey: string; item: ItemOf<'permission'>; questions: AskQuestion[]; }) {
+  const t = useT();
+  const pendingNow = item.state === 'pending';
+  const [picked, setPicked] = useState<Record<string, string[]>>({});
+  const [other, setOther] = useState<Record<string, string>>({});
+
+  const toggle = (entry: AskQuestion, label: string) => setPicked((current) => {
+    const now = current[entry.question] ?? [];
+    if (entry.multiSelect) {
+      return { ...current, [entry.question]: now.includes(label) ? now.filter((value) => value !== label) : [...now, label] };
+    }
+    return { ...current, [entry.question]: [label] };
+  });
+  const answerOf = (entry: AskQuestion) => [...(picked[entry.question] ?? []), other[entry.question]?.trim()].filter(Boolean).join(', ');
+  const complete = questions.every((entry) => answerOf(entry));
+  const submit = () => void agentChat.answer(agentKey, item.requestId, true, false, undefined, Object.fromEntries(questions.map((entry) => [entry.question, answerOf(entry)])));
+
+  return (
+    <div className={`rounded-lumen border p-2.5 ${pendingNow ? 'border-accent bg-active' : 'border-edge bg-surface'}`}>
+      <div className="flex items-center gap-1.5 text-[12px] text-fg">
+        <ShieldQuestion size={13} className="shrink-0 text-accent" />
+        <span className="min-w-0 flex-1">{t('agent.ask.title')}</span>
+        {!pendingNow && <span className={`text-[10.5px] ${item.state === 'allowed' ? 'text-ok' : 'text-bad'}`}>{t(item.state === 'allowed' ? 'agent.ask.answered' : 'agent.ask.skipped')}</span>}
+      </div>
+      <div className="mt-2 space-y-3">
+        {questions.map((entry) => (
+          <div key={entry.question}>
+            {entry.header && <div className="text-[10px] uppercase tracking-[0.08em] text-subtle">{entry.header}</div>}
+            <div className="text-[12px] text-fg">{entry.question}</div>
+            <div className="mt-1.5 flex flex-col gap-1">
+              {entry.options.map((option) => {
+                const on = (picked[entry.question] ?? []).includes(option.label);
+                return (
+                  <button
+                    key={option.label}
+                    type="button"
+                    disabled={!pendingNow}
+                    onClick={() => toggle(entry, option.label)}
+                    className={[
+                      'lm-transition rounded-lumen-sm border px-2 py-1 text-left disabled:cursor-default',
+                      on ? 'border-accent bg-active text-fg' : 'border-edge text-muted enabled:hover:border-edge-strong',
+                    ].join(' ')}
+                  >
+                    <span className="block text-[12px]">{option.label}</span>
+                    {option.description && <span className="block text-[11px] text-subtle">{option.description}</span>}
+                  </button>
+                );
+              })}
+              {pendingNow && (
+                <input
+                  value={other[entry.question] ?? ''}
+                  onChange={(e) => setOther((current) => ({ ...current, [entry.question]: e.target.value }))}
+                  placeholder={t('agent.ask.other')}
+                  className="rounded-lumen-sm border border-edge bg-input px-2 py-1 text-[12px] outline-none focus:border-accent"
+                />
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      {pendingNow && (
+        <div className="mt-2 flex gap-1.5">
+          <Button size="sm" variant="solid" disabled={!complete} onClick={submit}>{t('agent.ask.submit')}</Button>
+          <Button size="sm" variant="danger" onClick={() => void agentChat.answer(agentKey, item.requestId, false)}>{t('agent.ask.skip')}</Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PermissionCard({ agentKey, item }: { agentKey: string; item: ItemOf<'permission'>; }) {
   const t = useT();
+  const questions = item.tool === 'AskUserQuestion' ? questionsOf(item.input) : [];
+  if (questions.length > 0) {
+    return <QuestionCard agentKey={agentKey} item={item} questions={questions} />;
+  }
   const [reasoning, setReasoning] = useState(false);
   const [reason, setReason] = useState('');
   const pendingNow = item.state === 'pending';

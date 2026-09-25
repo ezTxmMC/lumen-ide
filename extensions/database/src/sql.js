@@ -217,6 +217,34 @@ function castRowId(dialect, condition) {
  * strings, quoted names, comments or PostgreSQL's `$tag$` bodies. MS SQL's
  * `GO` on a line of its own separates batches as well. Empty statements go.
  */
+/**
+ * The text after any leading whitespace and line or block comments.
+ * A plain scan: a regex for this backtracks badly on many short comments.
+ */
+export function skipComments(text) {
+  let i = 0;
+  for (;;) {
+    while (i < text.length && /\s/.test(text[i])) {
+      i++;
+    }
+    if (text.startsWith('--', i)) {
+      const end = text.indexOf('\n', i);
+      i = end === -1 ? text.length : end + 1;
+      continue;
+    }
+    if (text.startsWith('/*', i)) {
+      const end = text.indexOf('*/', i + 2);
+      // An unterminated comment swallows the rest, as the regex did not match it at all: keep it as text.
+      if (end === -1) {
+        return text.slice(i);
+      }
+      i = end + 2;
+      continue;
+    }
+    return text.slice(i);
+  }
+}
+
 export function splitStatements(script, dialect = '') {
   const statements = [];
   let start = 0;
@@ -224,7 +252,7 @@ export function splitStatements(script, dialect = '') {
   const text = String(script);
   const push = (end) => {
     const statement = text.slice(start, end).trim();
-    if (statement && !/^(--[^\n]*\n?|\/\*[\s\S]*?\*\/|\s)*$/.test(statement)) {
+    if (statement && skipComments(statement) !== '') {
       statements.push(statement);
     }
   };
@@ -297,6 +325,6 @@ export function splitStatements(script, dialect = '') {
 
 /** Does a statement return rows? (A guess by its first word — for choosing how to run it.) */
 export function returnsRows(statement) {
-  const word = /^\s*(?:(?:--[^\n]*\n|\/\*[\s\S]*?\*\/)\s*)*([a-z]+)/i.exec(statement)?.[1]?.toLowerCase();
+  const word = /^[a-z]+/i.exec(skipComments(statement))?.[0]?.toLowerCase();
   return ['select', 'with', 'show', 'pragma', 'explain', 'describe', 'desc', 'values', 'table', 'call', 'exec', 'execute'].includes(word ?? '');
 }

@@ -17,5 +17,9 @@
     "properties",
     "dockerfile"
   ],
+  "requires": [
+    {"sdk": "gradle"},
+    {"sdk": "maven"}
+  ],
   "minAppVersion": "0.5.0"
 }

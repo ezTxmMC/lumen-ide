@@ -12,6 +12,7 @@
 
 import { invoke, subscribe } from './ipc';
 import type { DetectedJdk, InstallProgress, InstallRequest, SdkEnvironment } from './sdk';
+import type { DetectedTool, ToolInstallRequest, ToolPackage } from './sdk-tools';
 
 export const sdkApi = {
   /** PATH, platform and where things are stored — for the environment of tasks and terminals. */
@@ -24,5 +25,11 @@ export const sdkApi = {
   cancel: (jobId: string): Promise<boolean> => invoke('sdk:cancel', jobId),
   /** Only installations under ~/.lumen/jdks. */
   remove: (home: string): Promise<boolean> => invoke('sdk:remove', home),
+  /** The other SDKs (Node, Go, Gradle, Maven, Deno, Bun, Kotlin, Zig). */
+  tools: {
+    catalog: (toolId: string): Promise<ToolPackage[]> => invoke('sdk:tools:catalog', toolId),
+    detect: (toolId: string): Promise<DetectedTool[]> => invoke('sdk:tools:detect', toolId),
+    install: (request: ToolInstallRequest): Promise<string> => invoke('sdk:tools:install', request),
+  },
   onProgress: (cb: (progress: InstallProgress) => void) => subscribe('sdk:progress', cb),
 };

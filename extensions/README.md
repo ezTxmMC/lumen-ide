@@ -11,6 +11,19 @@ npm run check:extensions          # test against the server's and Lumen's checks
 npm run publish:ext -- --server https://lumen-extensions.eztxm.de --token "$LUMEN_EXT_TOKEN"
 ```
 
+The folder also builds on its own — it has its own `package.json`:
+
+```sh
+cd extensions
+npm install                       # esbuild, and nothing else the extensions do not bring themselves
+npm run build                     # all of them -> dist/   (npm run build -- go rust: only these)
+npm test                          # the tests the extensions keep beside their code
+npm run publish -- --server https://lumen-extensions.eztxm.de --token "$LUMEN_EXT_TOKEN"
+```
+
+Building needs `../extension-server/src/manifest.js` — the same check the server
+runs — so the folder is standalone within this repository, not outside of it.
+
 To try things out, a server of your own alongside is enough:
 
 ```sh

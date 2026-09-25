@@ -10,13 +10,14 @@
 
 import { useEffect, useState } from 'react';
 import {
-  Check, Download, FolderOpen, FolderPlus, Layers, Pencil, Plus, Star, Trash2, Upload, X,
+  Check, Download, FolderOpen, FolderPlus, Layers, Pencil, Plus, Trash2, Upload, X,
 } from 'lucide-react';
 import { useStore, type WorkspaceDef } from '@/state/store';
 import { useDialogVisible } from '@/hooks/usePresence';
 import { locale, useT } from '@/i18n';
 import { Button, Empty } from '../ui';
 import { DialogShell } from './DialogShell';
+import { sortedByName } from '../panels/Explorer';
 
 const COLORS = ['#7c8cff', '#22d3ee', '#5ecf8f', '#fbbf24', '#f472b6', '#fb7185', '#c084fc', '#f97316'];
 
@@ -63,21 +64,13 @@ function CurrentFolders({ workspace, extraFolders, title, store }: {
       <h3 className="mb-1 text-[10.5px] font-semibold uppercase tracking-[0.09em] text-subtle">
         {title}
       </h3>
-      <p className="mb-2 text-[11.5px] text-subtle">{t('workspaces.activeHint')}</p>
       <div className="lm-stagger space-y-1">
-        {[workspace, ...extraFolders].map((folder) => {
-          const active = folder === workspace;
+        {sortedByName([workspace, ...extraFolders]).map((folder) => {
           return (
             <div key={folder} className="lm-transition group flex items-center gap-2 rounded-lumen-sm border border-edge px-2.5 py-1.5 hover:bg-hover">
-              <FolderOpen size={13} className={active ? 'text-accent' : 'text-subtle'} />
+              <FolderOpen size={13} className="text-subtle" />
               <span className="text-[12.5px] text-fg">{baseName(folder)}</span>
               <span className="min-w-0 flex-1 truncate text-[11px] text-subtle" title={folder}>{folder}</span>
-              {active && <span className="rounded-full bg-accent/15 px-1.5 text-[10px] text-accent">{t('workspaces.active')}</span>}
-              {!active && (
-                <Button size="sm" title={t('workspaces.setActive')} onClick={() => void store.setActiveFolder(folder)}>
-                  <Star size={11} />
-                </Button>
-              )}
               {extraFolders.length > 0 && (
                 <Button size="sm" title={t('workspaces.removeFolder')} onClick={() => void store.removeFolderFromWorkspace(folder)}>
                   <X size={11} />
@@ -151,9 +144,9 @@ function WorkspaceCard({
     </div>
 
     <ul className="mt-2 space-y-0.5">
-      {def.folders.map((folder) => (
+      {sortedByName(def.folders).map((folder) => (
         <li key={folder} className="flex items-center gap-1.5 text-[11.5px]" title={folder}>
-          <FolderOpen size={11} className={folder === def.activeFolder ? 'text-accent' : 'text-subtle'} />
+          <FolderOpen size={11} className="text-subtle" />
           <span className={missing.has(folder) ? 'text-bad line-through' : 'text-muted'}>{baseName(folder)}</span>
           {missing.has(folder) && <span className="text-[10px] text-bad">{t('workspaces.missing')}</span>}
         </li>
@@ -240,6 +233,9 @@ export function WorkspacesDialog() {
           </Button>
           <Button size="sm" title={t('workspaces.import')} onClick={() => void store.importWorkspace()}>
             <Upload size={12} />
+          </Button>
+          <Button size="sm" title={t('workspaces.importDirHint')} onClick={() => void store.importWorkspaceFolder()}>
+            <FolderPlus size={12} /> {t('workspaces.importDir')}
           </Button>
         </div>
       }

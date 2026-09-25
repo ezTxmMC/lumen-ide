@@ -13,6 +13,8 @@ import type { NamespaceMessages } from '@/i18n';
 /** The explorer: the file tree, the context menu, name checking. */
 export default {
   de: {
+    jvmTypeKeys: 'Mit ↑ und ↓ wählen',
+    moduleNew: 'Neues Modul …', moduleWhere: 'Wird angelegt unter {path}', moduleName: 'Name des Moduls', modulePackaging: 'Packaging', modulePackagingJar: 'Modul mit Code', modulePackagingPom: 'Sammelmodul (nur weitere Module)', moduleNoBuild: 'Kein Maven- oder Gradle-Build gefunden', moduleInvalid: 'Nur Buchstaben, Ziffern, . _ -', moduleExists: '„{name}“ gibt es schon', moduleCreated: 'Modul „{name}“ angelegt',
     unsaved: 'Ungespeichert', newFileHere: 'Neue Datei hier', newFolderHere: 'Neuer Ordner hier',
     empty: 'leer', copied: 'In die Zwischenablage kopiert', clipboardUnavailable: 'Zwischenablage nicht verfügbar',
     jvmNewClass: 'Neue Klasse …', jvmNewPackage: 'Neues Paket …', jvmCreate: 'Erstellen', jvmLanguage: 'Sprache', jvmType: 'Typ',
@@ -44,6 +46,8 @@ export default {
     moveIntoItself: '„{name}“ kann nicht in sich selbst verschoben werden', alreadyExists: '„{name}“ gibt es im Zielordner schon',
   },
   en: {
+    jvmTypeKeys: 'Choose with ↑ and ↓',
+    moduleNew: 'New Module…', moduleWhere: 'Created under {path}', moduleName: 'Module name', modulePackaging: 'Packaging', modulePackagingJar: 'A module with code', modulePackagingPom: 'An aggregator (holds other modules)', moduleNoBuild: 'No Maven or Gradle build found', moduleInvalid: 'Letters, digits, . _ - only', moduleExists: '“{name}” already exists', moduleCreated: 'Module “{name}” created',
     unsaved: 'Unsaved', newFileHere: 'New File Here', newFolderHere: 'New Folder Here',
     empty: 'empty', copied: 'Copied to clipboard', clipboardUnavailable: 'Clipboard not available',
     jvmNewClass: 'New Class…', jvmNewPackage: 'New Package…', jvmCreate: 'Create', jvmLanguage: 'Language', jvmType: 'Type',
@@ -75,6 +79,8 @@ export default {
     moveIntoItself: '“{name}” cannot be moved into itself', alreadyExists: '“{name}” already exists in the target folder',
   },
   es: {
+    jvmTypeKeys: 'Elige con ↑ y ↓',
+    moduleNew: 'Nuevo módulo…', moduleWhere: 'Se crea en {path}', moduleName: 'Nombre del módulo', modulePackaging: 'Empaquetado', modulePackagingJar: 'Un módulo con código', modulePackagingPom: 'Un agregador (contiene otros módulos)', moduleNoBuild: 'No se encontró ningún build de Maven ni Gradle', moduleInvalid: 'Solo letras, dígitos, . _ -', moduleExists: '«{name}» ya existe', moduleCreated: 'Módulo «{name}» creado',
     unsaved: 'Sin guardar', newFileHere: 'Nuevo archivo aquí', newFolderHere: 'Nueva carpeta aquí',
     empty: 'vacía', copied: 'Copiado al portapapeles', clipboardUnavailable: 'Portapapeles no disponible',
     newFile: 'Nuevo archivo', newFolder: 'Nueva carpeta', rename: 'Cambiar nombre',
@@ -94,6 +100,8 @@ export default {
     moveIntoItself: '«{name}» no se puede mover dentro de sí mismo', alreadyExists: '«{name}» ya existe en la carpeta de destino',
   },
   fr: {
+    jvmTypeKeys: 'Choisir avec ↑ et ↓',
+    moduleNew: 'Nouveau module…', moduleWhere: 'Créé dans {path}', moduleName: 'Nom du module', modulePackaging: 'Packaging', modulePackagingJar: 'Un module avec du code', modulePackagingPom: 'Un agrégateur (contient d’autres modules)', moduleNoBuild: 'Aucun build Maven ou Gradle trouvé', moduleInvalid: 'Lettres, chiffres, . _ - uniquement', moduleExists: '« {name} » existe déjà', moduleCreated: 'Module « {name} » créé',
     unsaved: 'Non enregistré', newFileHere: 'Nouveau fichier ici', newFolderHere: 'Nouveau dossier ici',
     empty: 'vide', copied: 'Copié dans le presse-papiers', clipboardUnavailable: 'Presse-papiers indisponible',
     newFile: 'Nouveau fichier', newFolder: 'Nouveau dossier', rename: 'Renommer',
@@ -113,6 +121,8 @@ export default {
     moveIntoItself: '« {name} » ne peut pas être déplacé dans lui-même', alreadyExists: '« {name} » existe déjà dans le dossier cible',
   },
   pl: {
+    jvmTypeKeys: 'Wybierz klawiszami ↑ i ↓',
+    moduleNew: 'Nowy moduł…', moduleWhere: 'Zostanie utworzony w {path}', moduleName: 'Nazwa modułu', modulePackaging: 'Pakowanie', modulePackagingJar: 'Moduł z kodem', modulePackagingPom: 'Agregator (zawiera inne moduły)', moduleNoBuild: 'Nie znaleziono buildu Maven ani Gradle', moduleInvalid: 'Tylko litery, cyfry, . _ -', moduleExists: '„{name}” już istnieje', moduleCreated: 'Utworzono moduł „{name}”',
     unsaved: 'Niezapisane', newFileHere: 'Nowy plik tutaj', newFolderHere: 'Nowy folder tutaj',
     empty: 'pusty', copied: 'Skopiowano do schowka', clipboardUnavailable: 'Schowek jest niedostępny',
     newFile: 'Nowy plik', newFolder: 'Nowy folder', rename: 'Zmień nazwę',
@@ -132,6 +142,8 @@ export default {
     moveIntoItself: 'Nie można przenieść „{name}” do samego siebie', alreadyExists: '„{name}” już istnieje w folderze docelowym',
   },
   it: {
+    jvmTypeKeys: 'Scegli con ↑ e ↓',
+    moduleNew: 'Nuovo modulo…', moduleWhere: 'Creato in {path}', moduleName: 'Nome del modulo', modulePackaging: 'Packaging', modulePackagingJar: 'Un modulo con codice', modulePackagingPom: 'Un aggregatore (contiene altri moduli)', moduleNoBuild: 'Nessuna build Maven o Gradle trovata', moduleInvalid: 'Solo lettere, cifre, . _ -', moduleExists: '«{name}» esiste già', moduleCreated: 'Modulo «{name}» creato',
     unsaved: 'Non salvato', newFileHere: 'Nuovo file qui', newFolderHere: 'Nuova cartella qui',
     empty: 'vuota', copied: 'Copiato negli appunti', clipboardUnavailable: 'Appunti non disponibili',
     newFile: 'Nuovo file', newFolder: 'Nuova cartella', rename: 'Rinomina',
@@ -151,6 +163,8 @@ export default {
     moveIntoItself: '“{name}” non può essere spostato in sé stesso', alreadyExists: '“{name}” esiste già nella cartella di destinazione',
   },
   pt: {
+    jvmTypeKeys: 'Escolha com ↑ e ↓',
+    moduleNew: 'Novo módulo…', moduleWhere: 'Criado em {path}', moduleName: 'Nome do módulo', modulePackaging: 'Empacotamento', modulePackagingJar: 'Um módulo com código', modulePackagingPom: 'Um agregador (contém outros módulos)', moduleNoBuild: 'Nenhum build Maven ou Gradle encontrado', moduleInvalid: 'Apenas letras, dígitos, . _ -', moduleExists: '“{name}” já existe', moduleCreated: 'Módulo “{name}” criado',
     unsaved: 'Não salvo', newFileHere: 'Novo arquivo aqui', newFolderHere: 'Nova pasta aqui',
     empty: 'vazia', copied: 'Copiado para a área de transferência', clipboardUnavailable: 'Área de transferência indisponível',
     newFile: 'Novo arquivo', newFolder: 'Nova pasta', rename: 'Renomear',
@@ -170,6 +184,8 @@ export default {
     moveIntoItself: '“{name}” não pode ser movido para dentro de si mesmo', alreadyExists: '“{name}” já existe na pasta de destino',
   },
   nl: {
+    jvmTypeKeys: 'Kies met ↑ en ↓',
+    moduleNew: 'Nieuwe module…', moduleWhere: 'Wordt aangemaakt in {path}', moduleName: 'Naam van de module', modulePackaging: 'Packaging', modulePackagingJar: 'Een module met code', modulePackagingPom: 'Een aggregator (bevat andere modules)', moduleNoBuild: 'Geen Maven- of Gradle-build gevonden', moduleInvalid: 'Alleen letters, cijfers, . _ -', moduleExists: '„{name}” bestaat al', moduleCreated: 'Module „{name}” aangemaakt',
     unsaved: 'Niet opgeslagen', newFileHere: 'Nieuw bestand hier', newFolderHere: 'Nieuwe map hier',
     empty: 'leeg', copied: 'Naar klembord gekopieerd', clipboardUnavailable: 'Klembord niet beschikbaar',
     newFile: 'Nieuw bestand', newFolder: 'Nieuwe map', rename: 'Naam wijzigen',

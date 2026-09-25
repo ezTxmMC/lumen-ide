@@ -200,8 +200,9 @@ function taskSteps(tasks: ProjectTask[], root: string): Step[] {
 }
 
 /** Run a project task. */
-export async function runTask(task: ProjectTask, onSuccess?: () => void) {
-  await runTasks([task], undefined, onSuccess);
+/** `root` runs it in another project of the workspace than the open one. */
+export async function runTask(task: ProjectTask, onSuccess?: () => void, root?: string) {
+  await runTasks([task], root, onSuccess);
 }
 
 /**

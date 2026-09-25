@@ -500,8 +500,16 @@ xattr -dr com.apple.quarantine "$2" 2>/dev/null
 if [ "$4" = 1 ]; then open "$2"; fi
 `;
 
+/** An absolute path the swap script may take as an argument: no NUL or line breaks, nothing relative. */
+function safeBundlePath(value: string): string {
+  if (!path.isAbsolute(value) || /[\0\r\n]/.test(value)) {
+    throw new Error(`Unsafe bundle path: ${JSON.stringify(value)}`);
+  }
+  return value;
+}
+
 function installMac(bundle: string, relaunch: boolean) {
-  const args = ['-c', MAC_SWAP_SCRIPT, 'lumen-update', String(process.pid), macBundle(), bundle, relaunch ? '1' : '0'];
+  const args = ['-c', MAC_SWAP_SCRIPT, 'lumen-update', String(process.pid), safeBundlePath(macBundle()), safeBundlePath(bundle), relaunch ? '1' : '0'];
   spawn('/bin/sh', args, { detached: true, stdio: 'ignore' }).unref();
   if (!relaunch) {
     return true;

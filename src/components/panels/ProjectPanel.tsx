@@ -23,6 +23,9 @@ import { tr, useT } from '@/i18n';
 import { formatBindingsFor } from '@/core/keybindings';
 import { Button, Empty } from '../ui';
 import type { ProjectModule, ProjectTask, TaskGroup } from '@/core/types';
+import { sortedByName } from './Explorer';
+import { minecraftIcon } from '@/lib/minecraft-icon';
+import { EMPTY_PROJECT_CONFIG } from '@/core/project/config';
 import { loadGradleTasks, rootTasks, tasksOfModule, useGradleTasks } from '@/lib/gradle-tasks';
 
 /** Quote an argument for the shell when it holds spaces or special characters. */
@@ -134,7 +137,15 @@ function NoProjectView() {
   );
 }
 
-function ProjectHeader({ workspace, project, loading }: { workspace: string; project: Project | null; loading: boolean; }) {
+function ProjectHeader({ workspace, project, loading, primary: isPrimaryFolder = true, collapsed, onToggle }: {
+  workspace: string;
+  project: Project | null;
+  loading: boolean;
+  /** The open project (the default tasks are its own); the other folders of a workspace use their first task per group. */
+  primary?: boolean;
+  collapsed?: boolean;
+  onToggle?: () => void;
+}) {
   const t = useT();
   const running = useStore((s) => s.runningId !== null);
   const runningLabel = useStore((s) => s.runningLabel);
@@ -142,9 +153,11 @@ function ProjectHeader({ workspace, project, loading }: { workspace: string; pro
   const setNewProjectOpen = useStore((s) => s.setNewProjectOpen);
   const openFile = useStore((s) => s.openFile);
   const primary = project?.primary;
-  const build = defaultTask('build');
-  const run = defaultTask('run');
-  const test = defaultTask('test');
+  const pick = (group: 'build' | 'run' | 'test') => (isPrimaryFolder ? defaultTask(group) : project?.tasks.find((task) => task.group === group) ?? null);
+  const build = pick('build');
+  const run = pick('run');
+  const test = pick('test');
+  const image = minecraftIcon(project);
 
   const openBuildFile = () => {
     const file = project?.meta.buildFile ?? primary?.markers[0];
@@ -156,12 +169,17 @@ function ProjectHeader({ workspace, project, loading }: { workspace: string; pro
   return (
     <div className="border-b border-edge px-3 py-2.5">
       <div className="flex items-start gap-2">
+        {onToggle && (
+          <button onClick={onToggle} className="mt-2 shrink-0 text-subtle hover:text-fg" aria-expanded={!collapsed}>
+            <ChevronRight size={13} className="lm-transition" style={{ transform: collapsed ? 'none' : 'rotate(90deg)' }} />
+          </button>
+        )}
         <span
           className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lumen-sm bg-active font-mono text-[11px] font-bold"
           style={{ color: primary?.kind.color ?? 'var(--c-accent)' }}
           title={primary ? tr(primary.kind.name) : t('project.noBuildSystem')}
         >
-          {primary?.kind.icon ?? '·'}
+          {image ? <img src={image} width={20} height={20} alt="" draggable={false} /> : (primary?.kind.icon ?? '·')}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-1.5">
@@ -195,9 +213,9 @@ function ProjectHeader({ workspace, project, loading }: { workspace: string; pro
       )}
 
       <div className="mt-2 flex items-center gap-1">
-        <QuickAction icon={Hammer} label={t('project.groups.build')} hint={formatBindingsFor('project.build')} task={build} running={running} />
-        <QuickAction icon={Play} label={t('project.groups.run')} hint={formatBindingsFor('project.run')} task={run} running={running} />
-        <QuickAction icon={FlaskConical} label={t('project.groups.test')} hint={formatBindingsFor('project.test')} task={test} running={running} />
+        <QuickAction icon={Hammer} label={t('project.groups.build')} hint={isPrimaryFolder ? formatBindingsFor('project.build') : undefined} task={build} running={running} root={workspace} />
+        <QuickAction icon={Play} label={t('project.groups.run')} hint={isPrimaryFolder ? formatBindingsFor('project.run') : undefined} task={run} running={running} root={workspace} />
+        <QuickAction icon={FlaskConical} label={t('project.groups.test')} hint={isPrimaryFolder ? formatBindingsFor('project.test') : undefined} task={test} running={running} root={workspace} />
         <span className="flex-1" />
         {running ? (
           <Button size="sm" variant="danger" onClick={stopRun} title={t('project.cancelRun', { label: tr(runningLabel ?? '') })}>
@@ -218,7 +236,7 @@ function ProjectHeader({ workspace, project, loading }: { workspace: string; pro
   );
 }
 
-function TasksSection({ workspace, project, config }: { workspace: string; project: Project | null; config: Config; }) {
+function TasksSection({ workspace, project, config, readonly = false }: { workspace: string; project: Project | null; config: Config; /** Another folder of a workspace: its detected tasks only, no defaults or custom ones. */ readonly?: boolean; }) {
   const t = useT();
   const updateConfig = useStore((s) => s.updateProjectConfig);
   const notify = useStore((s) => s.notify);
@@ -241,11 +259,11 @@ function TasksSection({ workspace, project, config }: { workspace: string; proje
     <Collapsible
       title={t('project.tasks')}
       count={allTasks.length}
-      action={
+      action={readonly ? undefined : (
         <Button size="sm" title={t('project.customTask')} onClick={() => setAdding((v) => !v)}>
           <Plus size={12} />
         </Button>
-      }
+      )}
     >
       {adding && (
         <TaskForm
@@ -281,7 +299,7 @@ function TasksSection({ workspace, project, config }: { workspace: string; proje
                   root={project?.root ?? workspace}
                   badge={custom ? t('project.customBadge') : undefined}
                   marker={isDefault ? <Star size={10} className="shrink-0 fill-current text-warn group-hover:hidden" /> : undefined}
-                  actions={(
+                  actions={readonly ? undefined : (
                     <>
                       {(id === 'build' || id === 'run' || id === 'test') && (
                         <button
@@ -395,10 +413,47 @@ function DependenciesSection({ project }: { project: Project; }) {
   );
 }
 
+/** The modules of a multi-module build (from the parent pom's `<modules>`, or Gradle's includes), as a tree. */
+function ModulesSection({ project }: { project: Project; }) {
+  const t = useT();
+  if (project.modules.length === 0) {
+    return null;
+  }
+  return (
+    <Collapsible title={t('project.modules.title')} count={countModules(project.modules)}>
+      <div className="space-y-px">
+        {project.modules.map((module) => (
+          <ModuleNode key={module.id} module={module} root={project.root} depth={0} />
+        ))}
+      </div>
+    </Collapsible>
+  );
+}
+
+/** One project of a workspace: its header (with the fold), and its tasks while unfolded. */
+function WorkspaceProject({ folder, project, primary, loading, config }: {
+  folder: string;
+  project: Project | null;
+  primary: boolean;
+  loading: boolean;
+  config: Config;
+}) {
+  const [collapsed, setCollapsed] = useState(!primary);
+  return (
+    <div className="border-b border-edge">
+      <ProjectHeader workspace={folder} project={project} loading={loading} primary={primary} collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
+      {!collapsed && <TasksSection workspace={folder} project={project} config={config} readonly={!primary} />}
+      {!collapsed && project && <ModulesSection project={project} />}
+    </div>
+  );
+}
+
 export function ProjectPanel() {
   const t = useT();
   const workspace = useStore((s) => s.workspace);
   const project = useStore((s) => s.project);
+  const extraFolders = useStore((s) => s.extraFolders);
+  const extraProjects = useStore((s) => s.extraProjects);
   const loading = useStore((s) => s.projectLoading);
   const config = useStore((s) => s.projectConfig);
   const updateConfig = useStore((s) => s.updateProjectConfig);
@@ -412,20 +467,26 @@ export function ProjectPanel() {
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
-      <ProjectHeader workspace={workspace} project={project} loading={loading} />
+      {extraFolders.length > 0 && sortedByName([workspace, ...extraFolders]).map((folder) => (
+        <WorkspaceProject
+          key={folder}
+          folder={folder}
+          project={folder === workspace ? project : extraProjects[folder] ?? null}
+          primary={folder === workspace}
+          loading={loading}
+          config={folder === workspace ? config : EMPTY_PROJECT_CONFIG}
+        />
+      ))}
 
-      <TasksSection workspace={workspace} project={project} config={config} />
+      {extraFolders.length === 0 && (
+        <>
+          <ProjectHeader workspace={workspace} project={project} loading={loading} />
+          <TasksSection workspace={workspace} project={project} config={config} />
+        </>
+      )}
 
       {/* Modules */}
-      {project && project.modules.length > 0 && (
-        <Collapsible title={t('project.modules.title')} count={countModules(project.modules)}>
-          <div className="space-y-px">
-            {project.modules.map((module) => (
-              <ModuleNode key={module.id} module={module} root={project.root} depth={0} />
-            ))}
-          </div>
-        </Collapsible>
-      )}
+      {extraFolders.length === 0 && project && <ModulesSection project={project} />}
 
       {/* Custom and discovered tasks */}
       {project && <CustomTasks />}
@@ -433,9 +494,9 @@ export function ProjectPanel() {
       {/* Language-Server */}
       <LanguageServers />
 
-      {project && <FactsSection project={project} />}
+      {extraFolders.length === 0 && project && <FactsSection project={project} />}
 
-      {project && <DependenciesSection project={project} />}
+      {extraFolders.length === 0 && project && <DependenciesSection project={project} />}
 
       {/* Umgebung */}
       <Collapsible title={t('project.environment')} count={Object.keys(config.env).length || undefined} defaultOpen={Object.keys(config.env).length > 0}>
@@ -477,7 +538,7 @@ function TaskRow({ task, root, badge, marker, actions, hint }: {
       title={task.detail ? tr(task.detail) : `${task.command} ${task.args.join(' ')}`}
     >
       <button
-        onClick={() => void runTask(task)}
+        onClick={() => void runTask(task, undefined, root)}
         disabled={running}
         className="flex min-w-0 flex-1 items-center gap-1.5 text-left disabled:opacity-50"
       >
@@ -726,7 +787,8 @@ function categoryLabel(category: string, t: (key: string) => string): string {
   return category;
 }
 
-function QuickAction({ icon: Icon, label, hint, task, running }: {
+function QuickAction({ icon: Icon, label, hint, task, running, root }: {
+  root?: string;
   icon: typeof Hammer;
   label: string;
   hint: string | undefined;
@@ -749,7 +811,7 @@ function QuickAction({ icon: Icon, label, hint, task, running }: {
       size="sm"
       variant={task ? 'outline' : 'ghost'}
       disabled={!task || running}
-      onClick={() => task && void runTask(task)}
+      onClick={() => task && void runTask(task, undefined, root)}
       title={taskTitle()}
     >
       <Icon size={12} /> {label}

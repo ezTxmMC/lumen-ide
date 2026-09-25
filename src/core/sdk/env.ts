@@ -27,6 +27,8 @@ export interface ActiveSdk {
   /** Where the choice came from. */
   origin: 'project' | 'default';
   variables: Record<string, string>;
+  /** The folder for PATH, when it is not `<home>/bin`. */
+  bin?: string;
 }
 
 let base: SdkEnvironment | null = null;
@@ -52,7 +54,7 @@ function compose(): Record<string, string> {
     Object.assign(env, sdk.variables);
   }
   const current = base.path.split(base.delimiter).filter(Boolean);
-  const bins = active.map((sdk) => binDir(sdk.home, base!.platform));
+  const bins = active.map((sdk) => sdk.bin ?? binDir(sdk.home, base!.platform));
   const rest = current.filter((dir) => !bins.includes(dir));
   env[base.pathKey] = [...bins, ...rest].join(base.delimiter);
   return env;

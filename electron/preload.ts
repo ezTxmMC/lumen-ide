@@ -139,6 +139,8 @@ const api = {
     list: (dir: string): Promise<{ name: string; isDirectory: boolean; }[]> =>
       invoke('fs:list', dir),
     readFile: (file: string): Promise<string> => invoke('fs:readFile', file),
+    /** `null` when the file does not exist — for optional files such as a project's data. */
+    readFileIfExists: (file: string): Promise<string | null> => invoke('fs:readFileIfExists', file),
     writeFile: (file: string, content: string): Promise<boolean> =>
       invoke('fs:writeFile', file, content),
     create: (target: string, isDir: boolean): Promise<boolean> =>

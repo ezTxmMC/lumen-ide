@@ -9,5 +9,8 @@
   "category": "language",
   "license": "MIT",
   "keywords": ["go", "golang", "gopls", "delve"],
+  "requires": [
+    {"sdk": "go", "reason": "The Go toolchain"}
+  ],
   "minAppVersion": "0.5.0"
 }

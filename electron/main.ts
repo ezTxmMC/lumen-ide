@@ -23,6 +23,7 @@ import {
   openExternalTerminal, resizeTerminal, terminalKey, writeTerminal, type TerminalOptions,
 } from './terminal';
 import { registerSdkIpc } from './features/sdk';
+import { registerSdkToolIpc } from './features/sdk-tools';
 import { registerDapIpc, stopAllDebugAdapters, stopDebugAdaptersOf } from './features/dap';
 import { registerUserAddonIpc } from './features/user-addons';
 import { registerNetIpc } from './features/net';
@@ -423,6 +424,7 @@ app.whenReady().then(() => {
   registerIpc();
   registerNetIpc();
   registerSdkIpc(activeWindow);
+  registerSdkToolIpc(activeWindow);
   registerLspPackageIpc(activeWindow);
   registerPrivilegedIpc(activeWindow);
   registerDapIpc();
@@ -1381,6 +1383,23 @@ function registerFsIpc() {
       throw new Error('Binary file');
     }
     return buf.toString('utf8');
+  });
+
+  /** Like `fs:readFile`, but a file that is not there is `null` — no error, and none in the console. */
+  ipcMain.handle('fs:readFileIfExists', async (_e, file: string) => {
+    const stat = await fs.stat(file).catch((err: NodeJS.ErrnoException) => {
+      if (err.code === 'ENOENT') {
+        return null;
+      }
+      throw err;
+    });
+    if (!stat) {
+      return null;
+    }
+    if (stat.size > MAX_FILE_BYTES) {
+      throw new Error(`File is too large (${(stat.size / 1048576).toFixed(1)} MB)`);
+    }
+    return (await fs.readFile(file)).toString('utf8');
   });
 
   ipcMain.handle('fs:writeFile', async (_e, file: string, content: string) => {

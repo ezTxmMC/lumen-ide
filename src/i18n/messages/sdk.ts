@@ -13,6 +13,8 @@ import type { NamespaceMessages } from '@/i18n';
 /** Texts: sdk. German is the source; every language in LANGUAGES should carry the same keys. */
 export default {
   de: {
+    required: { section: "Benötigt", title: "Von Add-ons benötigt", essentials: "Grundausstattung", none: "Kein installiertes Add-on verlangt ein SDK", noneHint: "Add-ons können angeben, welche SDKs sie brauchen — sie erscheinen dann hier.", found: "Gefunden: {version}", notFound: "Nicht gefunden", neededBy: "Gebraucht von {addon}", manage: "Verwalten", missing: "„{addon}“ braucht {sdks}, das noch nicht installiert ist. Unter Einstellungen → SDKs kannst du es laden." },
+    tools: { empty: '{name} ist nicht installiert', emptyHint: 'Lumen kann es herunterladen — oder es wird im PATH gefunden.', system: 'System', usedBy: 'Gehört zu: {addon}', loading: 'Wird geladen …', latest: 'Neueste', installed: 'Installiert', install: 'Installieren' },
     title: 'SDKs & JDKs',
     category: 'SDKs',
     searchPlaceholder: 'JDKs suchen…',
@@ -96,6 +98,8 @@ export default {
     },
   },
   en: {
+    required: { section: "Required", title: "Needed by add-ons", essentials: "Essentials", none: "No installed add-on asks for an SDK", noneHint: "Add-ons can say which SDKs they need — they show up here.", found: "Found: {version}", notFound: "Not found", neededBy: "Needed by {addon}", manage: "Manage", missing: "“{addon}” needs {sdks}, which is not installed yet. You can download it under Settings → SDKs." },
+    tools: { empty: '{name} is not installed', emptyHint: 'Lumen can download it — or it is found on your PATH.', system: 'System', usedBy: 'Used by: {addon}', loading: 'Loading…', latest: 'Latest', installed: 'Installed', install: 'Install' },
     title: 'SDKs & JDKs',
     category: 'SDKs',
     searchPlaceholder: 'Search JDKs…',
@@ -179,6 +183,8 @@ export default {
     },
   },
   es: {
+    required: { section: "Necesarios", title: "Los que piden los complementos", essentials: "Básicos", none: "Ningún complemento instalado pide un SDK", noneHint: "Los complementos pueden indicar qué SDK necesitan; aparecerán aquí.", found: "Encontrado: {version}", notFound: "No encontrado", neededBy: "Lo necesita {addon}", manage: "Gestionar", missing: "«{addon}» necesita {sdks}, que aún no está instalado. Puedes descargarlo en Ajustes → SDK." },
+    tools: { empty: '{name} no está instalado', emptyHint: 'Lumen puede descargarlo, o se encuentra en el PATH.', system: 'Sistema', usedBy: 'Lo usa: {addon}', loading: 'Cargando…', latest: 'Última', installed: 'Instalado', install: 'Instalar' },
     title: 'SDKs y JDKs',
     category: 'SDKs',
     searchPlaceholder: 'Buscar JDKs…',
@@ -262,6 +268,8 @@ export default {
     },
   },
   fr: {
+    required: { section: "Requis", title: "Demandés par les modules", essentials: "Essentiels", none: "Aucun module installé ne demande de SDK", noneHint: "Les modules peuvent indiquer les SDK dont ils ont besoin ; ils apparaissent ici.", found: "Trouvé : {version}", notFound: "Introuvable", neededBy: "Requis par {addon}", manage: "Gérer", missing: "« {addon} » a besoin de {sdks}, pas encore installé. Vous pouvez le télécharger dans Paramètres → SDK." },
+    tools: { empty: '{name} n’est pas installé', emptyHint: 'Lumen peut le télécharger — ou il est trouvé dans le PATH.', system: 'Système', usedBy: 'Utilisé par : {addon}', loading: 'Chargement…', latest: 'Dernière', installed: 'Installé', install: 'Installer' },
     title: 'SDK et JDK',
     category: 'SDK',
     searchPlaceholder: 'Rechercher des JDK…',
@@ -345,6 +353,8 @@ export default {
     },
   },
   pl: {
+    required: { section: "Wymagane", title: "Potrzebne dodatkom", essentials: "Podstawy", none: "Żaden zainstalowany dodatek nie wymaga SDK", noneHint: "Dodatki mogą podać, jakich SDK potrzebują — pojawią się tutaj.", found: "Znaleziono: {version}", notFound: "Nie znaleziono", neededBy: "Potrzebne dla {addon}", manage: "Zarządzaj", missing: "„{addon}” potrzebuje {sdks}, którego jeszcze nie zainstalowano. Pobierzesz go w Ustawienia → SDK." },
+    tools: { empty: '{name} nie jest zainstalowany', emptyHint: 'Lumen może go pobrać — albo znajdzie go w PATH.', system: 'System', usedBy: 'Używany przez: {addon}', loading: 'Ładowanie…', latest: 'Najnowsza', installed: 'Zainstalowano', install: 'Zainstaluj' },
     title: 'SDK i JDK',
     category: 'SDK',
     searchPlaceholder: 'Szukaj JDK…',
@@ -428,6 +438,8 @@ export default {
     },
   },
   it: {
+    required: { section: "Richiesti", title: "Richiesti dai componenti aggiuntivi", essentials: "Essenziali", none: "Nessun componente aggiuntivo installato richiede un SDK", noneHint: "I componenti aggiuntivi possono indicare quali SDK servono: compaiono qui.", found: "Trovato: {version}", notFound: "Non trovato", neededBy: "Richiesto da {addon}", manage: "Gestisci", missing: "«{addon}» richiede {sdks}, non ancora installato. Puoi scaricarlo in Impostazioni → SDK." },
+    tools: { empty: '{name} non è installato', emptyHint: 'Lumen può scaricarlo — oppure viene trovato nel PATH.', system: 'Sistema', usedBy: 'Usato da: {addon}', loading: 'Caricamento…', latest: 'Ultima', installed: 'Installato', install: 'Installa' },
     title: 'SDK e JDK',
     category: 'SDK',
     searchPlaceholder: 'Cerca JDK…',
@@ -511,6 +523,8 @@ export default {
     },
   },
   pt: {
+    required: { section: "Necessários", title: "Pedidos pelos complementos", essentials: "Essenciais", none: "Nenhum complemento instalado pede um SDK", noneHint: "Os complementos podem indicar quais SDKs precisam — eles aparecem aqui.", found: "Encontrado: {version}", notFound: "Não encontrado", neededBy: "Necessário para {addon}", manage: "Gerenciar", missing: "“{addon}” precisa de {sdks}, que ainda não está instalado. Você pode baixá-lo em Configurações → SDKs." },
+    tools: { empty: '{name} não está instalado', emptyHint: 'O Lumen pode baixá-lo — ou ele é encontrado no PATH.', system: 'Sistema', usedBy: 'Usado por: {addon}', loading: 'Carregando…', latest: 'Mais recente', installed: 'Instalado', install: 'Instalar' },
     title: 'SDKs e JDKs',
     category: 'SDKs',
     searchPlaceholder: 'Pesquisar JDKs…',
@@ -594,6 +608,8 @@ export default {
     },
   },
   nl: {
+    required: { section: "Vereist", title: "Nodig voor add-ons", essentials: "Basis", none: "Geen geïnstalleerde add-on vraagt om een SDK", noneHint: "Add-ons kunnen aangeven welke SDK’s ze nodig hebben — ze verschijnen hier.", found: "Gevonden: {version}", notFound: "Niet gevonden", neededBy: "Nodig voor {addon}", manage: "Beheren", missing: "„{addon}” heeft {sdks} nodig, dat nog niet is geïnstalleerd. Je kunt het downloaden onder Instellingen → SDK’s." },
+    tools: { empty: '{name} is niet geïnstalleerd', emptyHint: 'Lumen kan het downloaden — of het wordt gevonden in het PATH.', system: 'Systeem', usedBy: 'Gebruikt door: {addon}', loading: 'Laden…', latest: 'Nieuwste', installed: 'Geïnstalleerd', install: 'Installeren' },
     title: 'SDK’s en JDK’s',
     category: 'SDK’s',
     searchPlaceholder: 'JDK’s zoeken…',

@@ -58,7 +58,7 @@ function WelcomeWorkspaces() {
   return (
     <div className="mt-8">
       <div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.09em] text-subtle">
-        {t('shell.dialog.workspaces')}
+        {t('workspaces.recent')}
       </div>
       <div className="lm-stagger grid grid-cols-2 gap-1.5">
         {[...workspaces].sort((a, b) => b.openedAt - a.openedAt).slice(0, 4).map((ws) => (

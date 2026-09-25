@@ -84,6 +84,11 @@ const isEditorView = (extensionId: string, viewId: string) =>
   extensions.list().some(({ manifest }) => manifest.id === extensionId
     && (manifest.views ?? []).some((view) => view.id === viewId && view.location === 'editor'));
 
+/** A view in a dock (not an editor tab) that an installed, switched-on extension declares. */
+const isDockedView = (extensionId: string, viewId: string) =>
+  extensions.listActive().some(({ manifest }) => manifest.id === extensionId
+    && (manifest.views ?? []).some((view) => view.id === viewId && view.location !== 'editor'));
+
 /** Open an editor view's tab, or bring it forward when it is already open. */
 function openViewTab(extensionId: string, viewId: string, instance: string, title?: string) {
   const store = useStore.getState();
@@ -338,6 +343,19 @@ export const extensionHost = {
 
   reload: (extensionId: string, viewId: string, instance?: string) => load(extensionId, viewId, instance),
 
+  /** Fetch the content of every docked view that has none yet, so badges show before a panel is opened. */
+  prefetchDocked() {
+    for (const { manifest } of extensions.listActive()) {
+      for (const view of manifest.views ?? []) {
+        const key = keyOf(manifest.id, view.id);
+        const state = stateOf(key);
+        if (view.location !== 'editor' && !state.content && !state.loading) {
+          void load(manifest.id, view.id);
+        }
+      }
+    }
+  },
+
   /** Run a view action — after asking, where the action wants that. */
   async action(extensionId: string, viewId: string, action: ViewAction, inputs: Record<string, string | boolean>, instance?: string) {
     if (action.disabled) {
@@ -380,7 +398,8 @@ export const extensionHost = {
     const host = window.lumen.extensionHost;
     host.onViewChanged(({ extensionId, viewId, instance }) => {
       const changed = (key: string, tab?: string) => {
-        if (visible.has(key)) {
+        // A docked view keeps its content current even while hidden: its badge sits on the dock icon.
+        if (visible.has(key) || (tab === undefined && isDockedView(extensionId, viewId))) {
           void load(extensionId, viewId, tab);
           return;
         }

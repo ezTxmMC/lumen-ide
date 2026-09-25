@@ -104,6 +104,31 @@ export default function App() {
     });
   }, []);
 
+  // Project kinds arrive late: an extension's code registers its own (Paper, Leaf, Velocity …) only once it
+  // has loaded, which is after the project was first looked at. Look again when the set of kinds changes.
+  useEffect(() => {
+    const kindKey = () => registry.projectKinds().map((kind) => kind.id).join(',');
+    let known = kindKey();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const off = registry.subscribe(() => {
+      const now = kindKey();
+      if (now === known) {
+        return;
+      }
+      known = now;
+      if (timer) {
+        clearTimeout(timer);
+      }
+      timer = setTimeout(() => void useStore.getState().refreshProject(), 300);
+    });
+    return () => {
+      off();
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, []);
+
   // Open files are watched one by one as well — the workspace watcher skips
   // build and dot folders, and files from outside the project.
   useEffect(() => {

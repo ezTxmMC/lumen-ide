@@ -103,8 +103,12 @@ function tokenMatches(tokens, candidate) {
 
 function bearer(request) {
   const header = request.headers.authorization ?? '';
-  const match = /^Bearer\s+(.+)$/i.exec(header.trim());
-  return match ? match[1].trim() : null;
+  // No regex over the whole header: whitespace runs make that slow on hostile input.
+  const value = header.trim();
+  if (value.slice(0, 6).toLowerCase() !== 'bearer' || !/^\s/.test(value.slice(6, 7))) {
+    return null;
+  }
+  return value.slice(7).trim() || null;
 }
 
 const EXTENSION_PATH = /^\/api\/v1\/extensions\/([^/]+)(?:\/([^/]+))?$/;

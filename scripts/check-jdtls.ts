@@ -233,7 +233,7 @@ function cur(): { client: LspClient; file: string; } {
 /** Puts `marked` into the open file (full-text didChange like a reload) and returns the plain text + cursor. */
 function setText(marked: string, file = cur().file) {
   const head = marked.indexOf('|');
-  const text = marked.replace('|', '');
+  const text = marked.replace(/\|/, '');
   lsp.changeDocument(file, text);
   session.text = text;
   return { text, head };
@@ -354,6 +354,10 @@ async function diagnosticsFor(file: string, ms = 20_000): Promise<{ message: str
  */
 const deepMerge = (target: any, patch: any) => {
   for (const [key, value] of Object.entries(patch)) {
+    // Never walk into the prototype chain.
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      continue;
+    }
     if (value && typeof value === 'object' && !Array.isArray(value) && target[key] && typeof target[key] === 'object') {
       deepMerge(target[key], value);
     }

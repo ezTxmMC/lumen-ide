@@ -84,18 +84,23 @@ function KindPicker({ language, kinds, kind, onKind }: { language: JvmLanguage; 
   return (
     <div>
   <div className="mb-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted">{t('explorer.jvmType')}</div>
-  <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+  <div role="listbox" aria-label={t('explorer.jvmType')} className="flex flex-col gap-1">
     {kinds.map((id) => (
       <button
         key={id}
         type="button"
+        role="option"
+        aria-selected={kind === id}
+        tabIndex={-1}
+        ref={kind === id ? (element) => element?.scrollIntoView({ block: 'nearest' }) : undefined}
         onClick={() => onKind(id)}
-        className={`lm-transition rounded-lumen-sm border px-2 py-1.5 text-left text-[12px] ${kind === id ? 'border-accent bg-hover text-fg' : 'border-edge text-muted hover:bg-hover'}`}
+        className={`lm-transition rounded-lumen-sm border px-2.5 py-1.5 text-left text-[12px] ${kind === id ? 'border-accent bg-hover text-fg' : 'border-edge text-muted hover:bg-hover'}`}
       >
         {t(`explorer.jvmKind.${language}.${id}`)}
       </button>
     ))}
   </div>
+  <p className="mt-1 text-[11px] text-subtle">{t('explorer.jvmTypeKeys')}</p>
 </div>
   );
 }
@@ -247,6 +252,14 @@ function Dialog({ request }: { request: NewJvmRequest; }) {
           event.preventDefault();
           event.stopPropagation();
           closeNewJvm();
+          return;
+        }
+        // ↑ / ↓ walk through the list of types without leaving the name field.
+        if (isClass && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+          event.preventDefault();
+          const at = kinds.indexOf(kind);
+          const next = event.key === 'ArrowDown' ? Math.min(kinds.length - 1, at + 1) : Math.max(0, at - 1);
+          setKind(kinds[next]);
           return;
         }
         if (event.key === 'Enter' && !(event.target instanceof HTMLButtonElement)) {

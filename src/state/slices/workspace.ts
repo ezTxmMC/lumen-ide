@@ -16,9 +16,10 @@
 
 import { isProjectsWindow } from '@/lib/window-mode';
 import { registry } from '@/core/registry';
+import { findProjects } from '@/core/project/scan';
 import { lsp } from '@/core/lsp/manager';
 import { matchLanguage } from '@/core/language';
-import { detectProject, projectContext } from '@/core/project/detect';
+import { detectProject, projectContext, type ProjectInfo } from '@/core/project/detect';
 import {
   EMPTY_PROJECT_CONFIG, loadProjectConfig, projectConfigFile, saveProjectConfig, type ProjectConfig,
 } from '@/core/project/config';
@@ -108,6 +109,25 @@ async function restoreOpenFiles({ get, set }: Ctx, root: string, config: Project
   get().focusGroup(0);
 }
 
+const MAX_MODULES = 40;
+
+/** The detection result of every module folder below the given projects, by absolute path. */
+async function detectModules(projects: ProjectInfo[], platform: string): Promise<Record<string, ProjectInfo>> {
+  const flat = (modules: ProjectInfo['modules']): ProjectInfo['modules'] => modules.flatMap((module) => [module, ...flat(module.modules ?? [])]);
+  const folders = projects
+    .flatMap((project) => flat(project.modules).map((module) => `${project.root.replace(/[\\/]+$/, '')}/${module.path}`))
+    .slice(0, MAX_MODULES);
+  const found = await Promise.all(folders.map((folder) => detectProject(folder, registry.projectKinds(), platform).catch(() => null)));
+  const out: Record<string, ProjectInfo> = {};
+  folders.forEach((folder, index) => {
+    const result = found[index];
+    if (result && result.kinds.length > 0) {
+      out[folder] = result;
+    }
+  });
+  return out;
+}
+
 function folderActions(ctx: Ctx): Pick<WorkspaceSlice, 'openFolder' | 'setWorkspace'> {
   const { get, set, remember } = ctx;
   return {
@@ -139,12 +159,14 @@ function folderActions(ctx: Ctx): Pick<WorkspaceSlice, 'openFolder' | 'setWorksp
       await window.lumen.workspace.set(root, get().extraFolders.filter((f) => f !== root));
       lsp.setWorkspace(root);
 
-      const recent: RecentProject[] = [
+      // A folder opened as part of a workspace is not a recent project — the workspace is what is recent.
+      const inWorkspace = Boolean(get().currentWorkspaceId);
+      const recent: RecentProject[] = inWorkspace ? get().recentProjects : [
         { ...(get().recentProjects.find((p) => p.path === root) ?? { name: baseName(root) }), path: root, openedAt: Date.now() },
         ...get().recentProjects.filter((p) => p.path !== root),
       ].slice(0, 12);
 
-      set({ workspace: root, recentProjects: recent, project: null, projectConfig: emptyConfig(), references: null });
+      set({ workspace: root, recentProjects: recent, project: null, extraProjects: {}, moduleProjects: {}, projectConfig: emptyConfig(), references: null });
       get().persist();
 
       const config = await loadProjectConfig(root);
@@ -181,7 +203,7 @@ function workspaceSwitchActions(ctx: Ctx): Pick<WorkspaceSlice, 'closeWorkspace'
       get().closeAll();
       lsp.setWorkspace(null);
       set({
-        workspace: null, extraFolders: [], currentWorkspaceId: null, project: null,
+        workspace: null, extraFolders: [], currentWorkspaceId: null, project: null, extraProjects: {}, moduleProjects: {},
         projectConfig: emptyConfig(), references: null,
       });
       get().persist();
@@ -197,6 +219,8 @@ function workspaceSwitchActions(ctx: Ctx): Pick<WorkspaceSlice, 'closeWorkspace'
         return;
       }
       if (isProjectsWindow) {
+        // The new window reads the workspace from the saved settings — a workspace made a moment ago must be there.
+        await get().persist();
         await window.lumen.window.handOver({ workspace: id });
         return;
       }
@@ -234,7 +258,7 @@ function workspaceSwitchActions(ctx: Ctx): Pick<WorkspaceSlice, 'closeWorkspace'
   };
 }
 
-function workspaceListActions(ctx: Ctx): Pick<WorkspaceSlice, 'saveWorkspace' | 'updateWorkspace' | 'deleteWorkspace' | 'exportWorkspace' | 'importWorkspace' | 'removeRecent' | 'loadLocalDependencies'> {
+function workspaceListActions(ctx: Ctx): Pick<WorkspaceSlice, 'saveWorkspace' | 'updateWorkspace' | 'deleteWorkspace' | 'exportWorkspace' | 'importWorkspace' | 'importWorkspaceFolder' | 'removeRecent' | 'loadLocalDependencies'> {
   const { get, set, capture } = ctx;
   return {
     saveWorkspace(name) {
@@ -312,6 +336,31 @@ function workspaceListActions(ctx: Ctx): Pick<WorkspaceSlice, 'saveWorkspace' | 
       }
     },
 
+    async importWorkspaceFolder() {
+      const dir = await window.lumen.dialog.chooseFolder(t('workspaces.importDirChoose'));
+      if (!dir) {
+        return;
+      }
+      const markers = registry.projectKinds().flatMap((kind) => kind.markers);
+      const folders = await findProjects(dir, (path) => window.lumen.fs.list(path), markers);
+      if (!folders.length) {
+        get().notify(t('workspaces.noProjects', { path: dir }), 'warning');
+        return;
+      }
+      const def: WorkspaceDef = {
+        id: `ws-${Date.now().toString(36)}`,
+        name: baseName(dir),
+        color: WORKSPACE_COLORS[get().workspaces.length % WORKSPACE_COLORS.length],
+        folders,
+        activeFolder: folders[0],
+        openedAt: Date.now(),
+      };
+      set((s) => ({ workspaces: [...s.workspaces, def] }));
+      await get().persist();
+      get().notify(t('workspaces.importedDir', { name: def.name, count: folders.length }), 'success');
+      await get().openWorkspace(def.id);
+    },
+
     removeRecent(path) {
       set((s) => ({ recentProjects: s.recentProjects.filter((p) => p.path !== path) }));
       get().persist();
@@ -346,6 +395,7 @@ function workspaceFolderActions(ctx: Ctx): Pick<WorkspaceSlice, 'addFolderToWork
       const extraFolders = [...s.extraFolders, folder];
       set({ extraFolders });
       await window.lumen.workspace.set(s.workspace, extraFolders);
+      void get().refreshProject();
       if (!get().currentWorkspaceId) {
         get().saveWorkspace(baseName(s.workspace));
       }
@@ -372,6 +422,7 @@ function workspaceFolderActions(ctx: Ctx): Pick<WorkspaceSlice, 'addFolderToWork
       set({ extraFolders });
       if (get().workspace) {
         await window.lumen.workspace.set(get().workspace!, extraFolders);
+        void get().refreshProject();
       }
       const prefix = `${path}/`;
       for (const tab of get().tabs.filter((tb) => tb.path && !tb.virtual && tb.path.startsWith(prefix) && tb.content === tb.saved)) {
@@ -419,7 +470,27 @@ function projectActions(ctx: Ctx): Pick<WorkspaceSlice, 'refreshProject' | 'relo
           return;
         }
         const name = get().projectConfig.name ?? info.name;
+        // The other folders of a workspace are projects as well.
+        const others = get().extraFolders.filter((folder) => folder !== root);
+        const found = await Promise.all(others.map((folder) => detectProject(folder, registry.projectKinds(), get().platform).catch(() => null)));
+        if (get().workspace !== root) {
+          return;
+        }
+        const extraProjects: Record<string, ProjectInfo> = {};
+        others.forEach((folder, index) => {
+          const other = found[index];
+          if (other) {
+            extraProjects[folder] = other;
+          }
+        });
+        // Each module of those projects is looked at on its own: what it builds for decides its icon.
+        const moduleProjects = await detectModules([info, ...Object.values(extraProjects)], get().platform);
+        if (get().workspace !== root) {
+          return;
+        }
         set((s) => ({
+          extraProjects,
+          moduleProjects,
           project: { ...info, name },
           projectLoading: false,
           recentProjects: s.recentProjects.map((p) => {
@@ -678,6 +749,8 @@ export const createWorkspaceSlice: Slice<WorkspaceSlice> = (set, get) => {
     recentProjects: [],
     localDependencies: [],
     project: null,
+    extraProjects: {},
+    moduleProjects: {},
     projectConfig: emptyConfig(),
     projectLoading: false,
     ...folderActions(ctx),

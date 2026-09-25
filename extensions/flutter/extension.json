@@ -13,5 +13,9 @@
     "dart",
     "widget"
   ],
+  "requires": [
+    {"sdk": "flutter", "reason": "The Flutter SDK"},
+    {"sdk": "dart"}
+  ],
   "minAppVersion": "0.5.0"
 }

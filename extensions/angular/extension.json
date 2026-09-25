@@ -13,5 +13,8 @@
     "angular-html",
     "angular-ts"
   ],
+  "requires": [
+    {"sdk": "node", "reason": "Angular CLI and the language server run on Node.js"}
+  ],
   "minAppVersion": "0.5.0"
 }

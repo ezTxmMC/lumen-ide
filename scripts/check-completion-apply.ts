@@ -45,7 +45,7 @@ const r = (sl: number, sc: number, el: number, ec: number) => ({
 /** Plans on `text` with `|` marking the cursor; the word range is the identifier before it. */
 function plan(marked: string, item: CompletionItem, extra: Partial<PlanInput> = {}) {
   const head = marked.indexOf('|');
-  const text = marked.replace('|', '');
+  const text = marked.replace(/\|/, '');
   const d = doc(text);
   let from = head;
   while (from > 0 && /[\w$]/.test(text[from - 1])) {
@@ -324,7 +324,7 @@ async function accept(
   interim?: (text: string) => string,
 ) {
   const head = before.indexOf('|');
-  const text = before.replace('|', '');
+  const text = before.replace(/\|/, '');
   const baseDoc = doc(text);
   let from = head;
   while (from > 0 && /[\w$]/.test(text[from - 1])) {

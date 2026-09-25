@@ -178,7 +178,8 @@ const versionToken = (values: FormValues) => (isMaven(values) ? '${project.versi
 /** Text for YAML, with `$` escaped for Gradle's template engine. */
 function yaml(values: FormValues, text: string): string {
   if (isMaven(values)) { return quoted(text); }
-  return quoted(text).replace(/\$/g, '\\$');
+  // `quoted` has escaped the backslashes already; only the `$` is left.
+  return quoted(text).split('$').join('\\$');
 }
 
 function buildCommands(values: FormValues, runTask?: string): string[] {

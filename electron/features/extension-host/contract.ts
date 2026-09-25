@@ -111,6 +111,8 @@ export interface AgentAnswer {
   allow: boolean;
   remember?: boolean;
   message?: string;
+  /** For a question the agent asks (`AskUserQuestion`): the chosen answer per question text; several choices joined by ", ". */
+  answers?: Record<string, string>;
 }
 
 /** What an extension implements for each agent it registers. */

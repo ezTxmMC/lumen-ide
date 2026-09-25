@@ -72,7 +72,8 @@ const VIEWS: ViewDef[] = [
     order: 30,
     icon: FolderKanban,
     command: "project.panel",
-    title: () => t("shell.view.project"),
+    // A workspace holds several projects.
+    title: () => t(state().extraFolders.length > 0 ? "shell.view.projects" : "shell.view.project"),
     render: () => <ProjectPanel />,
     badge:
       () => (state().project?.primary
@@ -195,4 +196,14 @@ export function registerBuiltinViews() {
   for (const view of VIEWS) {
     viewRegistry.register(view);
   }
+  // The project panel's title changes with the workspace (Project → Projects): have the docks read it again.
+  useStore.subscribe((now, before) => {
+    if ((now.extraFolders.length > 0) === (before.extraFolders.length > 0)) {
+      return;
+    }
+    const project = viewRegistry.get("project");
+    if (project) {
+      viewRegistry.register({ ...project });
+    }
+  });
 }

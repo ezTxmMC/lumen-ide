@@ -583,7 +583,7 @@ const provider = {
     }
   },
 
-  answer({ requestId, allow, remember, message }) {
+  answer({ requestId, allow, remember, message, answers }) {
     const entry = pending.get(requestId);
     if (!entry) {
       return false;
@@ -593,7 +593,9 @@ const provider = {
       entry.resolve({ behavior: 'deny', message: message?.trim() || 'The user denied this action' });
       return true;
     }
-    entry.resolve({ behavior: 'allow', updatedInput: entry.input, updatedPermissions: remember ? entry.suggestions : undefined });
+    // A question the agent asked: the chosen answers travel back inside the tool's input.
+    const updatedInput = answers ? { ...entry.input, answers } : entry.input;
+    entry.resolve({ behavior: 'allow', updatedInput, updatedPermissions: remember ? entry.suggestions : undefined });
     return true;
   },
 

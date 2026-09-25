@@ -191,6 +191,16 @@ export interface ExtensionCode {
 }
 
 /** The full manifest, as a server delivers it. */
+/** An SDK an extension needs — Lumen offers to download it when it is missing. */
+export interface ExtensionRequirement {
+  /** `java`, `node`, `python` … the ids of the SDK settings. */
+  sdk: string;
+  /** The oldest version that works (`17`, `3.9`). */
+  version?: string;
+  /** Why — shown next to the SDK. */
+  reason?: string;
+}
+
 export interface ExtensionManifest {
   schema: number;
   id: string;
@@ -213,6 +223,7 @@ export interface ExtensionManifest {
   views?: ExtensionView[];
   commands?: ExtensionCommand[];
   openWith?: ExtensionOpenWith[];
+  requires?: ExtensionRequirement[];
   /** Not kept in the installed record — the code lives in its own file. */
   code?: ExtensionCode;
   addon: UserAddonModel;

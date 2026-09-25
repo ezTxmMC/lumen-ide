@@ -11,5 +11,8 @@
   "keywords": [
     "astro"
   ],
+  "requires": [
+    {"sdk": "node", "reason": "Astro runs on Node.js"}
+  ],
   "minAppVersion": "0.5.0"
 }
