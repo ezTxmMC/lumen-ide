@@ -1224,6 +1224,26 @@ function registerWindowIpc() {
     handOver({ workspace: typeof request?.workspace === 'string' ? request.workspace : undefined, empty: request?.empty === true });
     return true;
   });
+  /** A project was closed: the project screen's window opens (or comes forward) and this window goes. */
+  ipcMain.handle('window:closeToProjects', (e) => {
+    const win = senderWindow(e.sender);
+    if (!win || win === projectsWindow) {
+      return;
+    }
+    const ctx = contextOf(e.sender);
+    if (ctx) {
+      ctx.forceClose = true;
+    }
+    if (projectsWindow && !projectsWindow.isDestroyed()) {
+      projectsWindow.focus();
+    }
+    if (!projectsWindow || projectsWindow.isDestroyed()) {
+      createWindow({ view: 'projects' });
+    }
+    if (!win.isDestroyed()) {
+      win.close();
+    }
+  });
   /** Clipboard and selection commands for the menu bar — they act on whatever has focus. */
   ipcMain.handle('window:edit', (e, action: string) => {
     const actions: Record<string, () => void> = {

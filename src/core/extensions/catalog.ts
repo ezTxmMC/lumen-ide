@@ -19,6 +19,7 @@
 import { fetchIndex } from './client';
 import { extensions } from './manager';
 import { isNewer } from './version';
+import { normalizeServerUrl } from './trust';
 import type { ExtensionServer, ExtensionSummary } from './types';
 
 export interface ServerCatalog {
@@ -38,6 +39,8 @@ export interface AvailableUpdate {
   name: string;
   from: string;
   to: string;
+  /** The Lumen version the newer release wants, when it names one. */
+  minAppVersion?: string;
   server: ExtensionServer;
 }
 
@@ -51,6 +54,43 @@ function emit() {
   for (const fn of listeners) {
     fn();
   }
+}
+
+/** The same server, however the address was written down (trailing slash, case of the host). */
+function sameServer(a: string, b: string): boolean {
+  const key = (url: string) => {
+    try {
+      return normalizeServerUrl(url).toLowerCase();
+    } catch {
+      return url.trim().replace(/\/+$/, '').toLowerCase();
+    }
+  };
+  return key(a) === key(b);
+}
+
+/**
+ * The server an installed add-on's updates come from, with its catalogue entry.
+ *
+ * The origin counts. Only an add-on that recorded none (older installs) is
+ * looked up on every enabled server, the newest version winning.
+ */
+function originOf(origin: string, id: string, servers: readonly ExtensionServer[]): { server: ExtensionServer; remote: ExtensionSummary; } | null {
+  if (origin) {
+    const server = servers.find((candidate) => sameServer(candidate.url, origin));
+    const remote = server && catalogs.get(server.url)?.entries.find((entry) => entry.id === id);
+    if (!server || !remote) {
+      return null;
+    }
+    return { server, remote };
+  }
+  let best: { server: ExtensionServer; remote: ExtensionSummary; } | null = null;
+  for (const server of servers) {
+    const remote = catalogs.get(server.url)?.entries.find((entry) => entry.id === id);
+    if (remote && (!best || isNewer(remote.version, best.remote.version))) {
+      best = { server, remote };
+    }
+  }
+  return best;
 }
 
 export const catalog = {
@@ -124,15 +164,15 @@ export const catalog = {
   updates(servers: readonly ExtensionServer[]): AvailableUpdate[] {
     const out: AvailableUpdate[] = [];
     for (const { manifest, server: origin } of extensions.list()) {
-      const server = servers.find((candidate) => candidate.url === origin);
-      if (!server) {
+      const found = originOf(origin, manifest.id, servers);
+      if (!found) {
         continue;
       }
-      const remote = catalogs.get(server.url)?.entries.find((entry) => entry.id === manifest.id);
-      if (!remote || !isNewer(remote.version, manifest.version)) {
+      const { server, remote } = found;
+      if (!isNewer(remote.version, manifest.version)) {
         continue;
       }
-      out.push({ id: manifest.id, name: manifest.name, from: manifest.version, to: remote.version, server });
+      out.push({ id: manifest.id, name: manifest.name, from: manifest.version, to: remote.version, minAppVersion: remote.minAppVersion, server });
     }
     return out;
   },

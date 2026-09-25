@@ -31,7 +31,7 @@ import path from 'node:path';
 
 const TIMEOUT_MS = 20_000;
 const MAX_RESPONSE_BYTES = 8 * 1024 * 1024;
-const EXTENSION_ID = /^(?:ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/;
+const EXTENSION_ID = /^(?:addon|ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/;
 
 const extensionsDir = () => path.join(app.getPath('userData'), 'extensions');
 

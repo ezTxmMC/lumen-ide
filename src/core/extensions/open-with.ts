@@ -42,7 +42,7 @@ export function matchesFilePattern(name: string, pattern: string): boolean {
 
 export function openWithHandlers(path: string): OpenWithHandler[] {
   const name = path.split(/[\\/]/).pop() ?? path;
-  return extensions.list().flatMap(({ manifest }) => (manifest.openWith ?? [])
+  return extensions.listActive().flatMap(({ manifest }) => (manifest.openWith ?? [])
     .filter((entry) => entry.patterns.some((pattern) => matchesFilePattern(name, pattern)))
     .map((entry) => ({ extensionId: manifest.id, command: entry.command, title: localizeTitle(entry, getLanguage()).title })));
 }

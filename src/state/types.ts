@@ -75,6 +75,8 @@ export interface FsChange {
 export interface FormDialogSpec {
   title: string;
   description?: string;
+  /** A value to read out in full below the description — a checksum, say — selectable in one click. */
+  detail?: { label: string; value: string; };
   fields: FormField[];
   initial?: FormValues;
   submitLabel?: string;

@@ -51,12 +51,12 @@ export async function installExtension(
     }
     const { manifest, hash } = err;
     useStore.getState().openForm({
-      title: t('extensions.codeTitle'),
+      title: t('extensions.codeTitle', { name: manifest.name }),
       description: t('extensions.codeBody', {
         name: manifest.name,
         host: hostOf(server) ?? server,
-        hash: hash.slice(0, 12),
       }),
+      detail: { label: t('extensions.codeChecksum'), value: hash },
       submitLabel: t('extensions.codeApprove'),
       fields: [],
       onSubmit: async () => {

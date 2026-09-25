@@ -9,14 +9,13 @@
  */
 
 /**
- * *Settings → Extensions*: one page per installed extension.
+ * The *Settings* section of the add-ons dialog: one page per installed add-on.
  *
- * On the left the extensions that bring settings, with how many of them
+ * On the left the add-ons that bring settings, with how many of them
  * differ from their defaults; on the right the chosen one — its particulars,
  * its settings grouped by `section` into cards, a mark beside each changed
- * value that resets it, and a reset for the whole extension. The dialog's
- * search still lists matching settings of every extension together; this
- * page is what the section shows without a search.
+ * value that resets it, and a reset for the whole add-on. A search narrows the
+ * list to the add-ons — and, within one, the settings — that match it.
  */
 
 import { useMemo, useState, useSyncExternalStore } from 'react';
@@ -61,7 +60,7 @@ function ExtensionNav({ manifests, selectedId, changedCount, onSelect }: {
 }) {
   const t = useT();
   return (
-    <nav className="flex w-[200px] shrink-0 flex-col gap-0.5" aria-label={t('settings.sections.extensions')}>
+    <nav className="flex w-[200px] shrink-0 flex-col gap-0.5" aria-label={t('extensions.settings')}>
       {manifests.map((manifest) => {
         const count = changedCount(manifest);
         const active = manifest.id === selectedId;
@@ -90,9 +89,8 @@ function ExtensionNav({ manifests, selectedId, changedCount, onSelect }: {
   );
 }
 
-function ExtensionHeader({ manifest: selected, changed, onResetAll }: { manifest: Manifest; changed: number; onResetAll(): void; }) {
+function ExtensionHeader({ manifest: selected, changed, onResetAll, onManage }: { manifest: Manifest; changed: number; onResetAll(): void; onManage(): void; }) {
   const t = useT();
-  const openDialog = useStore((s) => s.openDialog);
   return (
     <header className="mb-3 flex items-start gap-3 rounded-lumen border border-edge bg-surface/60 p-3">
       <ExtensionBadge manifest={selected} />
@@ -108,7 +106,7 @@ function ExtensionHeader({ manifest: selected, changed, onResetAll }: { manifest
         <Button size="sm" variant="outline" disabled={!changed} onClick={onResetAll} title={t('settings.ext.resetAllHint')}>
           <RotateCcw size={12} /> {t('settings.ext.resetAll')}
         </Button>
-        <Button size="sm" onClick={() => openDialog('extensions')}>
+        <Button size="sm" onClick={onManage}>
           <SlidersHorizontal size={12} /> {t('settings.ext.manage')}
         </Button>
       </div>
@@ -135,39 +133,61 @@ function SettingSections({ extensionId, settings }: { extensionId: string; setti
   );
 }
 
-export function ExtensionSettingsPage() {
+/** Whether the add-on's name, or any of its settings' texts, contain the search text. */
+function settingMatches(setting: ExtensionSetting, needle: string): boolean {
+  return `${setting.section ?? ''} ${setting.label} ${setting.hint ?? ''} ${setting.key}`.toLowerCase().includes(needle);
+}
+
+function manifestMatches(manifest: Manifest, needle: string): boolean {
+  if (!needle) {
+    return true;
+  }
+  return manifest.name.toLowerCase().includes(needle) || (manifest.settings ?? []).some((setting) => settingMatches(setting, needle));
+}
+
+export function ExtensionSettingsPage({ query = '', onBrowse, onManage }: { query?: string; onBrowse(): void; onManage(): void; }) {
   const t = useT();
   const language = useLanguage();
   const values = useStore((s) => s.extensionSettings);
   const setSetting = useStore((s) => s.setExtensionSetting);
-  const openDialog = useStore((s) => s.openDialog);
   useSyncExternalStore(installedExtensions.subscribe, installedExtensions.getVersion);
+  const needle = query.trim().toLowerCase();
 
+  // An add-on that is switched off shows no settings, as if it were not installed.
+  const registryVersion = useStore((s) => s.registryVersion);
   const withSettings = useMemo(
-    () => installedExtensions.list()
+    () => installedExtensions.listActive()
       .map(({ manifest }) => manifest)
       .filter((manifest) => manifest.settings?.length)
       .sort((a, b) => a.name.localeCompare(b.name)),
-    [installedExtensions.getVersion()],
+    [installedExtensions.getVersion(), registryVersion],
   );
+  const shown = withSettings.filter((manifest) => manifestMatches(manifest, needle));
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = withSettings.find((manifest) => manifest.id === selectedId) ?? withSettings[0];
+  const selected = shown.find((manifest) => manifest.id === selectedId) ?? shown[0];
 
-  if (!selected) {
+  if (!withSettings.length) {
     return (
       <Empty
         icon={<Blocks size={22} />}
         title={t('settings.ext.none')}
         hint={t('settings.ext.noneHint')}
-        action={<Button variant="outline" size="sm" onClick={() => openDialog('extensions')}>{t('settings.ext.browse')}</Button>}
+        action={<Button variant="outline" size="sm" onClick={onBrowse}>{t('settings.ext.browse')}</Button>}
       />
     );
+  }
+  if (!selected) {
+    return <Empty title={t('settings.noResults', { query })} />;
   }
 
   const changedCount = (manifest: Manifest) =>
     (manifest.settings ?? []).filter((setting) => settingChanged(values[manifest.id], setting)).length;
   const settings = (selected.settings ?? []).map((setting) => localizeSetting(setting, language));
-  const visible = settings.filter((setting) => settingVisible(setting, settings, values[selected.id]));
+  // A search that names the add-on itself keeps all of its settings.
+  const wholeAddon = !needle || selected.name.toLowerCase().includes(needle);
+  const visible = settings
+    .filter((setting) => settingVisible(setting, settings, values[selected.id]))
+    .filter((setting) => wholeAddon || settingMatches(setting, needle));
   const changed = changedCount(selected);
   const resetAll = () => {
     for (const setting of selected.settings ?? []) {
@@ -180,10 +200,10 @@ export function ExtensionSettingsPage() {
 
   return (
     <div className="flex min-h-[420px] gap-4">
-      <ExtensionNav manifests={withSettings} selectedId={selected.id} changedCount={changedCount} onSelect={setSelectedId} />
+      <ExtensionNav manifests={shown} selectedId={selected.id} changedCount={changedCount} onSelect={setSelectedId} />
 
       <div className="min-w-0 flex-1">
-        <ExtensionHeader manifest={selected} changed={changed} onResetAll={resetAll} />
+        <ExtensionHeader manifest={selected} changed={changed} onResetAll={resetAll} onManage={onManage} />
 
         <SettingSections extensionId={selected.id} settings={visible} />
       </div>

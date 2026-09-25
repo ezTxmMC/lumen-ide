@@ -28,8 +28,14 @@ import type { AgentModel } from '../../../electron/features/extension-host/contr
 /** Version of the manifest format Lumen understands. */
 export const EXTENSION_SCHEMA = 1;
 
-/** Ids of server extensions: `ext.` from the official catalogue, `user.` from users who publish their Studio add-ons. */
-export const EXTENSION_ID_PATTERN = /^(?:ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/;
+/**
+ * Ids of server add-ons: `addon.` from the official catalogue, `user.` from users who publish their Studio add-ons.
+ * `ext.` is the old prefix of the catalogue — still accepted, but deprecated.
+ */
+export const EXTENSION_ID_PATTERN = /^(?:addon|ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/;
+
+/** Whether an id still uses the deprecated `ext.` prefix. */
+export const isDeprecatedId = (id: string) => id.startsWith('ext.');
 
 /** The one server Lumen installs from without asking. */
 export const OFFICIAL_HOST = 'lumen-extensions.eztxm.de';

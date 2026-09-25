@@ -34,7 +34,9 @@ import {
   Badge, CommandsSection, DetailSection, KindsSection, LanguagesSection, TemplatesSection, ThemesSection,
 } from './AddonSections';
 
-type Filter = 'all' | 'language' | 'theme' | 'tool' | 'extension' | 'user';
+type Filter = 'all' | 'language' | 'theme' | 'tool' | 'extension' | 'user' | 'updates';
+type State = 'all' | 'on' | 'off';
+type Group = 'server' | 'user' | 'builtin';
 
 const FILTER_ICONS: Record<Filter, typeof Blocks> = {
   all: Blocks,
@@ -43,10 +45,11 @@ const FILTER_ICONS: Record<Filter, typeof Blocks> = {
   tool: Wrench,
   extension: Package,
   user: User,
+  updates: RefreshCw,
 };
 
 /** An add-on's category — stated, or inferred from its contents. */
-function categoryOf(addon: Addon): Exclude<Filter, 'all' | 'user' | 'extension'> {
+function categoryOf(addon: Addon): 'language' | 'theme' | 'tool' {
   if (addon.category) {
     return addon.category;
   }
@@ -59,27 +62,58 @@ function categoryOf(addon: Addon): Exclude<Filter, 'all' | 'user' | 'extension'>
   return 'tool';
 }
 
-const matchesFilter: Record<Filter, (addon: Addon) => boolean> = {
+const matchesFilter: Record<Filter, (addon: Addon, updateIds: Set<string>) => boolean> = {
   all: () => true,
   language: (addon) => categoryOf(addon) === 'language',
   theme: (addon) => categoryOf(addon) === 'theme',
   tool: (addon) => categoryOf(addon) === 'tool',
   extension: (addon) => extensions.has(addon.id),
   user: (addon) => Boolean(addon.user) && !extensions.has(addon.id),
+  updates: (addon, updateIds) => updateIds.has(addon.id),
 };
 
-function FilterBar({ filter, addons, onFilter, onImport, onOpenStudio }: {
+const matchesState: Record<State, (addon: Addon) => boolean> = {
+  all: () => true,
+  on: (addon) => registry.isActive(addon.id),
+  off: (addon) => !registry.isActive(addon.id),
+};
+
+/** Where an add-on came from: a server, the user's own folder, or Lumen itself. */
+function groupOf(addon: Addon): Group {
+  if (extensions.has(addon.id)) {
+    return 'server';
+  }
+  return addon.user ? 'user' : 'builtin';
+}
+
+const GROUPS: { id: Group; label: string; }[] = [
+  { id: 'server', label: 'extensions.groupServer' },
+  { id: 'user', label: 'extensions.groupUser' },
+  { id: 'builtin', label: 'extensions.groupBuiltin' },
+];
+
+function FilterBar({ filter, addons, updateIds, onFilter, onImport, onOpenStudio }: {
   filter: Filter;
   addons: Addon[];
+  updateIds: Set<string>;
   onFilter: (id: Filter) => void;
   onImport: () => void;
   onOpenStudio: (id: string | null, starter?: 'toolkit') => void;
 }) {
   const t = useT();
-  const filterLabel = (id: Filter) => (id === 'extension' ? t('extensions.extensionBadge') : t(`addonStudio.dialog.nav.${id}`));
+  const filterLabel = (id: Filter) => {
+    if (id === 'extension') {
+      return t('extensions.extensionBadge');
+    }
+    if (id === 'updates') {
+      return t('extensions.updates');
+    }
+    return t(`addonStudio.dialog.nav.${id}`);
+  };
+  const ids = (Object.keys(matchesFilter) as Filter[]).filter((id) => id !== 'updates' || updateIds.size > 0);
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-edge px-3 py-2">
-      {(Object.keys(matchesFilter) as Filter[]).map((id) => {
+      {ids.map((id) => {
         const FilterIcon = FILTER_ICONS[id];
         return (
           <button
@@ -92,7 +126,7 @@ function FilterBar({ filter, addons, onFilter, onImport, onOpenStudio }: {
           >
             <FilterIcon size={11} />
             {filterLabel(id)}
-            <span className="font-mono text-[10px] text-subtle">{addons.filter(matchesFilter[id]).length}</span>
+            <span className="font-mono text-[10px] text-subtle">{addons.filter((addon) => matchesFilter[id](addon, updateIds)).length}</span>
           </button>
         );
       })}
@@ -122,6 +156,7 @@ export function InstalledView({ query, initialFilter, updates }: {
   useSyncExternalStore(extensions.subscribe, extensions.getVersion);
 
   const [filter, setFilter] = useState<Filter>('all');
+  const [state, setState] = useState<State>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -131,10 +166,11 @@ export function InstalledView({ query, initialFilter, updates }: {
   }, [initialFilter]);
 
   const addons = useMemo(() => registry.all().filter((addon) => !addon.hidden), [registryVersion]);
+  const updateIds = useMemo(() => new Set(updates.map((update) => update.id)), [updates]);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return addons.filter(matchesFilter[filter]).filter((a) => {
+    return addons.filter((addon) => matchesFilter[filter](addon, updateIds)).filter((addon) => matchesState[state](addon)).filter((a) => {
       if (!needle) {
         return true;
       }
@@ -145,7 +181,7 @@ export function InstalledView({ query, initialFilter, updates }: {
         || (a.languages ?? []).some((l) => l.name.toLowerCase().includes(needle) || l.extensions.some((e) => e.includes(needle)))
       );
     });
-  }, [addons, filter, query]);
+  }, [addons, filter, state, query, updateIds, registryVersion]);
 
   const selected = filtered.find((a) => a.id === selectedId) ?? filtered[0] ?? null;
   const activeCount = addons.filter((a) => registry.isActive(a.id)).length;
@@ -164,30 +200,26 @@ export function InstalledView({ query, initialFilter, updates }: {
       <FilterBar
         filter={filter}
         addons={addons}
+        updateIds={updateIds}
         onFilter={setFilter}
         onImport={() => void importAddon()}
         onOpenStudio={openStudio}
       />
 
       <div className="flex min-h-0 flex-1">
-        <div className="w-[380px] shrink-0 overflow-y-auto border-r border-edge p-2">
-          {filtered.length === 0 && (
-            <Empty
-              icon={<Blocks size={24} strokeWidth={1.4} />}
-              title={t('common.nothingFound')}
-              hint={filter === 'user' ? t('addonStudio.dialog.userEmpty') : undefined}
-            />
-          )}
-          {filter === 'user' && <LoadProblems />}
-          {filtered.map((addon, index) => (
-            <AddonCard
-              key={addon.id}
-              addon={addon}
-              index={index}
-              selected={selected?.id === addon.id}
-              onSelect={() => setSelectedId(addon.id)}
-            />
-          ))}
+        <div className="flex w-[380px] shrink-0 flex-col border-r border-edge">
+          <StateBar state={state} addons={addons} onState={setState} />
+          <div className="min-h-0 flex-1 overflow-y-auto p-2">
+            {filtered.length === 0 && (
+              <Empty
+                icon={<Blocks size={24} strokeWidth={1.4} />}
+                title={t('common.nothingFound')}
+                hint={filter === 'user' ? t('addonStudio.dialog.userEmpty') : undefined}
+              />
+            )}
+            {filter === 'user' && <LoadProblems />}
+            <AddonGroups addons={filtered} selectedId={selected?.id ?? null} updateIds={updateIds} onSelect={setSelectedId} />
+          </div>
         </div>
         <div className="min-w-0 flex-1 overflow-y-auto">
           {selected && (
@@ -211,6 +243,68 @@ export function InstalledView({ query, initialFilter, updates }: {
 }
 
 /* ------------------------------------------------------------------ */
+
+/** Enabled / disabled, above the list. */
+function StateBar({ state, addons, onState }: { state: State; addons: Addon[]; onState: (state: State) => void; }) {
+  const t = useT();
+  const labels: Record<State, string> = { all: t('addonStudio.dialog.nav.all'), on: t('common.enabled'), off: t('common.disabled') };
+  return (
+    <div className="flex shrink-0 items-center gap-1 border-b border-edge px-2 py-1.5">
+      {(Object.keys(labels) as State[]).map((id) => (
+        <button
+          key={id}
+          onClick={() => onState(id)}
+          className={[
+            'lm-transition flex items-center gap-1 rounded-lumen-sm px-2 py-0.5 text-[11.5px]',
+            id === state ? 'bg-active text-fg' : 'text-muted hover:bg-hover hover:text-fg',
+          ].join(' ')}
+        >
+          {labels[id]}
+          <span className="font-mono text-[10px] text-subtle">{addons.filter(matchesState[id]).length}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** The list, in groups by origin — headings only when more than one group has something to show. */
+function AddonGroups({ addons, selectedId, updateIds, onSelect }: {
+  addons: Addon[];
+  selectedId: string | null;
+  updateIds: Set<string>;
+  onSelect: (id: string) => void;
+}) {
+  const t = useT();
+  const groups = GROUPS
+    .map(({ id, label }) => ({ id, label, list: addons.filter((addon) => groupOf(addon) === id) }))
+    .filter((group) => group.list.length > 0);
+  const headings = groups.length > 1;
+  let index = 0;
+  return (
+    <>
+      {groups.map((group) => (
+        <section key={group.id} className="mb-2">
+          {headings && (
+            <div className="mb-1.5 flex items-center gap-2 px-1 text-[10.5px] font-semibold uppercase tracking-[0.09em] text-subtle">
+              {t(group.label)}
+              <span className="font-mono font-normal">{group.list.length}</span>
+            </div>
+          )}
+          {group.list.map((addon) => (
+            <AddonCard
+              key={addon.id}
+              addon={addon}
+              index={index++}
+              selected={selectedId === addon.id}
+              hasUpdate={updateIds.has(addon.id)}
+              onSelect={() => onSelect(addon.id)}
+            />
+          ))}
+        </section>
+      ))}
+    </>
+  );
+}
 
 function Switch({ addon }: { addon: Addon; }) {
   const t = useT();
@@ -251,7 +345,7 @@ function AddonIcon({ addon, size = 28 }: { addon: Addon; size?: number; }) {
 
 const snippetCount = (addon: Addon) => (addon.languages ?? []).reduce((n, l) => n + (l.snippets?.length ?? 0), 0);
 
-function AddonCard({ addon, index, selected, onSelect }: { addon: Addon; index: number; selected: boolean; onSelect: () => void; }) {
+function AddonCard({ addon, index, selected, hasUpdate, onSelect }: { addon: Addon; index: number; selected: boolean; hasUpdate: boolean; onSelect: () => void; }) {
   const t = useT();
   const active = registry.isActive(addon.id);
   const snippets = snippetCount(addon);
@@ -286,6 +380,7 @@ function AddonCard({ addon, index, selected, onSelect }: { addon: Addon; index: 
         <Switch addon={addon} />
       </div>
       <div className="mt-1.5 ml-[38px] flex flex-wrap items-center gap-1">
+        {hasUpdate && <Badge className="text-good"><RefreshCw size={8} /> {t('extensions.updateBadge')}</Badge>}
         {addon.builtin && <Badge title={t('addonStudio.dialog.builtinHint')}><Lock size={8} /> {t('common.builtin')}</Badge>}
         {extensions.has(addon.id) && <Badge className="text-accent"><Package size={8} /> {t('extensions.extensionBadge')}</Badge>}
         {addon.user && !extensions.has(addon.id) && <Badge className="text-accent"><Sparkles size={8} /> {t('addonStudio.dialog.userBadge')}</Badge>}
@@ -448,6 +543,12 @@ function AddonDetails({ addon, update, onSelect }: { addon: Addon; update?: Avai
   return (
     <div className="lm-anim-fade">
       <AddonHeader addon={addon} extension={extension} />
+      {update && (
+        <div className="mx-5 mb-3 flex items-center gap-2 rounded-lumen-sm border border-accent/40 bg-accent/10 px-3 py-1.5 text-[12px] text-fg">
+          <RefreshCw size={12} className="shrink-0 text-good" />
+          {t('extensions.updateBanner', { from: update.from, to: update.to })}
+        </div>
+      )}
       <AddonActions addon={addon} update={update} onSelect={onSelect} />
 
       {languages.length > 0 && <LanguagesSection languages={languages} />}

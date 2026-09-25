@@ -39,11 +39,11 @@ const v = (key: string, params?: Record<string, string | number>) => t(`addonStu
 const p = (key: string, params?: Record<string, string | number>) => t(`studioProject.validate.${key}`, params);
 
 /**
- * `user.` comes out of the Add-on Studio, `ext.` from an extension server.
+ * `user.` comes out of the Add-on Studio, `addon.` from an add-on server (`ext.`, the old prefix, is deprecated but accepted).
  * Both go through the same validation and live in the same folder — the prefix
  * only records who built them.
  */
-export const ADDON_ID_PATTERN = /^(?:user|ext)\.[a-z0-9][a-z0-9._-]*$/;
+export const ADDON_ID_PATTERN = /^(?:user|addon|ext)\.[a-z0-9][a-z0-9._-]*$/;
 const LANGUAGE_ID_PATTERN = /^[a-z0-9][a-z0-9_+-]*$/;
 const LOCAL_ID_PATTERN = /^[A-Za-z0-9][\w.-]*$/;
 const FIELD_ID_PATTERN = /^[A-Za-z_]\w*$/;

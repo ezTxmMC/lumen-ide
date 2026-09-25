@@ -137,7 +137,7 @@ async function main() {
   }
 
   const all = await newestPackages();
-  const packages = options.only ? all.filter((manifest) => options.only.some((want) => manifest.id === want || manifest.id === `ext.${want}`)) : all;
+  const packages = options.only ? all.filter((manifest) => options.only.some((want) => manifest.id === want || manifest.id === `addon.${want}` || manifest.id === `ext.${want}`)) : all;
   if (!packages.length) {
     throw new Error('No matching packages in extensions/dist');
   }

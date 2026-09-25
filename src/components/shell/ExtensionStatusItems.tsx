@@ -15,12 +15,18 @@
 
 import { useSyncExternalStore } from 'react';
 import { extensionHost } from '@/core/extensions/host';
+import { extensions } from '@/core/extensions/manager';
+import { useStore } from '@/state/store';
 import { namedIcon } from '../ui/named-icons';
 import { TONE_TEXT } from '../extension-view/ExtensionView';
 
 export function ExtensionStatusItems({ side }: { side: 'left' | 'right'; }) {
   useSyncExternalStore(extensionHost.subscribe, extensionHost.getVersion);
+  // Switching an add-on off changes the registry version, which re-renders this.
+  useStore((s) => s.registryVersion);
+  const active = new Set(extensions.listActive().map(({ manifest }) => manifest.id));
   const items = extensionHost.statusItems()
+    .filter((item) => active.has(item.extensionId))
     .filter((item) => (item.side ?? 'left') === side)
     .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
 

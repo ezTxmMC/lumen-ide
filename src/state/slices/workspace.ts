@@ -170,6 +170,10 @@ function workspaceSwitchActions(ctx: Ctx): Pick<WorkspaceSlice, 'closeWorkspace'
   return {
     async closeWorkspace() {
       const previous = get().workspace;
+      const dirty = get().tabs.filter((tab) => tab.content !== tab.saved && !tab.readonly);
+      if (dirty.length > 0 && !confirm(t('notify.closeUnsaved', { count: dirty.length, names: dirty.map((tab) => `• ${tab.name}`).join('\n') }))) {
+        return;
+      }
       if (previous) {
         await remember(previous);
       }
@@ -181,6 +185,10 @@ function workspaceSwitchActions(ctx: Ctx): Pick<WorkspaceSlice, 'closeWorkspace'
         projectConfig: emptyConfig(), references: null,
       });
       get().persist();
+      // The window goes with the project; the project screen's window takes over.
+      if (!isProjectsWindow) {
+        await window.lumen.window.closeToProjects();
+      }
     },
 
     async openWorkspace(id) {

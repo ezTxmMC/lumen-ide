@@ -20,6 +20,7 @@ import { useStore } from '@/state/store';
 import { registerCommandProvider } from '@/core/commands';
 import { agentChat } from '@/core/agent/chat';
 import { extensions } from '@/core/extensions/manager';
+import { registry } from '@/core/registry';
 import { viewRegistry, type ViewDef } from '@/core/views';
 import { namedIcon } from '@/components/ui/named-icons';
 import { AgentPanel } from '@/components/panels/AgentPanel';
@@ -59,4 +60,6 @@ export function init() {
   registerCommandProvider(commands);
   syncViews();
   extensions.subscribe(syncViews);
+  // An agent goes when its extension's add-on is switched off.
+  registry.subscribe(syncViews);
 }

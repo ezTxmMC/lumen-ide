@@ -46,7 +46,7 @@ interface ExtensionModule {
   activate?: (ctx: ExtensionContext) => void | (() => void | Promise<void>) | Promise<void | (() => void | Promise<void>)>;
 }
 
-const EXTENSION_ID = /^(?:ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/;
+const EXTENSION_ID = /^(?:addon|ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/;
 const HASH = /^[0-9a-f]{64}$/;
 const MAX_CODE_BYTES = 8 * 1024 * 1024;
 
@@ -55,6 +55,9 @@ interface Active {
 }
 
 const active = new Map<string, Active>();
+
+/** Starting everything installed, at launch — switching an extension on or off waits for it. */
+let startup: Promise<void> = Promise.resolve();
 
 const extensionsDir = () => path.join(app.getPath('userData'), 'extensions');
 const codeDir = () => path.join(extensionsDir(), 'code');
@@ -229,6 +232,20 @@ async function rendererCode(id: string): Promise<string | null> {
   return code?.renderer ?? null;
 }
 
+/** An add-on switched off stops its program code, as if it were not installed; switched on, it starts again. */
+async function setEnabled(id: string, enabled: boolean) {
+  assertId(id);
+  await startup;
+  if (!enabled) {
+    await deactivate(id);
+    return;
+  }
+  if (active.has(id)) {
+    return;
+  }
+  await activateRecord(`${id}.json`);
+}
+
 /** At startup: run every installed extension whose code still matches its approved hash. */
 async function activateInstalled() {
   const names = await fs.readdir(extensionsDir()).catch(() => [] as string[]);
@@ -253,6 +270,9 @@ export function registerExtensionHostIpc(getWindow: () => BrowserWindow | null) 
   ipcMain.handle('extensions:code:install', (_e, id: string, code: CodeParts | string, hash: string) => installCode(id, code, hash));
   ipcMain.handle('extensions:code:renderer', (_e, id: string) => rendererCode(id).catch(() => null));
   ipcMain.handle('extensions:code:remove', (_e, id: string) => removeCode(id));
+  ipcMain.handle('extensions:code:enabled', (_e, id: string, enabled: boolean) => setEnabled(id, enabled === true).catch((err: Error) => {
+    console.error(`[lumen] ${id}: could not ${enabled ? 'start' : 'stop'}:`, err.message);
+  }));
   ipcMain.handle('extensions:running', () => [...active.keys()]);
 
   ipcMain.handle('agent:send', (e, request: AgentSendRequest) => agents.send(request, e.sender));
@@ -278,7 +298,7 @@ export function registerExtensionHostIpc(getWindow: () => BrowserWindow | null) 
   ipcMain.handle('extensions:ui:answer', (_e, requestId: string, answer: unknown) => services.answer(requestId, answer));
   ipcMain.handle('extensions:event', (_e, event: HostEvent) => services.dispatch(event));
 
-  void activateInstalled();
+  startup = activateInstalled();
   app.on('before-quit', () => {
     for (const id of [...active.keys()]) {
       void deactivate(id);

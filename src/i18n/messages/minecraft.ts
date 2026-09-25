@@ -17,27 +17,27 @@ import type { NamespaceMessages } from '@/i18n';
  */
 export default {
   de: {
-    moved: 'Minecraft Development ist jetzt eine Erweiterung: Installiere „Minecraft Development“ unter Erweiterungen, um die Vorlagen, Projektarten und Snippets wieder zu bekommen.',
+    moved: 'Minecraft Development ist jetzt ein Add-on: Installiere „Minecraft Development“ unter Add-ons, um die Vorlagen, Projektarten und Snippets wieder zu bekommen.',
   },
   en: {
-    moved: 'Minecraft Development is now an extension: install “Minecraft Development” under Extensions to get its templates, project kinds and snippets back.',
+    moved: 'Minecraft Development is now an add-on: install “Minecraft Development” under Add-ons to get its templates, project kinds and snippets back.',
   },
   es: {
-    moved: 'Minecraft Development ahora es una extensión: instala «Minecraft Development» en Extensiones para recuperar sus plantillas, tipos de proyecto y fragmentos.',
+    moved: 'Minecraft Development ahora es un complemento: instala «Minecraft Development» en Complementos para recuperar sus plantillas, tipos de proyecto y fragmentos.',
   },
   fr: {
-    moved: 'Minecraft Development est désormais une extension : installez « Minecraft Development » dans Extensions pour retrouver ses modèles, types de projet et extraits.',
+    moved: 'Minecraft Development est désormais un module : installez « Minecraft Development » dans Modules pour retrouver ses modèles, types de projet et extraits.',
   },
   pl: {
-    moved: 'Minecraft Development jest teraz rozszerzeniem: zainstaluj „Minecraft Development” w Rozszerzeniach, aby odzyskać jego szablony, typy projektów i fragmenty kodu.',
+    moved: 'Minecraft Development jest teraz dodatkiem: zainstaluj „Minecraft Development” w Dodatkach, aby odzyskać jego szablony, typy projektów i fragmenty kodu.',
   },
   it: {
-    moved: 'Minecraft Development ora è un’estensione: installa «Minecraft Development» in Estensioni per riavere modelli, tipi di progetto e snippet.',
+    moved: 'Minecraft Development ora è un componente aggiuntivo: installa «Minecraft Development» in Componenti aggiuntivi per riavere modelli, tipi di progetto e snippet.',
   },
   pt: {
-    moved: 'O Minecraft Development agora é uma extensão: instale “Minecraft Development” em Extensões para recuperar seus modelos, tipos de projeto e snippets.',
+    moved: 'O Minecraft Development agora é um complemento: instale “Minecraft Development” em Complementos para recuperar seus modelos, tipos de projeto e snippets.',
   },
   nl: {
-    moved: 'Minecraft Development is nu een extensie: installeer „Minecraft Development” onder Extensies om de sjablonen, projecttypes en snippets terug te krijgen.',
+    moved: 'Minecraft Development is nu een add-on: installeer „Minecraft Development” onder Add-ons om de sjablonen, projecttypes en snippets terug te krijgen.',
   },
 } satisfies NamespaceMessages;

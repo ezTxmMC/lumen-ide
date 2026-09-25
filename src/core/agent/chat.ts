@@ -392,7 +392,7 @@ export const agentChat = {
 
   /** Every agent the installed extensions declare. */
   agents(): AgentInfo[] {
-    return extensions.list().flatMap(({ manifest }) =>
+    return extensions.listActive().flatMap(({ manifest }) =>
       (manifest.agents ?? []).map((agent) => ({ key: `${manifest.id}/${agent.id}`, extensionId: manifest.id, agent })));
   },
 

@@ -57,6 +57,8 @@ const api = {
     openProject: (folder?: string): Promise<'opened' | 'focused'> => invoke('window:openProject', folder),
     /** From the project screen's own window: the main window opens with a saved workspace or without a project. */
     handOver: (request: { workspace?: string; empty?: boolean; }): Promise<boolean> => invoke('window:handOver', request),
+    /** Closing the project: this window goes, and the project screen's window comes back. */
+    closeToProjects: (): Promise<void> => invoke('window:closeToProjects'),
     /** Clipboard and selection commands, run on whatever has focus in this window. */
     edit: (action: 'cut' | 'copy' | 'paste' | 'selectAll'): Promise<void> => invoke('window:edit', action),
     toggleDevTools: (): Promise<void> => invoke('window:toggleDevTools'),
@@ -112,6 +114,8 @@ const api = {
     /** The approved window part of an extension's code (`code.renderer`), or `null`. */
     rendererCode: (id: string): Promise<string | null> => invoke('extensions:code:renderer', id),
     removeCode: (id: string): Promise<void> => invoke('extensions:code:remove', id),
+    /** Starts or stops an extension's program code — it follows the extension's add-on being on or off. */
+    setCodeEnabled: (id: string, enabled: boolean): Promise<void> => invoke('extensions:code:enabled', id, enabled),
   },
 
   dialog: {

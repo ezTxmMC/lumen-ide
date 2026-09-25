@@ -26,8 +26,8 @@
 /** The version of the manifest format this server understands. */
 export const MANIFEST_SCHEMA = 1;
 
-/** Ids: `ext.` for server extensions, `user.` for ones built by hand. */
-export const ID_PATTERN = /^(?:ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/;
+/** Ids: `addon.` for server add-ons, `user.` for ones built by hand. `ext.` is the old prefix — deprecated, still accepted. */
+export const ID_PATTERN = /^(?:addon|ext|user)\.[a-z0-9][a-z0-9._-]{0,63}$/;
 
 /** A semantic version, optionally with a prerelease tag (`1.2.0-beta.1`). */
 export const VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
@@ -387,7 +387,11 @@ export function checkManifest(raw) {
 
   const id = text(raw.id, 'id', { max: 64, required: true });
   if (!ID_PATTERN.test(id)) {
-    fail('id must start with "ext." or "user." and contain only lowercase letters, digits, dots, hyphens and underscores', 'id');
+    fail('id must start with "addon." or "user." ("ext." is deprecated) and contain only lowercase letters, digits, dots, hyphens and underscores', 'id');
+  }
+
+  if (id.startsWith('ext.')) {
+    console.warn(`[deprecated] ${id}: the "ext." id prefix is deprecated — new add-ons should use "addon."`);
   }
 
   const version = text(raw.version, 'version', { max: 64, required: true });

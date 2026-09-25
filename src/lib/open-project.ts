@@ -14,7 +14,7 @@
  * `effects.openProjectsIn` decides; on `ask` the choice dialog comes up
  * (`OpenProjectChoice`), and “remember my choice” writes the answer back
  * there. A window without a project simply takes the project — there is
- * nothing to replace.
+ * nothing to replace — except in the welcome view, which asks (`ask`).
  */
 
 import { create } from 'zustand';
@@ -43,7 +43,7 @@ function openIn(target: OpenTarget, path: string) {
   return useStore.getState().setWorkspace(path);
 }
 
-export async function openProject(path: string) {
+export async function openProject(path: string, options: { ask?: boolean; } = {}) {
   const state = useStore.getState();
   if (!path || state.workspace === path) {
     return;
@@ -54,7 +54,8 @@ export async function openProject(path: string) {
     state.removeRecent(path);
     return;
   }
-  if (!state.workspace) {
+  // Without a project there is nothing to replace — unless the caller wants the question anyway (welcome view).
+  if (!state.workspace && !options.ask) {
     await state.setWorkspace(path);
     return;
   }
@@ -80,10 +81,10 @@ export function resolveOpenChoice(target: OpenTarget | null, remember: boolean) 
 }
 
 /** Pick a folder and open it the same way as a recent project. */
-export async function openFolderAsProject() {
+export async function openFolderAsProject(options: { ask?: boolean; } = {}) {
   const folder = await window.lumen.dialog.chooseFolder(t('projectSwitcher.chooseFolder'));
   if (!folder) {
     return;
   }
-  await openProject(folder);
+  await openProject(folder, options);
 }

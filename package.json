@@ -1,11 +1,14 @@
 {
   "name": "lumen-ide",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "Lumen — eine moderne, leichtgewichtige IDE mit einfachem Add-on-System",
   "private": true,
   "type": "module",
   "main": "dist-electron/main.js",
-  "author": "ezTxmMC",
+  "author": {
+    "name": "ezTxmMC",
+    "email": "contact@eztxm.de"
+  },
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "dev": "vite",
@@ -14,6 +17,7 @@
     "typecheck": "tsc --noEmit",
     "dist": "vite build && electron-builder --publish never",
     "dist:linux": "vite build && electron-builder --publish never --linux --x64",
+    "dist:linux:deb": "vite build && electron-builder --linux deb --x64 --publish never",
     "dist:linux:arm64": "vite build && electron-builder --publish never --linux --arm64",
     "dist:win": "vite build && electron-builder --publish never --win --x64 --arm64",
     "dist:win:x64": "vite build && electron-builder --publish never --win --x64",
@@ -92,7 +96,8 @@
     ],
     "linux": {
       "target": [
-        "AppImage"
+        "AppImage",
+        "deb"
       ],
       "category": "Development",
       "executableArgs": [

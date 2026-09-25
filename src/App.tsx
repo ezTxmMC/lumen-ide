@@ -41,7 +41,7 @@ import { WorkspacesDialog } from '@/components/dialogs/WorkspacesDialog';
 import { MergeEditor } from '@/components/merge/MergeEditor';
 import { AddonStudio } from '@/components/addon-studio/AddonStudio';
 import { DebugToolbar } from '@/components/debug/DebugToolbar';
-import { initFeatures } from '@/features';
+import { initFeatures, initProjectsFeatures } from '@/features';
 import { isProjectsWindow, startsEmpty } from '@/lib/window-mode';
 
 export default function App() {
@@ -76,6 +76,7 @@ export default function App() {
       setOpeningProject(false);
       // The project screen's window has no editor, terminals or run bridge to feed.
       if (isProjectsWindow) {
+        initProjectsFeatures();
         return;
       }
       initRunBridge();

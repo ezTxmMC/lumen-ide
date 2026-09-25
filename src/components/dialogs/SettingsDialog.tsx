@@ -10,7 +10,7 @@
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import {
-  AlignLeft, AppWindow, Blocks, Code2, Coffee, Info, RefreshCw, Settings, SlidersHorizontal, TerminalSquare, Type, Zap,
+  AlignLeft, AppWindow, Code2, Coffee, Info, RefreshCw, Settings, SlidersHorizontal, TerminalSquare, Type, Zap,
 } from 'lucide-react';
 import { useStore } from '@/state/store';
 import { useDialogVisible } from '@/hooks/usePresence';
@@ -18,13 +18,11 @@ import { registry } from '@/core/registry';
 import { lsp } from '@/core/lsp/manager';
 import { terminals } from '@/lib/terminals';
 import { LANGUAGES, systemLanguage, useT } from '@/i18n';
-import { extensions as installedExtensions } from '@/core/extensions/manager';
 import { formatRows } from '../settings/format-rows';
-import { ExtensionSettingsPage } from '../settings/ExtensionSettingsPage';
 import { Empty } from '../ui';
 import { DialogShell, type DialogSection } from './DialogShell';
 import {
-  aboutRows, editorRows, extensionRows, fontRows, generalRows, lspRows, sdkRows, terminalRows, updateRows, windowRows,
+  aboutRows, editorRows, fontRows, generalRows, lspRows, sdkRows, terminalRows, updateRows, windowRows,
   type AppInfo, type Row, type SectionId, type SettingsData,
 } from './SettingsRows';
 
@@ -36,7 +34,6 @@ const SECTIONS: { id: SectionId; icon: typeof Settings; }[] = [
   { id: 'lsp', icon: Zap },
   { id: 'terminal', icon: TerminalSquare },
   { id: 'sdks', icon: Coffee },
-  { id: 'extensions', icon: Blocks },
   { id: 'window', icon: AppWindow },
   { id: 'updates', icon: RefreshCw },
   { id: 'about', icon: Info },
@@ -54,10 +51,8 @@ function useSettingsData(info: AppInfo | null, initialWindowSystem: SettingsData
   const workspace = useStore((s) => s.workspace);
   const registryVersion = useStore((s) => s.registryVersion);
   const lspVersion = useStore((s) => s.lspVersion);
-  const extensionSettings = useStore((s) => s.extensionSettings);
   const navSide = useStore((s) => s.layout.navSide);
   useSyncExternalStore(terminals.subscribe.bind(terminals), terminals.getVersion);
-  useSyncExternalStore(installedExtensions.subscribe, installedExtensions.getVersion);
 
   const servers = useMemo(() => lsp.list(), [lspVersion]);
   const stats = useMemo(() => ({
@@ -71,7 +66,7 @@ function useSettingsData(info: AppInfo | null, initialWindowSystem: SettingsData
   }), [registryVersion]);
 
   return {
-    t, effects, setEffects, openDialog, showPanel, language, setLanguage, navSide, extensionSettings, workspace,
+    t, effects, setEffects, openDialog, showPanel, language, setLanguage, navSide, workspace,
     system: LANGUAGES.find((l) => l.id === systemLanguage())?.name ?? 'English',
     stats, servers, shells: terminals.shells, externals: terminals.externals, info, initialWindowSystem,
   };
@@ -127,7 +122,6 @@ export function SettingsDialog() {
     ...sdkRows(data),
     ...windowRows(data),
     ...updateRows(data),
-    ...extensionRows(data),
     ...aboutRows(data),
   ];
 
@@ -155,19 +149,16 @@ export function SettingsDialog() {
       onSearch={setQuery}
       searchPlaceholder={t('settings.searchPlaceholder')}
     >
-      <div className={`mx-auto px-6 py-4 ${!needle && section === 'extensions' ? 'max-w-[900px]' : 'max-w-[680px]'}`}>
+      <div className="mx-auto max-w-[680px] px-6 py-4">
         {!needle && (
           <h3 className="mb-2 text-[16px] font-medium text-fg">{t(`settings.sections.${section}`)}</h3>
         )}
         {needle && visible.length === 0 && <Empty title={t('settings.noResults', { query })} />}
-        {!needle && section === 'extensions' && <ExtensionSettingsPage />}
-        {(needle || section !== 'extensions') && (
-          <div className="divide-y divide-edge/60">
-            {visible.map((row, index) => (
-              row.node ? <div key={`${row.section}-${index}`}>{row.node}</div> : null
-            ))}
-          </div>
-        )}
+        <div className="divide-y divide-edge/60">
+          {visible.map((row, index) => (
+            row.node ? <div key={`${row.section}-${index}`}>{row.node}</div> : null
+          ))}
+        </div>
       </div>
     </DialogShell>
   );
