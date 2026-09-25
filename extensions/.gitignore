@@ -1,6 +1,0 @@
-# Built manifests (`npm run build` → dist/<id>-<version>.json)
-dist/
-# Dependencies of this folder, and of the extensions that bring their own (database …)
-node_modules/
-*.log
-.DS_Store
