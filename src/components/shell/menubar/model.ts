@@ -32,6 +32,8 @@ export interface MenuSpec {
 
 export interface ActionRow {
   kind: 'action';
+  /** The command behind the row, when there is one. */
+  commandId?: string;
   label: string;
   run: () => void;
   hint?: string;
@@ -60,6 +62,7 @@ function commandRow(entry: Extract<MenuEntry, { command: string; }>, commands: C
   const hint = formatBindingsFor(command.id) ?? (entry.keys ? formatBinding(entry.keys) : undefined);
   return {
     kind: 'action',
+    commandId: command.id,
     label: entry.label ?? command.title,
     hint,
     checked: entry.checked,

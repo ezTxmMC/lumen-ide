@@ -42,6 +42,8 @@ import { registerJdtlsIpc } from './features/jdtls-support';
 import { setWorkspaceRoots } from './features/workspace-roots';
 import { registerOpenFileWatchIpc } from './features/open-file-watch';
 import { popoutOpenResult, registerPopoutIpc, trackPopouts } from './features/popout';
+import { fixPathForGuiLaunch } from './features/shell-env';
+import { registerNativeMenuIpc } from './features/native-menu';
 import { applyWindowState, loadWindowState, trackWindowState, type WindowState } from './features/window-state';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -416,12 +418,14 @@ app.on('second-instance', (_event, argv) => {
   win.webContents.send('app:open-folder', folder);
 });
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   if (relaunching || !singleInstance) {
     return;
   }
+  await fixPathForGuiLaunch();
   nativeTheme.themeSource = 'dark';
   registerIpc();
+  registerNativeMenuIpc(activeWindow);
   registerNetIpc();
   registerSdkIpc(activeWindow);
   registerSdkToolIpc(activeWindow);

@@ -87,6 +87,12 @@ const api = {
     onOpenFolder: (cb: (folder: string) => void) => subscribe('app:open-folder', cb),
   },
 
+  menu: {
+    /** macOS: replace the native menu bar (menus as plain data; clicks come back by id). */
+    set: (menus: unknown[]): Promise<void> => invoke('menu:set', menus),
+    onClick: (cb: (id: string) => void) => subscribe('menu:click', cb),
+  },
+
   deps: {
     /** Dependencies already present in ~/.m2 or the Gradle cache. */
     local: (): Promise<{ name: string; versions: string[]; }[]> => invoke('deps:local'),

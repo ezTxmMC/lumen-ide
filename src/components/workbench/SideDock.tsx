@@ -43,11 +43,11 @@ export function SideDock({ side }: { side: 'left' | 'right'; }) {
     <aside data-dock={side} className={`${animation} flex shrink-0 ${border} border-edge bg-surface`} style={{ width: size }}>
       {side === 'right' && <ResizeHandle dock="right" edge="left" />}
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex h-8 shrink-0 items-center gap-1 pr-1 pl-3" title={source}>
-          <span className="min-w-0 flex-1 truncate text-[10.5px] font-semibold uppercase tracking-[0.09em] text-subtle">
+        <div className="flex min-h-8 shrink-0 flex-wrap items-center gap-1 py-0.5 pr-1 pl-3" title={source}>
+          <span className="min-w-16 flex-1 truncate text-[10.5px] font-semibold uppercase tracking-[0.09em] text-subtle">
             {active.title()}
           </span>
-          {!popped && active.toolbar?.()}
+          {!popped && <div className="flex shrink-0 flex-wrap items-center gap-1">{active.toolbar?.()}</div>}
           <PopOutButton view={active} />
           <span onClick={(e) => setMenu({ ...menuBelow(e.currentTarget), items: viewMenu(active, side) })}>
             <Button size="sm" title={t('shell.layout.more')}>

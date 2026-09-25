@@ -423,7 +423,8 @@ export function runTool(job: Job, command: string, args: string[]): Promise<void
     });
     child.on('close', (code) => {
       job.child = null;
-      if (code === 0) {
+      // unzip exits with 1 for warnings (odd names, macOS metadata) although everything was unpacked.
+      if (code === 0 || (command === 'unzip' && code === 1)) {
         resolve();
         return;
       }
