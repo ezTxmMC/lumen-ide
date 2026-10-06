@@ -34,6 +34,7 @@ import { folderFromArgv, registerRecentProjectsIpc } from './features/recent-pro
 import { registerLocalRepoIpc } from './features/local-repos';
 import { registerCaptureIpc } from './features/capture';
 import { registerExtensionIpc } from './features/extensions';
+import { registerSecurityIpc } from './features/security';
 import { registerMediaIpc } from './features/media';
 import { managedCommand, registerLspPackageIpc } from './features/lsp-packages';
 import { registerPrivilegedIpc } from './features/privileged';
@@ -441,6 +442,7 @@ app.whenReady().then(async () => {
   registerJdtlsIpc();
   registerExtensionHostIpc(activeWindow);
   registerExtensionIpc();
+  registerSecurityIpc();
   registerMediaIpc();
   registerPopoutIpc();
   registerOpenFileWatchIpc((owner, file) => contextOf(owner)?.watchers.some((watcher) => watcher.covers(file)) ?? false);

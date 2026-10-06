@@ -13,6 +13,7 @@ import { gradleKind, javaPlainTemplate, javaProjectTemplate, mavenKind } from '.
 import { bazelKind } from '../lib/native-project';
 import { javaDebug } from '@/core/debug/adapters';
 import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages';
+import { pomBlockFormatter } from '../lib/xml-format';
 import { localizeSnippets } from '../lib/localize';
 import { t } from '@/i18n';
 
@@ -92,6 +93,7 @@ export const javaSpec: LanguageSpec = {
   icon: 'J',
   color: '#e76f00',
   capitalizedAsType: true,
+  format: { tabWidth: 4 },
   comments: { line: '//', block: ['/*', '*/'] },
   meta: /^@[A-Za-z]\w*/,
   controls: [
@@ -274,4 +276,5 @@ export const javaAddon: Addon = {
   languages: [javaSpec],
   projectKinds: [mavenKind, gradleKind, bazelKind],
   projectTemplates: [javaProjectTemplate, javaPlainTemplate],
+  formatters: [pomBlockFormatter],
 };

@@ -20,7 +20,6 @@
 import { useStore } from '@/state/store';
 import { registry } from '@/core/registry';
 import { matchLanguage } from '@/core/language';
-import { DEFAULT_THEME_ID } from '@/addons/builtin/themes';
 import { t } from '@/i18n';
 import type { Addon, LanguageSpec, Theme } from '@/core/types';
 import { compileAddon, extractChoices } from './compile';
@@ -146,7 +145,7 @@ function refreshStore() {
     registryVersion: registry.getVersion(),
   });
   if (!registry.themes().some((theme) => theme.id === s.themeId)) {
-    s.setTheme(DEFAULT_THEME_ID);
+    s.setTheme(registry.defaultThemeId());
   }
   s.applyKeybindings();
 }
@@ -414,6 +413,7 @@ function languageFromSpec(spec: LanguageSpec, taken: Set<string>): UserLanguage 
     indentOpen: source(spec.indentOpen),
     indentClose: source(spec.indentClose),
     indentUnit: spec.indentUnit,
+    indentTabs: spec.format?.useTabs || undefined,
     completions: clone(spec.completions),
     snippets: clone(spec.snippets),
     run: clone(spec.run),

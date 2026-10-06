@@ -107,7 +107,7 @@ export function SettingsDialog() {
   const rows: Row[] = [
     ...formatRows({
       t,
-      languages: registry.languages().map((l) => ({ id: l.id, name: l.name, indentUnit: l.indentUnit })),
+      languages: registry.languages(),
       languageId: formatLanguage,
       onLanguage: setFormatLanguage,
       settings: formatSettings,

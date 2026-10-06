@@ -483,7 +483,7 @@ const { lsp } = await import('@/core/lsp/manager');
 // manifests, exactly as they reach a running Lumen.
 const { extensionAddons, extensionsBuilt } = await import('./lib/extension-addons');
 if (!extensionsBuilt()) {
-  console.log('extensions/dist is missing — run `npm run build:ext` first.');
+  console.log('addons/dist is missing — run `npm run build:ext` first.');
   process.exit(1);
 }
 const languagesById = new Map(

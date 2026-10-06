@@ -13,7 +13,6 @@
 import { registry } from '@/core/registry';
 import { isOfficial } from '@/core/extensions/trust';
 import { OFFICIAL_SERVER_URL, type ExtensionServer } from '@/core/extensions/types';
-import { DEFAULT_ICON_PACK_ID } from '@/addons/builtin/icons';
 import { setActiveIconPack } from '@/lib/file-icon';
 import type { Theme } from '@/core/types';
 import type { Tab, WorkspaceDef } from './types';
@@ -79,7 +78,7 @@ export function uniqueThemeId(base: string, existing: Theme[]): string {
 /** Set the active icon pack; an unknown id falls back to the default pack. */
 export function applyIconPack(id: string) {
   const packs = registry.iconPacks();
-  setActiveIconPack(packs.find((pack) => pack.id === id) ?? packs.find((pack) => pack.id === DEFAULT_ICON_PACK_ID) ?? null);
+  setActiveIconPack(packs.find((pack) => pack.id === id) ?? packs.find((pack) => pack.id === registry.defaultIconPackId()) ?? null);
 }
 
 /** Split the identifier of an extension page (`ext:<extension>:<page>`). */

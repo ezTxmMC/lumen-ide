@@ -609,7 +609,8 @@ function saveActions(ctx: Ctx): Pick<EditorSlice, 'saveTab' | 'saveAll'> {
       const fresh = get().tabs.find((open) => open.id === tab.id) ?? tab;
 
       try {
-        const format = formatFor(get().formatSettings, matchLanguage(target, registry.languages())?.id ?? fresh.languageId ?? undefined);
+        const languages = registry.languages();
+        const format = formatFor(get().formatSettings, matchLanguage(target, languages) ?? languages.find((entry) => entry.id === fresh.languageId));
         const eol = format.endOfLine === 'keep' ? fresh.eol : (format.endOfLine === 'crlf' ? '\r\n' : '\n');
         await window.lumen.fs.writeFile(target, toDisk(applySaveRules(fresh.content, format), eol));
       } catch (err) {

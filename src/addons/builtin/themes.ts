@@ -174,6 +174,5 @@ export const themesAddon: Addon = {
   builtin: true,
   category: 'theme',
   themes: [lumenDark, midnight, forest, graphite, lumenLight, solar],
+  defaults: { theme: lumenDark.id },
 };
-
-export const DEFAULT_THEME_ID = lumenDark.id;

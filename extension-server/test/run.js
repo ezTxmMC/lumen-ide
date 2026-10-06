@@ -16,6 +16,8 @@
  * just individual functions.
  *
  *   node test/run.js
+ *
+ * The scanner's own tests are in `scanner.js` and run as part of this file.
  */
 
 import assert from 'node:assert/strict';
@@ -25,6 +27,7 @@ import path from 'node:path';
 import { Store } from '../src/store.js';
 import { createServer } from '../src/server.js';
 import { ManifestError, checkManifest, compareVersions } from '../src/manifest.js';
+import { scannerChecks, scannerServerChecks } from './scanner.js';
 
 let passed = 0;
 let failed = 0;
@@ -268,6 +271,8 @@ async function stockChecks(root) {
 
 async function main() {
   await manifestChecks();
+  // The scanner is a module of its own and is tested without a server first.
+  await scannerChecks(check);
 
   /* -------------------------------------------------------------- *
    * The server over HTTP
@@ -297,6 +302,8 @@ async function main() {
   await readChecks(call);
   await deleteChecks(call);
   await stockChecks(root);
+  // Last: it adds extensions of its own, which the checks above count.
+  await scannerServerChecks(check, call, sample, store);
 
   server.close();
   await fs.rm(root, { recursive: true, force: true });

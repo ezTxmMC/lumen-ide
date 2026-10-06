@@ -17,7 +17,7 @@ import { extensionAddons, extensionsBuilt } from './lib/extension-addons';
 import type { LanguageSpec } from '@/core/types';
 
 if (!extensionsBuilt()) {
-  console.log('extensions/dist is missing — run `npm run build:ext` first.');
+  console.log('addons/dist is missing — run `npm run build:ext` first.');
   process.exit(1);
 }
 

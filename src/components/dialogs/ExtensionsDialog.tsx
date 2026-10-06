@@ -93,6 +93,16 @@ function Badge(
   );
 }
 
+/** What the server's security scan said about the recommended version, as a small shield. */
+function SecurityMark({ security }: { security: NonNullable<ExtensionSummary["security"]>; }) {
+  const t = useT();
+  const count = (security.counts?.critical ?? 0) + (security.counts?.high ?? 0) + (security.counts?.medium ?? 0);
+  if (security.verdict === "clean") {
+    return <span title={t("security.badge.clean")}><ShieldCheck size={12} className="shrink-0 text-good" /></span>;
+  }
+  return <span title={t("security.badge.warn", { count })}><ShieldAlert size={12} className="shrink-0 text-warn" /></span>;
+}
+
 /** What the extension brings, as a list. */
 function useProvidesText() {
   const t = useT();
@@ -519,6 +529,7 @@ function ExploreList(
                   {current && !outdated && (
                     <CheckCircle2 size={12} className="shrink-0 text-good" />
                   )}
+                  {summary.security && <SecurityMark security={summary.security} />}
                 </div>
                 <div className="line-clamp-2 text-[12px] text-muted">
                   {summary.description}

@@ -13,6 +13,7 @@ import { htmlSiteTemplate } from '../lib/web-project';
 import { npmKind } from '../lib/node-project';
 import { htmlTokenizer } from '../lib/html-tokenizer';
 import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages';
+import { htmlFormat } from '../lib/format-settings';
 import { localizeSnippets } from '../lib/localize';
 import { t } from '@/i18n';
 
@@ -79,7 +80,7 @@ export const htmlSpec: LanguageSpec = {
       args: ['--stdio'],
       languageId: 'html',
       rootMarkers: ['package.json', '.git'],
-      settings: { html: { format: { wrapLineLength: 100 } } },
+      formatSettings: htmlFormat,
       install: 'npm i -g vscode-langservers-extracted',
       package: LSP_PACKAGES.langserversExtracted,
       systemPackages: SYSTEM_PACKAGES.langserversExtracted,

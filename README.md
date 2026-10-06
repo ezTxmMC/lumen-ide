@@ -337,6 +337,18 @@ The native module `node-pty` is built for Electron automatically during
 An add-on is an object — no manifest, no build step, no registration API. A new
 language usually amounts to nothing but lists of words.
 
+The add-ons that ship with Lumen and the ones from an extension server are the
+same thing to the app: both enter the registry through `registry.register`
+(`src/addons/register.ts` is the one place where the built-in ones do), and the
+app's own code — core, state, components, the main process — imports none of
+them (`npm run check:core` fails when one does). The built-in ones differ only
+in being part of the download and in not being removable. What an add-on can
+contribute, it contributes through the API: languages, themes, icon packs,
+commands, panels, project kinds and templates, **formatters**, **checkers**,
+the theme and icon pack to fall back on (`defaults`), and — from an extension's
+program code — views, agents, status items, formatters, diagnostics and rules
+for the security scanner (`addons/README.md` has the whole `ctx`).
+
 ### A language in 20 lines
 
 `src/addons/extra/lua.ts`:
@@ -434,6 +446,56 @@ export const myAddon: Addon = {
   },
 }
 ```
+
+### Formatting
+
+*Format Document* (`Ctrl+Alt+L` in the default keymap) and *format on save* know no code style. They
+ask **formatter add-ons**; the first one that claims the file formats it, the
+language server steps in only when none does, and small `after` formatters
+polish the result (the blank lines between the blocks of a POM, for instance).
+The result is applied as line edits, so cursor and folds stay put.
+
+The **Formatter** extension (`addons/formatter`, `addon.formatter`) brings the
+default: [Pureline 1.1](PURELINE_SPECIFICATION_1.1.md) for Java, JavaScript,
+TypeScript, Go and Crystal — braces on every control-flow body, guard clauses
+instead of `else` where the branch before it ends in `return`/`throw`/
+`continue`/`break`, semicolons, compact calls, consistent indentation — plus a
+Pureline checker that reports its rule ids (`PL-CF-002` …) as diagnostics. What
+it follows is read from the project:
+
+| File | Meaning |
+| --- | --- |
+| `.pureline` | the Pureline spec file: indentation, line endings, print width, per-language overrides, rules (`off`/`info`/`warn`/`error`), ignore globs; the nearest one wins |
+| `.prettierrc`, `.prettierrc.json/.yaml/.yml/.json5/.toml/.js/.cjs/.mjs/.ts`, `prettier.config.*`, `"prettier"` in `package.json`, `.prettierignore` | detected; Prettier itself (project `node_modules/.bin`, the path setting, or `PATH`) formats the files it supports |
+| neither | Pureline defaults |
+
+Without the extension only the editor-level choices remain in the core
+(*Settings → Formatting*: tab width, tabs or spaces, line endings, trailing
+whitespace, final newline); quotes, semicolons and print width belong to a
+formatter and the project's own files, not to an app setting.
+
+### Security scanner
+
+One scanner, in `extension-server/src/scanner` — pure JavaScript with no
+dependency, so the extension server and the app run **the same rules**. Every
+finding carries a stable rule id (`SEC-CMD-…`, `SEC-PKG-…`, `SEC-EXT-…`,
+`SEC-MAL-001` for the EICAR test string), a severity (critical, high, medium,
+low, info) and a fingerprint. Critical findings make the verdict `block`,
+high and medium ones `warn`.
+
+| Where | What happens |
+| --- | --- |
+| Extension server, on publish | the manifest — its code, pages and the add-on's node graphs — is scanned; a critical finding is refused with `422 security_blocked`; the verdict and counts are stored, shown in the catalogue (a shield on the card) and under `GET /api/v1/extensions/<id>/<version>/security` |
+| Installing an extension | the manifest is scanned again in the app: critical findings refuse the install, the rest is added to the approval the user answers anyway; the main process scans the code once more before it is saved |
+| Tasks, runners, terminal | the whole chain is scanned before the first step starts; critical/high findings ask first (*Run anyway* / *Cancel*), medium ones are a toast. A command **typed** into a terminal is held at Enter until the scan is through (declining sends Ctrl+C), and pasted text is scanned before it goes in |
+| Extension code | `ctx.exec` refuses the worst commands; node-graph shell nodes of add-ons from a server too; permission cards of AI agents for a shell command carry the scanner's verdict |
+| Opening a project | manifests, install scripts, `.vscode/tasks.json` with `runOn: folderOpen`, dev-container hooks, Git hooks, shell/PowerShell/batch scripts and executables are read — never run — and findings of medium and above open a report; *Acknowledge* keeps them quiet for that project (stored in the project's data folder). *Settings → General* switches it off; the command *Scan Project for Malware* runs it by hand |
+
+Normalisation comes first, so the usual disguises do not help: quote splitting,
+`${IFS}`, `\x` quoting, `base64 -d | sh`, `bash -c '…'`, `$(…)` and chained
+commands are unwrapped and scanned. Extensions can add rules as data
+(`ctx.security.addRules`); patterns with nested quantifiers are refused so a
+rule cannot hang the scanner.
 
 ---
 
@@ -1089,12 +1151,15 @@ electron/terminal.ts    finding shells and external terminals, PTY sessions (nod
 electron/preload.ts     typed bridge (contextIsolation, no nodeIntegration)
 electron/features/      SDK downloads, debug adapters, user add-ons, network, Wayland, updater,
                         project data (~/.lumen/projects), privileged installs, output capture
-electron/features/extension-host/  extension code: activation, ctx, agents, views, services
+electron/features/extension-host/  extension code: activation, ctx, agents, views, formatters, services
+electron/features/security.ts      the security scanner in the main process: rule packs, project walk, IPC
 src/core/types.ts       the whole add-on API (languages, themes, project kinds, templates)
 src/core/tokenizer.ts   LanguageSpec → CodeMirror StreamParser
 src/core/language.ts    language association, completion, indentation
 src/core/theme.ts       theme + effects → CSS variables and a CodeMirror theme
 src/core/registry.ts    the add-on registry and its lifecycle
+src/core/format/        asking formatter add-ons; checks/ — checker add-ons as diagnostics
+src/core/security/      what the person is asked: dangerous commands, project reports, extension installs
 src/core/commands.ts    every command; keybindings.ts: presets, chords, conflicts
 src/core/completion/    error-tolerant matcher, the merged suggestion source
 src/core/folding.ts     fold ranges for every language
@@ -1106,7 +1171,7 @@ src/features/           features that register themselves at startup
 src/i18n/               translations (8 languages)
 src/core/lsp/           JSON-RPC client, server management, protocol types
 src/core/project/       project detection, the project configuration (~/.lumen/projects), templates
-src/addons/             the add-ons themselves
+src/addons/             the add-ons that ship with the app; register.ts is their only connection to the registry
 src/addons/lib/         project kinds, package managers and templates (jvm, native, node, web, lang)
 src/lib/                Markdown renderer, workspace edits, runner, editor bridge, symbols
 src/core/views.ts       the registry of views every dock draws from
@@ -1120,8 +1185,8 @@ src/components/overlays/   command palette, search everywhere, forms
 src/components/panels/  the views themselves (explorer, project, terminal, output …)
 src/components/extension-view/  draws extension views from their data
 src/components/…        dialogs, studios, agent chat, debug, settings, ui
-extension-server/       standalone extension server (catalogue, publishing, project pages)
-extensions/             extension sources, built and published from here
+extension-server/       standalone extension server (catalogue, publishing, project pages, scanner/)
+addons/                 extension sources (the formatter among them), built and published from here
 ```
 
 Writing is limited to the opened folder and to paths chosen in a file dialog,

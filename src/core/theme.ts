@@ -72,6 +72,8 @@ export interface Effects {
   lspAutoStart: boolean;
   /** Fetch every Gradle task (`gradle tasks --all`) in the background when a project has none cached. */
   gradleTasksOnOpen: boolean;
+  /** Look through a project's manifests, scripts and hooks for malware and dangerous commands when it opens. */
+  securityScan: boolean;
   /**
    * Let jdtls check Java with javac (its javac backend) instead of the Eclipse
    * compiler, where it can — the same verdicts as the build. The backend's
@@ -138,6 +140,7 @@ export const DEFAULT_EFFECTS: Effects = {
   openProjectsIn: 'ask',
   lspAutoStart: true,
   gradleTasksOnOpen: true,
+  securityScan: true,
   javacBackend: true,
   terminalShell: '',
   terminalFontSize: 13,

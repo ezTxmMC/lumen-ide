@@ -21,6 +21,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { BrowserWindow, WebContents } from 'electron';
 import type { AgentAnswer, AgentEvent, AgentEventBody, AgentModel, AgentProvider, AgentSendRequest } from './contract';
+import { scanCommandLine } from '../security';
 
 const AGENT_ID = /^[a-z][a-z0-9-]*$/;
 const MAX_ATTACHMENTS = 12;
@@ -48,6 +49,29 @@ function providerFor(agent: string): AgentProvider {
     throw new Error(`Agent not available: ${agent} — is the extension installed and running?`);
   }
   return provider;
+}
+
+const SHELL_TOOLS = /^(?:bash|shell|sh|exec|run_command|execute_command|terminal|powershell|cmd)$/i;
+
+/**
+ * A permission card for a shell command carries the scanner's verdict: whoever
+ * decides should not have to recognise `curl … | sh` in a long command line on
+ * their own. The agent's own reason, if any, stays.
+ */
+function annotatePermission(body: AgentEventBody): AgentEventBody {
+  if (body.kind !== 'permission' || !SHELL_TOOLS.test(body.tool)) {
+    return body;
+  }
+  const command = body.input?.command ?? body.input?.cmd;
+  if (typeof command !== 'string') {
+    return body;
+  }
+  const worst = scanCommandLine(command).findings.find((finding) => finding.severity === 'critical' || finding.severity === 'high');
+  if (!worst) {
+    return body;
+  }
+  const warning = `Security scanner: ${worst.title} (${worst.id}) — ${worst.message}`;
+  return { ...body, reason: body.reason ? `${warning}\n${body.reason}` : warning };
 }
 
 /** Keep only well-formed attachments of reasonable size. */
@@ -158,7 +182,7 @@ export const agents = {
       if (!target || target.isDestroyed()) {
         return;
       }
-      const event: AgentEvent = { ...body, agent, chatId };
+      const event: AgentEvent = { ...annotatePermission(body), agent, chatId };
       target.send('agent:event', event);
     };
 

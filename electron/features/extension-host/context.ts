@@ -29,6 +29,9 @@
  *   ctx.storage.get / set                      a small JSON document that survives restarts
  *   ctx.storage.dir()                          a folder of the extension's own (downloads, caches)
  *   ctx.openExternal(url)                      a link in the browser
+ *   ctx.formatters.register(id, provider, { priority })   formats documents (see contract.ts)
+ *   ctx.diagnostics.register(id, provider)     checks documents, shown like a language server's
+ *   ctx.security.addRules(rules)               extra rules for the security scanner (data only)
  *
  * Every registration is undone when the extension stops, whatever it forgot
  * to clean up itself.
@@ -40,10 +43,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { agents } from './agents';
 import { contributions } from './contributions';
+import { providers } from './providers';
 import { services } from './services';
+import { assertExecAllowed, addRulePack } from '../security';
 import { onWorkspaceRoots, workspaceFolders, workspaceRoot } from '../workspace-roots';
 import type {
-  AgentProvider, HostEvent, InputField, StatusItem, UiMessage, ViewProvider,
+  AgentProvider, DiagnosticProvider, FormatterProvider, HostEvent, InputField, SecurityRuleSpec, StatusItem, UiMessage, ViewProvider,
 } from './contract';
 
 const MAX_OUTPUT = 16 * 1024 * 1024;
@@ -75,6 +80,11 @@ export function exec(command: string, args: string[] = [], options: ExecOptions 
   const cwd = options.cwd ?? workspaceRoot() ?? process.cwd();
   if (!path.isAbsolute(cwd)) {
     return Promise.reject(new Error('cwd must be an absolute path'));
+  }
+  try {
+    assertExecAllowed(command, args);
+  } catch (err) {
+    return Promise.reject(err);
   }
   return new Promise((resolve, reject) => {
     const child = spawn(command, args.map(String), {
@@ -231,6 +241,24 @@ export function createContext(extensionId: string, onDispose: (fn: Dispose) => v
     statusBar: {
       set(itemId: string, item: StatusItem | null) {
         contributions.setStatus(extensionId, itemId, item);
+      },
+    },
+
+    formatters: {
+      register(formatterId: string, provider: FormatterProvider, options: { priority?: number; } = {}) {
+        providers.registerFormatter(extensionId, formatterId, provider, options.priority);
+      },
+    },
+
+    diagnostics: {
+      register(checkerId: string, provider: DiagnosticProvider) {
+        providers.registerChecker(extensionId, checkerId, provider);
+      },
+    },
+
+    security: {
+      addRules(rules: SecurityRuleSpec[]) {
+        addRulePack(extensionId, rules);
       },
     },
 

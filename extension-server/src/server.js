@@ -12,7 +12,8 @@
  * The HTTP interface of the extension server.
  *
  * Two faces on the same port:
- *   • `/api/v1/…` — what Lumen fetches: the catalogue, the details, the manifests.
+ *   • `/api/v1/…` — what Lumen fetches: the catalogue, the details, the manifests
+ *     and what the security scanner found.
  *   • `/` and `/e/<id>` — project pages to look at in a browser.
  *
  * Reading is open, writing needs a token (`Authorization: Bearer …`). With no
@@ -29,6 +30,8 @@ import http from 'node:http';
 import { URL } from 'node:url';
 import { ManifestError, MAX_MANIFEST_BYTES, checkManifest } from './manifest.js';
 import { errorPage, extensionPage, indexPage } from './pages.js';
+import { RULES, SCANNER_VERSION, scanManifest, summarize } from './scanner/index.js';
+import { MAX_BLOCK_FINDINGS, publicSummary, scanStored, securitySummary } from './security.js';
 
 const JSON_HEADERS = {
   'content-type': 'application/json; charset=utf-8',
@@ -112,6 +115,7 @@ function bearer(request) {
 }
 
 const EXTENSION_PATH = /^\/api\/v1\/extensions\/([^/]+)(?:\/([^/]+))?$/;
+const SECURITY_PATH = /^\/api\/v1\/extensions\/([^/]+)\/([^/]+)\/security$/;
 const PAGE_PATH = /^\/e\/([^/]+)\/?$/;
 
 /** The read-only routes that need no lookup in the URL. */
@@ -124,6 +128,14 @@ function createRoutes({ store, config, server }) {
       name: config.name,
       url: config.publicUrl,
       extensions: store.latest.size,
+    }),
+
+    /** What the scanner checks for, so that publishers can see why a manifest was turned away. */
+    'GET /api/v1/scanner': (_request, response) => sendJson(response, 200, {
+      schema: 1,
+      version: SCANNER_VERSION,
+      rules: RULES.length,
+      items: RULES.map(({ id, severity, category, title, targets }) => ({ id, severity, category, title, targets })),
     }),
 
     'GET /api/v1/index': (_request, response, url) => {
@@ -147,13 +159,47 @@ async function getExtension({ store, server }, response, api) {
     return sendJson(response, 404, { error: 'not_found', message: `Unknown extension: ${id}` });
   }
   if (!version) {
-    return sendJson(response, 200, { schema: 1, server, ...entry.meta, manifest: entry.manifest });
+    return sendJson(response, 200, {
+      schema: 1,
+      server,
+      ...entry.meta,
+      security: publicSummary(entry.meta.security),
+      securityByVersion: await store.securityByVersion(id),
+      manifest: entry.manifest,
+    });
   }
   const manifest = await store.manifest(id, version);
   if (!manifest) {
     return sendJson(response, 404, { error: 'not_found', message: `Unknown version: ${version}` });
   }
   return sendJson(response, 200, manifest);
+}
+
+/** GET /api/v1/extensions/<id>/<version>/security — the full findings, from a fresh scan of the stored manifest. */
+async function getSecurity({ store }, response, api) {
+  const id = decodeURIComponent(api[1]);
+  const requested = decodeURIComponent(api[2]);
+  const manifest = await store.manifest(id, requested);
+  if (!manifest) {
+    return sendJson(response, 404, { error: 'not_found', message: `Unknown extension or version: ${id} ${requested}` });
+  }
+  const report = scanStored(manifest);
+  if (!report) {
+    return sendJson(response, 500, { error: 'scan_failed', message: 'The scanner could not read this manifest.' });
+  }
+  return sendJson(response, 200, {
+    schema: 1,
+    id,
+    version: manifest.version,
+    scanner: SCANNER_VERSION,
+    scannedAt: new Date().toISOString(),
+    verdict: report.verdict,
+    counts: summarize(report),
+    scanned: report.scanned,
+    rules: report.rules,
+    truncated: report.truncated ?? false,
+    findings: report.findings,
+  });
 }
 
 /** DELETE /api/v1/extensions/<id>/<version> */
@@ -206,6 +252,18 @@ async function publishExtension({ store, config }, request, response) {
   if (failure) {
     return sendJson(response, failure.status, failure.body);
   }
+  // The scan comes before everything that touches the disk, and the publisher
+  // cannot override it: a manifest that blocks is never stored.
+  const report = scanManifest(manifest);
+  if (report.verdict === 'block') {
+    const critical = report.findings.filter((finding) => finding.severity === 'critical');
+    return sendJson(response, 422, {
+      error: 'security_blocked',
+      message: `${manifest.id} ${manifest.version} was turned away: the security scan found ${critical.length} critical problem${critical.length === 1 ? '' : 's'}.`,
+      counts: summarize(report),
+      findings: critical.slice(0, MAX_BLOCK_FINDINGS),
+    });
+  }
   const existing = await store.manifest(manifest.id, manifest.version);
   if (existing && !config.allowOverwrite) {
     return sendJson(response, 409, {
@@ -213,12 +271,14 @@ async function publishExtension({ store, config }, request, response) {
       message: `${manifest.id} ${manifest.version} already exists. Raise the version or start the server with --allow-overwrite.`,
     });
   }
-  const { replaced } = await store.publish(manifest);
+  const security = securitySummary(report);
+  const { replaced } = await store.publish(manifest, security);
   return sendJson(response, replaced ? 200 : 201, {
     ok: true,
     id: manifest.id,
     version: manifest.version,
     replaced,
+    security: publicSummary(security),
     url: `${config.publicUrl}/e/${encodeURIComponent(manifest.id)}`,
   });
 }
@@ -249,6 +309,11 @@ export function createServer({ store, config }) {
     const exact = routes[route];
     if (exact) {
       return exact(request, response, url);
+    }
+
+    const security = SECURITY_PATH.exec(url.pathname);
+    if (security && request.method === 'GET') {
+      return getSecurity(env, response, security);
     }
 
     const api = EXTENSION_PATH.exec(url.pathname);

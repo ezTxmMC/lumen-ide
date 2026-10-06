@@ -16,7 +16,8 @@
  */
 
 import type {
-  Addon, AddonContext, AddonPanel, AddonSnippet, Command, IconPack, LanguageSpec, ProjectKind, ProjectTemplate, Theme,
+  Addon, AddonContext, AddonPanel, AddonSnippet, Command, IconPack, LanguageSpec, ProjectKind, ProjectTemplate,
+  RendererChecker, RendererFormatter, Theme,
 } from './types';
 
 type Notifier = (message: string, kind?: 'info' | 'success' | 'warning' | 'error') => void;
@@ -34,6 +35,8 @@ class Registry {
   private dynCommands = new Map<string, Command[]>();
   private dynProjectKinds = new Map<string, ProjectKind[]>();
   private dynProjectTemplates = new Map<string, ProjectTemplate[]>();
+  private dynFormatters = new Map<string, RendererFormatter[]>();
+  private dynCheckers = new Map<string, RendererChecker[]>();
 
   /** Themes made in the Theme Studio — they belong to no add-on. */
   private userThemes: Theme[] = [];
@@ -164,6 +167,18 @@ class Registry {
         this.dynProjectTemplates.set(addon.id, list);
         this.emit();
       },
+      registerFormatter: (formatter) => {
+        const list = this.dynFormatters.get(addon.id) ?? [];
+        list.push(formatter);
+        this.dynFormatters.set(addon.id, list);
+        this.emit();
+      },
+      registerChecker: (checker) => {
+        const list = this.dynCheckers.get(addon.id) ?? [];
+        list.push(checker);
+        this.dynCheckers.set(addon.id, list);
+        this.emit();
+      },
     };
   }
 
@@ -204,6 +219,8 @@ class Registry {
     this.dynCommands.delete(id);
     this.dynProjectKinds.delete(id);
     this.dynProjectTemplates.delete(id);
+    this.dynFormatters.delete(id);
+    this.dynCheckers.delete(id);
     this.active.delete(id);
     this.emit();
     return true;
@@ -340,6 +357,60 @@ class Registry {
       }
     }
     return out;
+  }
+
+  /** Formatters of the active add-ons, highest priority first. */
+  formatters(): RendererFormatter[] {
+    const all = [...this.active].flatMap((id) => [
+      ...(this.addons.get(id)?.formatters ?? []),
+      ...(this.dynFormatters.get(id) ?? []),
+    ]);
+    return all.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+  }
+
+  checkers(): RendererChecker[] {
+    return [...this.active].flatMap((id) => [
+      ...(this.addons.get(id)?.checkers ?? []),
+      ...(this.dynCheckers.get(id) ?? []),
+    ]);
+  }
+
+  /* -------------------------------------------------- */
+
+  /**
+   * The theme the app falls back on: the one an active add-on names as its
+   * default, otherwise the first dark theme, otherwise the first one at all.
+   */
+  defaultThemeId(): string {
+    const themes = this.themes();
+    for (const id of this.active) {
+      const wanted = this.addons.get(id)?.defaults?.theme;
+      if (wanted && themes.some((theme) => theme.id === wanted)) {
+        return wanted;
+      }
+    }
+    return (themes.find((theme) => theme.type === 'dark') ?? themes[0])?.id ?? '';
+  }
+
+  defaultTheme(): Theme | undefined {
+    const id = this.defaultThemeId();
+    return this.themes().find((theme) => theme.id === id);
+  }
+
+  defaultIconPackId(): string {
+    const packs = this.iconPacks();
+    for (const id of this.active) {
+      const wanted = this.addons.get(id)?.defaults?.iconPack;
+      if (wanted && packs.some((pack) => pack.id === wanted)) {
+        return wanted;
+      }
+    }
+    return packs[0]?.id ?? '';
+  }
+
+  /** Ids of the add-ons that are on from the first start without being built in. */
+  defaultEnabledIds(): string[] {
+    return [...this.addons.values()].filter((addon) => !addon.builtin && addon.defaults?.enabled).map((addon) => addon.id);
   }
 
   /* -------------------------------------------------- */

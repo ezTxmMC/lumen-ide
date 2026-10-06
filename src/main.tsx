@@ -10,6 +10,8 @@
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+// First: the add-ons that ship with the app go into the registry before anything reads it.
+import './addons/register';
 import App from './App';
 import './styles/index.css';
 

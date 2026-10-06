@@ -1,0 +1,28 @@
+- Deutlich mehr Snippets - HTML: h1 -> <h1></h1> usw.
+- Agents (Claude Code / GPT Codex) sollen nicht die Files öffnen, welche sie bearbeitet haben.
+- Bessere und mehr an die Agents angepasse Panels.
+- React component export import geht zu "<Header()" statt zu eigentlich "<Header" ohne () von der funktion
+- CSS + Tailwind CSS in .css Dateien greift nicht. Keinerlei CSS suggestions
+- Import refactor bei rename / move
+- Prioritized Imports - Sinnvolle Imports je Sprache
+- Run -> Output - Keine Interaktion / Terminal schreiben möglich
+- Database Client Add-on Application-Wide & Project-Wide Connections
+- Drag & Drop von Dateien rein -> raus, raus -> rein - von Panels und Editortabs ohne extra Klicks einfach so. Copy & Paste von rein -> raus & raus -> Rein mühelos
+- bei Workspaces soll der Workspace root ordner ne als "Projekt" mit aufgelistet werden.
+- TypeScript / React import aus externen dependencies wird nicht bei suggestions angezeigt
+- verbessertes offline handling von add-on servern
+- unbekannte Dateitypen nicht als binary zeigen
+- terminal öffnet manchmal in "~"
+- pop-out in new window nur in den "..." verstecken, nicht direkt zeigend.
+- code nach PURELINE_SPECIFICATION_1.2.md umstrukturieren / formattieren
+- Java Annotation dependencies wie lombok funktionieren nicht / Getter/Setter werden als Fehler angezeigt
+- Suggestions select springt von bspw. "xyz.map" -> "xyzmap()"
+- middle mouse click horizontal and vertical editor "scroll"
+- auto closing brackets / tags - ausschaltbar
+- datei erstellen kann stucken und dann kann man nichts mehr ins feld eintippen
+- reveal in filemanager copy path auch bei rechtsklick ohne datei im explorer
+- komponitisierung, sodass die codebase übersichtlicher aussieht.
+- build/ ordner wird nicht im explorer anzeigt
+- markdown files 3 modes, raw, preview and splitted (left raw and right preview)
+- novus: füg novus-lsp support hinzu: https://github.com/ezTxmMC/novus
+- novus: füg nvh datei & language support hinzu

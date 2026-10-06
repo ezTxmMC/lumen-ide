@@ -741,8 +741,6 @@ export const classicIconPack: IconPack = {
   },
 };
 
-export const DEFAULT_ICON_PACK_ID = lumenIconPack.id;
-
 export const iconsAddon: Addon = {
   id: 'icons.lumen',
   name: 'Lumen Icons',
@@ -754,4 +752,5 @@ export const iconsAddon: Addon = {
   builtin: true,
   category: 'theme',
   iconPacks: [lumenIconPack, monoIconPack, classicIconPack],
+  defaults: { iconPack: lumenIconPack.id },
 };

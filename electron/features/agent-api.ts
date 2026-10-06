@@ -12,7 +12,8 @@
 
 import { invoke, subscribe } from './ipc';
 import type {
-  AgentAnswer, AgentEvent, AgentModel, AgentSendRequest, HostEvent, StatusItem, UiMessage, UiRequest, ViewActionEvent, ViewContent,
+  AgentAnswer, AgentEvent, AgentModel, AgentSendRequest, CheckDiagnostic, CheckRequest, FileRef, FormatRequest, FormatResult,
+  HostEvent, StatusItem, UiMessage, UiRequest, ViewActionEvent, ViewContent,
 } from './extension-host/contract';
 
 export const agentApi = {
@@ -51,4 +52,13 @@ export const extensionHostApi = {
     subscribe('extensions:ui:request', cb),
   answer: (requestId: string, answer: unknown): Promise<boolean> => invoke('extensions:ui:answer', requestId, answer),
   emit: (event: HostEvent): Promise<void> => invoke('extensions:event', event),
+  /** The formatter an extension registered for this file (`<extension>/<formatter>`), or `null`. */
+  formatterFor: (file: FileRef): Promise<string | null> => invoke('extensions:format:available', file),
+  format: (request: FormatRequest): Promise<
+    | { status: 'formatted'; result: FormatResult; by: string; }
+    | { status: 'unchanged'; by: string; notes: string[]; }
+    | { status: 'none'; }
+  > => invoke('extensions:format', request),
+  /** Diagnostics of the checkers extensions registered for this file. */
+  check: (request: CheckRequest): Promise<CheckDiagnostic[]> => invoke('extensions:check', request),
 };

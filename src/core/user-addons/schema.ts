@@ -96,6 +96,8 @@ export interface UserLanguage {
   indentOpen?: string;
   indentClose?: string;
   indentUnit?: number;
+  /** Indent with tabs instead of spaces (Go, Makefiles) — the editor's default for this language. */
+  indentTabs?: boolean;
   completions?: string[];
   snippets?: Snippet[];
   run?: RunConfig[];

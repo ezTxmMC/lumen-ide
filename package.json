@@ -1,6 +1,6 @@
 {
   "name": "lumen-ide",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "description": "Modern, lightweight and add-on based coding IDE with broad customizability.",
   "private": true,
   "type": "module",
@@ -45,8 +45,9 @@
     "check:menubar": "esbuild scripts/check-menubar.ts --bundle --platform=node --format=esm --alias:@=./src --outfile=node_modules/.cache/check-menubar.mjs --log-level=error && node node_modules/.cache/check-menubar.mjs",
     "check:addons": "esbuild scripts/check-addons.ts --bundle --platform=node --format=esm --alias:@=./src --outfile=node_modules/.cache/check-addons.mjs --log-level=error && node node_modules/.cache/check-addons.mjs",
     "check:files": "esbuild scripts/check-files.ts --bundle --platform=node --format=esm --alias:@=./src --outfile=node_modules/.cache/check-files.mjs --log-level=error && node node_modules/.cache/check-files.mjs",
+    "check:core": "esbuild scripts/check-core-api.ts --bundle --platform=node --format=esm --alias:@=./src --outfile=node_modules/.cache/check-core-api.mjs --log-level=error && node node_modules/.cache/check-core-api.mjs",
     "check:merge": "esbuild scripts/check-merge.ts --bundle --platform=node --format=esm --alias:@=./src --outfile=node_modules/.cache/check-merge.mjs --log-level=error && node node_modules/.cache/check-merge.mjs",
-    "check": "npm run typecheck && npm run build:ext && npm run check:languages && npm run check:project && npm run check:lsp && npm run check:i18n && npm run check:completion && npm run check:completion-apply && npm run check:themes && npm run check:layout && npm run check:menubar && npm run check:files && npm run check:media && npm run check:addons && npm run check:merge && npm run check:extensions && npm run check:docs && npm run test:server && npm run test:extensions",
+    "check": "npm run typecheck && npm run build:ext && npm run check:languages && npm run check:project && npm run check:lsp && npm run check:i18n && npm run check:completion && npm run check:completion-apply && npm run check:themes && npm run check:layout && npm run check:menubar && npm run check:files && npm run check:media && npm run check:addons && npm run check:merge && npm run check:core && npm run check:extensions && npm run check:docs && npm run test:server && npm run test:extensions",
     "rebuild:native": "electron-rebuild -f -w node-pty",
     "postinstall": "electron-rebuild -f -w node-pty",
     "check:extensions": "esbuild scripts/check-extensions.ts --bundle --platform=node --format=esm --alias:@=./src --outfile=node_modules/.cache/check-extensions.mjs --log-level=error && node node_modules/.cache/check-extensions.mjs",

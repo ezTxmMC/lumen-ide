@@ -77,6 +77,7 @@ export function compileLanguage(lang: UserLanguage): LanguageSpec {
     indentOpen: regex(lang.indentOpen, false),
     indentClose: regex(lang.indentClose, false),
     indentUnit: lang.indentUnit,
+    format: lang.indentTabs ? { useTabs: true } : undefined,
     completions: nonEmpty(lang.completions),
     snippets: nonEmpty(lang.snippets),
     run: nonEmpty(lang.run),

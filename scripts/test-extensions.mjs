@@ -23,7 +23,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'extensions');
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'addons');
 const wanted = process.argv.slice(2);
 const names = fs.readdirSync(ROOT, { withFileTypes: true })
   .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(ROOT, entry.name, 'test.mjs')))

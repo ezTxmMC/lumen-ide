@@ -18,9 +18,6 @@ import { lsp } from '@/core/lsp/manager';
 import { matchLanguage } from '@/core/language';
 import { applyEffects, applyTheme, DEFAULT_EFFECTS } from '@/core/theme';
 import { isIconPack, uniqueIconPackId } from '@/core/icon-pack';
-import { DEFAULT_ENABLED } from '@/addons';
-import { DEFAULT_THEME_ID, lumenDark } from '@/addons/builtin/themes';
-import { DEFAULT_ICON_PACK_ID } from '@/addons/builtin/icons';
 import type { IconPack, Theme } from '@/core/types';
 import { t } from '@/i18n';
 import { applyIconPack, isTheme, uniqueThemeId } from '../helpers';
@@ -125,7 +122,10 @@ function themeActions(ctx: Ctx): Pick<AppearanceSlice, 'setTheme' | 'setEffects'
         s.setTheme(baseId);
         return;
       }
-      const source = registry.themes().find((theme) => theme.id === (baseId ?? s.themeId)) ?? lumenDark;
+      const source = registry.themes().find((theme) => theme.id === (baseId ?? s.themeId)) ?? registry.defaultTheme();
+      if (!source) {
+        return;
+      }
       const copy = ownCopy(source, uniqueThemeId(source.id, s.customThemes));
       commitThemes(ctx, [...s.customThemes, copy]);
       set({ editingThemeId: copy.id });
@@ -145,7 +145,7 @@ function themeActions(ctx: Ctx): Pick<AppearanceSlice, 'setTheme' | 'setEffects'
         return;
       }
       commitThemes(ctx, s.customThemes.filter((theme) => theme.id !== id));
-      get().setTheme(registry.themes().some((theme) => theme.id === s.themeId) ? s.themeId : DEFAULT_THEME_ID);
+      get().setTheme(registry.themes().some((theme) => theme.id === s.themeId) ? s.themeId : registry.defaultThemeId());
     },
 
     previewTheme(theme) {
@@ -164,7 +164,7 @@ function themeActions(ctx: Ctx): Pick<AppearanceSlice, 'setTheme' | 'setEffects'
     deleteCustomTheme(id) {
       commitThemes(ctx, get().customThemes.filter((theme) => theme.id !== id));
       if (get().themeId === id) {
-        get().setTheme(DEFAULT_THEME_ID);
+        get().setTheme(registry.defaultThemeId());
       }
       get().persist();
       get().notify(t('notify.theme.deleted'), 'info');
@@ -260,7 +260,7 @@ function iconPackActions(ctx: Ctx): Pick<AppearanceSlice, 'setIconPack' | 'openI
     deleteCustomIconPack(id) {
       commitIconPacks(ctx, get().customIconPacks.filter((pack) => pack.id !== id));
       if (get().iconPackId === id) {
-        get().setIconPack(DEFAULT_ICON_PACK_ID);
+        get().setIconPack(registry.defaultIconPackId());
       }
       get().persist();
       get().notify(t('iconPacks.deleted'), 'info');
@@ -325,7 +325,7 @@ function addonActions(ctx: Ctx): Pick<AppearanceSlice, 'toggleAddon' | 'openAddo
 
       // When the theme disappears with the add-on, fall back to the default theme.
       if (!registry.themes().some((theme) => theme.id === get().themeId)) {
-        get().setTheme(DEFAULT_THEME_ID);
+        get().setTheme(registry.defaultThemeId());
       }
 
       // Work out the language of the open tabs afresh.
@@ -355,14 +355,14 @@ function addonActions(ctx: Ctx): Pick<AppearanceSlice, 'toggleAddon' | 'openAddo
 export const createAppearanceSlice: Slice<AppearanceSlice> = (set, get) => {
   const ctx: Ctx = { get, set };
   return {
-    themeId: DEFAULT_THEME_ID,
+    themeId: registry.defaultThemeId(),
     customThemes: [],
     editingThemeId: null,
     effects: DEFAULT_EFFECTS,
-    enabledAddons: DEFAULT_ENABLED,
+    enabledAddons: registry.defaultEnabledIds(),
     registryVersion: 0,
     addonStudio: null,
-    iconPackId: DEFAULT_ICON_PACK_ID,
+    iconPackId: registry.defaultIconPackId(),
     customIconPacks: [],
     iconStudio: null,
     formatSettings: {},

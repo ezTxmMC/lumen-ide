@@ -26,9 +26,10 @@ import type { EditorView } from '@codemirror/view';
 import { editorBridge } from '@/lib/editor-bridge';
 import { terminals } from '@/lib/terminals';
 import {
-  findReferences, formatDocument, gotoLocation, organizeImports, showCodeActions,
+  findReferences, gotoLocation, organizeImports, showCodeActions,
   startRename, triggerSignatureHelp,
 } from '@/components/editor/lsp-extension';
+import { formatDocument } from '@/components/editor/format';
 import { EDITOR_COMMANDS } from '@/core/editor-commands';
 import { formatBindingsFor } from '@/core/keybindings';
 import { visibleGroups } from '@/state/popout';
@@ -254,7 +255,7 @@ function runEditorCommands({ s, cat, withEditor, hasLsp, hasEditor }: Ctx): Comm
     { id: 'editor.codeActions', title: c('editor.codeActions'), category: cat.editor, scope: 'editor', run: withEditor((v, p) => showCodeActions(v, p)), when: hasLsp },
     { id: 'editor.refactor', title: c('editor.refactor'), category: cat.editor, scope: 'editor', run: withEditor((v, p) => showCodeActions(v, p, ['refactor'])), when: hasLsp },
     { id: 'editor.fixAll', title: c('editor.fixAll'), category: cat.editor, scope: 'editor', run: withEditor((v, p) => showCodeActions(v, p, ['source.fixAll'])), when: hasLsp },
-    { id: 'editor.format', title: c('editor.format'), category: cat.editor, scope: 'editor', run: withEditor(formatDocument), when: hasLsp },
+    { id: 'editor.format', title: c('editor.format'), category: cat.editor, scope: 'editor', run: withEditor((view, path) => formatDocument(view, path, { explicit: true })) },
     { id: 'editor.organizeImports', title: c('editor.organizeImports'), category: cat.editor, scope: 'editor', run: withEditor(organizeImports), when: hasLsp },
     { id: 'editor.signature', title: c('editor.signature'), category: cat.editor, scope: 'editor', run: withEditor((v, p) => triggerSignatureHelp(v, p)), when: hasLsp },
 

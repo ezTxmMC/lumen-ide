@@ -33,7 +33,7 @@ import { blockingIssues, validateAddon } from '@/core/user-addons/validate';
 
 // Bundled, this file lands under node_modules/.cache — the root of the project
 // is therefore npm's working directory, not where the module sits.
-const DIST = path.join(process.cwd(), 'extensions', 'dist');
+const DIST = path.join(process.cwd(), 'addons', 'dist');
 
 let failed = 0;
 let checked = 0;
@@ -47,7 +47,7 @@ function report(ok: boolean, message: string) {
 
 function main() {
   if (!fs.existsSync(DIST)) {
-    process.stdout.write('extensions/dist is missing — run `npm run build:ext` first.\n');
+    process.stdout.write('addons/dist is missing — run `npm run build:ext` first.\n');
     return;
   }
   const files = fs.readdirSync(DIST).filter((name) => name.endsWith('.json')).sort();
@@ -86,7 +86,7 @@ function main() {
  * ones; network tests run on request with the file's own flag.
  */
 function runExtensionTests() {
-  const root = path.join(process.cwd(), 'extensions');
+  const root = path.join(process.cwd(), 'addons');
   const folders = fs.readdirSync(root, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
   for (const name of folders) {
     const file = path.join(root, name, 'test.mjs');
@@ -94,10 +94,10 @@ function runExtensionTests() {
       continue;
     }
     checked++;
-    const result = spawnSync(process.execPath, [file], { cwd: process.cwd(), encoding: 'utf8' });
+    const result = spawnSync(process.execPath, [file], { cwd: path.join(root, name), encoding: 'utf8' });
     const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
     const summary = output.trim().split('\n').filter(Boolean).at(-1) ?? '';
-    report(result.status === 0, `extensions/${name}/test.mjs — ${summary}`);
+    report(result.status === 0, `addons/${name}/test.mjs — ${summary}`);
     if (result.status !== 0) {
       process.stdout.write(output.split('\n').filter((line) => line.startsWith('✗') || /Error/.test(line)).slice(0, 20).join('\n') + '\n');
     }

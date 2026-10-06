@@ -20,8 +20,7 @@
 import { diffChanges, needsResolve, offsetToPos, planCompletion, posToOffset } from '@/core/completion/apply';
 import { snippetToCm } from '@/core/completion/snippet';
 import { ensureSnippetSession, startSnippetSession } from './snippet-session';
-import { formatFor, lspFormattingOptions } from '@/core/format-settings';
-import { pomBlockGaps } from '@/core/xml-format';
+import { lspFormattingOptions, type LanguageFormat } from '@/core/format-settings';
 import {
   Decoration, EditorView, hoverTooltip, keymap, showTooltip, ViewPlugin, WidgetType,
   type DecorationSet, type Tooltip, type ViewUpdate,
@@ -1324,22 +1323,18 @@ export async function showLocations(title: string, locations: Location[]) {
  * Formatting
  * ------------------------------------------------------------------ */
 
-export async function formatDocument(view: EditorView, filePath: string): Promise<boolean> {
+/** Format through the language server: whether it changed anything, or `null` when there is no server to ask. */
+export async function formatWithLanguageServer(view: EditorView, filePath: string, format: LanguageFormat): Promise<boolean | null> {
   const client = readyClient(filePath);
   if (!client) {
-    return false;
+    return null;
   }
-
-  const spec = useStore.getState().languageFor(useStore.getState().activeTab());
-  const options = lspFormattingOptions(formatFor(useStore.getState().formatSettings, spec?.id, spec?.indentUnit));
+  const options = lspFormattingOptions(format);
   const selection = view.state.selection.main;
   const edits = selection.empty || !client.supports('documentRangeFormattingProvider')
     ? await client.formatting(filePath, options)
     : await client.rangeFormatting(filePath, selectionRange(view), options);
-  const formatted = edits?.length ? applyFormatEdits(view, edits, selection.head) : false;
-  // The server never adds blank lines; a POM gets them between its blocks.
-  const spaced = spec?.id === 'xml' && selection.empty && separatePomBlocks(view);
-  return formatted || spaced;
+  return edits?.length ? applyFormatEdits(view, edits, selection.head) : false;
 }
 
 function applyFormatEdits(view: EditorView, edits: TextEdit[], head: number): boolean {
@@ -1349,15 +1344,6 @@ function applyFormatEdits(view: EditorView, edits: TextEdit[], head: number): bo
   view.dispatch(tr);
   const mapped = tr.changes.mapPos(head);
   view.dispatch({ selection: EditorSelection.cursor(Math.min(mapped, view.state.doc.length)) });
-  return true;
-}
-
-function separatePomBlocks(view: EditorView): boolean {
-  const gaps = pomBlockGaps(view.state.doc.toString());
-  if (!gaps.length) {
-    return false;
-  }
-  view.dispatch({ changes: gaps.map((at) => ({ from: at, insert: '\n' })), userEvent: 'lsp.format' });
   return true;
 }
 

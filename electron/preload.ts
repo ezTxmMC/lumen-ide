@@ -18,6 +18,7 @@ import { userAddonsApi } from './features/user-addons-api';
 import { updaterApi } from './features/updater-api';
 import { agentApi, extensionHostApi } from './features/agent-api';
 import { mediaApi } from './features/media-api';
+import { securityApi } from './features/security-api';
 
 export interface DirEntry {
   name: string;
@@ -272,6 +273,7 @@ const api = {
   agent: agentApi,
   extensionHost: extensionHostApi,
   media: mediaApi,
+  security: securityApi,
 };
 
 contextBridge.exposeInMainWorld('lumen', api);

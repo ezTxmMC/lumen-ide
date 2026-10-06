@@ -9,15 +9,13 @@
  */
 
 import type { ReactNode } from 'react';
-import {
-  formatFor, supportsBracketSpacing, supportsQuotes, supportsSemicolons, supportsTrailingComma,
-  type FormatSettings, type LanguageFormat,
-} from '@/core/format-settings';
+import { formatFor, type FormatSettings, type LanguageFormat } from '@/core/format-settings';
+import type { LanguageSpec } from '@/core/types';
 import { Button, Select, Slider, Toggle } from '../ui';
 
 interface FormatRowsArgs {
   t: (key: string, params?: Record<string, string | number>) => string;
-  languages: { id: string; name: string; indentUnit?: number; }[];
+  languages: Pick<LanguageSpec, 'id' | 'name' | 'indentUnit' | 'format'>[];
   languageId: string;
   onLanguage: (id: string) => void;
   settings: FormatSettings;
@@ -33,11 +31,10 @@ interface FormatRow {
 
 /** The rows of the “Formatting” page: one language at a time, only the settings that make sense for it. */
 export function formatRows({ t, languages, languageId, onLanguage, settings, onChange, onReset }: FormatRowsArgs): FormatRow[] {
-  const language = languages.find((l) => l.id === languageId);
-  const format = formatFor(settings, languageId, language?.indentUnit);
+  const format = formatFor(settings, languages.find((l) => l.id === languageId));
   const label = (key: string) => t(`settings.formatting.${key}`);
 
-  const toggle = (key: 'useTabs' | 'singleQuote' | 'semicolons' | 'bracketSpacing' | 'trimTrailingWhitespace' | 'insertFinalNewline', hint = false): FormatRow => ({
+  const toggle = (key: 'useTabs' | 'trimTrailingWhitespace' | 'insertFinalNewline', hint = false): FormatRow => ({
     section: 'formatting',
     text: `${label(key)} ${hint ? label(`${key}Hint`) : ''}`,
     node: <Toggle label={label(key)} hint={hint ? label(`${key}Hint`) : undefined} checked={format[key]} onChange={(v) => onChange({ [key]: v })} />,
@@ -60,45 +57,7 @@ export function formatRows({ t, languages, languageId, onLanguage, settings, onC
       node: <Slider label={label('tabWidth')} min={1} max={8} value={format.tabWidth} format={(v) => String(v)} onChange={(v) => onChange({ tabWidth: v })} />,
     },
     toggle('useTabs'),
-    {
-      section: 'formatting',
-      text: `${label('printWidth')} ${label('printWidthHint')}`,
-      node: (
-        <div>
-          <Slider label={label('printWidth')} min={40} max={200} step={4} value={format.printWidth} format={(v) => String(v)} onChange={(v) => onChange({ printWidth: v })} />
-          <p className="text-[11.5px] leading-snug text-subtle">{label('printWidthHint')}</p>
-        </div>
-      ),
-    },
   ];
-
-  if (supportsQuotes(languageId)) {
-    rows.push(toggle('singleQuote'));
-  }
-  if (supportsSemicolons(languageId)) {
-    rows.push(toggle('semicolons'));
-  }
-  if (supportsTrailingComma(languageId)) {
-    rows.push({
-      section: 'formatting',
-      text: label('trailingComma'),
-      node: (
-        <Select
-          label={label('trailingComma')}
-          value={format.trailingComma}
-          options={[
-            { value: 'none', label: label('trailingCommaNone') },
-            { value: 'es5', label: label('trailingCommaEs5') },
-            { value: 'all', label: label('trailingCommaAll') },
-          ]}
-          onChange={(v) => onChange({ trailingComma: v })}
-        />
-      ),
-    });
-  }
-  if (supportsBracketSpacing(languageId)) {
-    rows.push(toggle('bracketSpacing'));
-  }
 
   rows.push(
     {

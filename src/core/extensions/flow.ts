@@ -52,13 +52,13 @@ export async function installExtension(
     if (!(err instanceof CodeApprovalRequired)) {
       throw err;
     }
-    const { manifest, hash } = err;
+    const { manifest, hash, securityNote } = err;
     useStore.getState().openForm({
       title: t('extensions.codeTitle', { name: manifest.name }),
-      description: t('extensions.codeBody', {
-        name: manifest.name,
-        host: hostOf(server) ?? server,
-      }),
+      description: [
+        t('extensions.codeBody', { name: manifest.name, host: hostOf(server) ?? server }),
+        securityNote,
+      ].filter(Boolean).join('\n\n'),
       detail: { label: t('extensions.codeChecksum'), value: hash },
       submitLabel: t('extensions.codeApprove'),
       fields: [],

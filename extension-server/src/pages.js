@@ -19,6 +19,7 @@
  */
 
 import { escapeHtml, renderMarkdown } from './markdown.js';
+import { securityLabel } from './security.js';
 import { provides } from './store.js';
 
 const STYLE = `
@@ -128,7 +129,7 @@ function card(entry) {
     <a class="card" href="/e/${encodeURIComponent(entry.id)}">
       <h2>${badge(entry)}${escapeHtml(entry.name)}</h2>
       <p>${escapeHtml(entry.description || NO_DESCRIPTION)}</p>
-      <div class="meta">${escapeHtml(entry.version)}${suffix(entry.author)}</div>
+      <div class="meta">${escapeHtml(entry.version)}${suffix(entry.author)}${suffix(securityLabel(entry.security))}</div>
     </a>`;
 }
 
@@ -188,6 +189,11 @@ function versionItem(manifest, version) {
   return `<li><code>${escapeHtml(version)}</code> — <a href="${href}">Manifest</a></li>`;
 }
 
+/** The full scan result of the version shown. */
+function securityHref(manifest) {
+  return `/api/v1/extensions/${encodeURIComponent(manifest.id)}/${encodeURIComponent(manifest.version)}/security`;
+}
+
 export function extensionPage(server, entry) {
   const { manifest, meta } = entry;
   const settings = listSection('Settings', manifest.settings?.map((setting) => `<li><code>${escapeHtml(setting.key)}</code> — ${escapeHtml(setting.label)}</li>`));
@@ -212,7 +218,8 @@ export function extensionPage(server, entry) {
     <p class="meta">
       Version ${escapeHtml(manifest.version)}${suffix(manifest.author)}${suffix(manifest.license)}<br>
       Identifier <code>${escapeHtml(manifest.id)}</code><br>
-      ${escapeHtml(providesText(provides(manifest)))}
+      ${escapeHtml(providesText(provides(manifest)))}<br>
+      <a href="${securityHref(manifest)}">${escapeHtml(securityLabel(meta.security))}</a>
       ${linkLine}
     </p>
     ${tagList(manifest.keywords)}

@@ -13,6 +13,7 @@ import { denoKind, denoTemplate, npmKind, tsLibraryTemplate, tsNodeTemplate, tsV
 import { javascriptSpec, TS_INLAY_HINTS, TS_PREFERENCES, VTSLS_PREFERENCES, VTSLS_SUGGEST } from './javascript';
 import { jsDebugTypeScript } from '@/core/debug/adapters';
 import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages';
+import { tsserverFormat } from '../lib/format-settings';
 import { localizeSnippets } from '../lib/localize';
 import { t } from '@/i18n';
 
@@ -69,6 +70,7 @@ export const typescriptSpec: LanguageSpec = {
         '/opt/homebrew/bin/typescript-language-server',
       ],
       languageId: 'typescript',
+      formatSettings: tsserverFormat,
       rootMarkers: ['tsconfig.json', 'jsconfig.json', 'package.json', '.git'],
       initializationOptions: {
         hostInfo: 'Lumen',

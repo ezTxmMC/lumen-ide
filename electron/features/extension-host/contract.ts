@@ -399,3 +399,93 @@ export type HostEvent =
   | { kind: 'viewVisible'; extensionId: string; viewId: string; }
   /** The interface language changed (`de`, `en` …) — also sent once at startup. */
   | { kind: 'locale'; language: string; };
+
+/* ------------------------------------------------------------------ *
+ * Formatters and checkers
+ * ------------------------------------------------------------------ */
+
+/** What identifies a file to a formatter or checker. */
+export interface FileRef {
+  /** Absolute path; `null` for a tab that was never saved. */
+  path: string | null;
+  /** Lumen's language id for the tab (`typescript`, `java` …); `null` when no language matched. */
+  languageId: string | null;
+}
+
+/** Editor-level options the formatter should honour unless a project file of its own says otherwise. */
+export interface FormatOptions {
+  tabWidth: number;
+  useTabs: boolean;
+  /** `keep` leaves line endings as they are. */
+  endOfLine: 'keep' | 'lf' | 'crlf';
+  trimTrailingWhitespace: boolean;
+  insertFinalNewline: boolean;
+}
+
+export interface FormatRequest extends FileRef {
+  text: string;
+  /** Character offsets of the selection; missing: the whole document. */
+  range?: { from: number; to: number; };
+  options: FormatOptions;
+  /** The open project's root, `null` without one. */
+  workspace: string | null;
+}
+
+export interface FormatResult {
+  /** The whole document after formatting (a range request still returns the whole document). */
+  text: string;
+  /** Who did it, for the status line — `Pureline 1.1 (.pureline)`, `Prettier 3.3`. */
+  engine?: string;
+  /** Things worth telling the user: a config that could not be read, a tool that was missing. */
+  notes?: string[];
+}
+
+/** Formats documents. The first registered provider that `supports` a file gets it; higher `priority` first. */
+export interface FormatterProvider {
+  supports(file: FileRef): boolean | Promise<boolean>;
+  /** `null` leaves the document untouched. */
+  format(request: FormatRequest): Promise<FormatResult | null>;
+}
+
+export type CheckSeverity = 'error' | 'warning' | 'info' | 'hint';
+
+export interface CheckDiagnostic {
+  /** Zero-based line and column (UTF-16 units) of the start. */
+  line: number;
+  column: number;
+  /** Zero-based end; missing: to the end of the line. */
+  endLine?: number;
+  endColumn?: number;
+  severity: CheckSeverity;
+  message: string;
+  /** A stable rule id (`PL-CF-002`). */
+  code?: string;
+  /** Shown as the diagnostic's source (`Pureline`). */
+  source?: string;
+  /** What to do about it, shown below the message. */
+  suggestion?: string;
+}
+
+export interface CheckRequest extends FileRef {
+  text: string;
+  workspace: string | null;
+}
+
+/** Checks documents and reports diagnostics; shown like a language server's. */
+export interface DiagnosticProvider {
+  supports(file: FileRef): boolean | Promise<boolean>;
+  check(request: CheckRequest): Promise<CheckDiagnostic[]>;
+}
+
+/** A rule an extension adds to Lumen's security scanner — plain data, never code. */
+export interface SecurityRuleSpec {
+  /** Unique within the extension; Lumen prefixes it (`ext.name:rule`). */
+  id: string;
+  title: string;
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
+  /** Where it applies. */
+  targets: ('command' | 'extension' | 'project')[];
+  /** A regular expression as text, matched per line (flags: `i`). */
+  pattern: string;
+  message?: string;
+}

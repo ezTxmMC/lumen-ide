@@ -100,7 +100,7 @@ class El {
 const { ALL_ADDONS } = await import('@/addons');
 const { extensionAddons, extensionsBuilt } = await import('./lib/extension-addons');
 if (!extensionsBuilt()) {
-  console.log('extensions/dist is missing — run `npm run build:ext` first.');
+  console.log('addons/dist is missing — run `npm run build:ext` first.');
   process.exit(1);
 }
 

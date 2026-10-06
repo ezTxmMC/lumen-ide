@@ -17,7 +17,7 @@
  * they read the built manifests as well and compile them exactly as the
  * running program does.
  *
- * `extensions/dist` comes from `npm run build:ext`; without it the caller gets
+ * `addons/dist` comes from `npm run build:ext`; without it the caller gets
  * an empty list and says so.
  */
 
@@ -32,7 +32,7 @@ import { compileAddon } from '@/core/user-addons/compile';
 import { normalizeModel } from '@/core/user-addons/schema';
 import type { Addon } from '@/core/types';
 
-const DIST = path.join(process.cwd(), 'extensions', 'dist');
+const DIST = path.join(process.cwd(), 'addons', 'dist');
 
 /** Is a built extension there at all? */
 export function extensionsBuilt(): boolean {

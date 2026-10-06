@@ -22,9 +22,6 @@ import { registry } from '@/core/registry';
 import { lsp } from '@/core/lsp/manager';
 import { applyTheme, DEFAULT_EFFECTS, type Effects } from '@/core/theme';
 import { isIconPack } from '@/core/icon-pack';
-import { ALL_ADDONS, DEFAULT_ENABLED } from '@/addons';
-import { DEFAULT_THEME_ID } from '@/addons/builtin/themes';
-import { DEFAULT_ICON_PACK_ID } from '@/addons/builtin/icons';
 import { setLanguage as applyLanguage, type LanguageSetting } from '@/i18n';
 import { keybindings, setKeybindingPlatform, type BindingMap } from '@/core/keybindings';
 import { normalizeLayout } from '../layout';
@@ -80,7 +77,6 @@ function settingsSnapshot(s: State): PersistedSettings {
 /** The registry, the language servers and their callbacks into the store. */
 function wireRegistryAndLsp({ get, set }: Ctx) {
   registry.notify = (message, kind) => get().notify(message, kind);
-  registry.register(...ALL_ADDONS);
   registry.subscribe(() => set({ registryVersion: registry.getVersion() }));
   lsp.subscribe(() => set({ lspVersion: lsp.getVersion(), lspLogVersion: lsp.getLogVersion() }));
   lsp.showMessage = (server, params) => {
@@ -111,7 +107,7 @@ async function configureLspPaths(info: AppInfo) {
 
 /** Add-ons, themes and icon packs from the stored settings, applied to the registry and the page. */
 function applyStoredAppearance({ get }: Ctx, stored: Partial<PersistedSettings>, effects: Effects) {
-  const enabledAddons = stored.enabledAddons ?? DEFAULT_ENABLED;
+  const enabledAddons = stored.enabledAddons ?? registry.defaultEnabledIds();
   const customThemes = (stored.customThemes ?? []).filter(isTheme);
 
   registry.applyEnabled(enabledAddons);
@@ -120,17 +116,17 @@ function applyStoredAppearance({ get }: Ctx, stored: Partial<PersistedSettings>,
   registry.setUserIconPacks(customIconPacks);
   const iconPackId = registry.iconPacks().some((pack) => pack.id === stored.iconPackId)
     ? stored.iconPackId!
-    : DEFAULT_ICON_PACK_ID;
+    : registry.defaultIconPackId();
   applyIconPack(iconPackId);
   // When the pack disappears with an add-on, the default pack applies again.
   registry.subscribe(() => applyIconPack(get().iconPackId));
   lsp.setEnabled(effects.lsp);
-  lsp.addConfigDecorator(createFormatDecorator(() => get().formatSettings));
+  lsp.addConfigDecorator(createFormatDecorator(() => get().formatSettings, (id) => registry.languages().find((language) => language.id === id)));
 
-  const themeId = stored.themeId ?? DEFAULT_THEME_ID;
+  const themeId = stored.themeId ?? registry.defaultThemeId();
   const theme = registry.themes().find((entry) => entry.id === themeId);
   applyTheme(theme ?? registry.themes()[0], effects);
-  return { enabledAddons, customThemes, customIconPacks, iconPackId, themeId: theme ? themeId : DEFAULT_THEME_ID };
+  return { enabledAddons, customThemes, customIconPacks, iconPackId, themeId: theme ? themeId : registry.defaultThemeId() };
 }
 
 /** Workspaces from the stored settings, and whichever project this window starts with. */

@@ -12,6 +12,7 @@ import type { Addon, LanguageSpec } from '@/core/types';
 import { cssLibraryTemplate } from '../lib/web-project';
 import { cssTokenizer } from '../lib/css-tokenizer';
 import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages';
+import { editorFormat } from '../lib/format-settings';
 import { localizeSnippets } from '../lib/localize';
 import { t } from '@/i18n';
 
@@ -80,6 +81,7 @@ export const cssSpec: LanguageSpec = {
       command: 'vscode-css-language-server',
       args: ['--stdio'],
       languageId: 'css',
+      formatSettings: editorFormat,
       rootMarkers: ['package.json', '.git'],
       settings: {
         css: { validate: true, lint: { unknownAtRules: 'ignore' } },

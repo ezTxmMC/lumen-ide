@@ -22,6 +22,7 @@ import { useStore } from '@/state/store';
 import { lsp } from '@/core/lsp/manager';
 import type { LspConfig, ProjectTask, RunConfig } from '@/core/types';
 import { sdkEnvironment } from '@/core/sdk/env';
+import { guardCommands } from '@/core/security';
 import { t } from '@/i18n';
 import { openServerInstall, openServersInstall } from './lsp-install';
 
@@ -119,6 +120,10 @@ async function startSteps(steps: Step[], onSuccess?: () => void, keepOutput = fa
   const state = useStore.getState();
   if (state.runningId) {
     state.notify(t('run.alreadyRunning'), 'warning');
+    return;
+  }
+  // Before anything starts: the whole chain is looked at, so a dangerous second step is not a surprise.
+  if (!(await guardCommands(first.label, steps.map(({ command, args }) => ({ command, args }))))) {
     return;
   }
   queue = rest;

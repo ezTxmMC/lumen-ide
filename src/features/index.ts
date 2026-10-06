@@ -25,6 +25,8 @@ import { init as initGradleTasks } from './gradleTasks';
 import { init as initMerge } from './merge';
 import { init as initMenubar } from './menubar';
 import { init as initNativeMenu } from './nativeMenu';
+import { init as initChecks } from './checks';
+import { init as initSecurity } from './security';
 
 let started = false;
 
@@ -33,7 +35,7 @@ export function initFeatures() {
     return;
   }
   started = true;
-  for (const [name, init] of [['sdk', initSdk], ['debug', initDebug], ['userAddons', initUserAddons], ['updater', initUpdater], ['recentProjects', initRecentProjects], ['lspInstall', initLspInstall], ['extensions', initExtensions], ['agents', initAgents], ['gradleTasks', initGradleTasks], ['merge', initMerge], ['menubar', initMenubar], ['nativeMenu', initNativeMenu]] as const) {
+  for (const [name, init] of [['sdk', initSdk], ['debug', initDebug], ['userAddons', initUserAddons], ['updater', initUpdater], ['recentProjects', initRecentProjects], ['lspInstall', initLspInstall], ['extensions', initExtensions], ['agents', initAgents], ['gradleTasks', initGradleTasks], ['merge', initMerge], ['menubar', initMenubar], ['nativeMenu', initNativeMenu], ['checks', initChecks], ['security', initSecurity]] as const) {
     try {
       void init();
     } catch (err) {

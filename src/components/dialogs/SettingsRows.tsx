@@ -132,6 +132,7 @@ export function generalRows(d: SettingsData): Row[] {
       ),
     },
     toggle(d, 'general', 'gradleTasksOnOpen', t('settings.general.gradleTasksOnOpen'), t('settings.general.gradleTasksOnOpenHint')),
+    toggle(d, 'general', 'securityScan', t('settings.general.securityScan'), t('settings.general.securityScanHint')),
     toggle(d, 'general', 'restoreOpenFiles', t('settings.general.restoreOpenFiles'), t('settings.general.restoreOpenFilesHint')),
     {
       section: 'general',

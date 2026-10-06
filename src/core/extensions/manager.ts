@@ -28,6 +28,7 @@ import { userAddons } from '@/core/user-addons/manager';
 import { registry } from '@/core/registry';
 import { blockingIssues } from '@/core/user-addons/validate';
 import { normalizeModel } from '@/core/user-addons/schema';
+import { checkExtension } from '@/core/security';
 import { t } from '@/i18n';
 import { fetchManifest } from './client';
 import { normalizeServerUrl } from './trust';
@@ -39,7 +40,7 @@ import { codeHashInput } from '../../../electron/features/extension-host/code-ha
 
 /** Thrown when an extension's code has not been approved yet — the caller asks the user and tries again. */
 export class CodeApprovalRequired extends Error {
-  constructor(readonly manifest: ExtensionManifest, readonly hash: string) {
+  constructor(readonly manifest: ExtensionManifest, readonly hash: string, readonly securityNote: string | null = null) {
     super(`${manifest.name} brings program code that has to be approved`);
     this.name = 'CodeApprovalRequired';
   }
@@ -144,12 +145,18 @@ export const extensions = {
     if (isDeprecatedId(manifest.id)) {
       console.warn(`[lumen] ${manifest.id}: the "ext." id prefix is deprecated — add-ons should use "addon."`);
     }
+    // The scanner looks at everything the manifest carries before anything of it is saved or run;
+    // what it refuses outright throws, what it merely doubts about goes into the question below.
+    const securityNote = await checkExtension(manifest);
     const { code, ...stored } = manifest;
     const known = installed.get(manifest.id)?.codeHash;
     const codeHash = code ? await sha256Hex(codeHashInput(code)) : undefined;
     // Code that was approved before and has not changed runs on; anything else asks first.
     if (code && codeHash !== known && !options.approveCode) {
-      throw new CodeApprovalRequired(manifest, codeHash ?? '');
+      throw new CodeApprovalRequired(manifest, codeHash ?? '', securityNote);
+    }
+    if (!code && securityNote) {
+      useStore.getState().notify(`${manifest.name}: ${securityNote}`, 'warning');
     }
 
     const model = normalizeModel(structuredClone(manifest.addon));

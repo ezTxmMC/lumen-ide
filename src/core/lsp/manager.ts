@@ -119,6 +119,8 @@ class LspManager {
   /** file → client key */
   private owners = new Map<string, string>();
   private diagnosticsByPath = new Map<string, Diagnostic[]>();
+  /** Diagnostics that do not come from a language server — checker add-ons — by file and then by source. */
+  private externalDiagnostics = new Map<string, Map<string, Diagnostic[]>>();
   /** Document version the diagnostics refer to; `null` when unknown. */
   private diagnosticsVersions = new Map<string, number | null>();
   private listeners = new Set<() => void>();
@@ -767,8 +769,47 @@ class LspManager {
    * Diagnostics
    * ---------------------------------------------------------------- */
 
+  /** The diagnostics of the servers and of the checkers together. */
+  private mergedDiagnostics(path: string): Diagnostic[] {
+    const own = this.diagnosticsByPath.get(path) ?? [];
+    const external = this.externalDiagnostics.get(path);
+    if (!external) {
+      return own;
+    }
+    return [...own, ...[...external.values()].flat()];
+  }
+
   diagnostics(filePath: string | null): Diagnostic[] {
-    return (filePath && this.diagnosticsByPath.get(filePath)) || [];
+    return filePath ? this.mergedDiagnostics(filePath) : [];
+  }
+
+  /** Checker add-ons report here; an empty list withdraws what `source` said about the file. */
+  setExternalDiagnostics(filePath: string, source: string, diagnostics: Diagnostic[]) {
+    const bySource = this.externalDiagnostics.get(filePath) ?? new Map<string, Diagnostic[]>();
+    const known = bySource.get(source);
+    if (!known && !diagnostics.length) {
+      return;
+    }
+    if (diagnostics.length) {
+      bySource.set(source, diagnostics);
+    }
+    if (!diagnostics.length) {
+      bySource.delete(source);
+    }
+    if (bySource.size) {
+      this.externalDiagnostics.set(filePath, bySource);
+    }
+    if (!bySource.size) {
+      this.externalDiagnostics.delete(filePath);
+    }
+    this.emit();
+  }
+
+  /** Drop everything the checkers said about a file — it was closed. */
+  clearExternalDiagnostics(filePath: string) {
+    if (this.externalDiagnostics.delete(filePath)) {
+      this.emit();
+    }
   }
 
   /**
@@ -790,7 +831,8 @@ class LspManager {
   /** Every diagnostic in the workspace — for the problems panel. */
   allDiagnostics(): { path: string; diagnostics: Diagnostic[]; }[] {
     const out: { path: string; diagnostics: Diagnostic[]; }[] = [];
-    for (const [path, diagnostics] of this.diagnosticsByPath) {
+    for (const path of new Set([...this.diagnosticsByPath.keys(), ...this.externalDiagnostics.keys()])) {
+      const diagnostics = this.mergedDiagnostics(path);
       if (diagnostics.length) {
         out.push({ path, diagnostics });
       }
@@ -800,8 +842,8 @@ class LspManager {
 
   diagnosticCounts(): { errors: number; warnings: number; infos: number; } {
     let errors = 0, warnings = 0, infos = 0;
-    for (const list of this.diagnosticsByPath.values()) {
-      for (const d of list) {
+    for (const path of new Set([...this.diagnosticsByPath.keys(), ...this.externalDiagnostics.keys()])) {
+      for (const d of this.mergedDiagnostics(path)) {
         const severity = d.severity ?? 1;
         if (severity === 1) {
           errors++;

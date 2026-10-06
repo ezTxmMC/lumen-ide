@@ -39,8 +39,9 @@ import { t } from '@/i18n';
 import { indentGuides } from './indent-guides';
 import { minimap } from './minimap';
 import {
-  applyDiagnostics, formatDocument, lspExtension, lspRefresh, offsetToPos, organizeImports,
+  applyDiagnostics, lspExtension, lspRefresh, offsetToPos, organizeImports,
 } from './lsp-extension';
+import { formatDocument } from './format';
 import type { LanguageSpec } from '@/core/types';
 import type { Tab } from '@/state/types';
 
@@ -317,7 +318,7 @@ function useExtensionSet(groupId: string, tab: ActiveTab): ExtensionSet {
     const state = useStore.getState();
     const found = state.tabs.find((t) => t.id === activeTabId) ?? null;
     const spec = found ? state.languageFor(found) : null;
-    const format = formatFor(state.formatSettings, spec?.id, spec?.indentUnit);
+    const format = formatFor(state.formatSettings, spec);
     return [editorExtensionFor(spec), foldingFor(spec), formatExtension(format)];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTabId, languageId, registryVersion, formatSettings]);

@@ -246,6 +246,8 @@ export interface ExtensionSummary {
   minAppVersion?: string;
   provides?: Record<string, number>;
   requires?: ExtensionRequirement[];
+  /** What the server's security scan found in the recommended version; servers that do not scan leave it out. */
+  security?: { verdict: 'clean' | 'warn' | 'block'; counts?: Record<string, number>; };
   versions?: string[];
 /** A newer prerelease, when there is one. */
   preview?: string;

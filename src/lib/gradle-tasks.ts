@@ -27,7 +27,7 @@ import { useSyncExternalStore } from 'react';
 import type { ProjectTask } from '@/core/types';
 import { sdkEnvironment } from '@/core/sdk/env';
 import { projectDataFile } from '@/core/project/data';
-import { parseGradleTasksOutput, type GradleTaskInfo } from '@/addons/lib/jvm-tasks';
+import { parseGradleTasksOutput, type GradleTaskInfo } from '@/core/project/gradle-output';
 
 export interface GradleTaskList {
   loading: boolean;

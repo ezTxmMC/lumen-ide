@@ -33,6 +33,8 @@
  */
 
 import type { StringStream } from '@codemirror/language';
+import type { CheckDiagnostic, CheckRequest, FileRef, FormatRequest, FormatResult } from '../../electron/features/extension-host/contract';
+import type { LanguageFormat } from './format-settings';
 
 /* ------------------------------------------------------------------ *
  * Tokens
@@ -172,6 +174,12 @@ export interface LspConfig {
   initializationOptions?: unknown;
   /** Sent through `workspace/didChangeConfiguration`. */
   settings?: unknown;
+  /**
+   * Settings derived from the user's editor formatting choices (tab width,
+   * tabs or spaces) for servers that carry their own formatter. Merged into
+   * `settings`; what `settings` sets itself wins.
+   */
+  formatSettings?: (format: LanguageFormat) => unknown;
   /** How to install the server, in prose. */
   install?: string;
   /**
@@ -264,6 +272,12 @@ export interface LanguageSpec {
 
   /** Replaces the generic tokenizer outright. */
   tokenizer?: CustomTokenizer<never>;
+
+  /**
+   * The language's own formatting conventions — tab width, tabs or spaces —
+   * which the editor's indentation follows until the user chooses otherwise.
+   */
+  format?: Partial<Pick<LanguageFormat, 'tabWidth' | 'useTabs'>>;
 
   /**
    * Higher wins when several languages claim the same extension (Tailwind
@@ -615,6 +629,48 @@ export interface AddonContext {
   registerCommand(command: Command): void;
   registerProjectKind(kind: ProjectKind): void;
   registerProjectTemplate(template: ProjectTemplate): void;
+  registerFormatter(formatter: RendererFormatter): void;
+  registerChecker(checker: RendererChecker): void;
+}
+
+/* ------------------------------------------------------------------ *
+ * Formatting and checking
+ * ------------------------------------------------------------------ */
+
+/**
+ * Formats a document inside the window. The same contract as the main-process
+ * `FormatterProvider` extensions register with `ctx.formatters`, minus the
+ * filesystem and process access the window does not have.
+ *
+ * `replace` formatters take over a file and the first that claims it wins
+ * (higher `priority` first); the language server formats only when none does.
+ * `after` formatters polish whatever came out of that — blank lines between
+ * the blocks of a POM, say — and all of them run, in order.
+ */
+export interface RendererFormatter {
+  id: string;
+  phase?: 'replace' | 'after';
+  priority?: number;
+  supports(file: FileRef): boolean;
+  /** `null` leaves the document as it is. */
+  format(request: FormatRequest): FormatResult | null | Promise<FormatResult | null>;
+}
+
+/** Checks a document inside the window; its diagnostics are shown like a language server's. */
+export interface RendererChecker {
+  id: string;
+  supports(file: FileRef): boolean;
+  check(request: CheckRequest): CheckDiagnostic[] | Promise<CheckDiagnostic[]>;
+}
+
+/** What an add-on is the default for: the first of the active ones to name an existing theme or pack wins. */
+export interface AddonDefaults {
+  /** Theme id used on a first start and whenever the chosen theme disappears. */
+  theme?: string;
+  /** Icon pack id, likewise. */
+  iconPack?: string;
+  /** On from the first start although it is not built in. */
+  enabled?: boolean;
 }
 
 /* ------------------------------------------------------------------ *
@@ -704,6 +760,12 @@ export interface Addon {
   projectKinds?: ProjectKind[];
   /** Templates for “New project”. */
   projectTemplates?: ProjectTemplate[];
+  /** Formatters that run inside the window (see `RendererFormatter`). */
+  formatters?: RendererFormatter[];
+  /** Checkers that run inside the window; their findings appear as diagnostics. */
+  checkers?: RendererChecker[];
+  /** Which theme and icon pack the app falls back on — the add-on that ships them says so. */
+  defaults?: AddonDefaults;
 
   /** Runs on activation. Its return value is called on deactivation. */
   activate?(ctx: AddonContext): void | (() => void);

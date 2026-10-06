@@ -25,7 +25,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-const ROOTS = ['src', 'electron', 'scripts', 'extension-server', 'extensions'];
+const ROOTS = ['src', 'electron', 'scripts', 'extension-server', 'addons'];
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'data', '.cache']);
 const EXTENSIONS = new Set(['.ts', '.tsx', '.mjs', '.js']);
 

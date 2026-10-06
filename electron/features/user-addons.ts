@@ -22,6 +22,7 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { scanCommandLine } from './security';
 
 const EXTENSION = '.lumen-addon.json';
 /** `user.` from the add-on studio, `addon.` from an add-on server; `ext.` is the deprecated old prefix. */
@@ -177,5 +178,12 @@ export function registerUserAddonIpc(getWindow: () => BrowserWindow | null) {
     return res.filePath;
   });
 
-  ipcMain.handle('userAddons:exec', (_e, command: string, cwd: string | null) => execShell(command, cwd));
+  ipcMain.handle('userAddons:exec', (_e, command: string, cwd: string | null) => {
+    // Node graphs of add-ons from a server end up here: the worst commands never reach the shell.
+    const blocked = typeof command === 'string' && scanCommandLine(command).findings.find((finding) => finding.severity === 'critical');
+    if (blocked) {
+      return { code: -1, stdout: '', stderr: `Blocked by Lumen's security scanner: ${blocked.title} (${blocked.id})` };
+    }
+    return execShell(command, cwd);
+  });
 }

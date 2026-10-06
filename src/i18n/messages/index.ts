@@ -55,6 +55,8 @@ import menubar from './menubar';
 import projectSwitcher from './projectSwitcher';
 import popout from './popout';
 import addons from './addons';
+import format from './format';
+import security from './security';
 
 export const MESSAGES: Record<string, NamespaceMessages> = {
   common,
@@ -98,4 +100,6 @@ export const MESSAGES: Record<string, NamespaceMessages> = {
   projectSwitcher,
   popout,
   addons,
+  format,
+  security,
 };

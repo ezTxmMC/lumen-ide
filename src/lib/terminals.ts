@@ -20,6 +20,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import '@xterm/xterm/css/xterm.css';
 import type { Effects } from '@/core/theme';
 import type { SyntaxStyle, Theme } from '@/core/types';
+import { guardCommands, guardPaste } from '@/core/security';
 import { t } from '@/i18n';
 
 export interface ShellProfile {
@@ -49,6 +50,8 @@ export interface TerminalSession {
   term: Terminal;
   fit: FitAddon;
   element: HTMLDivElement;
+  /** Input goes to the shell through this chain, so a line held back for the security scan keeps its place in the order. */
+  input: Promise<void>;
 }
 
 export interface CreateOptions {
@@ -66,6 +69,18 @@ type OpenLocation = (path: string, line: number, character: number) => void;
 const PATH_PATTERN = /(?:^|[\s'"(\[])((?:[A-Za-z]:)?(?:\.{0,2}\/)?[\w.@+-]+(?:\/[\w.@+-]+)*\.[A-Za-z0-9]{1,8})(?::(\d+))?(?::(\d+))?/g;
 
 let counter = 0;
+
+/** The command line the cursor is on, wrapped rows joined — what the shell is about to receive. */
+function currentLine(term: Terminal): string {
+  const buffer = term.buffer.active;
+  let row = buffer.baseY + buffer.cursorY;
+  let line = buffer.getLine(row)?.translateToString(true) ?? '';
+  while (row > 0 && buffer.getLine(row)?.isWrapped) {
+    row--;
+    line = (buffer.getLine(row)?.translateToString(false) ?? '') + line;
+  }
+  return line;
+}
 
 class TerminalManager {
   private sessions = new Map<string, TerminalSession>();
@@ -181,6 +196,7 @@ class TerminalManager {
       term,
       fit,
       element,
+      input: Promise.resolve(),
     };
     this.sessions.set(id, session);
     this.order.push(id);
@@ -204,7 +220,12 @@ class TerminalManager {
       }
       this.emit();
       if (options.command) {
-        window.setTimeout(() => void window.lumen.terminal.write(id, `${options.command}\r`), 150);
+        const command = options.command;
+        void guardCommands(session.title, [command]).then((allowed) => {
+          if (allowed) {
+            window.setTimeout(() => void window.lumen.terminal.write(id, `${command}\r`), 150);
+          }
+        });
       }
     } catch (err) {
       session.error = (err as Error).message;
@@ -219,7 +240,7 @@ class TerminalManager {
     const { term, id } = session;
     term.onData((data) => {
       if (session.exitCode === null) {
-        void window.lumen.terminal.write(id, data);
+        session.input = session.input.then(() => this.forward(session, data));
         return;
       }
       // A finished process: a key closes the tab.
@@ -245,9 +266,48 @@ class TerminalManager {
       void navigator.clipboard.writeText(term.getSelection()).catch(() => {});
     });
     term.attachCustomKeyEventHandler((event) => this.handleKey(session, event));
+    this.watchPaste(session);
     term.registerLinkProvider({
       provideLinks: (line, callback) => void this.fileLinks(session, line).then(callback),
     });
+  }
+
+  /**
+   * Keystrokes to the shell. Enter on a typed command line holds it back until
+   * the security scanner has looked at the line; when the user declines, the
+   * line is abandoned (Ctrl+C) instead of run.
+   */
+  private async forward(session: TerminalSession, data: string) {
+    const { term, id } = session;
+    const typedLine = data === '\r' && term.buffer.active.type === 'normal';
+    const line = typedLine ? currentLine(term).trim() : '';
+    if (line && !(await guardCommands(session.title, [line]))) {
+      await window.lumen.terminal.write(id, '\x03').catch(() => {});
+      return;
+    }
+    await window.lumen.terminal.write(id, data).catch(() => {});
+  }
+
+  /**
+   * A pasted block runs line by line in a shell that does not use bracketed
+   * paste — the oldest trick for getting a command executed that was never
+   * typed. The text is looked at first, and only goes in when it is harmless
+   * or the user confirms.
+   */
+  private watchPaste({ term }: TerminalSession) {
+    term.textarea?.addEventListener('paste', (event) => {
+      const text = event.clipboardData?.getData('text/plain');
+      if (!text) {
+        return;
+      }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      void guardPaste(text).then((allowed) => {
+        if (allowed) {
+          term.paste(text);
+        }
+      });
+    }, true);
   }
 
   /**

@@ -13,7 +13,7 @@
  *
  * The layout under the data folder:
  *   extensions/<id>/<version>.json   one manifest that has been checked
- *   extensions/<id>/meta.json        the publishing data per version
+ *   extensions/<id>/meta.json        the publishing data, and the security summary per version
  *   index.json                       the catalogue Lumen reads from
  *
  * The catalogue is written afresh after every change and built once from the
@@ -29,6 +29,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { ID_PATTERN, VERSION_PATTERN, compareVersions } from './manifest.js';
+import { isCurrentSummary, publicSummary, summaryOf } from './security.js';
 
 /** The fields that go into the catalogue — the rest comes only when a version is fetched. */
 function summarize(manifest, meta) {
@@ -51,6 +52,8 @@ function summarize(manifest, meta) {
     /** SDKs the extension works with, so the list can say so before it is installed. */
     requires: manifest.requires,
     versions: meta.versions,
+    /** The scanner's verdict on the recommended version. */
+    security: publicSummary(meta.security),
     preview: meta.preview,
     publishedAt: meta.publishedAt,
     updatedAt: meta.updatedAt,
@@ -177,11 +180,84 @@ export class Store {
       publishedAt: stored.publishedAt ?? stored.updatedAt ?? new Date().toISOString(),
       updatedAt: stored.updatedAt ?? new Date().toISOString(),
     };
+    // Versions that were stored before the scanner existed — or by an older
+    // scanner — are scanned now, once, and the result is kept.
+    const security = await this.refreshSecurity(id, stored.security, current, manifest, versions);
+    meta.security = security.summaries[current];
+    if (security.changed) {
+      await this.writeJson(this.metaFile(id), { publishedAt: meta.publishedAt, updatedAt: meta.updatedAt, security: security.summaries });
+    }
     this.latest.set(id, { manifest, meta });
   }
 
-  /** Store a version that has been checked. */
-  async publish(manifest) {
+  /** The stored summaries, with `version` brought up to date and versions that no longer exist dropped. */
+  async refreshSecurity(id, stored, version, manifest, versions) {
+    const summaries = { ...(stored ?? {}) };
+    let changed = false;
+    for (const key of Object.keys(summaries)) {
+      if (!versions.includes(key)) {
+        delete summaries[key];
+        changed = true;
+      }
+    }
+    if (!isCurrentSummary(summaries[version])) {
+      const summary = summaryOf(manifest);
+      if (summary) {
+        summaries[version] = summary;
+        changed = true;
+      }
+    }
+    return { summaries, changed };
+  }
+
+  /**
+   * The security summary of one version, scanned and remembered if it has none
+   * yet. `null` for a version that does not exist.
+   */
+  async security(id, version) {
+    const entry = this.get(id);
+    if (!entry) {
+      return null;
+    }
+    const wanted = !version || version === 'latest' ? entry.meta.latest : version;
+    if (wanted === entry.meta.latest) {
+      return entry.meta.security ?? null;
+    }
+    if (!entry.meta.versions.includes(wanted)) {
+      return null;
+    }
+    const stored = (await this.readJson(this.metaFile(id))) ?? {};
+    if (isCurrentSummary(stored.security?.[wanted])) {
+      return stored.security[wanted];
+    }
+    const manifest = await this.readJson(this.file(id, wanted));
+    const summary = manifest ? summaryOf(manifest) : undefined;
+    if (!summary) {
+      return null;
+    }
+    await this.writeJson(this.metaFile(id), {
+      publishedAt: entry.meta.publishedAt,
+      updatedAt: entry.meta.updatedAt,
+      security: { ...(stored.security ?? {}), [wanted]: summary },
+    });
+    return summary;
+  }
+
+  /** The summary of every version, `{ "1.0.0": { verdict, counts, … } }`. */
+  async securityByVersion(id) {
+    const entry = this.get(id);
+    const result = {};
+    for (const version of entry?.meta.versions ?? []) {
+      const summary = await this.security(id, version);
+      if (summary) {
+        result[version] = publicSummary(summary);
+      }
+    }
+    return result;
+  }
+
+  /** Store a version that has been checked and scanned; `security` is its summary. */
+  async publish(manifest, security) {
     const { id, version } = manifest;
     const file = this.file(id, version);
     const existed = await fs.access(file).then(() => true, () => false);
@@ -192,6 +268,7 @@ export class Store {
     await this.writeJson(this.metaFile(id), {
       publishedAt: stored.publishedAt ?? now,
       updatedAt: now,
+      security: { ...(stored.security ?? {}), ...(security ? { [version]: security } : {}) },
     });
     await this.reload(id);
     await this.writeIndex();

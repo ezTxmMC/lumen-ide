@@ -25,6 +25,7 @@ import { StatusBar } from '@/components/shell/StatusBar';
 import { CommandPalette } from '@/components/overlays/CommandPalette';
 import { NewProjectDialog } from '@/components/dialogs/NewProjectDialog';
 import { FormDialog } from '@/components/overlays/FormDialog';
+import { SecurityDialog } from '@/components/overlays/SecurityDialog';
 import { LspInstallDialog } from '@/components/dialogs/LspInstallDialog';
 import { SearchEverywhere } from '@/components/overlays/SearchEverywhere';
 import { terminals } from '@/lib/terminals';
@@ -217,6 +218,7 @@ export default function App() {
       <SearchEverywhere />
       <NewProjectDialog />
       <FormDialog />
+      <SecurityDialog />
       <LspInstallDialog />
       <SettingsDialog />
       <KeybindingsDialog />

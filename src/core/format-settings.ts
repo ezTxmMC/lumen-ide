@@ -9,24 +9,27 @@
  */
 
 /**
- * Formatting settings per language: tab width, tabs or spaces, print width,
- * quotes, semicolons … They drive the editor's indentation, the options sent
- * with LSP formatting requests, what happens on save, and the settings that
- * language servers with a formatter receive at start.
+ * Formatting settings per language: tab width, tabs or spaces, line endings,
+ * trailing whitespace, the final newline. They drive the editor's indentation,
+ * the options sent with formatting requests, what happens on save, and — for
+ * language servers that carry a formatter of their own — the settings they
+ * receive at start.
+ *
+ * Everything about *style* (quotes, semicolons, print width, which rules a
+ * project follows) is not here: that is the business of a formatter add-on,
+ * which reads the project's own files (`.pureline`, `.prettierrc` …). The
+ * core only knows the editor-level choices every language shares, and each
+ * language spec states its own conventions (`LanguageSpec.format`).
  */
 
 import { EditorState, Prec, type Extension } from '@codemirror/state';
 import { indentUnit } from '@codemirror/language';
-import type { LspConfig } from './types';
+import type { FormatOptions } from '../../electron/features/extension-host/contract';
+import type { LanguageSpec, LspConfig } from './types';
 
 export interface LanguageFormat {
   tabWidth: number;
   useTabs: boolean;
-  printWidth: number;
-  singleQuote: boolean;
-  semicolons: boolean;
-  trailingComma: 'none' | 'es5' | 'all';
-  bracketSpacing: boolean;
   endOfLine: 'keep' | 'lf' | 'crlf';
   trimTrailingWhitespace: boolean;
   insertFinalNewline: boolean;
@@ -37,51 +40,22 @@ export type FormatSettings = Record<string, Partial<LanguageFormat>>;
 export const DEFAULT_FORMAT: LanguageFormat = {
   tabWidth: 2,
   useTabs: false,
-  printWidth: 100,
-  singleQuote: false,
-  semicolons: true,
-  trailingComma: 'es5',
-  bracketSpacing: true,
   endOfLine: 'keep',
   trimTrailingWhitespace: false,
   insertFinalNewline: false,
 };
 
-/** Languages whose defaults differ from `DEFAULT_FORMAT` (their own conventions). */
-const LANGUAGE_DEFAULTS: Record<string, Partial<LanguageFormat>> = {
-  javascript: { singleQuote: true, semicolons: false },
-  typescript: { singleQuote: true, semicolons: false },
-  java: { tabWidth: 4, printWidth: 120 },
-  kotlin: { tabWidth: 4, printWidth: 120 },
-  python: { tabWidth: 4, printWidth: 88 },
-  rust: { tabWidth: 4 },
-  csharp: { tabWidth: 4, printWidth: 120 },
-  c: { tabWidth: 4 },
-  cpp: { tabWidth: 4 },
-  php: { tabWidth: 4, printWidth: 120 },
-  dart: { tabWidth: 2, printWidth: 80, trailingComma: 'all' },
-  go: { tabWidth: 4, useTabs: true },
-  makefile: { tabWidth: 4, useTabs: true },
-  groovy: { tabWidth: 4 },
-  html: { printWidth: 120 },
-};
+/** What a language spec contributes to its own defaults. */
+export type FormatSubject = Pick<LanguageSpec, 'id' | 'indentUnit' | 'format'> | null | undefined;
 
-/** Which settings are meaningful for which language — the rest is hidden in the settings page. */
-const QUOTE_LANGUAGES = new Set(['javascript', 'typescript', 'css', 'scss', 'less', 'json', 'html', 'vue', 'astro', 'mdx', 'python', 'php', 'dart']);
-const SEMICOLON_LANGUAGES = new Set(['javascript', 'typescript', 'vue', 'astro', 'mdx']);
-const TRAILING_COMMA_LANGUAGES = new Set(['javascript', 'typescript', 'vue', 'astro', 'mdx', 'json', 'dart', 'rust', 'python', 'php', 'kotlin', 'java']);
-const BRACKET_SPACING_LANGUAGES = new Set(['javascript', 'typescript', 'vue', 'astro', 'mdx', 'json', 'rust', 'dart']);
-
-export const supportsQuotes = (languageId: string) => QUOTE_LANGUAGES.has(languageId);
-export const supportsSemicolons = (languageId: string) => SEMICOLON_LANGUAGES.has(languageId);
-export const supportsTrailingComma = (languageId: string) => TRAILING_COMMA_LANGUAGES.has(languageId);
-export const supportsBracketSpacing = (languageId: string) => BRACKET_SPACING_LANGUAGES.has(languageId);
-
-/** The effective settings of a language: stored values over the language's defaults over the global ones. */
-export function formatFor(settings: FormatSettings, languageId: string | undefined, indentUnitHint?: number): LanguageFormat {
-  const id = languageId ?? '';
-  const base: LanguageFormat = { ...DEFAULT_FORMAT, ...(indentUnitHint ? { tabWidth: indentUnitHint } : {}), ...LANGUAGE_DEFAULTS[id] };
-  return { ...base, ...(settings[id] ?? {}) };
+/** The effective settings of a language: stored values over the language's own conventions over the global defaults. */
+export function formatFor(settings: FormatSettings, language: FormatSubject): LanguageFormat {
+  const base: LanguageFormat = {
+    ...DEFAULT_FORMAT,
+    ...(language?.indentUnit ? { tabWidth: language.indentUnit } : {}),
+    ...(language?.format ?? {}),
+  };
+  return { ...base, ...(settings[language?.id ?? ''] ?? {}) };
 }
 
 /** Indentation for the editor: overrides the language's own `indentUnit`. */
@@ -103,6 +77,17 @@ export function lspFormattingOptions(format: LanguageFormat) {
   };
 }
 
+/** What a formatter add-on is told about the editor's choices. */
+export function formatOptionsOf(format: LanguageFormat): FormatOptions {
+  return {
+    tabWidth: format.tabWidth,
+    useTabs: format.useTabs,
+    endOfLine: format.endOfLine,
+    trimTrailingWhitespace: format.trimTrailingWhitespace,
+    insertFinalNewline: format.insertFinalNewline,
+  };
+}
+
 /** What saving does to the text: trailing whitespace, the final newline. Line endings are handled by the caller. */
 export function applySaveRules(text: string, format: LanguageFormat): string {
   let out = text;
@@ -113,34 +98,6 @@ export function applySaveRules(text: string, format: LanguageFormat): string {
     out = out.replace(/\n*$/, '\n');
   }
   return out;
-}
-
-/** Keys of `settings` for servers that carry their own formatter, by language id. */
-function serverSettings(languageId: string, format: LanguageFormat): Record<string, unknown> | null {
-  const semicolons = format.semicolons ? 'insert' : 'remove';
-  if (languageId === 'typescript' || languageId === 'javascript') {
-    const options = {
-      format: {
-        tabSize: format.tabWidth,
-        indentSize: format.tabWidth,
-        convertTabsToSpaces: !format.useTabs,
-        semicolons,
-        insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: format.bracketSpacing,
-      },
-      preferences: { quoteStyle: format.singleQuote ? 'single' : 'double' },
-    };
-    return { typescript: options, javascript: options };
-  }
-  if (languageId === 'html') {
-    return {
-      html: { format: { wrapLineLength: format.printWidth, indentInnerHtml: true } },
-      editor: { tabSize: format.tabWidth, insertSpaces: !format.useTabs },
-    };
-  }
-  if (languageId === 'css' || languageId === 'scss' || languageId === 'less') {
-    return { editor: { tabSize: format.tabWidth, insertSpaces: !format.useTabs } };
-  }
-  return null;
 }
 
 /** Merge (deeply, objects only) `extra` into `base`; `base` wins where both set a value. */
@@ -154,14 +111,21 @@ function mergeDeep(base: unknown, extra: Record<string, unknown>): Record<string
   return out;
 }
 
-/** A decorator for `lsp.addConfigDecorator`: gives language servers the language's formatting settings at start. */
-export function createFormatDecorator(read: () => FormatSettings) {
+/**
+ * A decorator for `lsp.addConfigDecorator`: gives language servers the
+ * formatting settings of the editor at start, in the shape each server
+ * config asks for (`LspConfig.formatSettings`).
+ */
+export function createFormatDecorator(read: () => FormatSettings, languageOf: (languageId: string) => FormatSubject) {
   return (config: LspConfig, languageId: string): LspConfig => {
-    const extra = serverSettings(languageId, formatFor(read(), languageId));
-    if (!extra) {
+    if (!config.formatSettings) {
+      return config;
+    }
+    const extra = config.formatSettings(formatFor(read(), languageOf(languageId)));
+    if (!extra || typeof extra !== 'object') {
       return config;
     }
     // What the server config sets itself wins — the user's choice fills the gaps.
-    return { ...config, settings: mergeDeep(config.settings, extra) };
+    return { ...config, settings: mergeDeep(config.settings, extra as Record<string, unknown>) };
   };
 }

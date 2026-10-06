@@ -35,10 +35,12 @@ import { pathToFileURL } from 'node:url';
 import { createContext, type ExtensionContext } from './context';
 import { agents } from './agents';
 import { contributions } from './contributions';
+import { providers } from './providers';
 import { services } from './services';
-import type { AgentAnswer, AgentSendRequest, HostEvent, ViewActionEvent } from './contract';
+import type { AgentAnswer, AgentSendRequest, CheckRequest, FileRef, FormatRequest, HostEvent, ViewActionEvent } from './contract';
 import { codeHashInput, type CodeParts } from './code-hash';
 import { fitsApp } from '../../../src/core/extensions/compat';
+import { removeRulePack, scanExtensionManifest } from '../security';
 
 export type * from './contract';
 
@@ -119,6 +121,8 @@ async function deactivate(id: string) {
   }
   agents.removeExtension(id);
   contributions.removeExtension(id);
+  providers.removeExtension(id);
+  removeRulePack(id);
   services.removeExtension(id);
 }
 
@@ -157,6 +161,13 @@ async function installCode(id: string, raw: CodeParts | string, hash: string) {
   }
   if (!HASH.test(hash) || sha256(codeHashInput(code)) !== hash) {
     throw new Error('The code does not match the approved hash');
+  }
+  // The renderer scanned the manifest already; the code is checked again here because this is the last
+  // place before it runs with the rights of Lumen, whoever asks.
+  const report = scanExtensionManifest({ id, code });
+  if (report.verdict === 'block') {
+    const worst = report.findings.find((finding) => finding.severity === 'critical');
+    throw new Error(`Blocked by Lumen's security scanner: ${worst?.title ?? 'malicious code'} (${worst?.id ?? 'SEC'})`);
   }
 
   await fs.mkdir(codeDir(), { recursive: true });
@@ -274,6 +285,10 @@ export function registerExtensionHostIpc(getWindow: () => BrowserWindow | null) 
     console.error(`[lumen] ${id}: could not ${enabled ? 'start' : 'stop'}:`, err.message);
   }));
   ipcMain.handle('extensions:running', () => [...active.keys()]);
+
+  ipcMain.handle('extensions:format', (_e, request: FormatRequest) => providers.format(request));
+  ipcMain.handle('extensions:format:available', (_e, file: FileRef) => providers.formatterFor(file));
+  ipcMain.handle('extensions:check', (_e, request: CheckRequest) => providers.check(request));
 
   ipcMain.handle('agent:send', (e, request: AgentSendRequest) => agents.send(request, e.sender));
   ipcMain.handle('agent:answer', (_e, reply: AgentAnswer) => agents.answer(reply));

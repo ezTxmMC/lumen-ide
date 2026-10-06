@@ -12,6 +12,7 @@ import type { Addon, LanguageSpec } from '@/core/types';
 import { denoKind, jsBrowserTemplate, jsNodeTemplate, npmKind } from '../lib/node-project';
 import { jsDebugNode } from '@/core/debug/adapters';
 import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages';
+import { tsserverFormat } from '../lib/format-settings';
 import { localizeSnippets } from '../lib/localize';
 import { t } from '@/i18n';
 
@@ -131,6 +132,7 @@ export const javascriptSpec: LanguageSpec = {
         '/opt/homebrew/bin/typescript-language-server',
       ],
       languageId: 'javascript',
+      formatSettings: tsserverFormat,
       rootMarkers: ['tsconfig.json', 'jsconfig.json', 'package.json', '.git'],
       initializationOptions: {
         hostInfo: 'Lumen',

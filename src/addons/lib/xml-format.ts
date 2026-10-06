@@ -17,6 +17,8 @@
  * server's formatting; existing blank lines stay as they are.
  */
 
+import type { RendererFormatter } from '@/core/types';
+
 const POM_NAMESPACE = 'http://maven.apache.org/POM/4.0.0';
 const TOKEN = /<!--[\s\S]*?-->|<\?[\s\S]*?\?>|<!\[CDATA\[[\s\S]*?\]\]>|<![^>]*>|<[^>]+>/g;
 
@@ -129,3 +131,20 @@ export function pomBlockGaps(text: string): number[] {
   }
   return gaps;
 }
+
+const POM_FILE = /(?:^|[\\/])pom\.xml$/;
+
+/** Runs after whatever formatted a POM — the language server or a formatter add-on — and only on a whole document. */
+export const pomBlockFormatter: RendererFormatter = {
+  id: 'maven.pom-blocks',
+  phase: 'after',
+  supports: ({ path, languageId }) => languageId === 'xml' || POM_FILE.test(path ?? ''),
+  format({ text, range }) {
+    const gaps = pomBlockGaps(text);
+    if (range || !gaps.length) {
+      return null;
+    }
+    const spaced = [...gaps].sort((a, b) => b - a).reduce((out, at) => `${out.slice(0, at)}\n${out.slice(at)}`, text);
+    return { text: spaced, engine: 'POM' };
+  },
+};
