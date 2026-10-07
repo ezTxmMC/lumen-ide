@@ -10,8 +10,8 @@
 
 import { AlertTriangle, Box, Braces, CheckCircle2, ChevronDown, CornerDownLeft, FileCode2, Hash, Info, Search, Terminal, Variable, X, XCircle } from 'lucide-react';
 import { readableOn } from '@/core/theme';
-import { withAlpha } from '@/core/theme-colors';
-import { tokenCss, uses, type ColorKey } from '../keys';
+import { withAlpha } from '@/core/theme/colors';
+import { tokenCss, uses, type ColorKey } from '../state/keys';
 import { Card, type Kit } from './element-kit';
 
 /* One tile of the elements preview each; the shared helpers arrive through `kit`. */

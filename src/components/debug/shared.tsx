@@ -11,7 +11,7 @@
 import { useState, useSyncExternalStore, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { debug } from '@/core/debug/manager';
-import { breakpoints } from '@/core/debug/breakpoints';
+import { breakpoints } from '@/core/debug/state/breakpoints';
 
 /** Re-renders when the debugger or the breakpoints change. */
 export function useDebugVersion() {

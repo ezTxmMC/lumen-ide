@@ -22,7 +22,7 @@ import { useT } from '@/i18n';
 import { registry } from '@/core/registry';
 import {
   explainFileIcon, ICON_SHAPE_NAMES, iconPackProblems, resolveFileIcon, resolveFolderIcon,
-} from '@/core/icon-pack';
+} from '@/core/theme/icon-pack';
 import type { IconDef, IconPack } from '@/core/types';
 import { Button, Empty } from '../ui';
 import { IconGlyph } from '../icons/FileIcon';

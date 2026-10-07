@@ -17,11 +17,11 @@ import { Play, TextSearch, Zap } from 'lucide-react';
 import { relativeToWorkspace, type EverywhereTab, type useStore } from '@/state/store';
 import type { useCommands } from '@/hooks/useCommands';
 import { fuzzyMatch } from '@/lib/fuzzy';
-import { fileGlyph } from '@/lib/file-icon';
+import { fileGlyph } from '@/lib/files/file-icon';
 import { SYMBOL_GLYPH, symbolKindLabel, uriToPath, type WorkspaceSymbol } from '@/core/lsp/protocol';
-import { flattenSymbols, symbolStore } from '@/lib/symbols';
-import { runTask } from '@/lib/run';
-import { symbolTone } from '../panels/OutlinePanel';
+import { flattenSymbols, symbolStore } from '@/lib/editor/symbols';
+import { runTask } from '@/lib/project/run';
+import { symbolTone } from '../panels/navigation/OutlinePanel';
 import { t } from '@/i18n';
 import type { SearchHit } from '../../../electron/preload';
 

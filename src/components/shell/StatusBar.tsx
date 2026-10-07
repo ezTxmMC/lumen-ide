@@ -8,14 +8,14 @@
  * or (at your option) any later version. See the LICENSE file for details.
  */
 
-import { parseViewTabPath } from "@/core/extensions/host";
+import { parseViewTabPath } from "@/core/extensions/integration/host";
 import { formatBindingsFor } from "@/core/keybindings";
 import { lsp } from "@/core/lsp/manager";
 import { SYMBOL_GLYPH } from "@/core/lsp/protocol";
 import { registry } from "@/core/registry";
 import { useUpdater } from "@/features/updater";
 import { useT } from "@/i18n";
-import { symbolPathAt, symbolStore } from "@/lib/symbols";
+import { symbolPathAt, symbolStore } from "@/lib/editor/symbols";
 import { isDirty, useStore } from "@/state/store";
 import {
   AlertCircle,
@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { MergeConflictStatus } from "../merge/MergeConflictStatus";
-import { symbolTone } from "../panels/OutlinePanel";
+import { symbolTone } from "../panels/navigation/OutlinePanel";
 import { ExtensionStatusItems } from "./ExtensionStatusItems";
 
 /** A label with the command's shortcut, when it has one. */

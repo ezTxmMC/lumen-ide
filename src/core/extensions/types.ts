@@ -23,7 +23,7 @@
  */
 
 import type { UserAddonModel } from '@/core/user-addons/schema';
-import type { AgentModel } from '../../../electron/features/extension-host/contract';
+import type { AgentCapabilities, AgentModel } from '../../../electron/features/extension-host/contract';
 
 /** Version of the manifest format Lumen understands. */
 export const EXTENSION_SCHEMA = 1;
@@ -151,6 +151,33 @@ export interface ExtensionAgentMode {
   description?: string;
 }
 
+/** A prompt snippet shown as a button above the composer. `prompt` may use `{{selection}}`, `{{file}}`, `{{clipboard}}`. */
+export interface ExtensionAgentQuickAction {
+  id: string;
+  label: string;
+  prompt: string;
+  description?: string;
+}
+
+/** A prompt template offered as `/name`. `{{args}}` stands for what follows the name; the quick-action variables work too. */
+export interface ExtensionAgentCommand {
+  name: string;
+  prompt: string;
+  description?: string;
+  argumentHint?: string;
+}
+
+/** A named bundle the user switches in the chat header: mode, model, effort and extra extension settings. */
+export interface ExtensionAgentProfile {
+  id: string;
+  label: string;
+  mode?: string;
+  model?: string;
+  effort?: string;
+  /** Laid over the extension's settings for messages sent under the profile. */
+  settings?: Record<string, string>;
+}
+
 /**
  * A chat agent the extension's code registers.
  *
@@ -175,6 +202,22 @@ export interface ExtensionAgent {
   suggestions?: string[];
   /** Can the agent take images (pasted screenshots)? */
   images?: boolean;
+  /** Session actions the agent supports (`compact`, `rewind`, `fork` …); the `session` event may add more. */
+  capabilities?: AgentCapabilities;
+  /** Built-in quick actions; the user's come from `quickActionsSetting`. */
+  quickActions?: ExtensionAgentQuickAction[];
+  /** A `textarea` or `list` setting holding the user's quick actions, one per line: `Label | prompt` (`\n` in the prompt is a line break). */
+  quickActionsSetting?: string;
+  /** Built-in prompt-template commands. */
+  customCommands?: ExtensionAgentCommand[];
+  /** A `textarea` or `list` setting with the user's commands, one per line: `name | description | prompt`. */
+  customCommandsSetting?: string;
+  /** Built-in profiles. */
+  profiles?: ExtensionAgentProfile[];
+  /** A `textarea` or `list` setting with the user's profiles, one per line: `Label | mode=plan | model=… | effort=… | anyKey=value`. */
+  profilesSetting?: string;
+  /** Offer a system prompt the user can set per chat. */
+  systemPrompt?: boolean;
 }
 
 /**
@@ -183,7 +226,7 @@ export interface ExtensionAgent {
  * `main` is a bundled ES module for Lumen's main process (`activate(ctx)`).
  * `renderer` is one for the window: it exports `addon(lumen)`, which returns
  * an add-on like the built-in ones — project templates and kinds whose files
- * are computed, snippets, commands (`src/core/extensions/renderer-code.ts`).
+ * are computed, snippets, commands (`src/core/extensions/integration/renderer-code.ts`).
  */
 export interface ExtensionCode {
   main?: string;

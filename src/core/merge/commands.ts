@@ -10,7 +10,7 @@
 
 /** The merge commands, for the palette and the shortcuts. */
 
-import { editorBridge } from '@/lib/editor-bridge';
+import { editorBridge } from '@/lib/editor/editor-bridge';
 import { t } from '@/i18n';
 import type { Command } from '@/core/types';
 import type { Resolution } from './conflicts';

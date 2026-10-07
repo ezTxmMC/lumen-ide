@@ -27,7 +27,7 @@ import process from 'node:process';
 // Side effect: registers the named tokenizers (`"tokenizer": "markdown"` and
 // its like). Anything that compiles or validates add-on data needs them, or a
 // language would be reported as using an unknown tokenizer.
-import '@/addons/lib/builtin-tokenizers';
+import '@/addons/lib/tokenizers/builtin-tokenizers';
 import { compileAddon } from '@/core/user-addons/compile';
 import { normalizeModel } from '@/core/user-addons/schema';
 import type { Addon } from '@/core/types';

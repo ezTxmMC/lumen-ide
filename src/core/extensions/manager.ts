@@ -32,10 +32,10 @@ import { checkExtension } from '@/core/security';
 import { t } from '@/i18n';
 import { fetchManifest } from './client';
 import { normalizeServerUrl } from './trust';
-import { isNewer } from './version';
+import { isNewer } from './compat/version';
 import { EXTENSION_ID_PATTERN, isDeprecatedId, type ExtensionManifest, type ExtensionPage, type InstalledExtension } from './types';
-import { appVersion } from './app-version';
-import { fitsApp } from './compat';
+import { appVersion, appVersionKnown } from './compat/app-version';
+import { fitsApp } from './compat/compat';
 import { codeHashInput } from '../../../electron/features/extension-host/code-hash';
 
 /** Thrown when an extension's code has not been approved yet — the caller asks the user and tries again. */
@@ -94,9 +94,23 @@ export const extensions = {
   list: (): InstalledExtension[] =>
     [...installed.values()].sort((a, b) => a.manifest.name.localeCompare(b.manifest.name)),
 
+  /**
+   * Why an installed extension is off although the user did not switch it off:
+   * it needs a newer Lumen than this one (after going back to an older Lumen).
+   * `null` when it fits, is not installed, or the version is not known yet.
+   */
+  incompatibility(id: string): string | null {
+    const entry = installed.get(id);
+    if (!entry || !appVersionKnown() || fitsApp(entry.manifest.minAppVersion, appVersion())) {
+      return null;
+    }
+    return t('extensions.disabledNeedsApp', { name: entry.manifest.name, required: entry.manifest.minAppVersion ?? '', current: appVersion() });
+  },
+
   /** The ones switched on: an extension's contributions follow its add-on, as its languages and themes do. */
   listActive: (): InstalledExtension[] =>
-    extensions.list().filter(({ manifest }) => !registry.get(manifest.id) || registry.isActive(manifest.id)),
+    extensions.list().filter(({ manifest }) => !extensions.incompatibility(manifest.id)
+      && (!registry.get(manifest.id) || registry.isActive(manifest.id))),
 
   get: (id: string | null | undefined) => (id ? installed.get(id) : undefined),
   has: (id: string) => installed.has(id),

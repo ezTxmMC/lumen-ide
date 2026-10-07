@@ -26,6 +26,8 @@ export interface ToolInfo {
   purpose: string;
   /** The add-on (or language) that brings it, for the label in the list. */
   addon: string;
+  /** Ids of the programming languages it serves: the SDK is listed as soon as one of them is available. */
+  languages: string[];
   /** Variables for a chosen SDK, from its home. */
   variables(home: string): Record<string, string>;
   /** The folder with the executable, relative to the home; `bin` when left out. */
@@ -33,23 +35,25 @@ export interface ToolInfo {
 }
 
 export const TOOLS: ToolInfo[] = [
-  { id: 'node', name: 'Node.js', color: '#5fa04e', purpose: 'JavaScript runtime', addon: 'JavaScript · TypeScript', variables: () => ({}), binSubdir: (platform) => (platform === 'win32' ? '' : 'bin') },
-  { id: 'go', name: 'Go', color: '#00add8', purpose: 'Go toolchain', addon: 'Go', variables: (home) => ({ GOROOT: home }) },
-  { id: 'gradle', name: 'Gradle', color: '#02303a', purpose: 'Build tool for Java, Kotlin and Android', addon: 'Java · Kotlin', variables: (home) => ({ GRADLE_HOME: home }) },
-  { id: 'maven', name: 'Apache Maven', color: '#c71a36', purpose: 'Build tool for Java', addon: 'Java', variables: (home) => ({ MAVEN_HOME: home, M2_HOME: home }) },
-  { id: 'deno', name: 'Deno', color: '#70ffaf', purpose: 'JavaScript and TypeScript runtime', addon: 'TypeScript', variables: () => ({}), binSubdir: () => '' },
-  { id: 'bun', name: 'Bun', color: '#fbf0df', purpose: 'JavaScript runtime and package manager', addon: 'JavaScript · TypeScript', variables: () => ({}), binSubdir: () => '' },
-  { id: 'kotlin', name: 'Kotlin compiler', color: '#a97bff', purpose: 'kotlinc, the command-line compiler', addon: 'Kotlin', variables: (home) => ({ KOTLIN_HOME: home }) },
-  { id: 'zig', name: 'Zig', color: '#f7a41d', purpose: 'Zig compiler and build system', addon: 'Zig', variables: () => ({}), binSubdir: () => '' },
-  { id: 'python', name: 'Python', color: '#3776ab', purpose: 'Python interpreter (standalone builds)', addon: 'Python', variables: () => ({}), binSubdir: (platform) => (platform === 'win32' ? '' : 'bin') },
-  { id: 'dotnet', name: '.NET SDK', color: '#512bd4', purpose: 'Build and run C#, F# and Visual Basic', addon: 'C#', variables: (home) => ({ DOTNET_ROOT: home }), binSubdir: () => '' },
-  { id: 'rust', name: 'Rust', color: '#dea584', purpose: 'rustc and cargo', addon: 'Rust', variables: () => ({}) },
-  { id: 'dart', name: 'Dart SDK', color: '#0175c2', purpose: 'Dart compiler and pub', addon: 'Dart', variables: (home) => ({ DART_SDK: home }) },
-  { id: 'flutter', name: 'Flutter', color: '#02569b', purpose: 'UI toolkit for mobile, web and desktop', addon: 'Flutter', variables: (home) => ({ FLUTTER_ROOT: home }) },
-  { id: 'sbt', name: 'sbt', color: '#c22d40', purpose: 'Build tool for Scala', addon: 'Scala', variables: () => ({}) },
-  { id: 'cmake', name: 'CMake', color: '#064f8c', purpose: 'Build system generator for C and C++', addon: 'C · C++', variables: () => ({}), binSubdir: (platform) => (platform === 'darwin' ? 'CMake.app/Contents/bin' : 'bin') },
-  { id: 'ninja', name: 'Ninja', color: '#8a8a8a', purpose: 'Fast build runner for CMake and others', addon: 'C · C++', variables: () => ({}), binSubdir: () => '' },
-  { id: 'julia', name: 'Julia', color: '#9558b2', purpose: 'Julia language', addon: 'Julia', variables: () => ({}) },
+  { id: 'node', name: 'Node.js', color: '#5fa04e', purpose: 'JavaScript runtime', addon: 'JavaScript · TypeScript', languages: ['javascript', 'typescript', 'react-jsx', 'react-tsx', 'vue', 'angular-ts', 'astro', 'mdx'], variables: () => ({}), binSubdir: (platform) => (platform === 'win32' ? '' : 'bin') },
+  { id: 'go', name: 'Go', color: '#00add8', purpose: 'Go toolchain', addon: 'Go', languages: ['go'], variables: (home) => ({ GOROOT: home }) },
+  { id: 'gradle', name: 'Gradle', color: '#02303a', purpose: 'Build tool for Java, Kotlin and Android', addon: 'Java · Kotlin', languages: ['java', 'kotlin', 'groovy'], variables: (home) => ({ GRADLE_HOME: home }) },
+  { id: 'maven', name: 'Apache Maven', color: '#c71a36', purpose: 'Build tool for Java', addon: 'Java', languages: ['java'], variables: (home) => ({ MAVEN_HOME: home, M2_HOME: home }) },
+  { id: 'deno', name: 'Deno', color: '#70ffaf', purpose: 'JavaScript and TypeScript runtime', addon: 'TypeScript', languages: ['javascript', 'typescript'], variables: () => ({}), binSubdir: () => '' },
+  { id: 'bun', name: 'Bun', color: '#fbf0df', purpose: 'JavaScript runtime and package manager', addon: 'JavaScript · TypeScript', languages: ['javascript', 'typescript'], variables: () => ({}), binSubdir: () => '' },
+  { id: 'kotlin', name: 'Kotlin compiler', color: '#a97bff', purpose: 'kotlinc, the command-line compiler', addon: 'Kotlin', languages: ['kotlin'], variables: (home) => ({ KOTLIN_HOME: home }) },
+  { id: 'zig', name: 'Zig', color: '#f7a41d', purpose: 'Zig compiler and build system', addon: 'Zig', languages: ['zig'], variables: () => ({}), binSubdir: () => '' },
+  { id: 'python', name: 'Python', color: '#3776ab', purpose: 'Python interpreter (standalone builds)', addon: 'Python', languages: ['python'], variables: () => ({}), binSubdir: (platform) => (platform === 'win32' ? '' : 'bin') },
+  { id: 'dotnet', name: '.NET SDK', color: '#512bd4', purpose: 'Build and run C#, F# and Visual Basic', addon: 'C#', languages: ['csharp', 'fsharp'], variables: (home) => ({ DOTNET_ROOT: home }), binSubdir: () => '' },
+  { id: 'rust', name: 'Rust', color: '#dea584', purpose: 'rustc and cargo', addon: 'Rust', languages: ['rust'], variables: () => ({}) },
+  { id: 'dart', name: 'Dart SDK', color: '#0175c2', purpose: 'Dart compiler and pub', addon: 'Dart', languages: ['dart'], variables: (home) => ({ DART_SDK: home }) },
+  { id: 'flutter', name: 'Flutter', color: '#02569b', purpose: 'UI toolkit for mobile, web and desktop', addon: 'Flutter', languages: ['dart'], variables: (home) => ({ FLUTTER_ROOT: home }) },
+  { id: 'sbt', name: 'sbt', color: '#c22d40', purpose: 'Build tool for Scala', addon: 'Scala', languages: ['scala'], variables: () => ({}) },
+  { id: 'cmake', name: 'CMake', color: '#064f8c', purpose: 'Build system generator for C and C++', addon: 'C · C++', languages: ['cmake', 'c', 'cpp'], variables: () => ({}), binSubdir: (platform) => (platform === 'darwin' ? 'CMake.app/Contents/bin' : 'bin') },
+  { id: 'ninja', name: 'Ninja', color: '#8a8a8a', purpose: 'Fast build runner for CMake and others', addon: 'C · C++', languages: ['c', 'cpp'], variables: () => ({}), binSubdir: () => '' },
+  // Novus brings novusc and novus-lsp; the README documents no home variable (NOVUS_CC, NOVUS_CACHE … are settings of a build, not of an install).
+  { id: 'novus', name: 'Novus', color: '#7c3aed', purpose: 'Novus compiler and language server', addon: 'Novus', languages: ['novus', 'novus-html'], variables: () => ({}) },
+  { id: 'julia', name: 'Julia', color: '#9558b2', purpose: 'Julia language', addon: 'Julia', languages: ['julia'], variables: () => ({}) },
 ];
 
 /** Display name and colour of any SDK id, Java included. */
@@ -60,6 +64,10 @@ export function sdkTitle(id: string): { name: string; color: string; } {
   const tool = toolInfo(id);
   return { name: tool?.name ?? id, color: tool?.color ?? '#8a94a6' };
 }
+
+/** The SDKs that serve at least one of the given languages. */
+export const toolsForLanguages = (languageIds: ReadonlySet<string>) =>
+  TOOLS.filter((tool) => tool.languages.some((id) => languageIds.has(id)));
 
 export const toolInfo = (id: string) => TOOLS.find((tool) => tool.id === id) ?? null;
 
@@ -84,7 +92,7 @@ function toolProvider(info: ToolInfo): SdkProvider {
         version: entry.version,
         major: entry.major,
         lts: entry.lts,
-        earlyAccess: false,
+        earlyAccess: entry.prerelease === true,
         bundled: false,
         size: entry.size,
         filename: entry.filename,

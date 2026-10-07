@@ -17,7 +17,7 @@
  */
 
 import { useLayoutEffect, useRef } from 'react';
-import { renderMarkdown } from '@/lib/markdown';
+import { renderMarkdown } from '@/lib/files/markdown';
 import { useT } from '@/i18n';
 
 const PROSE = [

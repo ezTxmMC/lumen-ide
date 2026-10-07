@@ -17,7 +17,6 @@ import { formatBindingsFor } from '@/core/keybindings';
 import { t, useT } from '@/i18n';
 import type { Dock, ViewBadge, ViewDef } from '@/core/views';
 import type { MenuItem } from '../ui/ContextMenu';
-import { Button } from '../ui';
 import { DOT } from './builtin-views';
 
 /** The tooltip of a view: its title, its shortcut, and where it comes from. */
@@ -68,25 +67,6 @@ export function PoppedMark({ id, className = '' }: { id: string; className?: str
     return null;
   }
   return <ExternalLink size={9} aria-label={t('popout.poppedOut')} className={`shrink-0 text-accent ${className}`} />;
-}
-
-/** The dock header's button to pop the active view out — or, while it is out, to bring it back. */
-export function PopOutButton({ view }: { view: ViewDef; }) {
-  const t = useT();
-  const popped = useStore((s) => isViewPopped(s.popouts, view.id));
-  const run = () => {
-    const store = useStore.getState();
-    if (popped) {
-      store.dockBack(popoutKey('view', view.id));
-      return;
-    }
-    store.popOutView(view.id);
-  };
-  return (
-    <Button size="sm" title={t(popped ? 'popout.dockBack' : 'popout.popOut')} onClick={run}>
-      {popped ? <Undo2 size={13} /> : <ExternalLink size={13} />}
-    </Button>
-  );
 }
 
 /** The context menu of a view's icon or tab: pop it out, move it, close its dock, reset. */

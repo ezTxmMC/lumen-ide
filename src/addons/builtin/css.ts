@@ -9,8 +9,8 @@
  */
 
 import type { Addon, LanguageSpec } from '@/core/types';
-import { cssLibraryTemplate } from '../lib/web-project';
-import { cssTokenizer } from '../lib/css-tokenizer';
+import { cssLibraryTemplate } from '../lib/project/web-project';
+import { cssTokenizer } from '../lib/tokenizers/css-tokenizer';
 import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages';
 import { editorFormat } from '../lib/format-settings';
 import { localizeSnippets } from '../lib/localize';
@@ -74,6 +74,22 @@ export const cssSpec: LanguageSpec = {
     { label: 'grad', detail: 'addons.snippets.css.grad', body: 'background: linear-gradient(${135deg}, ${#7c8cff}, ${#22d3ee});$0' },
     { label: 'truncate', detail: 'addons.snippets.css.truncate', body: 'overflow: hidden;\ntext-overflow: ellipsis;\nwhite-space: nowrap;$0' },
     { label: 'reduce', detail: 'addons.snippets.css.reduce', body: '@media (prefers-reduced-motion: reduce) {\n  *, *::before, *::after {\n    animation-duration: 0.01ms !important;\n    transition-duration: 0.01ms !important;\n  }\n}$0' },
+    { label: 'tw-import', detail: 'Tailwind CSS import', body: '@import "tailwindcss";$0' },
+    { label: 'tw-theme', detail: 'Tailwind @theme', body: '@theme {\n  --color-${brand}: ${#7c8cff};\n  $0\n}' },
+    { label: 'tw-apply', detail: 'Tailwind @apply', body: '@apply ${flex items-center};$0' },
+    { label: 'tw-utility', detail: 'Tailwind @utility', body: '@utility ${name} {\n  $0\n}' },
+    { label: 'tw-variant', detail: 'Tailwind @custom-variant', body: '@custom-variant ${name} (${&:hover});$0' },
+    { label: 'tw-layer', detail: 'Tailwind @layer', body: '@layer ${components} {\n  .${name} {\n    @apply $0;\n  }\n}' },
+    { label: 'root', detail: ':root', body: ':root {\n  --${name}: ${value};\n  $0\n}' },
+    { label: 'abs', detail: 'Absolute fill', body: 'position: absolute;\ninset: 0;$0' },
+    { label: 'fixedfill', detail: 'Fixed fill', body: 'position: fixed;\ninset: 0;$0' },
+    { label: 'hover', detail: ':hover', body: '&:hover {\n  $0\n}' },
+    { label: 'focusv', detail: ':focus-visible', body: '&:focus-visible {\n  outline: 2px solid ${currentColor};\n  outline-offset: 2px;\n}$0' },
+    { label: 'before', detail: '::before', body: '&::before {\n  content: "${}";\n  $0\n}' },
+    { label: 'after', detail: '::after', body: '&::after {\n  content: "${}";\n  $0\n}' },
+    { label: 'gridauto', detail: 'Responsive grid', body: 'display: grid;\ngrid-template-columns: repeat(auto-fill, minmax(${16rem}, 1fr));\ngap: ${1rem};$0' },
+    { label: 'sronly', detail: 'Visually hidden', body: 'position: absolute;\nwidth: 1px;\nheight: 1px;\noverflow: hidden;\nclip: rect(0 0 0 0);\nwhite-space: nowrap;$0' },
+    { label: 'scrollbar', detail: 'Thin scrollbar', body: 'scrollbar-width: thin;\nscrollbar-color: ${#888} transparent;$0' },
   ]),
   lsp: [
     {

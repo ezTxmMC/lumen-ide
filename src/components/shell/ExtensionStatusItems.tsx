@@ -14,7 +14,7 @@
  */
 
 import { useSyncExternalStore } from 'react';
-import { extensionHost } from '@/core/extensions/host';
+import { extensionHost } from '@/core/extensions/integration/host';
 import { extensions } from '@/core/extensions/manager';
 import { useStore } from '@/state/store';
 import { namedIcon } from '../ui/named-icons';

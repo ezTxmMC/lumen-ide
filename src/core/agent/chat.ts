@@ -26,11 +26,16 @@
 import { useStore } from '@/state/store';
 import { t } from '@/i18n';
 import { extensions } from '@/core/extensions/manager';
-import { editorBridge } from '@/lib/editor-bridge';
-import { emitFsChanges } from '@/lib/fs-events';
+import { editorBridge } from '@/lib/editor/editor-bridge';
+import { emitFsChanges } from '@/lib/files/fs-events';
 import type { ExtensionAgent } from '@/core/extensions/types';
+import {
+  expandPrompt, normalizeCommands, parseCommands, parseProfiles, parseQuickActions, parseSlash, usesVariable, type PromptVariables,
+} from './customization';
+import type { ExtensionAgentProfile, ExtensionAgentQuickAction } from '@/core/extensions/types';
 import type {
-  AgentAttachment, AgentEvent, AgentModel, AgentUsage,
+  AgentActionId, AgentActionResult, AgentAttachment, AgentCapabilities, AgentCheckpoint, AgentEvent, AgentModel, AgentPermissionOption, AgentRateLimit,
+  AgentSlashCommand, AgentUsage,
 } from '../../../electron/features/extension-host/contract';
 
 export interface TodoEntry {
@@ -46,10 +51,12 @@ export interface DraftAttachment extends AgentAttachment {
 
 export type ChatItem =
   | { id: number; role: 'user'; text: string; context?: string; attachments?: { name: string; preview?: string; }[]; }
-  | { id: number; role: 'assistant'; text: string; streaming?: boolean; }
-  | { id: number; role: 'thinking'; text: string; streaming?: boolean; }
-  | { id: number; role: 'tool'; toolId: string; name: string; input: Record<string, unknown>; status: 'running' | 'done' | 'error'; output?: string; }
-  | { id: number; role: 'permission'; requestId: string; tool: string; input: Record<string, unknown>; blockedPath?: string; reason?: string; canRemember: boolean; state: 'pending' | 'allowed' | 'denied'; }
+  | { id: number; role: 'assistant'; text: string; streaming?: boolean; parentId?: string; }
+  | { id: number; role: 'thinking'; text: string; streaming?: boolean; parentId?: string; }
+  | { id: number; role: 'tool'; toolId: string; name: string; input: Record<string, unknown>; status: 'running' | 'done' | 'error'; output?: string; parentId?: string; }
+  | { id: number; role: 'subagent'; subagentId: string; description: string; agentType?: string; status: 'running' | 'done' | 'error'; summary?: string; }
+  | { id: number; role: 'notice'; level: 'info' | 'warn'; text: string; }
+  | { id: number; role: 'permission'; requestId: string; tool: string; input: Record<string, unknown>; blockedPath?: string; reason?: string; canRemember: boolean; options?: AgentPermissionOption[]; state: 'pending' | 'allowed' | 'denied'; }
   | { id: number; role: 'todos'; items: TodoEntry[]; }
   | { id: number; role: 'result'; isError: boolean; usage: AgentUsage; }
   | { id: number; role: 'note'; text: string; error: boolean; };
@@ -64,6 +71,16 @@ export interface AgentInfo {
   agent: ExtensionAgent;
 }
 
+/** The live numbers an agent reports for the toolbar. */
+export interface ChatUsage {
+  contextUsed?: number;
+  contextTotal?: number;
+  /** The session's total cost. */
+  costUsd?: number;
+  mode?: string;
+  rateLimits?: AgentRateLimit[];
+}
+
 export interface Chat {
   /** The chat id the main process knows the conversation by. */
   id: string;
@@ -75,7 +92,14 @@ export interface Chat {
   sessionRoot: string | null;
   /** What the agent reported at the start of the session. */
   model?: string;
-  slashCommands: string[];
+  slashCommands: AgentSlashCommand[];
+  /** What the agent said at the start of the session it can do, on top of the manifest's list. */
+  capabilities: AgentCapabilities;
+  usage: ChatUsage;
+  /** Cost summed from the turns' results, for agents that report no session total. */
+  spentUsd: number;
+  /** A system prompt for this chat only. */
+  systemPrompt: string;
   /** A short line while the agent works (“compacting”, “retrying” …). */
   status?: string;
   createdAt: number;
@@ -94,6 +118,8 @@ interface AgentState {
   modelsLoading: boolean;
   modelsError?: string;
   includeFile: boolean;
+  /** The active profile's id; `''` for none. */
+  profile: string;
   /** Messages sent, newest last — for the composer's arrow-up history. */
   history: string[];
 }
@@ -111,6 +137,7 @@ const MAX_SELECTION = 8000;
 const MAX_HISTORY = 50;
 const MODEL_KEY = (key: string) => `lumen.agent.model.${key}`;
 const EFFORT_KEY = (key: string) => `lumen.agent.effort.${key}`;
+const PROFILE_KEY = (key: string) => `lumen.agent.profile.${key}`;
 
 const listeners = new Set<() => void>();
 const agents = new Map<string, AgentState>();
@@ -134,6 +161,10 @@ function newChat(): Chat {
     running: false,
     sessionRoot: null,
     slashCommands: [],
+    capabilities: {},
+    usage: {},
+    spentUsd: 0,
+    systemPrompt: '',
     createdAt: Date.now(),
   };
 }
@@ -143,6 +174,14 @@ function storedModel(key: string): string | null {
     return window.localStorage.getItem(MODEL_KEY(key));
   } catch {
     return null;
+  }
+}
+
+function storedProfile(key: string): string {
+  try {
+    return window.localStorage.getItem(PROFILE_KEY(key)) ?? '';
+  } catch {
+    return '';
   }
 }
 
@@ -174,7 +213,7 @@ function stateOf(key: string): AgentState {
   const first = newChat();
   const fresh: AgentState = {
     chats: [first], activeChatId: first.id, mode: null, model: storedModel(key), efforts: storedEfforts(key),
-    reportedModels: null, modelsLoading: false, includeFile: true, history: [],
+    reportedModels: null, modelsLoading: false, includeFile: true, history: [], profile: storedProfile(key),
   };
   agents.set(key, fresh);
   return fresh;
@@ -252,17 +291,27 @@ const HANDLERS: { [K in AgentEvent['kind']]: (chat: Chat, event: Extract<AgentEv
     chat.sessionId = event.sessionId;
     chat.model = event.model ?? chat.model;
     if (event.slashCommands?.length) {
-      chat.slashCommands = event.slashCommands;
+      chat.slashCommands = normalizeCommands(event.slashCommands);
+    }
+    if (event.capabilities) {
+      chat.capabilities = { ...chat.capabilities, ...event.capabilities };
+    }
+    if (event.mode) {
+      chat.usage = { ...chat.usage, mode: event.mode };
+    }
+    if (event.title && !chat.items.some((item) => item.role === 'user')) {
+      chat.title = event.title;
     }
   },
   assistant(chat, event) {
     settleStreams(chat, true);
+    const parentId = event.parentId;
     for (const block of event.blocks) {
       if (block.type === 'text') {
-        push(chat, { role: 'assistant', text: block.text });
+        push(chat, { role: 'assistant', text: block.text, parentId });
       }
       if (block.type === 'thinking') {
-        push(chat, { role: 'thinking', text: block.text });
+        push(chat, { role: 'thinking', text: block.text, parentId });
       }
       if (block.type !== 'tool') {
         continue;
@@ -272,7 +321,7 @@ const HANDLERS: { [K in AgentEvent['kind']]: (chat: Chat, event: Extract<AgentEv
         setTodos(chat, todos);
         continue;
       }
-      push(chat, { role: 'tool', toolId: block.id, name: block.name, input: block.input, status: 'running' });
+      push(chat, { role: 'tool', toolId: block.id, name: block.name, input: block.input, status: 'running', parentId });
     }
   },
   delta(chat, event) {
@@ -300,15 +349,15 @@ const HANDLERS: { [K in AgentEvent['kind']]: (chat: Chat, event: Extract<AgentEv
     if (!FILE_TOOLS.has(tool.name)) {
       return;
     }
-    // Open what the agent touched, and hand the edit to the tabs explicitly
-    // rather than waiting for the watcher: an unedited tab reloads, an edited
-    // one shows the "changed on disk" banner.
-    void useStore.getState().openFile(file, true).catch(() => {}).then(() => emitFsChanges([{ path: file, type: 2 }]));
+    // Never open the file: the agent's edits stay out of the editor. Open tabs
+    // are told explicitly rather than waiting for the watcher: an unedited tab
+    // reloads, an edited one shows the "changed on disk" banner.
+    emitFsChanges([{ path: file, type: 2 }]);
   },
   permission(chat, event) {
     push(chat, {
       role: 'permission', requestId: event.requestId, tool: event.tool, input: event.input,
-      blockedPath: event.blockedPath, reason: event.reason, canRemember: event.canRemember, state: 'pending',
+      blockedPath: event.blockedPath, reason: event.reason, canRemember: event.canRemember, options: event.options, state: 'pending',
     });
   },
   permissionSettled(chat, event) {
@@ -316,6 +365,32 @@ const HANDLERS: { [K in AgentEvent['kind']]: (chat: Chat, event: Extract<AgentEv
   },
   todos(chat, event) {
     setTodos(chat, event.items);
+  },
+  subagent(chat, event) {
+    const mine = (item: ChatItem) => item.role === 'subagent' && item.subagentId === event.id;
+    if (event.phase === 'finish') {
+      patch(chat, mine, (item) => ({ ...item, status: event.isError ? 'error' : 'done', summary: event.summary }) as ChatItem);
+      return;
+    }
+    if (chat.items.some(mine)) {
+      return;
+    }
+    // The same call may have arrived as a plain tool row first: the subagent card replaces it.
+    chat.items = chat.items.filter((item) => !(item.role === 'tool' && item.toolId === event.id));
+    push(chat, { role: 'subagent', subagentId: event.id, description: event.description ?? '', agentType: event.agentType, status: 'running' });
+  },
+  notice(chat, event) {
+    push(chat, { role: 'notice', level: event.level, text: event.text });
+  },
+  usage(chat, event) {
+    const next: ChatUsage = { ...chat.usage };
+    for (const field of ['contextUsed', 'contextTotal', 'costUsd', 'mode', 'rateLimits'] as const) {
+      if (event[field] !== undefined) {
+        Object.assign(next, { [field]: event[field] });
+      }
+    }
+    chat.usage = next;
+    chat.model = event.model ?? chat.model;
   },
   status(chat, event) {
     chat.status = event.text || undefined;
@@ -326,6 +401,7 @@ const HANDLERS: { [K in AgentEvent['kind']]: (chat: Chat, event: Extract<AgentEv
       push(chat, { role: 'note', text: event.text, error: true });
     }
     const usage: AgentUsage = { ...(event.usage ?? {}), costUsd: event.usage?.costUsd ?? event.costUsd, durationMs: event.usage?.durationMs ?? event.durationMs };
+    chat.spentUsd += usage.costUsd ?? 0;
     push(chat, { role: 'result', isError: event.isError, usage });
   },
   error(chat, event) {
@@ -381,6 +457,70 @@ function editorContext(root: string): { prompt: string; label?: string; } {
 const titleFrom = (text: string) => {
   const line = text.trim().split('\n')[0];
   return line.length > 48 ? `${line.slice(0, 47)}…` : line;
+};
+
+/** What a prompt template may use: the selection, the open file, the clipboard, the arguments. */
+async function promptVariables(root: string, template: string, args: string): Promise<PromptVariables> {
+  const tab = useStore.getState().activeTab();
+  const file = tab?.path && !tab.virtual ? relativeTo(root, tab.path) : '';
+  const view = editorBridge.view;
+  const range = view && tab && editorBridge.tabId === tab.id ? view.state.selection.main : null;
+  const selection = range && !range.empty ? view!.state.sliceDoc(range.from, range.to).slice(0, MAX_SELECTION) : '';
+  const clipboard = usesVariable(template, 'clipboard') ? await navigator.clipboard.readText().catch(() => '') : '';
+  return { selection, file, clipboard, args };
+}
+
+/** The setting of an extension, empty when unset. */
+const settingOf = (extensionId: string, key: string | undefined) =>
+  (key ? useStore.getState().extensionSettings[extensionId]?.[key] : undefined) ?? '';
+
+/** What an action left behind: a new session (fork), a deleted one, an export to save, a line to show. */
+function applyActionResult(key: string, chat: Chat, action: AgentActionId, result: AgentActionResult) {
+  if (result.notice) {
+    push(chat, { role: 'notice', level: 'info', text: result.notice });
+  }
+  if (result.title) {
+    chat.title = result.title;
+  }
+  if (result.export) {
+    void saveExport(result.export.fileName, result.export.text);
+  }
+  if (result.deleted) {
+    chat.running = false;
+    agentChat.closeChat(key, chat.id);
+    return;
+  }
+  if (!result.sessionId) {
+    return;
+  }
+  if (action !== 'fork') {
+    chat.sessionId = result.sessionId;
+    return;
+  }
+  const state = stateOf(key);
+  const copy = newChat();
+  copy.title = t('agent.fork.title', { title: chat.title });
+  copy.sessionId = result.sessionId;
+  copy.sessionRoot = chat.sessionRoot;
+  copy.items = chat.items.map((item) => ({ ...item, id: ++counter }));
+  copy.slashCommands = chat.slashCommands;
+  copy.capabilities = chat.capabilities;
+  push(copy, { role: 'notice', level: 'info', text: t('agent.fork.done') });
+  state.chats = [...state.chats, copy];
+  state.activeChatId = copy.id;
+}
+
+async function saveExport(fileName: string, content: string) {
+  const target = await window.lumen.dialog.saveFile(fileName);
+  if (!target) {
+    return;
+  }
+  await window.lumen.fs.writeFile(target, content);
+  useStore.getState().notify(t('agent.export.saved', { path: target }), 'info');
+}
+
+const ACTION_COMMANDS: Record<string, AgentActionId | 'clear' | 'new'> = {
+  clear: 'clear', new: 'new', compact: 'compact', rewind: 'rewind', fork: 'fork', rename: 'rename', delete: 'delete', export: 'export',
 };
 
 export const agentChat = {
@@ -467,7 +607,6 @@ export const agentChat = {
     return configured ?? models.find((entry) => entry.isDefault);
   },
 
-
   /** The effort chosen for the current model; `''` leaves it to the extension's setting and the model. */
   effort(key: string): string {
     const effort = stateOf(key).efforts[agentChat.model(key)] ?? '';
@@ -514,6 +653,89 @@ export const agentChat = {
   setIncludeFile(key: string, value: boolean) {
     stateOf(key).includeFile = value;
     emit();
+  },
+
+  /* ---------------------------------------------------------------- *
+   * Customisation: quick actions, commands, profiles, system prompt
+   * ---------------------------------------------------------------- */
+
+  quickActions(key: string): ExtensionAgentQuickAction[] {
+    const info = agentChat.find(key);
+    if (!info) {
+      return [];
+    }
+    return [...(info.agent.quickActions ?? []), ...parseQuickActions(settingOf(info.extensionId, info.agent.quickActionsSetting))];
+  },
+
+  profiles(key: string): ExtensionAgentProfile[] {
+    const info = agentChat.find(key);
+    if (!info) {
+      return [];
+    }
+    return [...(info.agent.profiles ?? []), ...parseProfiles(settingOf(info.extensionId, info.agent.profilesSetting))];
+  },
+
+  /** The active profile; `undefined` when none is chosen or the chosen one no longer exists. */
+  profile(key: string): ExtensionAgentProfile | undefined {
+    const id = stateOf(key).profile;
+    return agentChat.profiles(key).find((entry) => entry.id === id);
+  },
+
+  /** Switching a profile sets mode, model and effort in one go; its extra settings apply to every message after. */
+  setProfile(key: string, id: string) {
+    const state = stateOf(key);
+    state.profile = id;
+    remember(PROFILE_KEY(key), id);
+    const profile = agentChat.profiles(key).find((entry) => entry.id === id);
+    if (profile?.mode) {
+      state.mode = profile.mode;
+    }
+    if (profile?.model !== undefined) {
+      agentChat.setModel(key, profile.model);
+    }
+    if (profile?.effort) {
+      agentChat.setEffort(key, profile.effort);
+    }
+    emit();
+  },
+
+  /** The extension's settings with the active profile's laid over them. */
+  settingsFor(key: string): Record<string, string> {
+    const info = agentChat.find(key);
+    const base = info ? useStore.getState().extensionSettings[info.extensionId] ?? {} : {};
+    return { ...base, ...agentChat.profile(key)?.settings };
+  },
+
+  setSystemPrompt(key: string, text: string) {
+    chatOf(key).systemPrompt = text.trim();
+    emit();
+  },
+
+  /** What the agent can do: the manifest's list plus what the session reported. */
+  capabilities(key: string): AgentCapabilities {
+    return { ...agentChat.find(key)?.agent.capabilities, ...chatOf(key).capabilities };
+  },
+
+  /**
+   * Everything the `/` palette offers: the actions the agent supports and the
+   * user's own commands first, then what the agent reports itself.
+   */
+  commands(key: string): AgentSlashCommand[] {
+    const info = agentChat.find(key);
+    if (!info) {
+      return [];
+    }
+    const capabilities = agentChat.capabilities(key);
+    const actions: AgentSlashCommand[] = Object.entries(ACTION_COMMANDS)
+      .filter(([, action]) => action === 'clear' || action === 'new' || capabilities[action])
+      .map(([name]) => ({ name, description: t(`agent.actions.${name}`), source: 'builtin' }));
+    const own: AgentSlashCommand[] = [
+      ...(info.agent.customCommands ?? []),
+      ...parseCommands(settingOf(info.extensionId, info.agent.customCommandsSetting)),
+    ].map((entry) => ({ name: entry.name, description: entry.description, argumentHint: entry.argumentHint ?? t('agent.commandArgs'), source: 'user' }));
+    const taken = new Set([...actions, ...own].map((entry) => entry.name));
+    const reported = chatOf(key).slashCommands.filter((entry) => !taken.has(entry.name));
+    return [...actions, ...own, ...reported];
   },
 
   /* ---------------------------------------------------------------- *
@@ -570,6 +792,8 @@ export const agentChat = {
     }
     chat.items = [];
     chat.sessionId = undefined;
+    chat.usage = {};
+    chat.spentUsd = 0;
     chat.title = t('agent.chats.untitled');
     emit();
   },
@@ -606,7 +830,127 @@ export const agentChat = {
    * Talking
    * ---------------------------------------------------------------- */
 
+  /** What the composer calls: `/command` lines are handled here, everything else goes to the agent. */
   async send(key: string, text: string, attachments: DraftAttachment[] = []) {
+    const slash = parseSlash(text);
+    if (slash && await agentChat.runSlash(key, slash.name, slash.args)) {
+      return;
+    }
+    await agentChat.deliver(key, text, attachments);
+  },
+
+  /** A quick action: its prompt, variables filled, goes out as a message. */
+  async runQuickAction(key: string, action: ExtensionAgentQuickAction) {
+    const root = useStore.getState().workspace;
+    if (!root) {
+      return;
+    }
+    await agentChat.deliver(key, expandPrompt(action.prompt, await promptVariables(root, action.prompt, '')));
+  },
+
+  /** Handles a slash command that is Lumen's (an action) or the user's (a template); `false` leaves it to the agent. */
+  async runSlash(key: string, name: string, args: string): Promise<boolean> {
+    const info = agentChat.find(key);
+    const root = useStore.getState().workspace;
+    if (!info || !root) {
+      return false;
+    }
+    const own = [...(info.agent.customCommands ?? []), ...parseCommands(settingOf(info.extensionId, info.agent.customCommandsSetting))]
+      .find((entry) => entry.name === name);
+    const action = ACTION_COMMANDS[name];
+    const capabilities = agentChat.capabilities(key);
+    if (own) {
+      await agentChat.deliver(key, expandPrompt(own.prompt, await promptVariables(root, own.prompt, args)));
+      return true;
+    }
+    if (action === 'clear') {
+      agentChat.reset(key);
+      return true;
+    }
+    if (action === 'new') {
+      agentChat.newChat(key);
+      return true;
+    }
+    if (!action || !capabilities[action]) {
+      return false;
+    }
+    if (action === 'rename' && args) {
+      agentChat.renameSession(key, args);
+      return true;
+    }
+    await agentChat.runAction(key, action, args);
+    return true;
+  },
+
+  /* ---------------------------------------------------------------- *
+   * Session actions
+   * ---------------------------------------------------------------- */
+
+  /** Asks the agent to carry out a session action; the chat shows what it reports meanwhile. */
+  async runAction(key: string, action: AgentActionId, argument?: string, checkpointId?: string) {
+    const root = useStore.getState().workspace;
+    const chat = chatOf(key);
+    if (!root || chat.running) {
+      return;
+    }
+    if (action === 'rewind' && !checkpointId) {
+      await agentChat.chooseCheckpoint(key);
+      return;
+    }
+    chat.running = true;
+    emit();
+    try {
+      const result = await window.lumen.agent.action({
+        agent: key, chatId: chat.id, action, cwd: root, sessionId: chat.sessionId, mode: agentChat.mode(key),
+        model: agentChat.model(key) || undefined, effort: agentChat.effort(key) || undefined,
+        settings: agentChat.settingsFor(key), argument, checkpointId,
+      });
+      applyActionResult(key, chat, action, result);
+    } catch (err) {
+      push(chat, { role: 'note', text: (err as Error).message, error: true });
+    } finally {
+      chat.running = false;
+      emit();
+    }
+  },
+
+  /** Lists the checkpoints and asks which one to return to. */
+  async chooseCheckpoint(key: string) {
+    const root = useStore.getState().workspace;
+    const chat = chatOf(key);
+    if (!root) {
+      return;
+    }
+    const points: AgentCheckpoint[] = await window.lumen.agent
+      .checkpoints(key, chat.id, chat.sessionId, root, agentChat.settingsFor(key)).catch(() => []);
+    if (!points.length) {
+      push(chat, { role: 'notice', level: 'info', text: t('agent.rewind.none') });
+      emit();
+      return;
+    }
+    useStore.getState().openForm({
+      title: t('agent.rewind.title'),
+      submitLabel: t('agent.rewind.submit'),
+      initial: { point: points[0].id },
+      fields: [{
+        id: 'point', label: t('agent.rewind.point'), type: 'select',
+        choices: points.map((point) => ({ value: point.id, label: point.at ? `${point.label} · ${new Date(point.at).toLocaleTimeString()}` : point.label })),
+      }],
+      onSubmit: (values) => { void agentChat.runAction(key, 'rewind', undefined, values.point); },
+    });
+  },
+
+  /** Rename the chat — and the agent's own session where it can. */
+  renameSession(key: string, title: string) {
+    const chat = chatOf(key);
+    agentChat.renameChat(key, chat.id, title);
+    if (agentChat.capabilities(key).rename && chat.sessionId) {
+      void agentChat.runAction(key, 'rename', title.trim());
+    }
+  },
+
+  /** Sends a message as it is — no slash command handling. */
+  async deliver(key: string, text: string, attachments: DraftAttachment[] = []) {
     const state = useStore.getState();
     const root = state.workspace;
     const agentState = stateOf(key);
@@ -651,7 +995,8 @@ export const agentChat = {
         model: agentChat.model(key) || undefined,
         effort: agentChat.effort(key) || undefined,
         attachments: attachments.map(({ preview: _preview, ...entry }) => entry),
-        settings: state.extensionSettings[info.extensionId],
+        settings: agentChat.settingsFor(key),
+        systemPrompt: chat.systemPrompt || undefined,
       });
     } catch (err) {
       chat.running = false;
@@ -664,13 +1009,13 @@ export const agentChat = {
     await window.lumen.agent.interrupt(key, chatOf(key).id);
   },
 
-  async answer(key: string, requestId: string, allow: boolean, remember = false, message?: string, answers?: Record<string, string>) {
+  async answer(key: string, requestId: string, allow: boolean, remember = false, message?: string, answers?: Record<string, string>, optionId?: string) {
     const isRequest = (item: ChatItem) => item.role === 'permission' && item.requestId === requestId;
     const chat = stateOf(key).chats.find((entry) => entry.items.some(isRequest));
     if (chat) {
       patch(chat, isRequest, (item) => ({ ...item, state: allow ? 'allowed' : 'denied' }) as ChatItem);
     }
     emit();
-    await window.lumen.agent.answer({ agent: key, requestId, allow, remember, message, answers });
+    await window.lumen.agent.answer({ agent: key, requestId, allow, remember, message, answers, optionId });
   },
 };

@@ -18,13 +18,37 @@ import { ChangeSet, Text } from '@codemirror/state';
 import { javaSpec } from '@/addons/builtin/java';
 import { mergeResolved, planCompletion, posToOffset } from '@/core/completion/apply';
 import { accepts, prepare, Query, rawScore } from '@/core/completion/matcher';
-import type { CompletionItem, TextEdit } from '@/core/lsp/protocol';
+import type { CompletionItem, CompletionList, TextEdit } from '@/core/lsp/protocol';
+
+interface DiagnosticLike {
+  message: string;
+}
+
+interface CodeActionLike {
+  title: string;
+  kind?: string;
+}
+
+/** What the harness reports back after applying a completion item. */
+interface AppliedCompletion {
+  text: string;
+  item: CompletionItem;
+  resolved?: CompletionItem;
+  plan: { dropped: unknown[]; warnings: unknown[]; };
+}
+
+interface JavaSettings {
+  completion: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+type RequestOptions = Record<string, unknown>;
 
 type H = Record<string, any>;
 /** Same rule as lspItemDeprecated() in lsp-extension.ts (not imported: that module pulls in the React store). */
 const lspItemDeprecated = (item: CompletionItem) => Boolean(item.deprecated || item.tags?.includes(1));
 
-const JAVA_SETTINGS = (javaSpec.lsp?.[0]?.settings as { java: Record<string, any>; }).java;
+const JAVA_SETTINGS = (javaSpec.lsp?.[0]?.settings as { java: JavaSettings; }).java;
 
 type Ctx = Record<string, any>;
 
@@ -62,7 +86,7 @@ async function scenariosPart1(c: Ctx) {
     setText(text);
     await sleep(500);
     const diags = await diagnosticsFor(mainFile);
-    ok(!diags.some((d: any) => /List cannot be resolved/.test(d.message)), 'no unresolved List', diags.map((d: any) => d.message));
+    ok(!diags.some((d: DiagnosticLike) => /List cannot be resolved/.test(d.message)), 'no unresolved List', diags.map((d: DiagnosticLike) => d.message));
   });
 
   await scenario('ambiguity: List offers java.util AND java.awt, distinct; each imports its own', async () => {
@@ -78,8 +102,8 @@ async function scenariosPart1(c: Ctx) {
     eq(importsOf(a.text), ['import java.awt.List;'], 'awt item imports java.awt.List only');
     const u = await accept(req, util);
     eq(importsOf(u.text), ['import java.util.List;'], 'util item imports java.util.List only');
-    const dup = req.list.items.filter((i: any) => nameOf(i) === 'List' && i.kind === 7);
-    ok(new Set(dup.map((i: any) => i.detail)).size === dup.length, 'no duplicate entries for one qualified name', dup.map((i: any) => i.detail));
+    const dup = req.list.items.filter((i: CompletionItem) => nameOf(i) === 'List' && i.kind === 7);
+    ok(new Set(dup.map((i: CompletionItem) => i.detail)).size === dup.length, 'no duplicate entries for one qualified name', dup.map((i: CompletionItem) => i.detail));
   });
 
   await scenario('import order and placement with existing imports (importOrder java, javax, org, com, "")', async () => {
@@ -184,7 +208,7 @@ async function scenariosPart3(c: Ctx) {
   const { scenario, ok, eq, requestAt, accept, nameOf, summary, importsOf, countOf, checkImportPlacement, body, typeAt, ev, clean } = c;
   await scenario('static member Math.max via qualified access (no import)', async () => {
     const req = await requestAt(body('int m = Math.ma|;'));
-    const item = req.list.items.find((i: any) => nameOf(i) === 'max' && /int a, int b/.test(i.labelDetails?.detail ?? i.label));
+    const item = req.list.items.find((i: CompletionItem) => nameOf(i) === 'max' && /int a, int b/.test(i.labelDetails?.detail ?? i.label));
     ok(Boolean(item), 'Math.max(int,int) offered', summary(req, 15));
     if (!item) {
       return;
@@ -197,7 +221,7 @@ async function scenariosPart3(c: Ctx) {
 
   await scenario('static import favourite: requireNonNull -> import static java.util.Objects.requireNonNull', async () => {
     const req = await requestAt(body('Object o = requireNonNu|;'));
-    const item = req.list.items.find((i: any) => nameOf(i) === 'requireNonNull');
+    const item = req.list.items.find((i: CompletionItem) => nameOf(i) === 'requireNonNull');
     ok(Boolean(item), 'requireNonNull offered unqualified', summary(req, 10));
     if (!item) {
       return;
@@ -212,7 +236,7 @@ async function scenariosPart3(c: Ctx) {
   await scenario('Collectors.toList after the import (member of an imported class)', async () => {
     const text = 'package app;\n\nimport java.util.stream.Collectors;\n\npublic class Main {\n    public static void main(String[] args) {\n        Object c = Collectors.toLi|;\n    }\n}\n';
     const req = await requestAt(text);
-    const item = req.list.items.find((i: any) => nameOf(i) === 'toList');
+    const item = req.list.items.find((i: CompletionItem) => nameOf(i) === 'toList');
     ok(Boolean(item), 'Collectors.toList offered', summary(req, 10));
     if (!item) {
       return;
@@ -230,7 +254,7 @@ async function scenariosPart3(c: Ctx) {
     }
     const next = r.applied.text.replace('        Collectors\n', '        Object c = Collectors.toLi|;\n');
     const req = await requestAt(next);
-    const item = req.list.items.find((i: any) => nameOf(i) === 'toList');
+    const item = req.list.items.find((i: CompletionItem) => nameOf(i) === 'toList');
     ok(Boolean(item), 'toList offered after the auto-import', summary(req, 10));
     if (!item) {
       return;
@@ -248,11 +272,11 @@ async function scenariosPart4(c: Ctx) {
     const text = mainText('        java.util.List<String> list = new java.util.ArrayList<>();\n        int n = list.|;');
     const req = await requestAt(text);
     eq(req.trigger, '.', 'request carries the trigger character');
-    const names = new Set(req.list.items.map((i: any) => nameOf(i)));
+    const names = new Set(req.list.items.map((i: CompletionItem) => nameOf(i)));
     for (const n of ['add', 'size', 'stream', 'forEach', 'isEmpty']) {
       ok(names.has(n), `${n} offered`, [...names].slice(0, 20));
     }
-    const item = req.list.items.find((i: any) => nameOf(i) === 'size');
+    const item = req.list.items.find((i: CompletionItem) => nameOf(i) === 'size');
     if (!item) {
       return;
     }
@@ -263,11 +287,11 @@ async function scenariosPart4(c: Ctx) {
 
   await scenario('member access on a String: `str.` offers length/substring/chars', async () => {
     const req = await requestAt(mainText('        String str = "";\n        String t = str.|;'));
-    const names = new Set(req.list.items.map((i: any) => nameOf(i)));
+    const names = new Set(req.list.items.map((i: CompletionItem) => nameOf(i)));
     for (const n of ['length', 'substring', 'chars', 'trim']) {
       ok(names.has(n), `${n} offered`, [...names].slice(0, 20));
     }
-    const sub = req.list.items.find((i: any) => nameOf(i) === 'substring');
+    const sub = req.list.items.find((i: CompletionItem) => nameOf(i) === 'substring');
     if (!sub) {
       return;
     }
@@ -278,7 +302,7 @@ async function scenariosPart4(c: Ctx) {
   await scenario('member of a jar type: Greeter.create() / hello(...) with resolved documentation path', async () => {
     const text = 'package app;\n\nimport lib.Greeter;\n\npublic class Main {\n    public static void main(String[] args) {\n        Greeter g = Greeter.cr|;\n    }\n}\n';
     const req = await requestAt(text);
-    const item = req.list.items.find((i: any) => nameOf(i) === 'create');
+    const item = req.list.items.find((i: CompletionItem) => nameOf(i) === 'create');
     ok(Boolean(item), 'Greeter.create offered', summary(req, 10));
     if (!item) {
       return;
@@ -286,7 +310,7 @@ async function scenariosPart4(c: Ctx) {
     const a = await accept(req, item);
     ok(a.text.includes('Greeter g = Greeter.create();'), 'create() inserted', ev(a));
     const req2 = await requestAt(text.replace('Greeter g = Greeter.cr|;', 'Greeter g = null;\n        String s = g.hel|;'));
-    ok(req2.list.items.some((i: any) => nameOf(i) === 'hello'), 'instance member hello from the jar', summary(req2, 10));
+    ok(req2.list.items.some((i: CompletionItem) => nameOf(i) === 'hello'), 'instance member hello from the jar', summary(req2, 10));
   });
 }
 
@@ -296,9 +320,9 @@ async function scenariosPart5(c: Ctx) {
   await scenario('prefix shrink: `Stri` -> backspace to `S` cannot reuse the list and re-query brings Set and String', async () => {
     const narrow = await requestAt(body('Stri|'));
     const wide = await requestAt(body('S|'));
-    const names = new Set(wide.list.items.map((i: any) => nameOf(i)));
+    const names = new Set(wide.list.items.map((i: CompletionItem) => nameOf(i)));
     ok(names.has('Set') && names.has('String'), 'S| offers Set and String', [...names].slice(0, 25));
-    ok(!narrow.list.items.some((i: any) => nameOf(i) === 'Set'), 'Stri| itself does not offer Set (server filtered)');
+    ok(!narrow.list.items.some((i: CompletionItem) => nameOf(i) === 'Set'), 'Stri| itself does not offer Set (server filtered)');
     eq(h.listReusable({ isIncomplete: narrow.list.isIncomplete, pattern: 'Stri' }, 'S'), false, 'the narrow list is NOT reusable for the shorter pattern');
     eq(h.listReusable({ isIncomplete: wide.list.isIncomplete, pattern: 'S' }, 'Str'), !wide.list.isIncomplete, 'a complete list serves the longer pattern');
     ok(wide.list.items.length > narrow.list.items.length, 'shorter prefix gives a bigger list', [wide.list.items.length, narrow.list.items.length]);
@@ -334,7 +358,7 @@ async function scenariosPart7(c: Ctx) {
   await scenario('postfix template: list.for (the resolved edit reaches back over the typed expression)', async () => {
     const text = mainText('        java.util.List<String> list = new java.util.ArrayList<>();\n        list.for|');
     const req = await requestAt(text);
-    const item = req.list.items.find((i: any) => i.kind === 15 && nameOf(i) === 'for');
+    const item = req.list.items.find((i: CompletionItem) => i.kind === 15 && nameOf(i) === 'for');
     if (!item) {
       return skipHere(`jdtls sent no postfix/template item for list.for (got: ${summary(req, 8)})`);
     }
@@ -350,13 +374,13 @@ async function scenariosPart8(c: Ctx) {
   const { scenario, ok, requestAt, nameOf, summary, body } = c;
   await scenario('deprecated items: Date.getYear (JDK) and Greeter.oldHello (jar) carry the deprecated tag', async () => {
     const d = await requestAt(body('new java.util.Date().getYea|'));
-    const year = d.list.items.find((i: any) => nameOf(i) === 'getYear');
+    const year = d.list.items.find((i: CompletionItem) => nameOf(i) === 'getYear');
     ok(Boolean(year), 'getYear offered', summary(d, 8));
     if (year) {
       ok(lspItemDeprecated(year), 'getYear is deprecated', { tags: year.tags, deprecated: year.deprecated });
     }
     const g = await requestAt(body('new lib.Greeter().oldHel|'));
-    const old = g.list.items.find((i: any) => nameOf(i) === 'oldHello');
+    const old = g.list.items.find((i: CompletionItem) => nameOf(i) === 'oldHello');
     ok(Boolean(old), 'oldHello offered', summary(g, 8));
     if (old) {
       ok(lspItemDeprecated(old), 'oldHello is deprecated', { tags: old.tags, deprecated: old.deprecated });
@@ -369,9 +393,9 @@ async function scenariosPart9(c: Ctx) {
   const { scenario, ok, eq, skipHere, requestAt, accept, nameOf, summary, mainText, classText, body } = c;
   await scenario('server snippet items: main / sysout through the snippet parser', async () => {
     const m = await requestAt(classText('    mai|'));
-    const mainItem = m.list.items.find((i: any) => nameOf(i) === 'main' && i.kind === 15);
+    const mainItem = m.list.items.find((i: CompletionItem) => nameOf(i) === 'main' && i.kind === 15);
     const s = await requestAt(body('sysou|'));
-    const sysItem = s.list.items.find((i: any) => nameOf(i) === 'sysout' && i.kind === 15);
+    const sysItem = s.list.items.find((i: CompletionItem) => nameOf(i) === 'sysout' && i.kind === 15);
     if (!mainItem && !sysItem) {
       return skipHere(`jdtls sent no template items (main: ${summary(m, 6)} | sysout: ${summary(s, 6)})`);
     }
@@ -410,7 +434,7 @@ async function scenariosPart9(c: Ctx) {
   await scenario('server data suffices: applying the RESOLVED main edit gives call parens, guessed args, ctor and postfix text', async () => {
     // What mergeResolved SHOULD produce: jdtls' resolve answer carries the final textEdit (parentheses, snippet
     // placeholders, postfix expression range) — the list item only has the bare name.
-    const viaResolved = async (marked: string, pick: (i: any) => boolean, opts: any = {}) => {
+    const viaResolved = async (marked: string, pick: (i: CompletionItem) => boolean, opts: RequestOptions = {}) => {
       const req = await requestAt(marked, opts);
       const item = req.list.items.find(pick);
       if (!item) { ok(false, `item for ${marked.trim().split('\n').pop()} offered`, summary(req, 8)); return null; }
@@ -447,10 +471,10 @@ async function scenariosPart10(c: Ctx) {
   await scenario('constructor: new Greeter( offers both ctors with guessed arguments and imports lib.Greeter', async () => {
     const text = mainText('        String prefix = "a";\n        int times = 2;\n        var g = new Greet|;');
     const req = await requestAt(text);
-    const ctors = req.list.items.filter((i: any) => nameOf(i) === 'Greeter');
+    const ctors = req.list.items.filter((i: CompletionItem) => nameOf(i) === 'Greeter');
     ok(ctors.length >= 1, 'Greeter constructors offered', summary(req, 15));
-    const two = ctors.find((i: any) => /String prefix, int times/.test(`${i.labelDetails?.detail ?? ''} ${i.label} ${i.detail ?? ''}`));
-    ok(Boolean(two), 'the (String, int) constructor is there', ctors.map((i: any) => `${i.label} ${i.labelDetails?.detail ?? ''} ${i.detail ?? ''}`));
+    const two = ctors.find((i: CompletionItem) => /String prefix, int times/.test(`${i.labelDetails?.detail ?? ''} ${i.label} ${i.detail ?? ''}`));
+    ok(Boolean(two), 'the (String, int) constructor is there', ctors.map((i: CompletionItem) => `${i.label} ${i.labelDetails?.detail ?? ''} ${i.detail ?? ''}`));
     if (!two) {
       return;
     }
@@ -459,7 +483,7 @@ async function scenariosPart10(c: Ctx) {
     ok(importsOf(a.text).includes('import lib.Greeter;'), 'lib.Greeter imported by the constructor item', a.text);
     ok(a.plan.stops !== null, 'placeholders are interactive stops');
     clean(a, 'ctor');
-    const noArg = ctors.find((i: any) => !/,/.test(i.labelDetails?.detail ?? i.label) && /\(\)/.test(`${i.labelDetails?.detail ?? ''}${i.label}`));
+    const noArg = ctors.find((i: CompletionItem) => !/,/.test(i.labelDetails?.detail ?? i.label) && /\(\)/.test(`${i.labelDetails?.detail ?? ''}${i.label}`));
     if (noArg) {
       const b = await accept(req, noArg);
       ok(/new Greeter\(\)/.test(b.text), 'no-arg ctor gives new Greeter()', b.text);
@@ -468,8 +492,8 @@ async function scenariosPart10(c: Ctx) {
 
   await scenario('constructor of a JDK class: new ArrLi -> new ArrayList<>() with import', async () => {
     const req = await requestAt(body('java.util.List<String> xs = new ArrLi|;'));
-    const item = req.list.items.find((i: any) => nameOf(i) === 'ArrayList' && /\(\)|<>/.test(`${i.label}${i.labelDetails?.detail ?? ''}${i.textEdit?.newText ?? ''}`))
-      ?? req.list.items.find((i: any) => nameOf(i) === 'ArrayList');
+    const item = req.list.items.find((i: CompletionItem) => nameOf(i) === 'ArrayList' && /\(\)|<>/.test(`${i.label}${i.labelDetails?.detail ?? ''}${i.textEdit?.newText ?? ''}`))
+      ?? req.list.items.find((i: CompletionItem) => nameOf(i) === 'ArrayList');
     ok(Boolean(item), 'ArrayList ctor offered', summary(req, 10));
     if (!item) {
       return;
@@ -487,7 +511,7 @@ async function scenariosPart11(c: Ctx) {
   await scenario('annotation @Over -> @Override (range covers the @, no @@)', async () => {
     const text = classText('    @Over|\n    public String toString() { return ""; }');
     const req = await requestAt(text);
-    const item = req.list.items.find((i: any) => nameOf(i).replace('@', '') === 'Override');
+    const item = req.list.items.find((i: CompletionItem) => nameOf(i).replace('@', '') === 'Override');
     ok(Boolean(item), 'Override offered', summary(req, 10));
     if (!item) {
       return;
@@ -501,7 +525,7 @@ async function scenariosPart11(c: Ctx) {
   await scenario('annotation of a non-java.lang package (@FunctionalInterface stays; @Nullable absent) and import inside annotation context', async () => {
     const text = 'package app;\n\n@Functional|\npublic interface Fn { void run(); }\n';
     const req = await requestAt(text);
-    const item = req.list.items.find((i: any) => nameOf(i).replace('@', '') === 'FunctionalInterface');
+    const item = req.list.items.find((i: CompletionItem) => nameOf(i).replace('@', '') === 'FunctionalInterface');
     ok(Boolean(item), 'FunctionalInterface offered', summary(req, 10));
     if (!item) {
       return;
@@ -517,7 +541,7 @@ async function scenariosPart12(c: Ctx) {
   await scenario('inside an import statement: `import java.u` and `import java.util.Arr`', async () => {
     const a1 = 'package app;\n\nimport java.u|\n\npublic class Main {\n}\n';
     const req = await requestAt(a1);
-    const pkgItem = req.list.items.find((i: any) => /^(java\.)?util$/.test(i.label) || i.label === 'util' || i.detail === 'java.util');
+    const pkgItem = req.list.items.find((i: CompletionItem) => /^(java\.)?util$/.test(i.label) || i.label === 'util' || i.detail === 'java.util');
     ok(Boolean(pkgItem), 'java.util package offered', summary(req, 10));
     if (pkgItem) {
       const a = await accept(req, pkgItem);
@@ -525,7 +549,7 @@ async function scenariosPart12(c: Ctx) {
     }
     const a2 = 'package app;\n\nimport java.util.Arr|\n\npublic class Main {\n}\n';
     const req2 = await requestAt(a2);
-    const list = req2.list.items.find((i: any) => nameOf(i) === 'ArrayList');
+    const list = req2.list.items.find((i: CompletionItem) => nameOf(i) === 'ArrayList');
     ok(Boolean(list), 'ArrayList offered inside the import', summary(req2, 10));
     if (list) {
       const a = await accept(req2, list);
@@ -547,25 +571,25 @@ async function scenariosPart13(c: Ctx) {
     const doc = Text.of(text.split('\n'));
     const range = { start: { line: 0, character: 0 }, end: { line: doc.lines - 1, character: 0 } };
     const actions = await client.codeActions(mainFile, range, [], ['source.organizeImports']);
-    const action = actions.find((a: any) => /organize/i.test(a.title) || a.kind === 'source.organizeImports');
+    const action = actions.find((a: CodeActionLike) => /organize/i.test(a.title) || a.kind === 'source.organizeImports');
     if (!action) {
-      return skipHere(`no organizeImports code action (${actions.map((a: any) => a.title).join(', ') || 'none'})`);
+      return skipHere(`no organizeImports code action (${actions.map((a: CodeActionLike) => a.title).join(', ') || 'none'})`);
     }
     let edits: TextEdit[] = [];
     const full = action.edit || action.command ? action : await client.resolveCodeAction(action);
     if (full.edit) {
       edits = Object.values(full.edit.changes ?? {}).flat() as TextEdit[];
       for (const dc of full.edit.documentChanges ?? []) {
-        if ('edits' in dc) {
+        if (dc.edits) {
           edits.push(...dc.edits);
         }
       }
     }
     if (!full.edit && full.command) {
-      const res: any = await client.executeCommand(full.command);
+      const res = await client.executeCommand(full.command) as { changes?: Record<string, TextEdit[]>; documentChanges?: { edits?: TextEdit[]; }[]; } | null;
       edits = Object.values(res?.changes ?? {}).flat() as TextEdit[];
       for (const dc of res?.documentChanges ?? []) {
-        if ('edits' in dc) {
+        if (dc.edits) {
           edits.push(...dc.edits);
         }
       }
@@ -583,7 +607,7 @@ async function scenariosPart13(c: Ctx) {
     await sleep(800);
     const doc2 = Text.of(used.split('\n'));
     const acts2 = await client.codeActions(mainFile, { start: { line: 0, character: 0 }, end: { line: doc2.lines - 1, character: 0 } }, [], ['source.organizeImports']);
-    const act2raw = acts2.find((a: any) => a.kind === 'source.organizeImports' || /organize/i.test(a.title));
+    const act2raw = acts2.find((a: CodeActionLike) => a.kind === 'source.organizeImports' || /organize/i.test(a.title));
     const act2 = act2raw && !act2raw.edit && !act2raw.command ? await client.resolveCodeAction(act2raw) : act2raw;
     const ed2 = act2?.edit ? (Object.values(act2.edit.changes ?? {}).flat() as TextEdit[]) : [];
     const removed = ed2.some((e) => /java\.nio\.file\.Path/.test(doc2.sliceString(posToOffset(doc2, e.range.start), posToOffset(doc2, e.range.end))) && !/Path/.test(e.newText));
@@ -687,7 +711,7 @@ async function scenariosPart15(c: Ctx) {
   await scenario('race D: 20 quick didChange+completion pairs, the last answer matches the last text', async () => {
     const { client } = cur();
     const prefixes = ['S', 'St', 'Str', 'Stri', 'Strin', 'String', 'Strin', 'Stri', 'Str', 'St', 'S', 'Se', 'Set', 'Se', 'S', 'Li', 'Lis', 'List', 'Lis', 'Li'];
-    const pending: Promise<any>[] = [];
+    const pending: Promise<CompletionList>[] = [];
     for (const p of prefixes) {
       const marked = body(`${p}|`);
       const text = marked.replace(/\|/, '');
@@ -698,17 +722,17 @@ async function scenariosPart15(c: Ctx) {
     }
     const all = await Promise.all(pending);
     const last = all[all.length - 1];
-    ok(last.items.some((i: any) => nameOf(i) === 'List'), 'last answer (Li) offers List', last.items.slice(0, 5).map((i: any) => i.label));
-    ok(!last.items.some((i: any) => nameOf(i) === 'String'), 'last answer is not a stale String answer');
+    ok(last.items.some((i: CompletionItem) => nameOf(i) === 'List'), 'last answer (Li) offers List', last.items.slice(0, 5).map((i: CompletionItem) => i.label));
+    ok(!last.items.some((i: CompletionItem) => nameOf(i) === 'String'), 'last answer is not a stale String answer');
     const settled = await requestAt(body('Str|'));
-    ok(settled.list.items.some((i: any) => nameOf(i) === 'String'), 'server still healthy after the burst');
+    ok(settled.list.items.some((i: CompletionItem) => nameOf(i) === 'String'), 'server still healthy after the burst');
   });
 }
 
 /** 16. settings-dependent (last: they change the server config) */
 async function scenariosPart16(c: Ctx) {
   const { scenario, ok, eq, skipHere, requestAt, accept, cur, findType, nameOf, summary, importsOf, sleep, h, body } = c;
-  const setJava = (patch: (java: Record<string, any>) => void) => {
+  const setJava = (patch: (java: JavaSettings) => void) => {
     const java = JSON.parse(JSON.stringify(JAVA_SETTINGS));
     patch(java);
     cur().client.notify('workspace/didChangeConfiguration', { settings: { java } });
@@ -725,7 +749,7 @@ async function scenariosPart16(c: Ctx) {
     try {
       await sleep(1500);
       const req = await requestAt(body('ArrayLi|'));
-      const item = findType(req, 'ArrayList', 'java.util') ?? req.list.items.find((i: any) => nameOf(i) === 'ArrayList');
+      const item = findType(req, 'ArrayList', 'java.util') ?? req.list.items.find((i: CompletionItem) => nameOf(i) === 'ArrayList');
       ok(Boolean(item), 'ArrayList offered in lazy mode', summary(req, 8));
       if (!item) {
         return;
@@ -753,7 +777,7 @@ async function scenariosPart16(c: Ctx) {
       ok(capped.list.isIncomplete, 'server marks the capped list isIncomplete', { isIncomplete: capped.list.isIncomplete, n: capped.list.items.length });
       eq(h.listReusable({ isIncomplete: capped.list.isIncomplete, pattern: 'S' }, 'Str'), !capped.list.isIncomplete, 'an incomplete list is re-queried for the longer pattern');
       const narrowed = await requestAt(body('Str|'));
-      ok(narrowed.list.items.some((i: any) => nameOf(i) === 'String'), 'the re-query finds String although the capped S| list may not hold it');
+      ok(narrowed.list.items.some((i: CompletionItem) => nameOf(i) === 'String'), 'the re-query finds String although the capped S| list may not hold it');
     } finally {
       setJava(() => {});
       await sleep(1000);
@@ -767,7 +791,7 @@ export async function registerScenarios(h: H) {
   const body = (line: string) => mainText(`        ${line}`);
 
   /** Bare identifier on its own line → apply → the result text. */
-  async function typeAt(marked: string, simple: string, pkg: string, opts: any = {}) {
+  async function typeAt(marked: string, simple: string, pkg: string, opts: RequestOptions = {}) {
     const req = await requestAt(marked, opts);
     const item = findType(req, simple, pkg);
     ok(Boolean(item), `${simple} (${pkg}) is offered`, summary(req, 15));
@@ -780,8 +804,8 @@ export async function registerScenarios(h: H) {
     return { req, item, applied };
   }
   /** Evidence for a text assertion: what was applied, and what list and resolve each said the main edit is. */
-  const ev = (a: any) => ({ text: a.text, listNewText: a.item.textEdit?.newText, resolvedNewText: a.resolved?.textEdit?.newText });
-  const clean = (a: any, label: string) => {
+  const ev = (a: AppliedCompletion) => ({ text: a.text, listNewText: a.item.textEdit?.newText, resolvedNewText: a.resolved?.textEdit?.newText });
+  const clean = (a: AppliedCompletion, label: string) => {
     eq(a.plan.dropped.length, 0, `${label}: nothing dropped`);
     eq(a.plan.warnings, [], `${label}: no warnings`);
   };
@@ -838,7 +862,7 @@ export async function registerBuildScenarios(h: H) {
   });
   await scenario(`${kind}: member of a project class: Helper.help() with the import present`, async () => {
     const req = await requestAt('package app;\n\nimport other.Helper;\n\npublic class Main {\n    public static void main(String[] args) {\n        String s = Helper.he|;\n    }\n}\n');
-    const item = req.list.items.find((i: any) => nameOf(i) === 'help');
+    const item = req.list.items.find((i: CompletionItem) => nameOf(i) === 'help');
     ok(Boolean(item), 'help offered', summary(req, 8));
     if (!item) {
       return;

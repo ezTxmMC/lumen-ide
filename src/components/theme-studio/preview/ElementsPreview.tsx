@@ -10,7 +10,7 @@
 
 import { useT } from '@/i18n';
 import type { Theme } from '@/core/types';
-import { uses } from '../keys';
+import { uses } from '../state/keys';
 import {
   BadgesCard, ButtonsCard, CompletionCard, ControlsCard, DiagnosticsCard, DialogCard, EditorMarksCard, InputsCard, PaletteCard, ToastsCard, TooltipCard,
 } from './element-cards';

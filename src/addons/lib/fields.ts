@@ -15,7 +15,7 @@
  */
 
 import type { FormField, FormValues } from '@/core/types';
-import { identifier, isValidPackage } from '@/core/project/scaffold';
+import { identifier, isValidPackage } from '@/core/project/create/scaffold';
 
 export const SEMVER = String.raw`\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?`;
 

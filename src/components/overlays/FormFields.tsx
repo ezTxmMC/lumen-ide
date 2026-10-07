@@ -11,8 +11,8 @@
 import { useId } from 'react';
 import { AlertCircle, Loader2, RotateCw } from 'lucide-react';
 import type { FieldChoice, FormField, FormValues } from '@/core/types';
-import { visibleFields } from '@/core/project/scaffold';
-import { fieldChoices, groupChoices, type ChoiceState, type LoadedChoices } from '@/core/project/choices';
+import { visibleFields } from '@/core/project/create/scaffold';
+import { fieldChoices, groupChoices, type ChoiceState, type LoadedChoices } from '@/core/project/create/choices';
 import { tr, useT } from '@/i18n';
 import { ChoiceBadge, Combobox } from './Combobox';
 

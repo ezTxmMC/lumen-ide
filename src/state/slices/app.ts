@@ -21,7 +21,7 @@ import { createFormatDecorator } from '@/core/format-settings';
 import { registry } from '@/core/registry';
 import { lsp } from '@/core/lsp/manager';
 import { applyTheme, DEFAULT_EFFECTS, type Effects } from '@/core/theme';
-import { isIconPack } from '@/core/icon-pack';
+import { isIconPack } from '@/core/theme/icon-pack';
 import { setLanguage as applyLanguage, type LanguageSetting } from '@/i18n';
 import { keybindings, setKeybindingPlatform, type BindingMap } from '@/core/keybindings';
 import { normalizeLayout } from '../layout';

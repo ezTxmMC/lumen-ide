@@ -9,9 +9,9 @@
  */
 
 import type { Addon, LanguageSpec } from '@/core/types';
-import { denoKind, denoTemplate, npmKind, tsLibraryTemplate, tsNodeTemplate, tsViteTemplate } from '../lib/node-project';
+import { denoKind, denoTemplate, npmKind, tsLibraryTemplate, tsNodeTemplate, tsViteTemplate } from '../lib/project/node-project';
 import { javascriptSpec, TS_INLAY_HINTS, TS_PREFERENCES, VTSLS_PREFERENCES, VTSLS_SUGGEST } from './javascript';
-import { jsDebugTypeScript } from '@/core/debug/adapters';
+import { jsDebugTypeScript } from '@/core/debug/adapters/adapters';
 import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages';
 import { tsserverFormat } from '../lib/format-settings';
 import { localizeSnippets } from '../lib/localize';

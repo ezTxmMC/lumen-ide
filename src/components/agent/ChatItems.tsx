@@ -15,7 +15,7 @@
 
 import { useState } from 'react';
 import {
-  Brain, Check, ChevronRight, Circle, CircleCheck, CircleDot, FileCode2, ListTodo, Loader2, ShieldQuestion, X,
+  Bot, Brain, Check, ChevronRight, Circle, CircleCheck, CircleDot, FileCode2, Info, ListTodo, Loader2, ShieldQuestion, TriangleAlert, X,
 } from 'lucide-react';
 import { useStore } from '@/state/store';
 import { useT } from '@/i18n';
@@ -258,7 +258,18 @@ function PermissionCard({ agentKey, item }: { agentKey: string; item: ItemOf<'pe
       {pendingNow && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           <Button size="sm" variant="solid" onClick={() => void agentChat.answer(agentKey, item.requestId, true)}>{t('agent.allow')}</Button>
-          {item.canRemember && <Button size="sm" variant="outline" onClick={() => void agentChat.answer(agentKey, item.requestId, true, true)}>{t('agent.allowAlways')}</Button>}
+          {item.canRemember && !item.options?.length && <Button size="sm" variant="outline" onClick={() => void agentChat.answer(agentKey, item.requestId, true, true)}>{t('agent.allowAlways')}</Button>}
+          {item.options?.map((option) => (
+            <Button
+              key={option.id}
+              size="sm"
+              variant="outline"
+              title={option.description}
+              onClick={() => void agentChat.answer(agentKey, item.requestId, true, option.scope === 'always', undefined, undefined, option.id)}
+            >
+              {option.label}
+            </Button>
+          ))}
           <Button size="sm" variant="danger" onClick={deny}>{t('agent.deny')}</Button>
           {!reasoning && <Button size="sm" onClick={() => setReasoning(true)}>{t('agent.denyWithReason')}</Button>}
         </div>
@@ -313,7 +324,7 @@ function ThinkingBlock({ item }: { item: ItemOf<'thinking'>; }) {
   );
 }
 
-const formatNumber = (value: number) => (value >= 10_000 ? `${(value / 1000).toFixed(1)}k` : String(value));
+export const formatNumber = (value: number) => (value >= 10_000 ? `${(value / 1000).toFixed(1)}k` : String(value));
 
 function ResultFooter({ item }: { item: ItemOf<'result'>; }) {
   const t = useT();
@@ -338,7 +349,52 @@ function ResultFooter({ item }: { item: ItemOf<'result'>; }) {
   );
 }
 
-export function ChatMessage({ agentKey, item }: { agentKey: string; item: ChatItem; }) {
+function NoticeRow({ item }: { item: ItemOf<'notice'>; }) {
+  const warn = item.level === 'warn';
+  const Icon = warn ? TriangleAlert : Info;
+  return (
+    <div className={`flex items-start gap-1.5 px-1 text-[11px] ${warn ? 'text-warn' : 'text-subtle'}`}>
+      <Icon size={11} className="mt-0.5 shrink-0" />
+      <span className="min-w-0 whitespace-pre-wrap break-words">{item.text}</span>
+    </div>
+  );
+}
+
+/** A subagent's run: its own tools and messages nest inside the card. */
+function SubagentCard({ agentKey, item, all }: { agentKey: string; item: ItemOf<'subagent'>; all: ChatItem[]; }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const nested = all.filter((entry) => 'parentId' in entry && entry.parentId === item.subagentId);
+  const expanded = open || item.status === 'running';
+  return (
+    <div className="rounded-lumen border border-edge bg-surface p-2">
+      <button onClick={() => setOpen(!open)} className="lm-transition flex w-full items-center gap-1.5 text-left text-[11.5px]">
+        <ChevronRight size={11} className={`shrink-0 text-subtle transition-transform ${expanded ? 'rotate-90' : ''}`} />
+        <Bot size={12} className="shrink-0 text-accent" />
+        <span className="shrink-0 font-medium text-fg">{item.agentType ?? t('agent.subagent.title')}</span>
+        <span className="min-w-0 flex-1 truncate text-subtle">{item.description}</span>
+        <StatusIcon status={item.status} />
+      </button>
+      {expanded && nested.length > 0 && (
+        <div className="mt-1.5 ml-2 flex flex-col gap-1.5 border-l-2 border-edge pl-2">
+          {nested.map((entry) => <ChatMessage key={entry.id} agentKey={agentKey} item={entry} all={all} />)}
+        </div>
+      )}
+      {expanded && item.summary && item.status !== 'running' && (
+        <div className="mt-1.5 whitespace-pre-wrap text-[11px] text-muted">{item.summary}</div>
+      )}
+    </div>
+  );
+}
+
+/** `all`: every item of the chat, so a subagent finds what belongs to it. */
+export function ChatMessage({ agentKey, item, all = [] }: { agentKey: string; item: ChatItem; all?: ChatItem[]; }) {
+  if (item.role === 'notice') {
+    return <NoticeRow item={item} />;
+  }
+  if (item.role === 'subagent') {
+    return <SubagentCard agentKey={agentKey} item={item} all={all} />;
+  }
   if (item.role === 'user') {
     return (
       <div className="ml-6 rounded-lumen bg-active px-2.5 py-1.5 text-[12.5px] text-fg">

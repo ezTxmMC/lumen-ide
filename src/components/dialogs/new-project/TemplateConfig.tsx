@@ -10,7 +10,7 @@
 
 import { AppWindow, ArrowLeft, FolderOpen, GitBranch, PanelTop, Terminal } from 'lucide-react';
 import type { FormField, FormValues, LanguageSpec, ProjectTask, ProjectTemplate } from '@/core/types';
-import type { LoadedChoices } from '@/core/project/choices';
+import type { LoadedChoices } from '@/core/project/create/choices';
 import { tr, useT } from '@/i18n';
 import { Button } from '../../ui';
 import { FormFields } from '../../overlays/FormFields';

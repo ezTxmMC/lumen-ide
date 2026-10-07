@@ -218,6 +218,68 @@ function checkPage(page, index) {
   return id;
 }
 
+const AGENT_ACTIONS = ['compact', 'rewind', 'fork', 'rename', 'delete', 'export', 'usage'];
+const COMMAND_NAME = /^[A-Za-z0-9][A-Za-z0-9:_.-]*$/;
+
+function checkFlag(value, where) {
+  if (value !== undefined && typeof value !== 'boolean') {
+    fail(`${where} must be true or false`, where);
+  }
+}
+
+/** Capabilities, quick actions, custom commands, profiles and the settings that hold the user's own. */
+function checkAgentCustomization(agent, where, modeIds) {
+  if (agent.capabilities !== undefined) {
+    if (!agent.capabilities || typeof agent.capabilities !== 'object' || Array.isArray(agent.capabilities)) {
+      fail(`${where}.capabilities must be an object`, `${where}.capabilities`);
+    }
+    for (const [name, value] of Object.entries(agent.capabilities)) {
+      if (!AGENT_ACTIONS.includes(name)) {
+        fail(`${where}.capabilities.${name} is unknown — use ${AGENT_ACTIONS.join(', ')}`, `${where}.capabilities`);
+      }
+      checkFlag(value, `${where}.capabilities.${name}`);
+    }
+  }
+  checkFlag(agent.systemPrompt, `${where}.systemPrompt`);
+  requireUnique(list(agent.quickActions, `${where}.quickActions`, { max: 24 }).map((entry, i) => {
+    const entryId = text(entry?.id, `${where}.quickActions[${i}].id`, { max: 64, required: true });
+    text(entry?.label, `${where}.quickActions[${i}].label`, { max: 60, required: true });
+    text(entry?.prompt, `${where}.quickActions[${i}].prompt`, { max: 4000, required: true });
+    text(entry?.description, `${where}.quickActions[${i}].description`, { max: 200 });
+    return entryId;
+  }), `${where}.quickActions.id`);
+  requireUnique(list(agent.customCommands, `${where}.customCommands`, { max: 48 }).map((entry, i) => {
+    const name = text(entry?.name, `${where}.customCommands[${i}].name`, { max: 64, required: true });
+    if (!COMMAND_NAME.test(name)) {
+      fail(`${where}.customCommands[${i}].name may contain only letters, digits and : _ . -`, `${where}.customCommands[${i}].name`);
+    }
+    text(entry?.prompt, `${where}.customCommands[${i}].prompt`, { max: 8000, required: true });
+    text(entry?.description, `${where}.customCommands[${i}].description`, { max: 200 });
+    text(entry?.argumentHint, `${where}.customCommands[${i}].argumentHint`, { max: 60 });
+    return name;
+  }), `${where}.customCommands.name`);
+  requireUnique(list(agent.profiles, `${where}.profiles`, { max: 24 }).map((entry, i) => {
+    const entryId = text(entry?.id, `${where}.profiles[${i}].id`, { max: 64, required: true });
+    text(entry?.label, `${where}.profiles[${i}].label`, { max: 60, required: true });
+    const mode = text(entry?.mode, `${where}.profiles[${i}].mode`, { max: 64 });
+    if (mode && !modeIds.includes(mode)) {
+      fail(`${where}.profiles[${i}].mode is not one of the agent's modes`, `${where}.profiles[${i}].mode`);
+    }
+    text(entry?.model, `${where}.profiles[${i}].model`, { max: 120 });
+    text(entry?.effort, `${where}.profiles[${i}].effort`, { max: 32 });
+    if (entry?.settings !== undefined) {
+      const values = entry.settings;
+      if (!values || typeof values !== 'object' || Array.isArray(values) || Object.values(values).some((value) => typeof value !== 'string')) {
+        fail(`${where}.profiles[${i}].settings must map setting keys to strings`, `${where}.profiles[${i}].settings`);
+      }
+    }
+    return entryId;
+  }), `${where}.profiles.id`);
+  for (const field of ['quickActionsSetting', 'customCommandsSetting', 'profilesSetting']) {
+    text(agent[field], `${where}.${field}`, { max: 64 });
+  }
+}
+
 function checkAgent(agent, index) {
   const where = `agents[${index}]`;
   if (!agent || typeof agent !== 'object') {
@@ -265,6 +327,7 @@ function checkAgent(agent, index) {
   if (agent.images !== undefined && typeof agent.images !== 'boolean') {
     fail(`${where}.images must be true or false`, `${where}.images`);
   }
+  checkAgentCustomization(agent, where, modeIds);
   return id;
 }
 

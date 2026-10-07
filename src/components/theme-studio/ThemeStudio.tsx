@@ -11,8 +11,8 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useStore } from '@/state/store';
 import { useT } from '@/i18n';
-import { useThemeHistory } from './history';
-import { colorOf, splitKey, type ColorKey } from './keys';
+import { useThemeHistory } from './state/history';
+import { colorOf, splitKey, type ColorKey } from './state/keys';
 import { PreviewStage } from './preview/PreviewStage';
 import {
   ConfirmOverlay, StudioFooter, StudioHeader, StudioSidebar, useStudioShortcuts, type Tab,

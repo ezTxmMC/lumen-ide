@@ -10,9 +10,9 @@
 
 import type { CSSProperties, ReactNode } from 'react';
 import type { Info } from 'lucide-react';
-import { withAlpha } from '@/core/theme-colors';
+import { withAlpha } from '@/core/theme/colors';
 import type { Theme } from '@/core/types';
-import { tokenCss, uses, type ColorKey } from '../keys';
+import { tokenCss, uses, type ColorKey } from '../state/keys';
 
 /** A tile with a heading; defined outside the preview so dragging does not rebuild it. */
 export function Card({ theme, title, children, className = '' }: { theme: Theme; title: string; children: ReactNode; className?: string; }) {

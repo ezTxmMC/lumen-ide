@@ -15,10 +15,10 @@ import {
 import { useStore } from '@/state/store';
 import { lsp } from '@/core/lsp/manager';
 import { registry } from '@/core/registry';
-import { openLspInstall } from '@/lib/lsp-install';
+import { openLspInstall } from '@/lib/project/lsp-install';
 import { statusDot } from '@/lib/status';
 import { locale, tr, useT } from '@/i18n';
-import { Button } from '../ui';
+import { Button, Checkbox } from '../ui';
 
 const STATE_LABEL = new Set(['idle', 'checking', 'starting', 'ready', 'unavailable', 'failed', 'stopped']);
 
@@ -136,9 +136,7 @@ function LogPane({ servers, logs, filter, stderr, onStderr, bottom }: {
         <span className="flex-1 truncate">
           {t('panels.lsp.log')}{filter ? ` · ${servers.find((s) => s.id === filter)?.label ?? ''}` : ''}
         </span>
-        <label className="flex items-center gap-1">
-          <input type="checkbox" checked={stderr} onChange={(e) => onStderr(e.target.checked)} /> stderr
-        </label>
+        <Checkbox checked={stderr} onChange={onStderr}>stderr</Checkbox>
         <Button size="sm" title={t('panels.lsp.clearLog')} onClick={() => lsp.clearLogs()}>
           <Trash2 size={11} />
         </Button>

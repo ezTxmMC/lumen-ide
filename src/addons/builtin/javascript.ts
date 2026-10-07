@@ -9,12 +9,15 @@
  */
 
 import type { Addon, LanguageSpec } from '@/core/types';
-import { denoKind, jsBrowserTemplate, jsNodeTemplate, npmKind } from '../lib/node-project';
-import { jsDebugNode } from '@/core/debug/adapters';
+import { denoKind, jsBrowserTemplate, jsNodeTemplate, npmKind } from '../lib/project/node-project';
+import { jsDebugNode } from '@/core/debug/adapters/adapters';
 import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages';
 import { tsserverFormat } from '../lib/format-settings';
 import { localizeSnippets } from '../lib/localize';
 import { t } from '@/i18n';
+
+/** `\n`, `\x41`, `\u00e9`, `\u{1F600}`, `\012` and any other escaped character. */
+const ECMA_ESCAPE = /^\\(?:u\{[0-9a-fA-F]+\}|u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|[0-7]{1,3}|[^])/;
 
 /** Inlay hints and suggestion settings, shared by the tsserver front ends. */
 export const TS_INLAY_HINTS = {
@@ -81,9 +84,9 @@ export const javascriptSpec: LanguageSpec = {
     'setTimeout', 'setInterval', 'queueMicrotask', 'document', 'window',
   ],
   strings: [
-    { start: '"', escapes: true },
-    { start: "'", escapes: true },
-    { start: '`', multiline: true, escapes: true, interpolate: '${' },
+    { start: '"', escapes: true, escapePattern: ECMA_ESCAPE },
+    { start: "'", escapes: true, escapePattern: ECMA_ESCAPE },
+    { start: '`', multiline: true, escapes: true, escapePattern: ECMA_ESCAPE, interpolate: '${' },
   ],
   completions: [
     'addEventListener', 'removeEventListener', 'querySelector',
@@ -113,6 +116,29 @@ export const javascriptSpec: LanguageSpec = {
     { label: 'timeout', detail: 'setTimeout', body: 'setTimeout(() => {\n  $0\n}, ${200})' },
     { label: 'switch', detail: 'switch', body: 'switch (${wert}) {\n  case ${1}:\n    $0\n    break\n  default:\n    break\n}' },
     { label: 'destr', detail: 'addons.snippets.javascript.destr', body: 'const { ${a}, ${b} } = ${objekt}$0' },
+    { label: 'cl', detail: 'console.log', body: 'console.log($0)' },
+    { label: 'ce', detail: 'console.error', body: 'console.error($0)' },
+    { label: 'cw', detail: 'console.warn', body: 'console.warn($0)' },
+    { label: 'ct', detail: 'console.table', body: 'console.table($0)' },
+    { label: 'forin', detail: 'for…in', body: 'for (const ${key} in ${objekt}) {\n  $0\n}' },
+    { label: 'fori', detail: 'for', body: 'for (let ${i} = 0; ${i} < ${liste}.length; ${i}++) {\n  $0\n}' },
+    { label: 'while', detail: 'while', body: 'while (${bedingung}) {\n  $0\n}' },
+    { label: 'if', detail: 'if', body: 'if (${bedingung}) {\n  $0\n}' },
+    { label: 'ifel', detail: 'if/else', body: 'if (${bedingung}) {\n  $0\n} else {\n  \n}' },
+    { label: 'tern', detail: 'Ternary', body: '${bedingung} ? ${a} : ${b}' },
+    { label: 'iife', detail: 'IIFE', body: '(() => {\n  $0\n})()' },
+    { label: 'afunc', detail: 'async function', body: 'async function ${name}(${args}) {\n  $0\n}' },
+    { label: 'expd', detail: 'export default', body: 'export default ${name}$0' },
+    { label: 'expf', detail: 'export function', body: 'export function ${name}(${args}) {\n  $0\n}' },
+    { label: 'req', detail: 'require', body: "const ${name} = require('${modul}')" },
+    { label: 'ael', detail: 'addEventListener', body: "${element}.addEventListener('${click}', (${event}) => {\n  $0\n})" },
+    { label: 'qs', detail: 'querySelector', body: "document.querySelector('${selector}')$0" },
+    { label: 'qsa', detail: 'querySelectorAll', body: "document.querySelectorAll('${selector}')$0" },
+    { label: 'jsonp', detail: 'JSON.parse', body: 'JSON.parse(${text})$0' },
+    { label: 'jsons', detail: 'JSON.stringify', body: 'JSON.stringify(${value}, null, 2)$0' },
+    { label: 'tc', detail: 'try/catch/finally', body: 'try {\n  $0\n} catch (err) {\n  console.error(err)\n} finally {\n  \n}' },
+    { label: 'setint', detail: 'setInterval', body: 'setInterval(() => {\n  $0\n}, ${1000})' },
+    { label: 'pall', detail: 'Promise.all', body: 'await Promise.all([${a}, ${b}])$0' },
   ]),
   run: [
     { label: 'Node', command: 'node', args: ['${file}'] },

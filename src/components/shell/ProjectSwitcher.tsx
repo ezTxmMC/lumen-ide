@@ -21,7 +21,7 @@ import {
   openFolderAsProject,
   openProject,
   useProjectSwitcher,
-} from "@/lib/open-project";
+} from "@/lib/project/open-project";
 import { type RecentProject, useStore, type WorkspaceDef } from "@/state/store";
 import {
   AppWindow,

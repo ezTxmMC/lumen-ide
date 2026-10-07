@@ -20,8 +20,8 @@
  */
 
 import { useStore } from '@/state/store';
-import { editorBridge } from '@/lib/editor-bridge';
-import { findTask, runTask } from '@/lib/run';
+import { editorBridge } from '@/lib/editor/editor-bridge';
+import { findTask, runTask } from '@/lib/project/run';
 import { runCommandById } from '@/core/commands';
 import { registry } from '@/core/registry';
 import { t } from '@/i18n';

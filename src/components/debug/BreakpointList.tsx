@@ -11,10 +11,10 @@
 import { CircleSlash, Trash2, X } from 'lucide-react';
 import { useStore } from '@/state/store';
 import { useT } from '@/i18n';
-import { breakpoints, type BreakpointEntry } from '@/core/debug/breakpoints';
+import { breakpoints, type BreakpointEntry } from '@/core/debug/state/breakpoints';
 import { debug } from '@/core/debug/manager';
 import { editBreakpoint } from '@/core/debug/actions';
-import { baseName, toRelative } from '@/core/debug/paths';
+import { baseName, toRelative } from '@/core/debug/state/paths';
 import { DebugSection, IconButton } from './shared';
 
 function Dot({ bp }: { bp: BreakpointEntry; }) {

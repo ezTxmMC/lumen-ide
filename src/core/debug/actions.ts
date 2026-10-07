@@ -12,8 +12,8 @@
 
 import { t } from '@/i18n';
 import type { FormField } from '@/core/types';
-import { breakpoints } from './breakpoints';
-import { askForm } from './config';
+import { breakpoints } from './state/breakpoints';
+import { askForm } from './state/config';
 
 type Focus = 'condition' | 'hitCondition' | 'logMessage';
 

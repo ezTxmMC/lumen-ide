@@ -11,7 +11,7 @@
 /**
  * `window.lumen` rebuilt with child_process, for tests that drive the real
  * LspManager / LspClient against a real language server. Same framing as
- * electron/main.ts (Content-Length over stdio).
+ * electron/lsp/server.ts (Content-Length over stdio).
  *
  * `installLumenShim({ commands })` maps a command name to an executable path;
  * only those names resolve. Nothing here touches the project folders except

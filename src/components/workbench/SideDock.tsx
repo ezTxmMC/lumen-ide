@@ -21,7 +21,7 @@ import { useT } from '@/i18n';
 import { ContextMenu, menuBelow, type MenuItem } from '../ui/ContextMenu';
 import { Button } from '../ui';
 import { useDock } from './useDock';
-import { PopOutButton, ResizeHandle, viewMenu } from './parts';
+import { ResizeHandle, viewMenu } from './parts';
 import { ViewBody } from './ViewBody';
 
 export function SideDock({ side }: { side: 'left' | 'right'; }) {
@@ -48,7 +48,6 @@ export function SideDock({ side }: { side: 'left' | 'right'; }) {
             {active.title()}
           </span>
           {!popped && <div className="flex shrink-0 flex-wrap items-center gap-1">{active.toolbar?.()}</div>}
-          <PopOutButton view={active} />
           <span onClick={(e) => setMenu({ ...menuBelow(e.currentTarget), items: viewMenu(active, side) })}>
             <Button size="sm" title={t('shell.layout.more')}>
               <Ellipsis size={13} />

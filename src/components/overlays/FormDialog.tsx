@@ -11,7 +11,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Loader2, X } from 'lucide-react';
 import { useStore } from '@/state/store';
-import { validateValues } from '@/core/project/scaffold';
+import { validateValues } from '@/core/project/create/scaffold';
 import { useFormValues } from '@/hooks/useFormValues';
 import { escapeOwnedByPopover } from './escape';
 import type { FormValues } from '@/core/types';

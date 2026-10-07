@@ -15,7 +15,7 @@
  */
 
 import { lsp } from '@/core/lsp/manager';
-import { symbolStore } from '@/lib/symbols';
+import { symbolStore } from '@/lib/editor/symbols';
 import { scheduleOpenFilesSync } from './session';
 import { settleGroups } from './popout';
 import type { EditorGroup, State, Tab } from './types';

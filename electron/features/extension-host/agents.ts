@@ -20,14 +20,20 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { BrowserWindow, WebContents } from 'electron';
-import type { AgentAnswer, AgentEvent, AgentEventBody, AgentModel, AgentProvider, AgentSendRequest } from './contract';
-import { scanCommandLine } from '../security';
+import type {
+  AgentActionId, AgentActionRequest, AgentActionResult, AgentAnswer, AgentCheckpoint, AgentEvent, AgentEventBody, AgentModel, AgentProvider,
+  AgentSendRequest,
+} from './contract';
+import { scanCommandLine } from '../security/security';
 
 const AGENT_ID = /^[a-z][a-z0-9-]*$/;
 const MAX_ATTACHMENTS = 12;
 const MAX_ATTACHMENT_BYTES = 12 * 1024 * 1024;
 const MAX_MODELS = 64;
 const MAX_EFFORTS = 12;
+const MAX_SYSTEM_PROMPT = 20_000;
+const MAX_CHECKPOINTS = 100;
+const ACTIONS = new Set<AgentActionId>(['compact', 'rewind', 'fork', 'rename', 'delete', 'export']);
 
 const providers = new Map<string, AgentProvider>();
 const running = new Set<string>();
@@ -138,6 +144,49 @@ function cleanModels(list: unknown): AgentModel[] {
   return models;
 }
 
+/** Sends a provider's events to the window that asked, tagged with the agent and chat. */
+function emitter(agent: string, chatId: string, owner?: WebContents) {
+  return (body: AgentEventBody) => {
+    const target = owner && !owner.isDestroyed() ? owner : getWindow()?.webContents;
+    if (!target || target.isDestroyed()) {
+      return;
+    }
+    const event: AgentEvent = { ...annotatePermission(body), agent, chatId };
+    target.send('agent:event', event);
+  };
+}
+
+/** A provider's checkpoints, reduced to well-formed entries. */
+function cleanCheckpoints(list: unknown): AgentCheckpoint[] {
+  if (!Array.isArray(list)) {
+    return [];
+  }
+  return list.slice(0, MAX_CHECKPOINTS).flatMap((entry) => {
+    const id = text(entry?.id);
+    if (!id) {
+      return [];
+    }
+    return [{ id, label: text(entry.label) ?? id, at: typeof entry.at === 'number' ? entry.at : undefined }];
+  });
+}
+
+/** An action's result, reduced to the fields the panel understands. */
+function cleanResult(result: AgentActionResult | void): AgentActionResult {
+  if (!result || typeof result !== 'object') {
+    return {};
+  }
+  const exported = result.export && typeof result.export.text === 'string'
+    ? { fileName: text(result.export.fileName) ?? 'export.md', text: result.export.text }
+    : undefined;
+  return {
+    sessionId: text(result.sessionId),
+    title: text(result.title),
+    deleted: result.deleted === true,
+    notice: text(result.notice),
+    export: exported,
+  };
+}
+
 export const agents = {
   attach(windowGetter: () => BrowserWindow | null) {
     getWindow = windowGetter;
@@ -177,14 +226,7 @@ export const agents = {
     }
     await assertDirectory(cwd);
 
-    const emit = (body: AgentEventBody) => {
-      const target = owner && !owner.isDestroyed() ? owner : getWindow()?.webContents;
-      if (!target || target.isDestroyed()) {
-        return;
-      }
-      const event: AgentEvent = { ...annotatePermission(body), agent, chatId };
-      target.send('agent:event', event);
-    };
+    const emit = emitter(agent, chatId, owner);
 
     const settings = cleanSettings(request.settings);
 
@@ -197,6 +239,7 @@ export const agents = {
           effort: text(effort),
           attachments: cleanAttachments(request),
           settings,
+          systemPrompt: text(request.systemPrompt)?.slice(0, MAX_SYSTEM_PROMPT),
         }, emit);
       } catch (err) {
         emit({ kind: 'error', message: (err as Error).message });
@@ -231,5 +274,46 @@ export const agents = {
     }
     await assertDirectory(cwd);
     return provider.sessions(cwd);
+  },
+
+  /** A session action; the turn's events and the closing `done` go to `owner` like a message's. */
+  async action(request: AgentActionRequest, owner?: WebContents): Promise<AgentActionResult> {
+    const { agent, chatId, action, cwd } = request;
+    const provider = providerFor(agent);
+    if (!ACTIONS.has(action) || !provider.action) {
+      throw new Error(`The agent does not support: ${String(action)}`);
+    }
+    if (typeof chatId !== 'string' || !chatId) {
+      throw new Error('Chat id missing');
+    }
+    const key = `${agent}:${chatId}`;
+    if (running.has(key)) {
+      throw new Error('The agent is still answering');
+    }
+    await assertDirectory(cwd);
+    const emit = emitter(agent, chatId, owner);
+    running.add(key);
+    try {
+      const { agent: _agent, ...rest } = request;
+      return cleanResult(await provider.action({
+        ...rest,
+        sessionId: text(request.sessionId),
+        argument: text(request.argument),
+        checkpointId: text(request.checkpointId),
+        settings: cleanSettings(request.settings),
+      }, emit));
+    } finally {
+      running.delete(key);
+      emit({ kind: 'done' });
+    }
+  },
+
+  async checkpoints(agent: string, chatId: string, sessionId: string | undefined, cwd: string, settings?: unknown) {
+    const provider = providerFor(agent);
+    if (!provider.checkpoints) {
+      return [];
+    }
+    await assertDirectory(cwd);
+    return cleanCheckpoints(await provider.checkpoints({ chatId, sessionId: text(sessionId), cwd, settings: cleanSettings(settings) }));
   },
 };

@@ -24,9 +24,31 @@ const TONES: Record<Severity, string> = {
   info: 'border-edge bg-input text-subtle',
 };
 
+function findingLocation(finding: Finding, t: ReturnType<typeof useT>): string | null {
+  if (!finding.file) {
+    return null;
+  }
+  if (!finding.line) {
+    return finding.file;
+  }
+  return t('security.where', { file: finding.file, line: finding.line });
+}
+
+type SecurityPrompt = NonNullable<ReturnType<typeof useSecurityPrompt.getState>['prompt']>;
+
+function promptBody(prompt: SecurityPrompt, t: ReturnType<typeof useT>): string {
+  if (prompt.kind === 'project') {
+    return t('security.project.body', { count: prompt.findings.length });
+  }
+  if (prompt.kind === 'paste') {
+    return t('security.paste.body');
+  }
+  return t('security.command.body', { label: prompt.label });
+}
+
 function FindingRow({ finding }: { finding: Finding; }) {
   const t = useT();
-  const where = finding.file ? (finding.line ? t('security.where', { file: finding.file, line: finding.line }) : finding.file) : null;
+  const where = findingLocation(finding, t);
   return (
     <li className="rounded-lumen-sm border border-edge bg-input/40 px-2.5 py-2">
       <div className="flex items-center gap-2">
@@ -86,9 +108,7 @@ export function SecurityDialog() {
   const title = isProject
     ? t('security.project.title', { name: prompt.name })
     : t(prompt.kind === 'paste' ? 'security.paste.title' : 'security.command.title');
-  const body = isProject
-    ? t('security.project.body', { count: prompt.findings.length })
-    : (prompt.kind === 'paste' ? t('security.paste.body') : t('security.command.body', { label: prompt.label }));
+  const body = promptBody(prompt, t);
 
   return (
     <div className={`lm-anim-fade fixed inset-0 z-[60] flex items-start justify-center bg-black/50 p-6 pt-[10vh] ${closing ? 'lm-closing' : ''}`} onClick={dismiss}>

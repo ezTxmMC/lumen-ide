@@ -14,15 +14,15 @@ import {
   Undo2, X,
 } from 'lucide-react';
 import { useT } from '@/i18n';
-import { syntaxMinContrast, UI_MIN_CONTRAST } from '@/core/theme-colors';
+import { syntaxMinContrast, UI_MIN_CONTRAST } from '@/core/theme/colors';
 import type { Theme, TokenKind, UIColorKey } from '@/core/types';
 import { Button, Kbd } from '../ui';
-import { ColorField, StyleToggle } from './ColorField';
+import { ColorField, StyleToggle } from './sections/ColorField';
 import { ContrastTools, PaletteTools } from './tools';
-import type { ThemeHistory } from './history';
+import type { ThemeHistory } from './state/history';
 import {
   colorOf, CONTRAST_AGAINST, splitKey, SYNTAX_GROUPS, syntaxStyle, TOKEN_SAMPLE, UI_GROUPS, withSyntaxStyle, type ColorKey,
-} from './keys';
+} from './state/keys';
 
 /* The presentational pieces of the Studio dialog; ThemeStudio keeps the state. */
 

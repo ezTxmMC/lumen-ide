@@ -23,7 +23,7 @@ import { Blocks, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { useStore } from '@/state/store';
 import { useLanguage, useT } from '@/i18n';
 import { extensions as installedExtensions } from '@/core/extensions/manager';
-import { localizeSetting } from '@/core/extensions/localize';
+import { localizeSetting } from '@/core/extensions/integration/localize';
 import type { ExtensionManifest, ExtensionSetting } from '@/core/extensions/types';
 import { Button, Empty } from '../ui';
 import { ExtensionSettingRow, settingChanged, settingDefault, settingVisible } from './ExtensionSettingRow';

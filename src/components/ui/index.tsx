@@ -56,6 +56,28 @@ export function Toggle({
   );
 }
 
+/** A checkbox with its label inline — the compact sibling of `Toggle` for filters and option rows. */
+export function Checkbox({
+  checked,
+  onChange,
+  children,
+  disabled,
+  className = '',
+}: {
+  checked: boolean;
+  onChange: (value: boolean) => void;
+  children: ReactNode;
+  disabled?: boolean;
+  className?: string;
+}) {
+  return (
+    <label className={['flex cursor-pointer select-none items-center gap-1.5', disabled ? 'opacity-40' : '', className].join(' ')}>
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
+      {children}
+    </label>
+  );
+}
+
 export function Slider({
   value,
   min,

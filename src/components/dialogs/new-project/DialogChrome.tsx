@@ -13,7 +13,7 @@
 import { AlertCircle, ArrowRight, ChevronRight, FolderPlus, Loader2, X } from 'lucide-react';
 import { tr, useT } from '@/i18n';
 import type { ProjectTemplate } from '@/core/types';
-import type { ScaffoldProgress } from '@/core/project/scaffold';
+import type { ScaffoldProgress } from '@/core/project/create/scaffold';
 import { Button, Kbd } from '../../ui';
 
 export type Step = 'pick' | 'configure';

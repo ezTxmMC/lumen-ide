@@ -22,6 +22,7 @@ import { useT } from '@/i18n';
 import { agentChat } from '@/core/agent/chat';
 import { ChatMessage } from '@/components/agent/ChatItems';
 import { ChatToolbar } from '@/components/agent/ChatToolbar';
+import { ChangedFiles } from '@/components/agent/ChangedFiles';
 import { Composer } from '@/components/agent/Composer';
 
 function EmptyChat({ agentKey }: { agentKey: string; }) {
@@ -64,6 +65,9 @@ export function AgentPanel({ agentKey }: { agentKey: string; }) {
   const chat = agentChat.activeChat(agentKey);
   const items = chat.items;
   const running = chat.running;
+  // What a subagent ran shows inside its card, not in the main flow.
+  const owners = new Set(items.flatMap((item) => (item.role === 'subagent' ? [item.subagentId] : [])));
+  const topLevel = items.filter((item) => !('parentId' in item && item.parentId && owners.has(item.parentId)));
 
   // Follow the answer as it streams in — unless the user scrolled up to read.
   useEffect(() => {
@@ -92,7 +96,7 @@ export function AgentPanel({ agentKey }: { agentKey: string; }) {
 
       <div ref={scroller} onScroll={onScroll} className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2.5">
         {items.length === 0 && <EmptyChat agentKey={agentKey} />}
-        {items.map((item) => <ChatMessage key={item.id} agentKey={agentKey} item={item} />)}
+        {topLevel.map((item) => <ChatMessage key={item.id} agentKey={agentKey} item={item} all={items} />)}
         {running && (
           <div className="flex items-center gap-1.5 text-[11.5px] text-subtle">
             <Loader2 size={11} className="lm-anim-spin" /> {chat.status ?? t('agent.working')}
@@ -100,6 +104,7 @@ export function AgentPanel({ agentKey }: { agentKey: string; }) {
         )}
       </div>
 
+      <ChangedFiles items={items} />
       <Composer key={chat.id} info={info} running={running} />
     </div>
   );

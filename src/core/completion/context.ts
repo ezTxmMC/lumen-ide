@@ -134,6 +134,65 @@ export function localityOf(scope: ImportScope, label: string, qualifier: string 
   return -1;
 }
 
+/**
+ * Sensible imports per language: where an auto-import is expected to come
+ * from first (preferred), and where it rarely is (discouraged). Matched
+ * against the module specifier or package the server names for the item.
+ */
+interface ImportPreferences { preferred: RegExp[]; discouraged: RegExp[]; }
+
+const JS_PREFERENCES: ImportPreferences = {
+  preferred: [/^react(-dom)?$/, /^node:/, /^(fs|path|os|url|util|events|crypto|child_process|stream|http|https)(\/promises)?$/, /^@\//],
+  discouraged: [/\/(dist|lib|build|esm|cjs|internal|src)(\/|$)/, /^@types\//, /node_modules/],
+};
+
+const IMPORT_PREFERENCES: Record<string, ImportPreferences> = {
+  javascript: JS_PREFERENCES,
+  typescript: JS_PREFERENCES,
+  java: {
+    preferred: [/^java\.util(\.function|\.stream|\.concurrent)?$/, /^java\.(io|time|math)$/, /^java\.nio\.file$/, /^java\.net(\.http)?$/, /^lombok(\.|$)/],
+    discouraged: [/^java\.awt/, /^javax\.swing/, /^java\.sql/, /^com\.sun\./, /^sun\./, /^jdk\.internal/, /\.internal(\.|$)/],
+  },
+  kotlin: {
+    preferred: [/^kotlin(\.(collections|io|text|math|time))?$/, /^java\.util$/, /^kotlinx\.coroutines/],
+    discouraged: [/^java\.awt/, /^javax\.swing/, /\.internal(\.|$)/],
+  },
+  python: {
+    preferred: [/^(typing|pathlib|dataclasses|collections|itertools|functools|os|sys|json|re|datetime)$/],
+    discouraged: [/(^|\.)_/, /\.tests?(\.|$)/],
+  },
+  go: { preferred: [/^(fmt|strings|errors|os|io|context|time|net\/http|encoding\/json)$/], discouraged: [/\/internal(\/|$)/, /^vendor\//] },
+  rust: { preferred: [/^std::(collections|io|fmt|sync|path|fs)/], discouraged: [/::internal/] },
+  c: { preferred: [], discouraged: [] },
+};
+IMPORT_PREFERENCES.javascriptreact = JS_PREFERENCES;
+IMPORT_PREFERENCES.typescriptreact = JS_PREFERENCES;
+
+/** Relative imports are the project's own code — the likeliest import of all. */
+const RELATIVE_SPECIFIER = /^\.{1,2}\//;
+
+/**
+ * Priority of the module an item comes from: 0.75 own code, 0.5 preferred
+ * for the language, -0.5 discouraged, 0 unknown. Lies between the extremes of
+ * `localityOf` (1 imported, -1 not) so it only orders what is not imported.
+ */
+export function importPriority(languageId: string | null | undefined, qualifier: string | undefined): number {
+  if (!qualifier) {
+    return 0;
+  }
+  const prefs = languageId ? IMPORT_PREFERENCES[languageId] : undefined;
+  if (languageId && IMPORT_PREFERENCES[languageId] === JS_PREFERENCES && RELATIVE_SPECIFIER.test(qualifier)) {
+    return 0.75;
+  }
+  if (!prefs) {
+    return 0;
+  }
+  if (prefs.discouraged.some((re) => re.test(qualifier))) {
+    return -0.5;
+  }
+  return prefs.preferred.some((re) => re.test(qualifier)) ? 0.5 : 0;
+}
+
 /** Whether a list stays valid for `pattern`: complete, and the word extends the one it was asked for. */
 export function listReusable(list: { isIncomplete: boolean; pattern: string; }, pattern: string): boolean {
   if (list.isIncomplete) {

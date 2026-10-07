@@ -15,17 +15,17 @@
  */
 
 import { useRef, useState } from 'react';
-import { Maximize2, Minimize2, X } from 'lucide-react';
+import { Ellipsis, Maximize2, Minimize2, X } from 'lucide-react';
 import { useStore } from '@/state/store';
 import { isViewPopped } from '@/state/popout';
 import { useT } from '@/i18n';
 import { formatBindingsFor } from '@/core/keybindings';
 import type { ViewDef } from '@/core/views';
-import { ContextMenu, type MenuItem } from '../ui/ContextMenu';
+import { ContextMenu, menuBelow, type MenuItem } from '../ui/ContextMenu';
 import { Button } from '../ui';
 import { carriesView, dropIndex, takeDroppedView, useDraggedView, viewDragSource } from './drag';
 import { useBadgeTick, useDock } from './useDock';
-import { PoppedMark, PopOutButton, ResizeHandle, TabBadge, viewMenu, viewTooltip } from './parts';
+import { PoppedMark, ResizeHandle, TabBadge, viewMenu, viewTooltip } from './parts';
 import { ViewBody } from './ViewBody';
 
 function withKeys(label: string, command: string) {
@@ -107,7 +107,11 @@ export function BottomDock({ maximized, onToggleMaximized }: { maximized: boolea
         <span className="min-w-2 flex-1" />
 
         {!popped && active.toolbar?.()}
-        <PopOutButton view={active} />
+        <span onClick={(e) => setMenu({ ...menuBelow(e.currentTarget), items: viewMenu(active, 'bottom') })}>
+          <Button size="sm" title={t('shell.layout.more')}>
+            <Ellipsis size={13} />
+          </Button>
+        </span>
         <Button size="sm" title={t(maximized ? 'shell.layout.restore' : 'shell.layout.maximize')} onClick={onToggleMaximized}>
           {maximized ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
         </Button>

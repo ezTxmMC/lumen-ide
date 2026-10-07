@@ -18,7 +18,7 @@ import { useMemo, useSyncExternalStore } from 'react';
 import { useStore } from '@/state/store';
 import { activeView, resolveDock } from '@/state/layout';
 import { viewRegistry, type Dock, type ViewDef } from '@/core/views';
-import { terminals } from '@/lib/terminals';
+import { terminals } from '@/lib/project/terminals';
 
 const terminalsSubscribe = (fn: () => void) => terminals.subscribe(fn);
 

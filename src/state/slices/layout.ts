@@ -17,8 +17,8 @@
  */
 
 import { viewRegistry, type Dock } from '@/core/views';
-import { editorBridge } from '@/lib/editor-bridge';
-import { terminals } from '@/lib/terminals';
+import { editorBridge } from '@/lib/editor/editor-bridge';
+import { terminals } from '@/lib/project/terminals';
 import { t } from '@/i18n';
 import { isViewPopped, popoutKey } from '../popout';
 import {

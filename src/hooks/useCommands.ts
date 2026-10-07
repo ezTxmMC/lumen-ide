@@ -11,7 +11,7 @@
 import { useMemo, useSyncExternalStore } from 'react';
 import { useStore } from '@/state/store';
 import { lsp } from '@/core/lsp/manager';
-import { terminals } from '@/lib/terminals';
+import { terminals } from '@/lib/project/terminals';
 import { keybindings } from '@/core/keybindings';
 import { useLanguage } from '@/i18n';
 import {

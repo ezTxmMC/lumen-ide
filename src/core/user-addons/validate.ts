@@ -17,10 +17,11 @@
 
 import { t } from '@/i18n';
 import { NODE_CATALOG } from './catalog';
-import { BUILTIN_DEBUG_ADAPTERS, BUILTIN_DEBUG_ADAPTER_NAMES } from '@/core/debug/builtin-adapters';
+import { BUILTIN_DEBUG_ADAPTERS, BUILTIN_DEBUG_ADAPTER_NAMES } from '@/core/debug/adapters/builtin-adapters';
 import { isTokenizerName, tokenizerNames } from './tokenizers';
-import { USER_ADDON_PREFIX, type Graph, type UserAddonModel } from './schema';
-import { isPackageManager, isValidPackageName } from '../../../electron/features/package-managers';
+import { contextDetectorNames, isContextDetectorName } from '@/core/editor/syntax-context';
+import { USER_ADDON_PREFIX, type Graph, type UserAddonModel, type UserCondition } from './schema';
+import { isPackageManager, isValidPackageName } from '../../../electron/features/sdk/package-managers';
 
 export type StudioSection = 'general' | 'languages' | 'commands' | 'events' | 'templates' | 'kinds' | 'snippets' | 'panels' | 'themes' | 'json';
 
@@ -64,6 +65,13 @@ export function checkRegex(source: string | undefined, flags = ''): string | nul
 }
 
 /** Finds duplicate values, returning the index of the second occurrence. */
+function conditionList(when: UserCondition | UserCondition[] | undefined): UserCondition[] {
+  if (Array.isArray(when)) {
+    return when;
+  }
+  return when ? [when] : [];
+}
+
 function duplicates(values: string[]): number[] {
   const seen = new Set<string>();
   const out: number[] = [];
@@ -114,7 +122,7 @@ function validateLanguage(lang: UserAddonModel['languages'][number], index: numb
       at('extensions', v('extension', { ext }));
     }
   }
-  for (const field of ['numbers', 'identifier', 'operators', 'meta', 'indentOpen', 'indentClose'] as const) {
+  for (const field of ['numbers', 'identifier', 'operators', 'meta', 'indentOpen', 'indentClose', 'wordPattern', 'codeWordPattern'] as const) {
     const error = checkRegex(lang[field]);
     if (error) {
       at(field, v('regex', { field, error }));
@@ -133,16 +141,28 @@ function validateLanguage(lang: UserAddonModel['languages'][number], index: numb
     }
   });
   lang.snippets?.forEach((snippet) => {
-    if (!snippet.label.trim() || !snippet.body) {
+    if (!snippet.label.trim() || !snippet.body || snippet.scope?.some((entry) => !entry.trim())) {
       at('snippets', v('snippet'));
     }
   });
+  // A named syntax context that does not exist would silently turn scoped snippets and `codeWordPattern` off.
+  if (lang.syntaxContext && !isContextDetectorName(lang.syntaxContext)) {
+    at('syntaxContext', v('syntaxContext', { name: lang.syntaxContext, known: contextDetectorNames().join(', ') }));
+  }
+  if (!lang.syntaxContext && lang.snippets?.some((snippet) => snippet.scope?.length)) {
+    at('syntaxContext', v('snippetScope'), true);
+  }
   lang.run?.forEach((run) => {
     if (!run.label.trim() || !run.command.trim()) {
       at('run', v('runConfig'));
     }
   });
-  lang.lsp?.forEach((server) => {
+  lang.tools?.forEach((tool) => {
+    if (!tool.id?.trim()) {
+      at('lsp', v('lspConfig'));
+    }
+  });
+  [...(lang.lsp ?? []), ...(lang.tools ?? [])].forEach((server) => {
     if (!server.label.trim() || !server.command.trim()) {
       at('lsp', v('lspConfig'));
     }
@@ -295,7 +315,7 @@ function validateTemplate(template: UserAddonModel['templates'][number], index: 
   }
   for (const file of template.files) {
     // A file may hang on several conditions at once.
-    const conditions = Array.isArray(file.when) ? file.when : file.when ? [file.when] : [];
+    const conditions = conditionList(file.when);
     for (const condition of conditions) {
       if (!condition.field) {
         continue;
@@ -386,7 +406,7 @@ function validateSnippets(model: UserAddonModel, push: Push) {
     if (!snippet.languageId) {
       push({ section: 'snippets', index, field: 'languageId', message: p('snippetLanguage', { label: snippet.label || String(index + 1) }) });
     }
-    if (!snippet.label.trim() || !snippet.body) {
+    if (!snippet.label.trim() || !snippet.body || snippet.scope?.some((entry) => !entry.trim())) {
       push({ section: 'snippets', index, message: v('snippet') });
     }
   });

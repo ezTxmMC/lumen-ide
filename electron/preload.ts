@@ -10,15 +10,16 @@
 
 import { contextBridge } from 'electron';
 import { invoke, subscribe } from './features/ipc';
-import { sdkApi } from './features/sdk-api';
-import { lspPackagesApi } from './features/lsp-packages-api';
-import { privilegedApi } from './features/privileged-api';
-import { dapApi } from './features/dap-api';
-import { userAddonsApi } from './features/user-addons-api';
-import { updaterApi } from './features/updater-api';
-import { agentApi, extensionHostApi } from './features/agent-api';
-import { mediaApi } from './features/media-api';
-import { securityApi } from './features/security-api';
+import { sdkApi } from './features/sdk/sdk-api';
+import { lspPackagesApi } from './features/lsp-packages/lsp-packages-api';
+import { privilegedApi } from './features/security/privileged-api';
+import { dapApi } from './features/debug/dap-api';
+import { userAddonsApi } from './features/extensions/user-addons-api';
+import { updaterApi } from './features/app/updater-api';
+import { agentApi, extensionHostApi } from './features/extensions/agent-api';
+import { mediaApi } from './features/documents/media-api';
+import { fileClipboardApi } from './features/documents/file-clipboard-api';
+import { securityApi } from './features/security/security-api';
 
 export interface DirEntry {
   name: string;
@@ -140,7 +141,8 @@ const api = {
   },
 
   fs: {
-    readDir: (dir: string): Promise<DirEntry[]> => invoke('fs:readDir', dir),
+    /** `showGenerated` also lists build output folders (build, dist, out, target …). */
+    readDir: (dir: string, showGenerated?: boolean): Promise<DirEntry[]> => invoke('fs:readDir', dir, showGenerated),
     exists: (target: string): Promise<boolean> => invoke('fs:exists', target),
     stat: (target: string): Promise<FileStat | null> => invoke('fs:stat', target),
     list: (dir: string): Promise<{ name: string; isDirectory: boolean; }[]> =>
@@ -189,6 +191,7 @@ const api = {
       id: string, cmd: string, args: string[], cwd: string, env?: Record<string, string>,
     ): Promise<string> => invoke('run:start', id, cmd, args, cwd, env),
     kill: (id: string): Promise<void> => invoke('run:kill', id),
+    write: (id: string, data: string): Promise<boolean> => invoke('run:write', id, data),
     /** Run a command and return its whole output (discovery such as `gradle tasks --all`); nothing reaches the output panel. */
     capture: (
       command: string, args: string[], cwd: string, env?: Record<string, string>, timeoutMs?: number,
@@ -221,6 +224,8 @@ const api = {
     javaImportDone: (dataDir: string): Promise<void> => invoke('lsp:javaImportDone', dataDir),
     /** Remove the Eclipse metadata jdtls generated in a project (what git tracks stays). */
     javaCleanMetadata: (root: string): Promise<{ removed: string[]; kept: string[]; }> => invoke('lsp:javaCleanMetadata', root),
+    /** The Lombok jar to attach to jdtls for the project at this root — or `null`. */
+    lombokAgent: (root: string): Promise<string | null> => invoke('lsp:lombokAgent', root),
     /** The javac backend of the jdtls behind this launcher — the JDK majors it runs on — or `null`. */
     jdtlsJavacBackend: (command: string): Promise<{ minJava: number; buildJava: number; } | null> =>
       invoke('lsp:jdtlsJavacBackend', command),
@@ -273,6 +278,7 @@ const api = {
   agent: agentApi,
   extensionHost: extensionHostApi,
   media: mediaApi,
+  clipboardFiles: fileClipboardApi,
   security: securityApi,
 };
 

@@ -12,7 +12,7 @@
 
 import { useEffect } from 'react';
 import { useStore } from '@/state/store';
-import { takeOverSetup } from '@/core/project/setup-handover';
+import { takeOverSetup } from '@/core/project/create/setup-handover';
 import { escapeOwnedByPopover } from '../../overlays/escape';
 import type { Step } from './DialogChrome';
 
@@ -34,7 +34,7 @@ export function useSetupHandover(workspace: string | null) {
     if (!note.tasks.length) {
       return;
     }
-    void import('@/lib/run').then(({ runTasks }) => runTasks(note.tasks, workspace, () => void useStore.getState().refreshProject()));
+    void import('@/lib/project/run').then(({ runTasks }) => runTasks(note.tasks, workspace, () => void useStore.getState().refreshProject()));
   }, [workspace]);
 }
 

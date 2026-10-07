@@ -39,17 +39,100 @@ export interface AgentUsage {
   turns?: number;
 }
 
+/** Where a slash command comes from; the `/` palette groups by it. */
+export type AgentCommandSource = 'builtin' | 'project' | 'user' | 'plugin' | 'skill';
+
+/** A slash command the agent offers, with what the palette shows next to it. */
+export interface AgentSlashCommand {
+  /** Without the leading `/`. */
+  name: string;
+  description?: string;
+  /** What follows the name, e.g. `<file>` or `[message]`. */
+  argumentHint?: string;
+  source?: AgentCommandSource;
+}
+
+/** A command as providers may report it: a bare name or the full entry. */
+export type AgentCommandEntry = string | AgentSlashCommand;
+
+/**
+ * What a session can do besides answering. `compact`, `rewind`, `fork`,
+ * `rename`, `delete` and `export` are carried out by the provider's `action`;
+ * the panel offers only those the agent declares (manifest `capabilities` or
+ * the `session` event's). `clear` — a fresh conversation — is always Lumen's own.
+ */
+export type AgentActionId = 'compact' | 'rewind' | 'fork' | 'rename' | 'delete' | 'export';
+
+export type AgentCapabilities = { [K in AgentActionId]?: boolean; } & {
+  /** The agent reports `usage` events (context meter, cost, limits). */
+  usage?: boolean;
+};
+
+/** A point of the conversation `rewind` can return to. */
+export interface AgentCheckpoint {
+  id: string;
+  label: string;
+  at?: number;
+}
+
+/** An extra answer a permission prompt offers besides allow and deny. */
+export interface AgentPermissionOption {
+  /** Handed back as `optionId`. */
+  id: string;
+  label: string;
+  description?: string;
+  /** How long the answer holds; shapes the button (`once` is the plain “allow”). */
+  scope?: 'once' | 'session' | 'always';
+}
+
+/** A rate limit or quota window the agent reports. */
+export interface AgentRateLimit {
+  label: string;
+  /** 0 to 100. */
+  usedPercent?: number;
+  /** Epoch milliseconds. */
+  resetsAt?: number;
+}
+
 /** What a provider reports; the host adds `agent` and `chatId`. */
 export type AgentEventBody =
-  | { kind: 'session'; sessionId: string; model?: string; tools?: string[]; slashCommands?: string[]; cwd?: string; }
-  | { kind: 'assistant'; blocks: AgentBlock[]; }
+  | {
+    kind: 'session'; sessionId: string; model?: string; tools?: string[]; slashCommands?: AgentCommandEntry[]; cwd?: string;
+    /** Adds to the manifest's `capabilities`. */
+    capabilities?: AgentCapabilities;
+    /** The mode the agent actually runs in (shown in the toolbar). */
+    mode?: string;
+    /** The name the agent gave the conversation. */
+    title?: string;
+  }
+  /** `parentId`: the id of the `subagent` this message belongs to; its tools nest under it. */
+  | { kind: 'assistant'; blocks: AgentBlock[]; parentId?: string; }
   /** Streamed text of the message being written; replaced by `assistant` once it is complete. */
   | { kind: 'delta'; text: string; thinking?: boolean; }
   | { kind: 'toolResult'; toolUseId: string; text: string; isError: boolean; }
-  | { kind: 'permission'; requestId: string; tool: string; input: Record<string, unknown>; blockedPath?: string; canRemember: boolean; reason?: string; }
+  | {
+    kind: 'permission'; requestId: string; tool: string; input: Record<string, unknown>; blockedPath?: string; canRemember: boolean; reason?: string;
+    /** Further answers (“allow for this session”, “always for `git *`”); the reply names one in `optionId`. */
+    options?: AgentPermissionOption[];
+  }
   | { kind: 'permissionSettled'; requestId: string; }
   /** The agent's plan or to-do list, replacing the previous one. */
   | { kind: 'todos'; items: { text: string; status: 'pending' | 'in_progress' | 'completed'; }[]; }
+  /** A subagent (Task) starting or ending; later `assistant` events with this `parentId` nest under it. */
+  | {
+    kind: 'subagent'; id: string; phase: 'start' | 'finish'; description?: string; agentType?: string;
+    isError?: boolean; summary?: string;
+  }
+  /** A line in the chat: “conversation compacted”, “hook blocked the command” … */
+  | { kind: 'notice'; level: 'info' | 'warn'; text: string; }
+  /**
+   * Live numbers for the toolbar; fields left out keep their last value.
+   * `costUsd` is the session's total, not the turn's.
+   */
+  | {
+    kind: 'usage'; contextUsed?: number; contextTotal?: number; costUsd?: number; model?: string; mode?: string;
+    rateLimits?: AgentRateLimit[];
+  }
   | { kind: 'status'; text: string; }
   | { kind: 'result'; isError: boolean; text: string; costUsd?: number; durationMs?: number; usage?: AgentUsage; }
   | { kind: 'error'; message: string; }
@@ -101,8 +184,43 @@ export interface AgentSendRequest {
   /** The effort chosen in the panel for that model, overriding the extension's setting. */
   effort?: string;
   attachments?: AgentAttachment[];
-  /** The extension's settings as the user set them. */
+  /**
+   * The extension's settings as the user set them, with the active profile's
+   * extra settings laid over them.
+   */
   settings?: Record<string, string>;
+  /** A system prompt the user set for this chat only; the agent adds it to its own. */
+  systemPrompt?: string;
+}
+
+/** A session action asked of the provider (see `AgentActionId`). */
+export interface AgentActionRequest {
+  agent: string;
+  chatId: string;
+  action: AgentActionId;
+  cwd: string;
+  sessionId?: string;
+  mode?: string;
+  model?: string;
+  effort?: string;
+  settings?: Record<string, string>;
+  /** `compact`: what to keep in mind; `rename`: the new title; `fork`, `export`: unused. */
+  argument?: string;
+  /** `rewind`: an id from `checkpoints`. */
+  checkpointId?: string;
+}
+
+/**
+ * What an action leaves behind. A `sessionId` moves the chat to that session
+ * (`fork`, `rewind` into a new one); `deleted` closes it; `text` of an
+ * `export` is offered for saving as `fileName`.
+ */
+export interface AgentActionResult {
+  sessionId?: string;
+  title?: string;
+  deleted?: boolean;
+  notice?: string;
+  export?: { fileName: string; text: string; };
 }
 
 export interface AgentAnswer {
@@ -110,6 +228,8 @@ export interface AgentAnswer {
   requestId: string;
   allow: boolean;
   remember?: boolean;
+  /** One of the prompt's `options`. */
+  optionId?: string;
   message?: string;
   /** For a question the agent asks (`AskUserQuestion`): the chosen answer per question text; several choices joined by ", ". */
   answers?: Record<string, string>;
@@ -120,11 +240,13 @@ export interface AgentProvider {
   send(
     request: {
       chatId: string; text: string; cwd: string; mode: string; sessionId?: string; model?: string; effort?: string;
-      attachments?: AgentAttachment[]; settings: Record<string, string>;
+      attachments?: AgentAttachment[]; settings: Record<string, string>; systemPrompt?: string;
     },
     emit: (event: AgentEventBody) => void,
   ): Promise<void>;
-  answer(reply: { requestId: string; allow: boolean; remember?: boolean; message?: string; }): boolean | Promise<boolean>;
+  answer(
+    reply: { requestId: string; allow: boolean; remember?: boolean; message?: string; optionId?: string; answers?: Record<string, string>; },
+  ): boolean | Promise<boolean>;
   interrupt(chatId: string): void | Promise<void>;
   /** Earlier conversations the user may resume, newest first. */
   sessions?(cwd: string): Promise<{ id: string; title: string; updatedAt?: number; }[]>;
@@ -134,6 +256,14 @@ export interface AgentProvider {
    * `refresh` asks to skip any cache and ask the program again.
    */
   models?(options: { settings: Record<string, string>; refresh: boolean; }): Promise<AgentModel[]>;
+  /**
+   * Carries out a session action the agent declared in `capabilities`. May
+   * `emit` events (a compaction reports `status`, `notice`, `usage`); `done`
+   * follows when it returns.
+   */
+  action?(request: Omit<AgentActionRequest, 'agent'> & { settings: Record<string, string>; }, emit: (event: AgentEventBody) => void): Promise<AgentActionResult | void>;
+  /** The points `rewind` can return to, newest first. */
+  checkpoints?(request: { chatId: string; sessionId?: string; cwd: string; settings: Record<string, string>; }): Promise<AgentCheckpoint[]>;
 }
 
 /* ------------------------------------------------------------------ *

@@ -8,136 +8,23 @@
  * or (at your option) any later version. See the LICENSE file for details.
  */
 
-/**
- * The debugger: sessions — child sessions through `startDebugging` included —
- * focus on a thread and a frame, the debug console, watch expressions, inline
- * values, exception filters, and keeping breakpoints in step with every
- * adapter.
- *
- * The interface and the editor read through `subscribe`/`getVersion`.
- */
-
 import { useStore } from '@/state/store';
 import { registry } from '@/core/registry';
 import { lsp } from '@/core/lsp/manager';
-import { matchLanguage } from '@/core/language';
+import { matchLanguage } from '@/core/editor/language';
 import { t } from '@/i18n';
 import type { DebugAdapterConfig, DebugContext } from '@/core/types';
-import { DapClient } from './client';
+import { DapClient } from './dap/client';
 import { DebugSession, type FileBreakpoints, type SessionHooks, type ThreadState } from './session';
-import type { EvaluateResult, OutputEventBody, RunInTerminalArguments, StackFrame, Variable } from './protocol';
-import { breakpoints } from './breakpoints';
-import {
-  createContext, debugChoices, injectLspBundles, launchArguments, pickOne, type DebugChoice, type Vars,
-} from './config';
-import {
-  EMPTY_DEBUG_STATE, isEmptyState, loadDebugState, saveDebugState, statePath, type DebugState,
-} from './persist';
-import { normalizePath, samePath, toAbsolute, toRelative } from './paths';
-import { createIpcTransport } from './transport';
-
-export type ConsoleKind = 'stdout' | 'stderr' | 'console' | 'important' | 'input' | 'result' | 'error' | 'adapter' | 'system';
-
-export interface ConsoleEntry {
-  id: number;
-  kind: ConsoleKind;
-  text: string;
-  sessionId?: string;
-  variablesReference?: number;
-}
-
-export interface MissingAdapter {
-  label: string;
-  language: string;
-  install?: string;
-  installCommand?: string;
-  docs?: string;
-}
-
-export interface WatchResult {
-  value: string;
-  type?: string;
-  variablesReference: number;
-  error?: boolean;
-}
-
-export interface Focus {
-  sessionId: string;
-  threadId: number | null;
-  frameId: number | null;
-}
-
-export interface ExecLocation {
-  path: string;
-  /** 0-based. */
-  line: number;
-  /** The topmost frame, unless a deeper one was chosen. */
-  top: boolean;
-}
-
-export interface InlineValues {
-  path: string;
-  line: number;
-  values: Map<string, string>;
-}
-
-interface Endpoint {
-  transport: 'stdio' | 'tcp';
-  command?: string;
-  args?: string[];
-  cwd?: string;
-  env?: Record<string, string>;
-  host?: string;
-  port?: number;
-}
-
-interface SessionMeta {
-  choice: DebugChoice;
-  /** For child sessions: TCP adapters reconnect, stdio adapters start again. */
-  childEndpoint: Endpoint;
-  revealed: boolean;
-}
-
-const MAX_CONSOLE = 4000;
-const ANSI = /\x1b\[[0-9;?]*[A-Za-z]/g;
-const INLINE_KEY = 'lumen.debug.inlineValues';
-
-const KIND_BY_CATEGORY: Record<string, ConsoleKind> = {
-  stdout: 'stdout',
-  stderr: 'stderr',
-  console: 'console',
-  important: 'important',
-};
-
-function readInlinePreference() {
-  try {
-    return localStorage.getItem(INLINE_KEY) !== 'false';
-  } catch {
-    return true;
-  }
-}
-
-/** Put environment variables in front of the command (PowerShell, or `env`). */
-function envPrefix(env: [string, string][], platform: string) {
-  if (!env.length) {
-    return '';
-  }
-  if (platform === 'win32') {
-    return env.map(([key, value]) => `$env:${key}=${quoteArg(value, platform)}; `).join('');
-  }
-  return `env ${env.map(([key, value]) => `${key}=${quoteArg(value, platform)}`).join(' ')} `;
-}
-
-function quoteArg(arg: string, platform: string) {
-  if (/^[\w@%+=:,./-]+$/.test(arg)) {
-    return arg;
-  }
-  if (platform === 'win32') {
-    // Backslashes only matter before a quote (or the closing one): double those, then escape the quotes.
-    return `"${arg.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/, '$1$1')}"`;
-  }
-  return `'${arg.replace(/'/g, `'\\''`)}'`;
-}
+import type { EvaluateResult, OutputEventBody, RunInTerminalArguments, StackFrame, Variable } from './dap/protocol';
+import { breakpoints } from './state/breakpoints';
+import { createContext, debugChoices, injectLspBundles, launchArguments, pickOne, type DebugChoice, type Vars } from './state/config';
+import { EMPTY_DEBUG_STATE, isEmptyState, loadDebugState, saveDebugState, statePath, type DebugState } from './state/persist';
+import { normalizePath, samePath, toAbsolute, toRelative } from './state/paths';
+import { createIpcTransport } from './dap/transport';
+import type { ConsoleKind, ConsoleEntry, MissingAdapter, WatchResult, Focus, ExecLocation, InlineValues, Endpoint, SessionMeta } from './manager-types';
+import { MAX_CONSOLE, ANSI, INLINE_KEY, KIND_BY_CATEGORY, readInlinePreference, envPrefix, quoteArg } from './console-format';
+export type { ConsoleKind, ConsoleEntry, MissingAdapter, WatchResult, Focus, ExecLocation, InlineValues } from './manager-types';
 
 class Debugger {
   sessions: DebugSession[] = [];

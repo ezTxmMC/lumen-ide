@@ -16,7 +16,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { templateContext } from '@/core/project/scaffold';
+import { templateContext } from '@/core/project/create/scaffold';
 import type { FormValues, ProjectTask, ProjectTemplate } from '@/core/types';
 
 const DEBOUNCE_MS = 220;

@@ -9,9 +9,9 @@
  */
 
 import type { Addon, LanguageSpec } from '@/core/types';
-import { gradleKind, javaPlainTemplate, javaProjectTemplate, mavenKind } from '../lib/jvm-project';
-import { bazelKind } from '../lib/native-project';
-import { javaDebug } from '@/core/debug/adapters';
+import { gradleKind, javaPlainTemplate, javaProjectTemplate, mavenKind } from '../lib/project/jvm-project';
+import { bazelKind } from '../lib/project/native-project';
+import { javaDebug } from '@/core/debug/adapters/adapters';
 import { LSP_PACKAGES, SYSTEM_PACKAGES } from '../lib/lsp-packages';
 import { pomBlockFormatter } from '../lib/xml-format';
 import { localizeSnippets } from '../lib/localize';
@@ -33,6 +33,8 @@ const JAVA_SETTINGS = {
       '**/build/**', '**/.gradle/**', '**/run/**', '**/out/**',
     ],
   },
+  // Lombok: the generated members count (the jar itself is attached as a javaagent, see core/sdk/lsp.ts).
+  jdt: { ls: { lombokSupport: { enabled: true } } },
   // Jars of a project without a build file (jdtls' invisible project) — the default, spelled out.
   project: { referencedLibraries: ['lib/**/*.jar', 'libs/**/*.jar'] },
   // Types from decompiled dependency classes count for references and searches.
@@ -150,6 +152,20 @@ export const javaSpec: LanguageSpec = {
     { label: 'stream', detail: 'Stream', body: '${liste}.stream()\n  .filter(${e} -> $0)\n  .toList();' },
     { label: 'test', detail: 'addons.snippets.java.test', body: '@Test\nvoid ${sollteEtwasTun}() {\n  $0\n}' },
     { label: 'sealed', detail: 'Sealed Interface', body: 'public sealed interface ${Name} permits ${A}, ${B} {}$0' },
+    { label: 'psvm', detail: 'main', body: 'public static void main(String[] args) {\n  $0\n}' },
+    { label: 'syserr', detail: 'System.err.println', body: 'System.err.println($0);' },
+    { label: 'souf', detail: 'printf', body: 'System.out.printf("${%s}%n", ${value});$0' },
+    { label: 'field', detail: 'private field', body: 'private ${String} ${name};$0' },
+    { label: 'getter', detail: 'getter', body: 'public ${String} get${Name}() {\n  return ${name};\n}$0' },
+    { label: 'setter', detail: 'setter', body: 'public void set${Name}(${String} ${name}) {\n  this.${name} = ${name};\n}$0' },
+    { label: 'whilei', detail: 'while', body: 'while (${condition}) {\n  $0\n}' },
+    { label: 'ifn', detail: 'if null', body: 'if (${value} == null) {\n  $0\n}' },
+    { label: 'lambda', detail: 'Lambda', body: '(${a}) -> $0' },
+    { label: 'opt', detail: 'Optional', body: 'Optional.ofNullable(${value})$0' },
+    { label: 'logger', detail: 'SLF4J logger', body: 'private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(${Name}.class);$0' },
+    { label: 'override', detail: '@Override', body: '@Override\npublic ${String} ${toString}() {\n  $0\n}' },
+    { label: 'singleton', detail: 'Singleton', body: 'private static final ${Name} INSTANCE = new ${Name}();\n\nprivate ${Name}() {}\n\npublic static ${Name} getInstance() {\n  return INSTANCE;\n}$0' },
+    { label: 'lombokdata', detail: 'Lombok @Data class', body: '@lombok.Data\npublic class ${Name} {\n  $0\n}' },
   ]),
   run: [
     // Java 11+ runs a single source file directly.

@@ -20,11 +20,11 @@
 import type { EditorView } from '@codemirror/view';
 import { formatFor, formatOptionsOf } from '@/core/format-settings';
 import { runAfterFormatters, runFormatters } from '@/core/format/providers';
-import { diffHunks } from '@/lib/text-diff';
+import { diffHunks } from '@/lib/editor/text-diff';
 import { t } from '@/i18n';
 import { useStore } from '@/state/store';
 import type { FormatRequest } from '../../../electron/features/extension-host/contract';
-import { formatWithLanguageServer } from './lsp-extension';
+import { formatWithLanguageServer } from './lsp/lsp-support';
 
 /** Replace the document's text with `text` as the smallest set of edits. */
 function applyText(view: EditorView, text: string): boolean {

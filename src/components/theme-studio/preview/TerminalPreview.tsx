@@ -10,9 +10,9 @@
 
 import type { ReactNode } from 'react';
 import { useT } from '@/i18n';
-import { xtermTheme } from '@/lib/terminals';
+import { xtermTheme } from '@/lib/project/terminals';
 import type { Theme } from '@/core/types';
-import { uses, type ColorKey } from '../keys';
+import { uses, type ColorKey } from '../state/keys';
 
 type Ansi = 'black' | 'red' | 'green' | 'yellow' | 'blue' | 'magenta' | 'cyan' | 'white';
 const ANSI: Ansi[] = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'];

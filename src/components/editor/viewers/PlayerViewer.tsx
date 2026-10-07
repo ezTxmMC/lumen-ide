@@ -11,7 +11,7 @@
 import { useEffect, useState } from 'react';
 import { Music } from 'lucide-react';
 import type { Tab } from '@/state/store';
-import { mediaUrl } from '@/lib/media-kind';
+import { mediaUrl } from '@/lib/files/media-kind';
 import { useT } from '@/i18n';
 import { InfoBar, InfoItem, useFileInfo, ViewerFallback } from './chrome';
 

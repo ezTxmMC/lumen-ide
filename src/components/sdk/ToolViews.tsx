@@ -172,6 +172,7 @@ export function ToolDownloads({ tool, search }: { tool: ToolInfo; search: string
                     <span className="font-mono text-[12px] text-muted">{pkg.version}</span>
                     {pkg.version === newest && <Badge tone="accent">{t('sdk.tools.latest')}</Badge>}
                     {pkg.lts && <Badge tone="ok">LTS</Badge>}
+                    {pkg.earlyAccess && <Badge tone="warn">{t('sdk.badge.prerelease')}</Badge>}
                     {have && <Badge>{t('sdk.tools.installed')}</Badge>}
                   </div>
                   <div className="truncate font-mono text-[11px] text-subtle">

@@ -26,8 +26,8 @@ import type { LspConfig, LspPackage } from '@/core/types';
 import {
   PACKAGE_MANAGERS, commandNeedsRoot, formatInvocation, installInvocation, isPackageManager,
   type PackageManagerId,
-} from '../../../electron/features/package-managers';
-import { packageFromCommand, packageSource } from './manager';
+} from '../../../electron/features/sdk/package-managers';
+import { packageFromCommand, packageSource } from './manager/package-commands';
 
 /** What the main process reports about the machine (`privileged:system`). */
 export interface SystemInfo {

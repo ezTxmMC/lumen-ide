@@ -15,9 +15,9 @@
 
 import { registry } from '@/core/registry';
 import { lsp } from '@/core/lsp/manager';
-import { matchLanguage } from '@/core/language';
+import { matchLanguage } from '@/core/editor/language';
 import { applyEffects, applyTheme, DEFAULT_EFFECTS } from '@/core/theme';
-import { isIconPack, uniqueIconPackId } from '@/core/icon-pack';
+import { isIconPack, uniqueIconPackId } from '@/core/theme/icon-pack';
 import type { IconPack, Theme } from '@/core/types';
 import { t } from '@/i18n';
 import { applyIconPack, isTheme, uniqueThemeId } from '../helpers';
@@ -318,9 +318,19 @@ function addonActions(ctx: Ctx): Pick<AppearanceSlice, 'toggleAddon' | 'openAddo
       if (!addon || addon.builtin) {
         return;
       }
+      const blocked = registry.blockedReason(id);
+      if (blocked) {
+        get().notify(blocked, 'warning');
+        return;
+      }
       registry.toggle(id);
 
-      const enabledAddons = registry.activeIds().filter((activeId) => !registry.get(activeId)?.builtin);
+      // Add-ons held off for being too new keep their place: they return with a newer Lumen.
+      const heldOff = get().enabledAddons.filter((enabledId) => registry.blockedReason(enabledId));
+      const enabledAddons = [
+        ...registry.activeIds().filter((activeId) => !registry.get(activeId)?.builtin),
+        ...heldOff.filter((heldId) => !registry.isActive(heldId)),
+      ];
       set({ enabledAddons, registryVersion: registry.getVersion() });
 
       // When the theme disappears with the add-on, fall back to the default theme.

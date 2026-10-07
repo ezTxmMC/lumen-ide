@@ -27,6 +27,7 @@ const STORAGE_PREFIX = 'lumen.addon.';
 class Registry {
   private addons = new Map<string, Addon>();
   private active = new Set<string>();
+  private guard: ((id: string) => string | null) | null = null;
   private disposers = new Map<string, () => void>();
 
   /** Contributions registered at runtime, from `activate`. */
@@ -182,9 +183,37 @@ class Registry {
     };
   }
 
+  /**
+   * Decides which add-ons must stay off, and why — one that needs a newer Lumen
+   * than the running one, for instance. The reason is shown to the user.
+   */
+  setActivationGuard(guard: ((id: string) => string | null) | null) {
+    this.guard = guard;
+  }
+
+  /** Why the add-on cannot be switched on right now, or `null` when it can. */
+  blockedReason(id: string): string | null {
+    if (!this.addons.has(id)) {
+      return null;
+    }
+    return this.guard?.(id) ?? null;
+  }
+
+  /** Switches off every active add-on the guard blocks; they stay in the enabled list and return once they fit. */
+  enforceGuard(): boolean {
+    let changed = false;
+    for (const id of [...this.active]) {
+      if (!this.blockedReason(id)) {
+        continue;
+      }
+      changed = this.deactivate(id) || changed;
+    }
+    return changed;
+  }
+
   activate(id: string): boolean {
     const addon = this.addons.get(id);
-    if (!addon || this.active.has(id)) {
+    if (!addon || this.active.has(id) || this.blockedReason(id)) {
       return false;
     }
     this.active.add(id);

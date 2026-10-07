@@ -19,11 +19,11 @@
  */
 
 import { getLanguage, t } from '@/i18n';
-import { DapClient } from './client';
+import { DapClient } from './dap/client';
 import type {
   Breakpoint, Capabilities, EvaluateResult, OutputEventBody, RunInTerminalArguments, Scope,
   SourceBreakpoint, StackFrame, StartDebuggingArguments, StoppedEventBody, Thread, Variable,
-} from './protocol';
+} from './dap/protocol';
 
 export type SessionState = 'initializing' | 'running' | 'stopped' | 'terminated';
 

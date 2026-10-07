@@ -10,25 +10,27 @@
 
 import { Fragment, useMemo, useRef, useState } from 'react';
 import {
-  ArrowLeftRight, Clipboard, Columns2, ExternalLink, FileCode2, FolderSearch, Image as ImageIcon, Pin, Rows2, SquareSplitHorizontal, X,
+  ArrowLeftRight, Clipboard, Columns2, Ellipsis, ExternalLink, FileCode2, FolderSearch, Image as ImageIcon, Pin, Rows2, SquareSplitHorizontal, X,
 } from 'lucide-react';
 import { useStore, isDirty, type EditorGroup } from '@/state/store';
 import type { Tab } from '@/state/types';
-import { fileGlyph } from '@/lib/file-icon';
+import { fileGlyph } from '@/lib/files/file-icon';
 import { IconGlyph, useIconPackVersion } from '../icons/FileIcon';
 import { formatBindingsFor } from '@/core/keybindings';
 import { useT } from '@/i18n';
 import { visibleGroups } from '@/state/popout';
 import { Editor, useEditorServices } from './Editor';
 import { FileBanner } from './FileBanner';
+import { MarkdownModeToggle, MarkdownPreview, useMarkdownMode } from './markdown-view';
 import { MediaViewer } from './viewers/MediaViewer';
 import { ExtensionView } from '../extension-view/ExtensionView';
-import { parseViewTabPath, viewTabIcon } from '@/core/extensions/host';
+import { parseViewTabPath, viewTabIcon } from '@/core/extensions/integration/host';
 import { namedIcon } from '../ui/named-icons';
-import { isSvgPath } from '@/lib/media-kind';
+import { isSvgPath } from '@/lib/files/media-kind';
+import { uriListOf } from '@/lib/files/os-drop';
 import { Welcome } from '../shell/Welcome';
 import { Button } from '../ui';
-import { ContextMenu, type MenuItem } from '../ui/ContextMenu';
+import { ContextMenu, menuBelow, type MenuItem } from '../ui/ContextMenu';
 
 const TAB_MIME = 'application/x-lumen-tab';
 
@@ -150,6 +152,8 @@ export function GroupView({ group, popped = false }: { group: EditorGroup; poppe
   // Tabs of an extension's editor view carry a `lumen-view:` path.
   const viewTab = parseViewTabPath(useStore((s) => s.tabs.find((open) => open.id === group.activeTabId)?.path));
   const [zone, setZone] = useState<DropZone>(null);
+  const markdownMode = useMarkdownMode(group.activeTabId);
+  const editorHidden = Boolean(viewerTab || viewTab) || markdownMode === 'preview';
 
   const onDragOver = (event: React.DragEvent) => {
     if (!hasTabDrag(event)) {
@@ -197,7 +201,7 @@ export function GroupView({ group, popped = false }: { group: EditorGroup; poppe
       <EditorTabs group={group} popped={popped} />
       <FileBanner tabId={group.activeTabId} />
       <div
-        className="relative min-h-0 flex-1"
+        className={`relative min-h-0 flex-1 ${markdownMode === 'split' ? 'flex' : ''}`}
         onDragOver={onDragOver}
         onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) {
           setZone(null);
@@ -205,9 +209,15 @@ export function GroupView({ group, popped = false }: { group: EditorGroup; poppe
         onDrop={onDrop}
       >
         {/* The editor stays mounted behind a viewer, so switching back keeps its state. */}
-        <div className="h-full w-full" hidden={Boolean(viewerTab || viewTab)}>
+        <div className={`h-full ${markdownMode === 'split' ? 'min-w-0 flex-1' : 'w-full'}`} hidden={editorHidden}>
           <Editor groupId={group.id} />
         </div>
+        {group.activeTabId && markdownMode === 'preview' && (
+          <MarkdownPreview tabId={group.activeTabId} className="absolute inset-0" />
+        )}
+        {group.activeTabId && markdownMode === 'split' && (
+          <MarkdownPreview tabId={group.activeTabId} className="h-full min-w-0 flex-1 border-l border-edge" />
+        )}
         {viewerTab && (
           <div className="absolute inset-0">
             <MediaViewer tab={viewerTab} />
@@ -340,7 +350,11 @@ function TabItem({ tab, index, isLast, groupId, active, groupActive, multiple, d
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData(TAB_MIME, JSON.stringify({ tabId: tab.id, groupId: groupId } satisfies DragPayload));
-        e.dataTransfer.effectAllowed = 'move';
+        // Also offered as a file, so the tab can be dropped into a file manager.
+        if (tab.path && !tab.virtual && /^([a-zA-Z]:[\\/]|\/)/.test(tab.path)) {
+          e.dataTransfer.setData('text/uri-list', uriListOf([tab.path]));
+        }
+        e.dataTransfer.effectAllowed = 'copyMove';
       }}
       onDragOver={(e) => {
         if (!hasTabDrag(e)) {
@@ -398,9 +412,11 @@ function TabItem({ tab, index, isLast, groupId, active, groupActive, multiple, d
 
 function GroupActions({ group, multiple, popped }: { group: EditorGroup; multiple: boolean; popped: boolean; }) {
   const t = useT();
+  const [menu, setMenu] = useState<{ x: number; y: number; } | null>(null);
   return (
   <div className="flex shrink-0 items-center gap-0.5 px-1">
     <SvgModeToggle tabId={group.activeTabId} />
+    <MarkdownModeToggle tabId={group.activeTabId} />
     {!multiple && !popped && (
       <Button size="sm" title={withKeys(t('shell.groups.splitRight'), 'view.splitRight')} onClick={() => {
         useStore.getState().setActiveTab(group.activeTabId ?? '', group.id);
@@ -410,9 +426,19 @@ function GroupActions({ group, multiple, popped }: { group: EditorGroup; multipl
       </Button>
     )}
     {!popped && (
-      <Button size="sm" title={t('popout.moveGroupToNewWindow')} onClick={() => useStore.getState().popOutGroup(group.id)}>
-        <ExternalLink size={13} />
-      </Button>
+      <span onClick={(e) => setMenu(menuBelow(e.currentTarget))}>
+        <Button size="sm" title={t('shell.layout.more')}>
+          <Ellipsis size={13} />
+        </Button>
+      </span>
+    )}
+    {menu && (
+      <ContextMenu
+        x={menu.x}
+        y={menu.y}
+        items={[{ label: t('popout.moveGroupToNewWindow'), icon: ExternalLink, run: () => useStore.getState().popOutGroup(group.id) }]}
+        onClose={() => setMenu(null)}
+      />
     )}
     {multiple && (
       <Button size="sm" title={t('shell.groups.closeGroup')} onClick={() => {

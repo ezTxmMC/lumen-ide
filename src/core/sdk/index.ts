@@ -13,9 +13,10 @@
 export * from './types';
 export * from './env';
 export * from './state';
-export { TOOLS, toolInfo, sdkTitle, type ToolInfo } from './tools';
+export { TOOLS, toolInfo, toolsForLanguages, sdkTitle, type ToolInfo } from './tools';
 export * from './requirements';
 export { javaProvider, javaDistribution, JAVA_DISTRIBUTIONS, compareVersions, normalizeJavaVersion } from './java';
 export {
-  createGradleImportDecorator, createJavacBackendDecorator, createJvmServerDecorator, createNetBeansDecorator, javacBackendArgs, javacBackendRuntime,
+  createGradleImportDecorator, createJavacBackendDecorator, createJvmServerDecorator, createLombokDecorator, createNetBeansDecorator, javacBackendArgs, javacBackendRuntime,
 } from './lsp';
+export { createNovusServerDecorator, novusCandidates, novusProgramPath, novusServerCandidates } from './novus';

@@ -20,7 +20,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useStore, type State } from '@/state/store';
-import { editorBridge } from '@/lib/editor-bridge';
+import { editorBridge } from '@/lib/editor/editor-bridge';
 
 /** Elements allowed to keep focus — someone is typing there on purpose. */
 const KEEPS_FOCUS = 'input, textarea, select, [contenteditable="true"], .lm-terminal, [role="dialog"], [role="menu"]';

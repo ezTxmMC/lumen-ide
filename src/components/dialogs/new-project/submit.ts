@@ -11,7 +11,7 @@
 /** Creating the project: validation, the scaffold call and the permission retry. */
 
 import type { ProjectTemplate, FormValues, FormField } from '@/core/types';
-import type { ScaffoldProgress } from '@/core/project/scaffold';
+import type { ScaffoldProgress } from '@/core/project/create/scaffold';
 import { rememberRecent } from '@/core/project/catalog';
 import type { useT } from '@/i18n';
 import {

@@ -26,14 +26,14 @@ import type { Effects } from '@/core/theme';
 import type { PopoutBounds, PopoutEntry } from './popout';
 import type { ProjectInfo } from '@/core/project/detect';
 import type { ProjectConfig } from '@/core/project/config';
-import type { ScaffoldProgress } from '@/core/project/scaffold';
+import type { ScaffoldProgress } from '@/core/project/create/scaffold';
 import type {
   DependencySpec, FormField, FormValues, IconPack, LanguageSpec, ProjectTemplate, Theme,
 } from '@/core/types';
 import type { Dock } from '@/core/views';
 import type { LanguageSetting } from '@/i18n';
 import type { BindingMap, PresetId } from '@/core/keybindings';
-import type { MediaKind } from '@/lib/media-kind';
+import type { MediaKind } from '@/lib/files/media-kind';
 import type { LayoutState, NavSide } from './layout';
 
 /* ------------------------------------------------------------------ *

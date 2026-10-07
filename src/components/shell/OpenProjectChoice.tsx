@@ -18,7 +18,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AppWindow, PanelsTopLeft, X } from 'lucide-react';
 import { useT } from '@/i18n';
-import { resolveOpenChoice, useOpenChoice, type OpenTarget } from '@/lib/open-project';
+import { resolveOpenChoice, useOpenChoice, type OpenTarget } from '@/lib/project/open-project';
 import { LAYER } from '../ui/layers';
 
 export function OpenProjectChoice() {

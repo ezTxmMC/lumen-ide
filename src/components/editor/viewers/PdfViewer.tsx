@@ -9,7 +9,7 @@
  */
 
 import type { Tab } from '@/state/store';
-import { mediaUrl } from '@/lib/media-kind';
+import { mediaUrl } from '@/lib/files/media-kind';
 import { InfoBar, useFileInfo } from './chrome';
 
 /** PDFs in Chromium's own viewer (search, zoom, print and page thumbnails come with it). */

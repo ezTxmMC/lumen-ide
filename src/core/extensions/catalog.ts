@@ -18,13 +18,21 @@
 
 import { fetchIndex } from './client';
 import { extensions } from './manager';
-import { isNewer } from './version';
+import { isNewer } from './compat/version';
 import { normalizeServerUrl } from './trust';
 import type { ExtensionServer, ExtensionSummary } from './types';
 
 export interface ServerCatalog {
   loading: boolean;
   error: string | null;
+  /** The failure is a network problem (offline, unreachable, timeout), not an answer the server gave. */
+  offline: boolean;
+  /** The entries come from the last successful fetch, not from this attempt. */
+  stale: boolean;
+  /** When the entries were fetched (ms since epoch); 0 when never. */
+  fetchedAt: number;
+  /** Automatic retries made since the last success; 0 when not failing. */
+  attempts: number;
   entries: ExtensionSummary[];
 }
 
@@ -44,10 +52,68 @@ export interface AvailableUpdate {
   server: ExtensionServer;
 }
 
+const CACHE_KEY = 'lumen.extensions.catalogCache';
+/** Pause before automatic retry n (0-based); the last value repeats. */
+const BACKOFF_MS = [5_000, 15_000, 45_000, 120_000, 300_000];
+const MAX_ATTEMPTS = 6;
+
 const listeners = new Set<() => void>();
 const catalogs = new Map<string, ServerCatalog>();
+const retryTimers = new Map<string, ReturnType<typeof setTimeout>>();
 let version = 0;
 let generation = 0;
+let lastServers: readonly ExtensionServer[] = [];
+type CatalogCache = Record<string, { fetchedAt: number; entries: ExtensionSummary[]; }>;
+let cache: CatalogCache | null = null;
+
+/** The last good catalogue of every server, kept across restarts so the list is there offline. */
+function readCache(): CatalogCache {
+  if (cache) {
+    return cache;
+  }
+  const loaded: CatalogCache = {};
+  try {
+    const parsed = JSON.parse(localStorage.getItem(CACHE_KEY) ?? '{}');
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      Object.assign(loaded, parsed);
+    }
+  } catch {
+    // Unreadable: start without a cache.
+  }
+  cache = loaded;
+  return loaded;
+}
+
+function writeCache(url: string, entries: ExtensionSummary[], fetchedAt: number) {
+  const store = readCache();
+  store[url] = { fetchedAt, entries };
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(store));
+  } catch {
+    // Storage full or blocked: the in-memory copy still serves this session.
+  }
+}
+
+/** A failure of the connection itself, as opposed to a server that answered with an error. */
+export function isNetworkError(message: string): boolean {
+  return /fetch failed|ERR_|ENOTFOUND|ECONN|EAI_AGAIN|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH|No answer from|network/i.test(message);
+}
+
+function backoffFor(attempt: number): number {
+  return BACKOFF_MS[Math.min(attempt, BACKOFF_MS.length - 1)];
+}
+
+function clearRetry(url?: string) {
+  if (url === undefined) {
+    for (const timer of retryTimers.values()) {
+      clearTimeout(timer);
+    }
+    retryTimers.clear();
+    return;
+  }
+  clearTimeout(retryTimers.get(url));
+  retryTimers.delete(url);
+}
 
 function emit() {
   version++;
@@ -93,6 +159,66 @@ function originOf(origin: string, id: string, servers: readonly ExtensionServer[
   return best;
 }
 
+async function fetchServer(server: ExtensionServer, run: number) {
+  const before = catalogs.get(server.url);
+  try {
+    const index = await fetchIndex(server.url);
+    if (run !== generation) {
+      return;
+    }
+    const fetchedAt = Date.now();
+    writeCache(server.url, index.extensions, fetchedAt);
+    catalogs.set(server.url, { loading: false, error: null, offline: false, stale: false, fetchedAt, attempts: 0, entries: index.extensions });
+  } catch (err) {
+    if (run !== generation) {
+      return;
+    }
+    const message = (err as Error).message;
+    const attempts = (before?.attempts ?? 0) + 1;
+    catalogs.set(server.url, {
+      loading: false,
+      error: message,
+      offline: isNetworkError(message),
+      stale: Boolean(before?.entries.length),
+      fetchedAt: before?.fetchedAt ?? 0,
+      attempts,
+      entries: before?.entries ?? [],
+    });
+    scheduleRetry(server, run, attempts);
+  }
+  emit();
+}
+
+function scheduleRetry(server: ExtensionServer, run: number, attempts: number) {
+  if (attempts >= MAX_ATTEMPTS) {
+    return;
+  }
+  clearRetry(server.url);
+  retryTimers.set(server.url, setTimeout(() => {
+    retryTimers.delete(server.url);
+    if (run !== generation) {
+      return;
+    }
+    const current = catalogs.get(server.url);
+    if (!current) {
+      return;
+    }
+    catalogs.set(server.url, { ...current, loading: true });
+    emit();
+    void fetchServer(server, run);
+  }, backoffFor(attempts - 1)));
+}
+
+if (typeof window !== 'undefined') {
+  // Back online: failing servers are asked again at once instead of waiting out the backoff.
+  window.addEventListener('online', () => {
+    const failing = [...catalogs.values()].some((entry) => entry.error);
+    if (failing) {
+      void catalog.refresh(lastServers);
+    }
+  });
+}
+
 export const catalog = {
   subscribe(fn: () => void) {
     listeners.add(fn);
@@ -105,9 +231,15 @@ export const catalog = {
   /** True while any server is still being asked. */
   loading: () => [...catalogs.values()].some((entry) => entry.loading),
 
-  /** Fetch every enabled server. A later call supersedes an earlier one. */
+  /**
+   * Fetch every enabled server. A later call supersedes an earlier one.
+   * A server that cannot be reached keeps its last good catalogue (marked
+   * stale) and is retried in the background with growing pauses.
+   */
   async refresh(servers: readonly ExtensionServer[]) {
     const run = ++generation;
+    clearRetry();
+    lastServers = servers;
     const active = servers.filter((server) => !server.disabled);
     for (const url of [...catalogs.keys()]) {
       if (!active.some((server) => server.url === url)) {
@@ -115,24 +247,25 @@ export const catalog = {
       }
     }
     for (const server of active) {
-      catalogs.set(server.url, { loading: true, error: null, entries: catalogs.get(server.url)?.entries ?? [] });
+      const known = catalogs.get(server.url);
+      const saved = readCache()[server.url];
+      catalogs.set(server.url, {
+        loading: true,
+        error: null,
+        offline: false,
+        stale: known?.stale ?? false,
+        fetchedAt: known?.fetchedAt ?? saved?.fetchedAt ?? 0,
+        attempts: 0,
+        entries: known?.entries ?? saved?.entries ?? [],
+      });
     }
     emit();
-    await Promise.all(active.map(async (server) => {
-      try {
-        const index = await fetchIndex(server.url);
-        if (run !== generation) {
-          return;
-        }
-        catalogs.set(server.url, { loading: false, error: null, entries: index.extensions });
-      } catch (err) {
-        if (run !== generation) {
-          return;
-        }
-        catalogs.set(server.url, { loading: false, error: (err as Error).message, entries: [] });
-      }
-      emit();
-    }));
+    await Promise.all(active.map((server) => fetchServer(server, run)));
+  },
+
+  /** Try the failing servers again right away, restarting their backoff. */
+  retryNow() {
+    return catalog.refresh(lastServers);
   },
 
   /**

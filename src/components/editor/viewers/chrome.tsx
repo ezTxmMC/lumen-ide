@@ -11,7 +11,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ExternalLink, FileCode2, FileQuestion, FolderSearch } from 'lucide-react';
 import { useStore, type Tab } from '@/state/store';
-import { formatBytes, isSvgPath } from '@/lib/media-kind';
+import { formatBytes, isSvgPath } from '@/lib/files/media-kind';
 import { useT } from '@/i18n';
 import { Button } from '../../ui';
 

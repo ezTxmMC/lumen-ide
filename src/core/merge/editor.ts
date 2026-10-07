@@ -17,7 +17,7 @@
 import { Facet, StateField, type EditorState, type Extension, type Range, type Text } from '@codemirror/state';
 import { Decoration, EditorView, WidgetType, type DecorationSet } from '@codemirror/view';
 import { t } from '@/i18n';
-import type { EditorContext } from '@/lib/editor-extensions';
+import type { EditorContext } from '@/lib/editor/editor-extensions';
 import {
   conflictAt, neighbourConflict, parseConflicts, resolutionText,
   type Conflict, type Resolution, type Span,

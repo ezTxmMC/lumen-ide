@@ -15,7 +15,7 @@ import {
   JAVA_DISTRIBUTIONS, cancelInstall, compareVersions, installPackage, isFinished, loadCatalog, normalizeJavaVersion, setEarlyAccess,
   useSdk, type InstallJob, type InstalledSdk, type SdkPackage,
 } from '@/core/sdk';
-import { Button, Empty } from '../ui';
+import { Button, Checkbox, Empty } from '../ui';
 import { Badge, DistributionMark, InstallProgressBar, formatBytes } from './parts';
 
 const EMPTY_PACKAGES: SdkPackage[] = [];
@@ -172,9 +172,9 @@ function CatalogFilters({
             {majors.map((m) => <option key={m} value={m}>{t('sdk.download.major', { major: m })}</option>)}
           </select>
         </label>
-        <Checkbox checked={ltsOnly} onChange={onLtsOnly} label={t('sdk.download.ltsOnly')} />
-        <Checkbox checked={earlyAccess} onChange={setEarlyAccess} label={t('sdk.download.earlyAccess')} />
-        <Checkbox checked={javafx} onChange={onJavafx} label={t('sdk.download.javafx')} />
+        <Checkbox checked={ltsOnly} onChange={onLtsOnly} className="text-muted hover:text-fg">{t('sdk.download.ltsOnly')}</Checkbox>
+        <Checkbox checked={earlyAccess} onChange={setEarlyAccess} className="text-muted hover:text-fg">{t('sdk.download.earlyAccess')}</Checkbox>
+        <Checkbox checked={javafx} onChange={onJavafx} className="text-muted hover:text-fg">{t('sdk.download.javafx')}</Checkbox>
         <span className="flex-1" />
         <span className="text-[11px] text-subtle">
           {environment && `${OS_LABELS[environment.platform] ?? environment.platform} · ${environment.arch}`}
@@ -273,11 +273,3 @@ function Chip({ active, color, count, onClick, children }: {
   );
 }
 
-function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: (value: boolean) => void; label: string; }) {
-  return (
-    <label className="flex cursor-pointer select-none items-center gap-1.5 text-muted hover:text-fg">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="accent-[var(--c-accent)]" />
-      {label}
-    </label>
-  );
-}

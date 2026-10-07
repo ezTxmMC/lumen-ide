@@ -208,9 +208,30 @@ function callIsUnsafe(doc: Text, from: number, to: number): boolean {
   return before === '::' || before.endsWith('&');
 }
 
+/** Whether the word at `from` is the name of a JSX tag (`<Header`, `</Header`). */
+function atJsxTagName(doc: Text, from: number): boolean {
+  const before = doc.sliceString(Math.max(0, from - 2), from);
+  return before.endsWith('<') || before === '</';
+}
+
+/** `Header(${1:props})` or `Header()` — a component name followed by the call the server adds. */
+const COMPONENT_CALL = /^([A-Z][\w$]*)\((?:[^()]|\$\{[^}]*\})*\)(?:\$0|\$\{0\})?$/;
+
+/** In a JSX tag the call suffix of a function item is wrong: `<Header()` → `<Header`. */
+function withoutComponentCall(raw: string, doc: Text, from: number): string {
+  if (!atJsxTagName(doc, from)) {
+    return raw;
+  }
+  const match = COMPONENT_CALL.exec(raw);
+  return match ? match[1] : raw;
+}
+
 /** A method-like item with nothing but a name gets `()` — only where it is safe. */
 function wantsCall(item: CompletionItem, raw: string, doc: Text, from: number, to: number): boolean {
   if (!item.kind || ![2, 3, 4].includes(item.kind)) {
+    return false;
+  }
+  if (atJsxTagName(doc, from)) {
     return false;
   }
   if (item.textEdit || item.insertTextFormat === 2 || raw.includes('(')) {
@@ -258,8 +279,8 @@ function insertionText(
   const { doc, head } = input;
   const edit = item.textEdit;
   const label = item.label.trim();
-  const raw = normalize(edit?.newText ?? item.insertText ?? label);
   const isSnippet = item.insertTextFormat === 2;
+  const raw = withoutComponentCall(normalize(edit?.newText ?? item.insertText ?? label), doc, from);
   const adjust = isSnippet || item.insertTextMode === 2;
   const indent = adjust ? lineIndent(doc, from) : '';
 

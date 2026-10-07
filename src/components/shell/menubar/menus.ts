@@ -16,7 +16,7 @@
 
 import { useStore } from '@/state/store';
 import { t } from '@/i18n';
-import { openProject } from '@/lib/open-project';
+import { openProject } from '@/lib/project/open-project';
 import type { MenuEntry, MenuSpec } from './model';
 
 const item = (key: string) => t(`menubar.item.${key}`);

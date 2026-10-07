@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronRight, Loader2 } from 'lucide-react';
 import { useT } from '@/i18n';
 import { debug } from '@/core/debug/manager';
-import type { Scope, Variable } from '@/core/debug/protocol';
+import type { Scope, Variable } from '@/core/debug/dap/protocol';
 import { valueTone } from './shared';
 
 /** Nodes left expanded across steps, keyed by a path of names. */

@@ -26,7 +26,7 @@
  */
 
 import { useEffect, useMemo, useRef } from 'react';
-import { renderMarkdown } from '@/lib/markdown';
+import { renderMarkdown } from '@/lib/files/markdown';
 import type { ExtensionPage } from '@/core/extensions/types';
 
 /** Pass the interface colours into the frame — it inherits nothing. */

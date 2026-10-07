@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useMemo, useRef, useSyncExternalStore, type MutableRefObject, type RefObject } from 'react';
-import { EditorState, Compartment, type Extension } from '@codemirror/state';
+import { EditorState, Compartment, Prec, type Extension } from '@codemirror/state';
 import {
   EditorView, keymap, lineNumbers, highlightActiveLineGutter,
   highlightSpecialChars, drawSelection, dropCursor, rectangularSelection,
@@ -18,29 +18,34 @@ import {
 import { history, indentWithTab, standardKeymap } from '@codemirror/commands';
 import { bracketMatching, indentOnInput } from '@codemirror/language';
 import { closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete';
-import { activeLineHighlight } from './active-line';
+import { autoCloseTags, closesTags } from './extensions/auto-close-tags';
+import { languageEditing } from './extensions/language-editing';
+import { activeLineHighlight } from './extensions/active-line';
 import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search';
 import { lintGutter } from '@codemirror/lint';
 
 import { useStore } from '@/state/store';
 import { registry } from '@/core/registry';
-import { editorExtensionFor } from '@/core/language';
+import { editorExtensionFor } from '@/core/editor/language';
 import { formatExtension, formatFor } from '@/core/format-settings';
-import { foldingFor, foldingUi } from '@/core/folding';
+import { foldingFor, foldingUi } from '@/core/editor/folding';
 import { editorTheme } from '@/core/theme';
 import { lsp } from '@/core/lsp/manager';
 import type { ContentChange } from '@/core/lsp/client';
 import { completionExtension } from '@/core/completion';
-import { editorBridge } from '@/lib/editor-bridge';
+import { editorBridge } from '@/lib/editor/editor-bridge';
 import {
   editorExtensions, getEditorExtensionVersion, subscribeEditorExtensions,
-} from '@/lib/editor-extensions';
+} from '@/lib/editor/editor-extensions';
 import { t } from '@/i18n';
-import { indentGuides } from './indent-guides';
-import { minimap } from './minimap';
-import {
-  applyDiagnostics, lspExtension, lspRefresh, offsetToPos, organizeImports,
-} from './lsp-extension';
+import { indentGuides } from './extensions/indent-guides';
+import { middleClickAutoscroll } from './extensions/autoscroll';
+import { minimap } from './extensions/minimap';
+import { applyDiagnostics } from './lsp/lsp-support';
+import { lspExtension } from './lsp/lsp-extension';
+import { lspRefresh } from './lsp/lsp-decorations';
+import { offsetToPos } from '@/core/completion/apply';
+import { organizeImports } from './lsp/lsp-actions';
 import { formatDocument } from './format';
 import type { LanguageSpec } from '@/core/types';
 import type { Tab } from '@/state/types';
@@ -62,7 +67,6 @@ const listenerComp = new Compartment();
  * the shortcut system in `core/keybindings.ts`.
  */
 const EDITOR_KEYMAP = [
-  ...closeBracketsKeymap,
   ...standardKeymap,
   ...completionKeymap.filter((binding) => binding.key !== 'Mod-Space' && binding.key !== 'Ctrl-Space'),
   ...searchKeymap.filter((binding) => binding.key === 'Escape'),
@@ -78,7 +82,6 @@ function baseExtensions(): Extension[] {
     EditorState.allowMultipleSelections.of(true),
     indentOnInput(),
     bracketMatching(),
-    closeBrackets(),
     rectangularSelection(),
     crosshairCursor(),
     highlightSelectionMatches(),
@@ -267,7 +270,17 @@ function useExtensionSet(groupId: string, tab: ActiveTab): ExtensionSet {
   );
 
   const options = useMemo<Extension[]>(() => {
-    const list: Extension[] = [];
+    const list: Extension[] = [middleClickAutoscroll];
+    if (effects.autoCloseBrackets) {
+      // Before the standard keymap, so Backspace removes both halves of a pair.
+      list.push(closeBrackets(), Prec.high(keymap.of(closeBracketsKeymap)));
+    }
+    if (effects.autoCloseTags && closesTags(languageId, activePath)) {
+      list.push(autoCloseTags);
+    }
+    const state = useStore.getState();
+    const found = state.tabs.find((t) => t.id === activeTabId) ?? null;
+    list.push(...languageEditing(found ? state.languageFor(found) : null, { autoClose: effects.autoCloseBrackets }));
     if (effects.showLineNumbers) {
       list.push(lineNumbers(), highlightActiveLineGutter());
     }
@@ -289,6 +302,7 @@ function useExtensionSet(groupId: string, tab: ActiveTab): ExtensionSet {
     return list;
   }, [
     effects.showLineNumbers, effects.highlightActiveLine, effects.showIndentGuides, effects.wordWrap,
+    effects.autoCloseBrackets, effects.autoCloseTags, languageId, activePath, activeTabId, registryVersion,
     effects.minimap, effects.minimapWidth, effects.minimapRenderCharacters, effects.foldingOnHover, themeSpec,
   ]);
 

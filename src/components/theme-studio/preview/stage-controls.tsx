@@ -14,9 +14,9 @@ import {
   Terminal as TerminalIcon,
 } from 'lucide-react';
 import { useT } from '@/i18n';
-import { svgColorMatrix, VISION_MODES, type VisionMode } from '@/core/theme-colors';
-import type { ColorKey } from '../keys';
-import { SAMPLES } from '../samples';
+import { svgColorMatrix, VISION_MODES, type VisionMode } from '@/core/theme/colors';
+import type { ColorKey } from '../state/keys';
+import { SAMPLES } from '../state/samples';
 
 /* The controls around the preview stage: toolbar, vision filters and footer. */
 

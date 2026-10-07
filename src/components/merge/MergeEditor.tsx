@@ -22,8 +22,8 @@ import { history, historyKeymap, indentWithTab, standardKeymap } from '@codemirr
 import { useStore } from '@/state/store';
 import { registry } from '@/core/registry';
 import { editorTheme } from '@/core/theme';
-import { editorExtensionFor, matchLanguage } from '@/core/language';
-import { editorBridge } from '@/lib/editor-bridge';
+import { editorExtensionFor, matchLanguage } from '@/core/editor/language';
+import { editorBridge } from '@/lib/editor/editor-bridge';
 import { useT } from '@/i18n';
 import {
   parseConflicts, project, resolutionText, UNTOUCHED, type Choice, type Conflict,

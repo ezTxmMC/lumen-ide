@@ -21,7 +21,7 @@ import { t } from '@/i18n';
 // Side effect: registers the named tokenizers, so that `"tokenizer":
 // "markdown"` and its like resolve for extensions. Anything that compiles
 // add-on data outside the app imports the same module directly.
-import './lib/builtin-tokenizers';
+import './lib/tokenizers/builtin-tokenizers';
 
 // Built in — always active, cannot be switched off.
 import { themesAddon } from './builtin/themes';

@@ -16,14 +16,14 @@
 import { registry } from '@/core/registry';
 import { lsp } from '@/core/lsp/manager';
 import { isVirtualUri } from '@/core/lsp/protocol';
-import { matchLanguage } from '@/core/language';
+import { matchLanguage } from '@/core/editor/language';
 import { isProjectConfigPath } from '@/core/project/config';
-import { editorBridge } from '@/lib/editor-bridge';
-import { symbolStore } from '@/lib/symbols';
-import { readText, toDisk, type LineEnding } from '@/lib/line-endings';
+import { editorBridge } from '@/lib/editor/editor-bridge';
+import { symbolStore } from '@/lib/editor/symbols';
+import { readText, toDisk, type LineEnding } from '@/lib/editor/line-endings';
 import { t } from '@/i18n';
 import { applySaveRules, formatFor } from '@/core/format-settings';
-import { isSvgPath, mediaKindForPath, sniffMediaKind, type MediaKind } from '@/lib/media-kind';
+import { isSvgPath, mediaKindForPath, sniffMediaKind, type MediaKind } from '@/lib/files/media-kind';
 import {
   addTabToActiveGroup, commitGroups, currentGroup, FIRST_GROUP_ID, insertAt, nextGroupId, nextTabId,
   reorder, withoutTab, withTab, type StoreAccess,
@@ -198,6 +198,11 @@ async function openFileTab(ctx: Ctx, path: string, preview: boolean) {
       const sniffed = await sniffFile(path);
       if (sniffed) {
         await openViewer(ctx, path, sniffed, preview);
+        return;
+      }
+      // The read refused it as binary (a NUL byte) but sniffing came back empty-handed: show it as binary rather than as an error.
+      if (errorText(err) === 'Binary file') {
+        await openViewer(ctx, path, 'binary', preview);
         return;
       }
       get().notify(`${fileName(path)}: ${errorText(err)}`, 'error');

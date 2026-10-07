@@ -18,6 +18,7 @@
  * without an import cycle; `features/sdk.ts` is what sets it.
  */
 
+import { compareSemver } from '../../../electron/features/sdk/tools/novus/version';
 import type { InstalledSdk, SdkEnvironment } from './types';
 
 export interface ActiveSdk {
@@ -30,6 +31,9 @@ export interface ActiveSdk {
   /** The folder for PATH, when it is not `<home>/bin`. */
   bin?: string;
 }
+
+/** Names the chosen SDK folders for `withManagedPath` (electron/features/lsp-packages/tools/managed-path.ts). */
+export const SDK_PATH_VARIABLE = 'LUMEN_SDK_PATH';
 
 let base: SdkEnvironment | null = null;
 let active: ActiveSdk[] = [];
@@ -57,6 +61,8 @@ function compose(): Record<string, string> {
   const bins = active.map((sdk) => sdk.bin ?? binDir(sdk.home, base!.platform));
   const rest = current.filter((dir) => !bins.includes(dir));
   env[base.pathKey] = [...bins, ...rest].join(base.delimiter);
+  // The main process puts ~/.lumen/lsp/bin first on every PATH it builds; this list keeps the chosen SDKs ahead of it.
+  env[SDK_PATH_VARIABLE] = bins.join(base.delimiter);
   return env;
 }
 
@@ -119,8 +125,9 @@ export function resolveSdk(value: string | undefined, installed: InstalledSdk[])
     const hit = installed.find((sdk) => sdk.home === wanted);
     return hit ?? { home: wanted, major: 0 };
   }
+  // Semver order: `0.1.0-pre.alpha.10` is newer than `alpha.9` and older than `0.1.0`.
   const byNewest = (list: InstalledSdk[]) =>
-    [...list].sort((a, b) => b.version.localeCompare(a.version, 'en', { numeric: true }))[0] ?? null;
+    [...list].sort((a, b) => compareSemver(b.version, a.version))[0] ?? null;
   const major = /^(\d+)$/.exec(wanted);
   if (major) {
     return byNewest(usable.filter((sdk) => sdk.major === Number(major[1])));

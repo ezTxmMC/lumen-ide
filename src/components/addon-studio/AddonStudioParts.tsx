@@ -18,13 +18,13 @@ import { userAddons } from '@/core/user-addons/manager';
 import type { UserAddonModel } from '@/core/user-addons/schema';
 import type { StudioSection, ValidationIssue } from '@/core/user-addons/validate';
 import { Button } from '../ui';
-import { LanguagesPage } from './LanguagesPage';
-import { CommandsPage, EventsPage } from './GraphPages';
-import { TemplatesPage } from './TemplatesPage';
-import { KindsPage } from './KindsPage';
-import { SnippetsPage } from './SnippetsPage';
-import { PanelsPage } from './PanelsPage';
-import { GeneralPage, JsonPage, ThemesPage } from './MetaPages';
+import { LanguagesPage } from './pages/LanguagesPage';
+import { CommandsPage, EventsPage } from './graph/GraphPages';
+import { TemplatesPage } from './pages/TemplatesPage';
+import { KindsPage } from './pages/KindsPage';
+import { SnippetsPage } from './pages/SnippetsPage';
+import { PanelsPage } from './pages/PanelsPage';
+import { GeneralPage, JsonPage, ThemesPage } from './pages/MetaPages';
 
 export const NAV: { id: StudioSection; icon: typeof X; }[] = [
   { id: 'general', icon: Settings2 },

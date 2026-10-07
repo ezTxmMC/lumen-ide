@@ -12,7 +12,7 @@ import { Blocks, Command, FolderOpen, FolderPlus, Layers, Palette, Sparkles, X }
 import { useT } from '@/i18n';
 import { formatBindingsFor } from '@/core/keybindings';
 import { useStore } from '@/state/store';
-import { openFolderAsProject, openProject } from '@/lib/open-project';
+import { openFolderAsProject, openProject } from '@/lib/project/open-project';
 import { Kbd } from '../ui';
 
 function WelcomeActions() {

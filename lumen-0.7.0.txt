@@ -26,3 +26,5 @@
 - markdown files 3 modes, raw, preview and splitted (left raw and right preview)
 - novus: füg novus-lsp support hinzu: https://github.com/ezTxmMC/novus
 - novus: füg nvh datei & language support hinzu
+- novus: update zu latest syntax
+- fix component inconsistency, wie bspw. checkboxes

@@ -12,7 +12,7 @@
  * The application state (zustand), put together from one slice per area:
  *
  *   slices/app.ts         startup, persistence, overlays, notifications, keys
- *   slices/workspace.ts   folders, workspaces, the detected project
+ *   slices/workspace/      folders, workspaces, the detected project
  *   slices/editor.ts      tabs, editor groups, saving, disk changes
  *   slices/layout.ts      docks and views, output, terminals
  *   slices/appearance.ts  themes, effects, icon packs, add-ons on/off

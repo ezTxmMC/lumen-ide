@@ -142,6 +142,69 @@
   ::-webkit-scrollbar-thumb:hover { background-clip: content-box; background-color: var(--c-text-subtle); }
   ::-webkit-scrollbar-corner { background: transparent; }
 
+  /* Checkboxes and radios everywhere look the same, whether a component
+     styles them or a plain <input> was dropped in. */
+  input[type='checkbox'],
+  input[type='radio'] {
+    appearance: none;
+    display: inline-grid;
+    place-content: center;
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    border: 1px solid var(--c-border-strong, var(--c-text-subtle));
+    border-radius: var(--radius-sm);
+    background: var(--c-bg-input);
+    cursor: pointer;
+    transition: background-color var(--duration) ease, border-color var(--duration) ease;
+  }
+  input[type='radio'] { border-radius: 50%; }
+  input[type='checkbox']:hover,
+  input[type='radio']:hover { border-color: var(--c-accent); }
+  input[type='checkbox']:checked,
+  input[type='checkbox']:indeterminate,
+  input[type='radio']:checked {
+    background: var(--c-accent);
+    border-color: var(--c-accent);
+  }
+  input[type='checkbox']::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--c-accent-text);
+    clip-path: polygon(14% 52%, 0 66%, 38% 100%, 100% 22%, 86% 8%, 38% 72%);
+    transform: scale(0);
+    transition: transform var(--duration) var(--ease-spring);
+  }
+  input[type='checkbox']:checked::after { transform: scale(1); }
+  input[type='checkbox']:indeterminate::after {
+    clip-path: none;
+    height: 2px;
+    transform: scale(1);
+  }
+  input[type='radio']::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--c-accent-text);
+    transform: scale(0);
+    transition: transform var(--duration) var(--ease-spring);
+  }
+  input[type='radio']:checked::after { transform: scale(1); }
+  input[type='checkbox']:disabled,
+  input[type='radio']:disabled { opacity: 0.4; cursor: default; }
+
+  /* A select without classes of its own gets the field look of the shared Select. */
+  :where(select) {
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--c-bg-input);
+    padding: 3px 8px;
+  }
+  :where(select):hover { border-color: var(--c-border-strong, var(--c-text-subtle)); }
+
   :focus-visible {
     outline: 2px solid var(--c-accent);
     outline-offset: 1px;

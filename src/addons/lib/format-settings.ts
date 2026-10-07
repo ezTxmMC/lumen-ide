@@ -43,3 +43,8 @@ export function htmlFormat(format: LanguageFormat) {
     ...editorFormat(format),
   };
 }
+
+/** `novus-lsp` reads `novus.format.*` when the editor sends no formatting options itself. */
+export function novusFormat(format: LanguageFormat) {
+  return { novus: { format: { tabSize: format.tabWidth, insertSpaces: !format.useTabs } } };
+}

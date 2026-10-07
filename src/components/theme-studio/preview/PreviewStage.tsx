@@ -12,9 +12,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useT } from '@/i18n';
 import type { Effects } from '@/core/theme';
 import type { Theme } from '@/core/types';
-import { CodeView } from '../CodeView';
-import { readStorage, STORAGE, uses, writeStorage, type ColorKey } from '../keys';
-import { SAMPLES, sampleSelection } from '../samples';
+import { CodeView } from '../sections/CodeView';
+import { readStorage, STORAGE, uses, writeStorage, type ColorKey } from '../state/keys';
+import { SAMPLES, sampleSelection } from '../state/samples';
 import {
   BACKDROP_CLASS, DEFAULTS, StageFooter, StageToolbar, VisionFilters, type StageSettings,
 } from './stage-controls';

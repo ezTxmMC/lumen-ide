@@ -11,7 +11,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Maximize, Minus, Plus, Scan } from 'lucide-react';
 import type { Tab } from '@/state/store';
-import { mediaUrl } from '@/lib/media-kind';
+import { mediaUrl } from '@/lib/files/media-kind';
 import { useT } from '@/i18n';
 import { Button } from '../../ui';
 import { InfoBar, InfoItem, useFileInfo, ViewerFallback } from './chrome';

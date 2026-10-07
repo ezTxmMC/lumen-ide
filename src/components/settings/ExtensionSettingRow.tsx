@@ -22,7 +22,7 @@ import { FolderOpen, KeyRound, Plus, RotateCcw, X } from 'lucide-react';
 import { useStore } from '@/state/store';
 import { useLanguage, useT } from '@/i18n';
 import type { ExtensionSetting } from '@/core/extensions/types';
-import { localizeSetting } from '@/core/extensions/localize';
+import { localizeSetting } from '@/core/extensions/integration/localize';
 import { Button, Select, Toggle } from '../ui';
 
 const inputClass = 'lm-transition w-full rounded-lumen-sm border border-edge bg-input px-2.5 py-1.5 font-mono text-[12px] outline-none focus:border-accent';

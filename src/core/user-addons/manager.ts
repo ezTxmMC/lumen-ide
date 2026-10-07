@@ -19,11 +19,12 @@
 
 import { useStore } from '@/state/store';
 import { registry } from '@/core/registry';
-import { matchLanguage } from '@/core/language';
+import { matchLanguage } from '@/core/editor/language';
 import { t } from '@/i18n';
 import type { Addon, LanguageSpec, Theme } from '@/core/types';
 import { compileAddon, extractChoices } from './compile';
 import { runUserCommand, startUserEvents } from './runtime';
+import { contextDetectorName } from '@/core/editor/syntax-context';
 import {
   createUserAddon, normalizeModel, slugify, uniqueAddonId, USER_ADDON_EXTENSION, USER_ADDON_PREFIX,
   type UserAddonModel, type UserLanguage, type UserTemplateField,
@@ -398,6 +399,11 @@ function languageFromSpec(spec: LanguageSpec, taken: Set<string>): UserLanguage 
     icon: spec.icon,
     color: spec.color,
     comments: clone(spec.comments),
+    autoClose: clone(spec.autoClose),
+    closeBrackets: clone(spec.closeBrackets),
+    wordPattern: source(spec.wordPattern),
+    codeWordPattern: source(spec.codeWordPattern),
+    syntaxContext: contextDetectorName(spec.syntaxContext),
     keywords: clone(spec.keywords),
     controls: clone(spec.controls),
     types: clone(spec.types),
@@ -419,6 +425,7 @@ function languageFromSpec(spec: LanguageSpec, taken: Set<string>): UserLanguage 
     run: clone(spec.run),
     // Language servers still expect the original language id.
     lsp: spec.lsp?.map((server) => ({ ...structuredClone(server), languageId: server.languageId ?? spec.id })),
+    tools: clone(spec.tools),
     priority: (spec.priority ?? 0) + 1,
   };
 }

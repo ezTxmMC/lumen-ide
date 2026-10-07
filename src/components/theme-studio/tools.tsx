@@ -14,12 +14,12 @@ import { useT } from '@/i18n';
 import {
   applyAccentHarmony, contrastIssues, contrastRatio, deriveSurfaces, fixContrast, fixIssue, HARMONIES,
   harmonyColors, isHexColor, syntaxColor, syntaxMinContrast, UI_MIN_CONTRAST, type Harmony,
-} from '@/core/theme-colors';
+} from '@/core/theme/colors';
 import { readableOn, splitAlpha } from '@/core/theme';
 import { TOKEN_KINDS, type Theme, type UIColorKey } from '@/core/types';
 import { Button } from '../ui';
-import { ContrastBadge } from './ColorField';
-import { colorOf, type ColorKey } from './keys';
+import { ContrastBadge } from './sections/ColorField';
+import { colorOf, type ColorKey } from './state/keys';
 
 function ToolSection({ icon: Icon, title, hint, children }: { icon: typeof Palette; title: string; hint?: string; children: React.ReactNode; }) {
   return (

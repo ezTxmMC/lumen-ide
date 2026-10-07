@@ -15,9 +15,9 @@
  */
 
 import { useSyncExternalStore } from 'react';
-import { isIconShape } from '@/core/icon-pack';
+import { isIconShape } from '@/core/theme/icon-pack';
 import type { IconDef } from '@/core/types';
-import { fileGlyph, folderIcon, iconPackVersion, subscribeIconPack } from '@/lib/file-icon';
+import { fileGlyph, folderIcon, iconPackVersion, subscribeIconPack } from '@/lib/files/file-icon';
 import { ICON_SHAPES } from './shapes';
 
 export function useIconPackVersion() {

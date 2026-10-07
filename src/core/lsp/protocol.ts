@@ -31,12 +31,30 @@ export interface Diagnostic {
   /** 1 error · 2 warning · 3 information · 4 hint */
   severity?: 1 | 2 | 3 | 4;
   code?: string | number;
+  /** Where the code is explained: shown as a link on the code. */
+  codeDescription?: { href: string; };
   source?: string;
   message: string;
   /** 1 Unnecessary · 2 Deprecated */
   tags?: (1 | 2)[];
   relatedInformation?: DiagnosticRelated[];
   data?: unknown;
+}
+
+/** `textDocument/foldingRange`: lines are zero-based; the lines after `startLine` up to `endLine` fold away. */
+export interface FoldingRange {
+  startLine: number;
+  startCharacter?: number;
+  endLine: number;
+  endCharacter?: number;
+  kind?: 'comment' | 'imports' | 'region' | string;
+}
+
+/** `textDocument/documentLink`: `target` is a URI (file or web address). */
+export interface DocumentLink {
+  range: Range;
+  target?: string;
+  tooltip?: string;
 }
 
 export interface MarkupContent { kind: 'plaintext' | 'markdown'; value: string; }

@@ -17,9 +17,9 @@ import { registry } from '@/core/registry';
 import type { Theme } from '@/core/types';
 import { Button, Empty } from '../ui';
 import { DialogShell } from './DialogShell';
-import { ThemeCard } from '../theme-studio/ThemeCard';
-import { EffectsSection } from '../theme-studio/EffectsSection';
-import { CssSection } from '../theme-studio/CssSection';
+import { ThemeCard } from '../theme-studio/sections/ThemeCard';
+import { EffectsSection } from '../theme-studio/sections/EffectsSection';
+import { CssSection } from '../theme-studio/sections/CssSection';
 import { IconPacksSection } from '../icon-studio/IconPacksSection';
 
 type Section = 'themes' | 'icons' | 'effects' | 'css';

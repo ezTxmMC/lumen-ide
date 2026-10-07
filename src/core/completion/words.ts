@@ -15,6 +15,7 @@
 
 import type { Completion } from '@codemirror/autocomplete';
 import type { LanguageSpec } from '@/core/types';
+import { wordCharsOf } from '../editor/word-pattern';
 import { prepare } from './matcher';
 import type { Candidate, Origin } from './ranking';
 
@@ -39,6 +40,18 @@ const DASH_RULES: WordRules = {
   before: /[\p{L}\p{N}_$-]+/u,
   scan: /[\p{L}_$-][\p{L}\p{N}_$-]+/gu,
 };
+
+/** The rules of a language: its own `wordPattern`, else the dashed or plain defaults. */
+export function wordRulesForSpec(spec: LanguageSpec | null | undefined): WordRules {
+  if (!spec?.wordPattern) {
+    return wordRulesFor(spec?.id);
+  }
+  const extra = [...wordCharsOf(spec.wordPattern)].map((ch) => ch.replace(/[\\^$.*+?()[\]{}|/-]/g, '\\$&')).join('');
+  return {
+    before: new RegExp(`[\\p{L}\\p{N}_$${extra}]+`, 'u'),
+    scan: new RegExp(`[\\p{L}_$${extra}][\\p{L}\\p{N}_$${extra}]+`, 'gu'),
+  };
+}
 
 export function wordRulesFor(languageId: string | null | undefined): WordRules {
   return languageId && DASH_LANGUAGES.has(languageId) ? DASH_RULES : PLAIN_RULES;
@@ -81,12 +94,55 @@ export function languageCandidates(spec: LanguageSpec): CompletionCandidate[] {
   return out;
 }
 
+function matchesFile(pattern: string, name: string): boolean {
+  if (pattern.startsWith('*.')) {
+    return name.endsWith(pattern.slice(1));
+  }
+  return name === pattern;
+}
+
+/**
+ * Is the snippet offered in this file? \`Snippet.files\` lists exact names and
+ * \`*.ext\` patterns; a \`!\` entry excludes. Without a file only unscoped
+ * snippets and exclusions-only ones apply.
+ */
+export function snippetInFile(snippet: { files?: string[]; }, filePath: string | null | undefined): boolean {
+  const files = snippet.files;
+  if (!files?.length) {
+    return true;
+  }
+  const name = (filePath ?? '').split(/[\\/]/).pop() ?? '';
+  const included = files.filter((entry) => !entry.startsWith('!'));
+  const excluded = files.filter((entry) => entry.startsWith('!')).map((entry) => entry.slice(1));
+  if (excluded.some((entry) => matchesFile(entry, name))) {
+    return false;
+  }
+  return included.length === 0 || included.some((entry) => matchesFile(entry, name));
+}
+
+/**
+ * Is the snippet offered in this syntax context? `Snippet.scope` lists the
+ * contexts; without it, or when the language detects none (`scope` null), it
+ * is offered everywhere.
+ */
+export function snippetInScope(snippet: { scope?: string[]; }, scope: string | null | undefined): boolean {
+  if (!snippet.scope?.length || scope === null || scope === undefined) {
+    return true;
+  }
+  return snippet.scope.includes(scope);
+}
+
 /** Snippets as candidates; `toCompletion` builds the CodeMirror option. */
 export function snippetCandidates(
   spec: LanguageSpec,
   toCompletion: (snippet: NonNullable<LanguageSpec['snippets']>[number]) => Completion,
+  filePath?: string | null,
+  scope?: string | null,
 ): CompletionCandidate[] {
-  return (spec.snippets ?? []).map((s) => ({
+  return (spec.snippets ?? [])
+    .filter((s) => filePath === undefined || snippetInFile(s, filePath))
+    .filter((s) => snippetInScope(s, scope))
+    .map((s) => ({
     label: s.label,
     filter: prepare(s.label),
     origin: 'snippet' as const,

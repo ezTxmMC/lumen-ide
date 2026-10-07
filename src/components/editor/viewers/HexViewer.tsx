@@ -11,7 +11,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Binary } from 'lucide-react';
 import type { Tab } from '@/state/store';
-import { extensionOf, formatBytes, hexRows } from '@/lib/media-kind';
+import { extensionOf, formatBytes, hexRows } from '@/lib/files/media-kind';
 import { useT } from '@/i18n';
 import { InfoBar, InfoItem, ViewerFallback } from './chrome';
 

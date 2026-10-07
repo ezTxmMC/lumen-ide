@@ -132,11 +132,15 @@ export function createJvmServerDecorator(installed: () => InstalledSdk[]) {
     }
     const isJdtls = /jdtls|jdt\.ls/i.test(`${given.command} ${given.label}`);
     const init0 = given.initializationOptions as { settings?: unknown; } | undefined;
-    const config: LspConfig = !isJdtls ? given : {
-      ...given,
-      settings: safeImportExclusions(given.settings, root ?? ''),
-      initializationOptions: init0 && typeof init0 === 'object' ? { ...init0, settings: safeImportExclusions(init0.settings, root ?? '') } : init0,
-    };
+    let config: LspConfig = given;
+    if (isJdtls) {
+      const hasInit = init0 && typeof init0 === 'object';
+      config = {
+        ...given,
+        settings: safeImportExclusions(given.settings, root ?? ''),
+        initializationOptions: hasInit ? { ...init0, settings: safeImportExclusions(init0.settings, root ?? '') } : init0,
+      };
+    }
     const java = activeSdk('java');
     if (!java) {
       return config;
@@ -200,6 +204,24 @@ export function createGradleImportDecorator(script: () => string | null) {
         ? { ...init, settings: withGradleInitScript(init.settings, path) }
         : init,
     };
+  };
+}
+
+/**
+ * A decorator that attaches Lombok to jdtls (`-javaagent`) for projects that
+ * use it: the generated getters, setters and builders then resolve instead of
+ * showing as errors.
+ */
+export function createLombokDecorator(agent: (root: string) => Promise<string | null>) {
+  return async (config: LspConfig, languageId: string, root: string): Promise<LspConfig> => {
+    if (languageId !== 'java' || !/jdtls|jdt\.ls/i.test(`${config.command} ${config.label}`)) {
+      return config;
+    }
+    const jar = await agent(root).catch(() => null);
+    if (!jar) {
+      return config;
+    }
+    return { ...config, args: [...(config.args ?? []), `--jvm-arg=-javaagent:${jar}`] };
   };
 }
 

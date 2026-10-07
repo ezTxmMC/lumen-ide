@@ -24,7 +24,7 @@ import { useStore } from '@/state/store';
 import { usePresence } from '@/hooks/usePresence';
 import { useFormValues } from '@/hooks/useFormValues';
 import { registry } from '@/core/registry';
-import { resolveValues, slugify, validateValues, type ScaffoldProgress } from '@/core/project/scaffold';
+import { resolveValues, slugify, validateValues, type ScaffoldProgress } from '@/core/project/create/scaffold';
 import {
   ALL_CATEGORY, RECENT_CATEGORY, filterTemplates, knownRecent, templateCategories,
   type CatalogOptions,

@@ -15,7 +15,7 @@ import { Check, Copy, Download, Pencil, Plus, Shapes, Trash2, Upload } from 'luc
 import { useStore } from '@/state/store';
 import { tr, useT } from '@/i18n';
 import { registry } from '@/core/registry';
-import { iconPackSize, resolveFileIcon, resolveFolderIcon } from '@/core/icon-pack';
+import { iconPackSize, resolveFileIcon, resolveFolderIcon } from '@/core/theme/icon-pack';
 import type { IconPack } from '@/core/types';
 import { Button, Empty } from '../ui';
 import { IconGlyph } from '../icons/FileIcon';

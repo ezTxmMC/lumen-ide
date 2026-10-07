@@ -43,7 +43,7 @@ import {
   UserCog, Users, Variable, Video, Wallet, WandSparkles, Waves, Webhook, Wifi, Wind, Workflow, Wrench, Zap,
   type LucideIcon,
 } from 'lucide-react';
-import type { IconShapeName } from '@/core/icon-pack';
+import type { IconShapeName } from '@/core/theme/icon-pack';
 import { MARKS, ROLE_FOLDERS } from './custom-shapes';
 
 const LUCIDE_SHAPES = {

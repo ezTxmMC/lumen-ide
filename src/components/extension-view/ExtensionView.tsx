@@ -20,8 +20,8 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ChevronRight, Loader2 } from 'lucide-react';
-import { extensionHost } from '@/core/extensions/host';
-import { renderMarkdown } from '@/lib/markdown';
+import { extensionHost } from '@/core/extensions/integration/host';
+import { renderMarkdown } from '@/lib/files/markdown';
 import type { ViewAction, ViewNode, ViewTone } from '../../../electron/features/extension-host/contract';
 import { namedIcon } from '../ui/named-icons';
 import { FileIcon } from '../icons/FileIcon';

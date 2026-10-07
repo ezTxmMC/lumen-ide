@@ -16,7 +16,7 @@
 
 export type {
   DetectedJdk, InstallPhase, InstallProgress, InstallRequest, SdkEnvironment,
-} from '../../../electron/features/sdk';
+} from '../../../electron/features/sdk/jdk/types';
 
 /** A downloadable package from the catalogue. */
 export interface SdkPackage {

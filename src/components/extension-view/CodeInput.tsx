@@ -23,7 +23,7 @@ import { bracketMatching } from '@codemirror/language';
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 import { useStore } from '@/state/store';
 import { registry } from '@/core/registry';
-import { editorExtensionFor } from '@/core/language';
+import { editorExtensionFor } from '@/core/editor/language';
 import { editorTheme } from '@/core/theme';
 import type { ViewCodeNode } from '../../../electron/features/extension-host/contract';
 

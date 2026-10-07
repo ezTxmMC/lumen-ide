@@ -18,8 +18,8 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { ChoiceLoader, fieldChoices, filterChoices, groupChoices, type LoadedChoices } from '@/core/project/choices';
-import { resolveValues, scaffoldProject, validateValues } from '@/core/project/scaffold';
+import { ChoiceLoader, fieldChoices, filterChoices, groupChoices, type LoadedChoices } from '@/core/project/create/choices';
+import { resolveValues, scaffoldProject, validateValues } from '@/core/project/create/scaffold';
 import {
   ALL_CATEGORY, RECENT_CATEGORY, fileTree, filterTemplates, gridStep, knownRecent, rememberRecent, templateCategories,
 } from '@/core/project/catalog';

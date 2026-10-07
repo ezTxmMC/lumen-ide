@@ -11,12 +11,12 @@
 /** The debugger's commands, for the palette and the shortcuts. */
 
 import { useStore } from '@/state/store';
-import { editorBridge } from '@/lib/editor-bridge';
+import { editorBridge } from '@/lib/editor/editor-bridge';
 import { t } from '@/i18n';
 import type { Command } from '@/core/types';
-import { breakpoints } from './breakpoints';
+import { breakpoints } from './state/breakpoints';
 import { debug } from './manager';
-import { openLaunchConfigFile } from './config';
+import { openLaunchConfigFile } from './state/config';
 import { cursorLine } from './editor';
 import { editBreakpoint } from './actions';
 

@@ -41,12 +41,13 @@ import { app, shell } from 'electron';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { withManagedPath } from '../lsp-packages/tools/managed-path';
 import { agents } from './agents';
 import { contributions } from './contributions';
 import { providers } from './providers';
 import { services } from './services';
-import { assertExecAllowed, addRulePack } from '../security';
-import { onWorkspaceRoots, workspaceFolders, workspaceRoot } from '../workspace-roots';
+import { assertExecAllowed, addRulePack } from '../security/security';
+import { onWorkspaceRoots, workspaceFolders, workspaceRoot } from '../desktop/workspace-roots';
 import type {
   AgentProvider, DiagnosticProvider, FormatterProvider, HostEvent, InputField, SecurityRuleSpec, StatusItem, UiMessage, ViewProvider,
 } from './contract';
@@ -89,7 +90,7 @@ export function exec(command: string, args: string[] = [], options: ExecOptions 
   return new Promise((resolve, reject) => {
     const child = spawn(command, args.map(String), {
       cwd,
-      env: { ...process.env, ...(options.env ?? {}) },
+      env: withManagedPath({ ...process.env, ...(options.env ?? {}) }),
       shell: process.platform === 'win32',
       windowsHide: true,
     });

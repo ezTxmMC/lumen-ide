@@ -720,6 +720,18 @@ images, and the open file and selection sent along on request. Everything else
 allowed and blocked tools, extra folders, MCP servers, profiles, `-c`
 overrides, environment variables — is configured under *Settings → Extensions*.
 
+The host contract for agent add-ons (`electron/features/extension-host/contract.ts`)
+is additive. A provider may report rich slash commands (`name`, `description`,
+`argumentHint`, `source`), live `usage` (context window, session cost, rate
+limits), `notice` lines, `subagent` start/finish with nested tool calls
+(`parentId`) and permission `options` (“allow for this session”). The manifest's
+agent entry declares `capabilities` (`compact`, `rewind`, `fork`, `rename`,
+`delete`, `export`, `usage`), which a provider's optional `action` and
+`checkpoints` methods carry out and the chat's “…” menu and `/` palette then
+offer; `quickActions`, `customCommands` and `profiles` (built in or kept in
+a textarea setting the agent names, one `|`-separated line each), plus a
+per-chat system prompt (`systemPrompt: true`), are the user's own shortcuts.
+
 ---
 
 ## Editor

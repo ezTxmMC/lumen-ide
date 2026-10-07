@@ -18,8 +18,8 @@
  */
 
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
-import { ChoiceLoader, type LoadedChoices } from '@/core/project/choices';
-import { resolveValues } from '@/core/project/scaffold';
+import { ChoiceLoader, type LoadedChoices } from '@/core/project/create/choices';
+import { resolveValues } from '@/core/project/create/scaffold';
 import type { FormField, FormValues } from '@/core/types';
 
 export interface FormValuesState {

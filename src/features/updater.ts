@@ -19,7 +19,7 @@ import { useStore, rememberOpenFiles } from '@/state/store';
 import { registerCommandProvider } from '@/core/commands';
 import { t } from '@/i18n';
 import type { Command } from '@/core/types';
-import type { UpdateState } from '../../electron/features/updater';
+import type { UpdateState } from '../../electron/features/app/updater';
 
 export type { UpdateState };
 

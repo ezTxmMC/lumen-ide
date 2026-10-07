@@ -27,6 +27,31 @@ function rustTargets(prefix: string, suffix: string, windowsSuffix = suffix): Re
   };
 }
 
+/**
+ * The Novus release both programs come from. Pinned: the releases are
+ * pre-releases, which "latest" does not return — and the installer records the
+ * tag, so raising it re-offers the update.
+ */
+export const NOVUS_VERSION = 'v0.1.0-pre.alpha.8';
+
+/** A program of the Novus release: `<bin>-<arch>-<os>`, Windows as `-windows-gnu.exe`. */
+function novusRelease(bin: string): LspPackage {
+  return {
+    type: 'github',
+    repo: 'ezTxmMC/novus',
+    version: NOVUS_VERSION,
+    bin,
+    assets: {
+      'linux-x64': `^${bin}-x86_64-linux-gnu$`,
+      'linux-arm64': `^${bin}-aarch64-linux-gnu$`,
+      'darwin-x64': `^${bin}-x86_64-macos$`,
+      'darwin-arm64': `^${bin}-aarch64-macos$`,
+      'win32-x64': `^${bin}-x86_64-windows-gnu\\.exe$`,
+      'win32-arm64': `^${bin}-aarch64-windows-gnu\\.exe$`,
+    },
+  };
+}
+
 export const LSP_PACKAGES = {
   typescriptLanguageServer: { type: 'npm', packages: ['typescript-language-server', 'typescript@6'] },
   eslint: { type: 'npm', packages: ['vscode-langservers-extracted'] },
@@ -34,6 +59,9 @@ export const LSP_PACKAGES = {
   vtsls: { type: 'npm', packages: ['@vtsls/language-server'] },
   langserversExtracted: { type: 'npm', packages: ['vscode-langservers-extracted'] },
   someSass: { type: 'npm', packages: ['some-sass-language-server'] },
+  // novus-lsp and novusc ship in the same release, as bare programs.
+  novusLsp: novusRelease('novus-lsp'),
+  novusc: novusRelease('novusc'),
   deno: { type: 'github', repo: 'denoland/deno', assets: rustTargets('deno-', '\\.zip') },
   superhtml: {
     type: 'github',

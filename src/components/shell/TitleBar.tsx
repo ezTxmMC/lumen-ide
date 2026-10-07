@@ -10,7 +10,7 @@
 
 import { formatBindingsFor } from "@/core/keybindings";
 import { useT } from "@/i18n";
-import { defaultTask, runDefault, stopRun } from "@/lib/run";
+import { defaultTask, runDefault, stopRun } from "@/lib/project/run";
 import { isProjectsWindow } from "@/lib/window-mode";
 import { useStore } from "@/state/store";
 import {

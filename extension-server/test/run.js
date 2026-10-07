@@ -141,6 +141,24 @@ async function manifestChecks() {
     rejects(sample({ pages: [{ id: 'a', title: 'A' }] }), 'pages[0].content'));
   await check('duplicate page id is rejected', () =>
     rejects(sample({ pages: [{ id: 'a', title: 'A', content: 'x' }, { id: 'a', title: 'B', content: 'y' }] }), 'pages.id'));
+  await check('language typing fields, syntax context and scoped snippets pass through unchanged', () => {
+    const manifest = sample();
+    manifest.addon.languages = [{
+      id: 'mix', name: 'Mix', extensions: ['.mix'],
+      autoClose: [{ open: '<?nv', before: ' ', after: ' ?>' }],
+      closeBrackets: ['(', '"'],
+      wordPattern: '[@$]?[A-Za-z_][\\w-]*',
+      codeWordPattern: '[$@]?[A-Za-z_]\\w*',
+      syntaxContext: 'nvh',
+      snippets: [{ label: 'x', body: 'x', files: ['*.mix'], scope: ['nvh_tag'] }],
+    }];
+    manifest.addon.snippets = [{ languageId: 'nvh', label: 'y', body: 'y', files: ['*.nvh'], scope: ['nvh_template'] }];
+    const checked = checkManifest(manifest);
+    assert.deepEqual(checked.addon.languages[0].autoClose, [{ open: '<?nv', before: ' ', after: ' ?>' }]);
+    assert.equal(checked.addon.languages[0].syntaxContext, 'nvh');
+    assert.deepEqual(checked.addon.languages[0].snippets[0].scope, ['nvh_tag']);
+    assert.deepEqual(checked.addon.snippets[0].scope, ['nvh_template']);
+  });
   await check('homepage over http is rejected', () =>
     rejects(sample({ homepage: 'http://example.com' }), 'homepage'));
   await check('homepage over https passes', () => {

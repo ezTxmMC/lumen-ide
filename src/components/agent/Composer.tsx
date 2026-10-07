@@ -19,10 +19,23 @@ import { ImagePlus, Send, Square, X } from 'lucide-react';
 import { useStore } from '@/state/store';
 import { useT } from '@/i18n';
 import { agentChat, type AgentInfo, type DraftAttachment } from '@/core/agent/chat';
+import type { AgentCommandSource } from '../../../electron/features/extension-host/contract';
 import { fuzzyMatch } from '@/lib/fuzzy';
 import { Button } from '@/components/ui';
+import { QuickActions } from './QuickActions';
 
-const MAX_SUGGESTIONS = 8;
+const MAX_SUGGESTIONS = 12;
+
+/** The order the palette groups commands in. */
+const SOURCE_ORDER: AgentCommandSource[] = ['builtin', 'user', 'project', 'plugin', 'skill'];
+
+/** One line of the `/` or `@` palette. */
+interface Suggestion {
+  value: string;
+  description?: string;
+  hint?: string;
+  source?: AgentCommandSource;
+}
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 interface Token {
@@ -68,7 +81,7 @@ const SUGGESTION_KEYS = ['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'];
 /** Arrows move through the suggestions, Enter or Tab takes one, Escape dismisses them. */
 function navigateSuggestions(
   key: string,
-  suggestions: string[],
+  suggestions: Suggestion[],
   selected: number,
   actions: { setSelected: (update: (index: number) => number) => void; accept: (value: string) => void; dismiss: () => void; },
 ) {
@@ -79,39 +92,46 @@ function navigateSuggestions(
     actions.setSelected((i) => (i - 1 + suggestions.length) % suggestions.length);
   }
   if (key === 'Enter' || key === 'Tab') {
-    actions.accept(suggestions[selected]);
+    actions.accept(suggestions[selected].value);
   }
   if (key === 'Escape') {
     actions.dismiss();
   }
 }
 
-/** Rank candidates against the query; an empty query keeps the order. */
-function rank(candidates: string[], query: string): string[] {
+/** Rank candidates against the query; an empty query keeps the order, grouped by source. */
+function rank(candidates: Suggestion[], query: string): Suggestion[] {
   if (!query) {
-    return candidates.slice(0, MAX_SUGGESTIONS);
+    const order = (entry: Suggestion) => SOURCE_ORDER.indexOf(entry.source ?? 'builtin');
+    return [...candidates].sort((a, b) => order(a) - order(b)).slice(0, MAX_SUGGESTIONS);
   }
   return candidates
-    .map((value) => ({ value, match: fuzzyMatch(value, query) }))
-    .filter((entry) => entry.match !== null)
+    .map((entry) => ({ entry, match: fuzzyMatch(entry.value, query) }))
+    .filter((found) => found.match !== null)
     .sort((a, b) => b.match!.score - a.match!.score)
     .slice(0, MAX_SUGGESTIONS)
-    .map((entry) => entry.value);
+    .map((found) => found.entry);
 }
 
 /** The suggestions for the token at the caret; the workspace's files load on first `@`. */
 function useSuggestions(token: Token | null, key: string, workspace: string | null) {
   const [files, setFiles] = useState<string[] | null>(null);
-  const slashCommands = agentChat.activeChat(key).slashCommands;
+  const commands = agentChat.commands(key);
   const suggestions = useMemo(() => {
     if (!token) {
       return [];
     }
     if (token.trigger === '/') {
-      return rank(slashCommands, token.query);
+      const entries = commands.map((entry) => ({
+        value: entry.name,
+        description: entry.description,
+        hint: entry.argumentHint,
+        source: entry.source,
+      }));
+      return rank(entries, token.query);
     }
-    return rank(files ?? [], token.query);
-  }, [token, slashCommands, files]);
+    return rank((files ?? []).map((file) => ({ value: file })), token.query);
+  }, [token, commands, files]);
 
   const loadFiles = () => {
     if (files || !workspace) {
@@ -143,27 +163,44 @@ function useAttachments() {
 
 function SuggestionList({ token, suggestions, selected, onAccept }: {
   token: Token | null;
-  suggestions: string[];
+  suggestions: Suggestion[];
   selected: number;
   onAccept: (value: string) => void;
 }) {
   const t = useT();
+  const grouped = token?.trigger === '/' && !token.query;
   return (
-    <div role="listbox" className="lm-glass lm-shadow absolute right-2 bottom-full left-2 mb-1 max-h-56 overflow-y-auto rounded-lumen border border-edge p-1">
+    <div role="listbox" className="lm-glass lm-shadow absolute right-2 bottom-full left-2 mb-1 max-h-64 overflow-y-auto rounded-lumen border border-edge p-1">
       <div className="px-2 pt-0.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-subtle">
         {t(token?.trigger === '/' ? 'agent.complete.commands' : 'agent.complete.files')}
       </div>
-      {suggestions.map((value, i) => (
-        <button
-          key={value}
-          role="option"
-          aria-selected={i === selected}
-          onMouseDown={(e) => { e.preventDefault(); onAccept(value); }}
-          className={`lm-transition block w-full truncate rounded-lumen-sm px-2 py-1 text-left font-mono text-[11.5px] ${i === selected ? 'bg-hover text-fg' : 'text-muted'}`}
-        >
-          {token?.trigger}{value}
-        </button>
-      ))}
+      {suggestions.map((entry, i) => {
+        const startsGroup = grouped && entry.source !== suggestions[i - 1]?.source;
+        return (
+          <div key={entry.value}>
+            {startsGroup && (
+              <div className="px-2 pt-1 pb-0.5 text-[9.5px] font-semibold uppercase tracking-[0.08em] text-subtle">
+                {t(`agent.source.${entry.source ?? 'builtin'}`)}
+              </div>
+            )}
+            <button
+              role="option"
+              aria-selected={i === selected}
+              onMouseDown={(e) => { e.preventDefault(); onAccept(entry.value); }}
+              className={`lm-transition block w-full rounded-lumen-sm px-2 py-1 text-left ${i === selected ? 'bg-hover text-fg' : 'text-muted'}`}
+            >
+              <span className="flex items-baseline gap-1.5">
+                <span className="min-w-0 truncate font-mono text-[11.5px]">{token?.trigger}{entry.value}</span>
+                {entry.hint && <span className="shrink-0 font-mono text-[10.5px] text-subtle">{entry.hint}</span>}
+                {entry.source && !grouped && token?.trigger === '/' && (
+                  <span className="ml-auto shrink-0 text-[9.5px] uppercase text-subtle">{t(`agent.source.${entry.source}`)}</span>
+                )}
+              </span>
+              {entry.description && <span className="block truncate text-[10.5px] text-subtle">{entry.description}</span>}
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -356,6 +393,8 @@ export function Composer({ info, running }: { info: AgentInfo; running: boolean;
       {suggestions.length > 0 && (
         <SuggestionList token={token} suggestions={suggestions} selected={selected} onAccept={accept} />
       )}
+
+      <QuickActions info={info} running={running} enabled={Boolean(workspace)} />
 
       {attachments.length > 0 && (
         <AttachmentStrip attachments={attachments} onRemove={(index) => setAttachments((current) => current.filter((_, i) => i !== index))} />

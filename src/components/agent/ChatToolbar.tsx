@@ -14,12 +14,14 @@
  */
 
 import { useEffect, useState } from 'react';
-import { ChevronDown, Eraser, History, MessageSquare, Pencil, Plus, RefreshCw, X } from 'lucide-react';
+import { ChevronDown, Eraser, History, MessageSquare, MoreHorizontal, Pencil, Plus, RefreshCw, X } from 'lucide-react';
 import { useStore } from '@/state/store';
 import { useT } from '@/i18n';
 import { agentChat, type AgentInfo } from '@/core/agent/chat';
 import { Button } from '@/components/ui';
 import { ContextMenu, menuBelow, type MenuItem } from '@/components/ui/ContextMenu';
+import { UsageMeter } from './UsageMeter';
+import { sessionMenuItems } from './sessionMenu';
 
 type Menu = { x: number; y: number; items: MenuItem[]; };
 
@@ -118,6 +120,26 @@ function ModelControls({ info }: { info: AgentInfo; }) {
   );
 }
 
+/** The agent's profiles: one choice sets mode, model, effort and extra settings together. */
+function ProfileSelect({ info }: { info: AgentInfo; }) {
+  const t = useT();
+  const profiles = agentChat.profiles(info.key);
+  if (profiles.length === 0) {
+    return null;
+  }
+  return (
+    <select
+      value={agentChat.profile(info.key)?.id ?? ''}
+      onChange={(e) => agentChat.setProfile(info.key, e.target.value)}
+      title={t('agent.profile.label')}
+      className="max-w-[120px] rounded-lumen-sm border border-edge bg-input px-1 py-0.5 text-[11px] text-muted"
+    >
+      <option value="">{t('agent.profile.none')}</option>
+      {profiles.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
+    </select>
+  );
+}
+
 /** The chat and session menus, opened below the button that was clicked. */
 function useChatMenus(info: AgentInfo, running: boolean, setMenu: (menu: Menu | null) => void) {
   const t = useT();
@@ -130,7 +152,7 @@ function useChatMenus(info: AgentInfo, running: boolean, setMenu: (menu: Menu | 
       submitLabel: t('common.save'),
       initial: { name: chat.title },
       fields: [{ id: 'name', label: t('agent.chats.name') }],
-      onSubmit: (values) => agentChat.renameChat(key, chat.id, values.name),
+      onSubmit: (values) => agentChat.renameSession(key, values.name),
     });
   };
 
@@ -167,7 +189,15 @@ function useChatMenus(info: AgentInfo, running: boolean, setMenu: (menu: Menu | 
     setMenu({ ...at, items: [{ header: t('agent.sessions.title') }, ...(entries.length ? entries : [empty])] });
   };
 
-  return { openChats, openSessions };
+  const openMore = (element: HTMLElement) => {
+    const items = sessionMenuItems(info, running, t);
+    if (items.length === 0) {
+      return;
+    }
+    setMenu({ ...menuBelow(element), items });
+  };
+
+  return { openChats, openSessions, openMore };
 }
 
 export function ChatToolbar({ info, running }: { info: AgentInfo; running: boolean; }) {
@@ -175,7 +205,8 @@ export function ChatToolbar({ info, running }: { info: AgentInfo; running: boole
   const key = info.key;
   const [menu, setMenu] = useState<Menu | null>(null);
   const chat = agentChat.activeChat(key);
-  const { openChats, openSessions } = useChatMenus(info, running, setMenu);
+  const { openChats, openSessions, openMore } = useChatMenus(info, running, setMenu);
+  const hasMore = sessionMenuItems(info, running, t).length > 0;
 
   return (
     <div className="shrink-0 border-b border-edge px-2 py-1.5">
@@ -189,6 +220,7 @@ export function ChatToolbar({ info, running }: { info: AgentInfo; running: boole
           <span className="truncate">{chat.title}</span>
           <ChevronDown size={11} className="shrink-0 text-subtle" />
         </button>
+        <ProfileSelect info={info} />
         <button
           title={t('agent.sessions.open')}
           onClick={(e) => void openSessions(e.currentTarget)}
@@ -196,12 +228,22 @@ export function ChatToolbar({ info, running }: { info: AgentInfo; running: boole
         >
           <History size={12} />
         </button>
+        {hasMore && (
+          <button
+            title={t('agent.more')}
+            onClick={(e) => openMore(e.currentTarget)}
+            className="lm-transition inline-flex h-6 items-center justify-center rounded-lumen-sm px-2 text-muted hover:bg-hover hover:text-fg"
+          >
+            <MoreHorizontal size={12} />
+          </button>
+        )}
         <Button size="sm" title={t('agent.newChat')} onClick={() => agentChat.newChat(key)}>
           <Plus size={12} />
         </Button>
       </div>
 
       <ModelControls info={info} />
+      <UsageMeter info={info} />
 
       {menu && <ContextMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => setMenu(null)} />}
     </div>

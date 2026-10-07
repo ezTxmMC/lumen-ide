@@ -12,7 +12,7 @@ import { ChevronRight, Pause, Play, Square } from 'lucide-react';
 import { useT } from '@/i18n';
 import { debug } from '@/core/debug/manager';
 import type { DebugSession, ThreadState } from '@/core/debug/session';
-import { baseName } from '@/core/debug/paths';
+import { baseName } from '@/core/debug/state/paths';
 import { DebugSection, IconButton } from './shared';
 
 function Frames({ session, thread }: { session: DebugSession; thread: ThreadState; }) {

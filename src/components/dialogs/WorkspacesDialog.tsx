@@ -17,7 +17,7 @@ import { useDialogVisible } from '@/hooks/usePresence';
 import { locale, useT } from '@/i18n';
 import { Button, Empty } from '../ui';
 import { DialogShell } from './DialogShell';
-import { sortedByName } from '../panels/Explorer';
+import { sortedByName } from '../panels/explorer/folder-chain';
 
 const COLORS = ['#7c8cff', '#22d3ee', '#5ecf8f', '#fbbf24', '#f472b6', '#fb7185', '#c084fc', '#f97316'];
 

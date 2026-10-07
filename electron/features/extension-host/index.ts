@@ -37,10 +37,10 @@ import { agents } from './agents';
 import { contributions } from './contributions';
 import { providers } from './providers';
 import { services } from './services';
-import type { AgentAnswer, AgentSendRequest, CheckRequest, FileRef, FormatRequest, HostEvent, ViewActionEvent } from './contract';
+import type { AgentActionRequest, AgentAnswer, AgentSendRequest, CheckRequest, FileRef, FormatRequest, HostEvent, ViewActionEvent } from './contract';
 import { codeHashInput, type CodeParts } from './code-hash';
-import { fitsApp } from '../../../src/core/extensions/compat';
-import { removeRulePack, scanExtensionManifest } from '../security';
+import { fitsApp } from '../../../src/core/extensions/compat/compat';
+import { removeRulePack, scanExtensionManifest } from '../security/security';
 
 export type * from './contract';
 
@@ -295,6 +295,9 @@ export function registerExtensionHostIpc(getWindow: () => BrowserWindow | null) 
   ipcMain.handle('agent:interrupt', (_e, agent: string, chatId: string) => agents.interrupt(agent, chatId));
   ipcMain.handle('agent:models', (_e, agent: string, settings?: Record<string, string>, refresh?: boolean) =>
     agents.models(agent, settings, refresh));
+  ipcMain.handle('agent:action', (e, request: AgentActionRequest) => agents.action(request, e.sender));
+  ipcMain.handle('agent:checkpoints', (_e, agent: string, chatId: string, sessionId: string | undefined, cwd: string, settings?: Record<string, string>) =>
+    agents.checkpoints(agent, chatId, sessionId, cwd, settings));
   ipcMain.handle('agent:sessions', (_e, agent: string, cwd: string) => agents.sessions(agent, cwd));
 
   ipcMain.handle('extensions:view:render', (_e, extensionId: string, viewId: string, instance?: string) =>

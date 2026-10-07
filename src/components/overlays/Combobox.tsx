@@ -24,7 +24,7 @@ import { createPortal } from 'react-dom';
 import { useOwner } from '@/hooks/useOwner';
 import { Check, ChevronsUpDown, Loader2, Search } from 'lucide-react';
 import type { FieldChoice } from '@/core/types';
-import { filterChoices, groupChoices } from '@/core/project/choices';
+import { filterChoices, groupChoices } from '@/core/project/create/choices';
 import { tr, useT } from '@/i18n';
 import { LAYER } from '../ui/layers';
 

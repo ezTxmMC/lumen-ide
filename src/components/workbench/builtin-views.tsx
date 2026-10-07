@@ -16,7 +16,7 @@
 import { lsp } from "@/core/lsp/manager";
 import { type ViewDef, viewRegistry } from "@/core/views";
 import { t } from "@/i18n";
-import { terminals } from "@/lib/terminals";
+import { terminals } from "@/lib/project/terminals";
 import { useStore } from "@/state/store";
 import {
   Bug,
@@ -30,17 +30,17 @@ import {
   TerminalSquare,
   Zap,
 } from "lucide-react";
-import { DebugPanel } from "../panels/DebugPanel";
-import { DebugSidebar } from "../panels/DebugSidebar";
-import { Explorer } from "../panels/Explorer";
+import { DebugPanel } from "../panels/debug/DebugPanel";
+import { DebugSidebar } from "../panels/debug/DebugSidebar";
+import { Explorer } from "../panels/explorer/Explorer";
 import { LspPanel } from "../panels/LspPanel";
-import { OutlinePanel } from "../panels/OutlinePanel";
-import { OutputBody, OutputToolbar } from "../panels/OutputView";
-import { ProblemsPanel } from "../panels/ProblemsPanel";
-import { ProjectPanel } from "../panels/ProjectPanel";
-import { ReferencesPanel } from "../panels/ReferencesPanel";
-import { SearchPanel } from "../panels/SearchPanel";
-import { TerminalPanel, TerminalToolbar } from "../panels/TerminalPanel";
+import { OutlinePanel } from "../panels/navigation/OutlinePanel";
+import { OutputBody, OutputToolbar } from "../panels/console/OutputView";
+import { ProblemsPanel } from "../panels/console/ProblemsPanel";
+import { ProjectPanel } from "../panels/project/ProjectPanel";
+import { ReferencesPanel } from "../panels/navigation/ReferencesPanel";
+import { SearchPanel } from "../panels/navigation/SearchPanel";
+import { TerminalPanel, TerminalToolbar } from "../panels/console/TerminalPanel";
 
 /** A dot rather than a number — “something is going on here”. */
 export const DOT = "•";

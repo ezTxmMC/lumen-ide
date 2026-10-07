@@ -13,7 +13,7 @@
 import { registry } from '@/core/registry';
 import { isOfficial } from '@/core/extensions/trust';
 import { OFFICIAL_SERVER_URL, type ExtensionServer } from '@/core/extensions/types';
-import { setActiveIconPack } from '@/lib/file-icon';
+import { setActiveIconPack } from '@/lib/files/file-icon';
 import type { Theme } from '@/core/types';
 import type { Tab, WorkspaceDef } from './types';
 

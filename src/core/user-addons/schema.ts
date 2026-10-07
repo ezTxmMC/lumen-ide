@@ -18,7 +18,7 @@
  * Each add-on lives in one file, `userData/addons/<id>.lumen-addon.json`.
  */
 
-import type { LspConfig, RunConfig, Snippet, StringRule, Theme } from '@/core/types';
+import type { AutoCloseRule, LspConfig, RunConfig, Snippet, StringRule, Theme, ToolSpec } from '@/core/types';
 
 export const USER_ADDON_SCHEMA = 1;
 export const USER_ADDON_PREFIX = 'user.';
@@ -80,7 +80,21 @@ export interface UserLanguage {
   filenames?: string[];
   icon?: string;
   color?: string;
-  comments?: { line?: string; block?: [string, string]; };
+  comments?: { line?: string; block?: [string, string]; docBlock?: boolean; };
+  /** Text that completes itself while typing (`<?nv` → `<?nv  ?>`). */
+  autoClose?: AutoCloseRule[];
+  /** Brackets and quotes that close themselves. */
+  closeBrackets?: string[];
+  /** What a word is, as regular expression source — matched against a whole word. */
+  wordPattern?: string;
+  /** The word inside code (`<?nv ?>`, `{expr}`), as regular expression source — needs `syntaxContext`. */
+  codeWordPattern?: string;
+  /**
+   * A syntax-context detector that ships with Lumen, named (`novus`, `nvh`,
+   * `nvmd`). It scopes snippets (`Snippet.scope`) and picks `codeWordPattern`;
+   * `core/editor/syntax-context.ts` lists the names that work.
+   */
+  syntaxContext?: string;
   keywords?: string[];
   controls?: string[];
   types?: string[];
@@ -102,6 +116,8 @@ export interface UserLanguage {
   snippets?: Snippet[];
   run?: RunConfig[];
   lsp?: LspConfig[];
+  /** Programs the language needs besides its server (a compiler, say); missing ones are offered for install. */
+  tools?: ToolSpec[];
   /**
    * Debug adapters that ship with Lumen, named (`delve`, `debugpy` …). An
    * adapter of your own cannot be declared here because its launch request is
@@ -475,6 +491,10 @@ export interface UserSnippet {
   label: string;
   detail?: string;
   body: string;
+  /** Only in these files — see `Snippet.files`. */
+  files?: string[];
+  /** Only in these syntax contexts of the language — see `Snippet.scope`. */
+  scope?: string[];
 }
 
 export type UserAddonCategory = 'language' | 'theme' | 'tool';

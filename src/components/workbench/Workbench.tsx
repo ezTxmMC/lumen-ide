@@ -30,10 +30,12 @@ import { SideDock } from './SideDock';
 import { BottomDock } from './BottomDock';
 import { DropZones } from './DropZones';
 import { registerBuiltinViews } from './builtin-views';
+import { useOsFileDrop } from '@/lib/files/os-drop';
 
 registerBuiltinViews();
 
 export function Workbench() {
+  useOsFileDrop();
   const [maximizedWish, setMaximized] = useState(false);
   const bottomOpen = useStore((s) => s.layout.bottom.open);
   // Closing the bottom dock ends its maximised state; the editor comes back.

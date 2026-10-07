@@ -15,7 +15,7 @@ import {
 import { useT } from '@/i18n';
 import { readableOn } from '@/core/theme';
 import type { Theme, TokenKind } from '@/core/types';
-import { tokenCss, uses, type ColorKey } from '../keys';
+import { tokenCss, uses, type ColorKey } from '../state/keys';
 
 type Span = [TokenKind, string];
 

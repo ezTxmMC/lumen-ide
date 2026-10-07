@@ -9,7 +9,7 @@
  */
 
 /**
- * What the shots show: Lumen open on its own source, at src/core/icon-pack.ts.
+ * What the shots show: Lumen open on its own source, at src/core/theme/icon-pack.ts.
  * The file is a verbatim copy, so the code and the minimap are the real thing.
  */
 

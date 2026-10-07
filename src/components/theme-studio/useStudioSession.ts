@@ -12,10 +12,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/state/store';
 import { useT } from '@/i18n';
 import type { Theme, TokenKind, UIColorKey } from '@/core/types';
-import type { ThemeHistory } from './history';
-import { invertTheme } from '@/core/theme-colors';
-import { readStorage, splitKey, STORAGE, withColor, writeStorage, type ColorKey } from './keys';
-import { pushRecentColor } from './recent';
+import type { ThemeHistory } from './state/history';
+import { invertTheme } from '@/core/theme/colors';
+import { readStorage, splitKey, STORAGE, withColor, writeStorage, type ColorKey } from './state/keys';
+import { pushRecentColor } from './state/recent';
 import type { Confirm } from './StudioParts';
 
 const sameTheme = (a: Theme | null, b: Theme | null) => JSON.stringify(a) === JSON.stringify(b);
