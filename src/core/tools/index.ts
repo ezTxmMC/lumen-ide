@@ -25,10 +25,10 @@ class ToolManager {
   private listeners = new Set<() => void>();
   private version = 0;
 
-  subscribe(fn: () => void) {
+  subscribe = (fn: () => void) => {
     this.listeners.add(fn);
     return () => { this.listeners.delete(fn); };
-  }
+  };
 
   getVersion = () => this.version;
 

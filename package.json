@@ -1,6 +1,6 @@
 {
   "name": "lumen-ide",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Modern, lightweight and add-on based coding IDE with broad customizability.",
   "private": true,
   "type": "module",
