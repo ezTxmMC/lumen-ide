@@ -21,13 +21,16 @@ export const adapters = new Map<string, AdapterHandle>();
 
 function spawnAdapter(command: string, args: string[], cwd: string | undefined, env: Record<string, string>) {
   const workdir = cwd && fsSync.existsSync(cwd) ? cwd : os.homedir();
-  return spawn(command, args, {
+  const child = spawn(command, args, {
     cwd: workdir,
     stdio: ['pipe', 'pipe', 'pipe'],
     env: withManagedPath({ ...process.env, ...env }),
     shell: process.platform === 'win32',
     windowsHide: true,
   });
+  // An adapter that exits mid-write emits EPIPE on stdin; its exit is handled elsewhere.
+  child.stdin?.on('error', () => {});
+  return child;
 }
 
 /** TCP adapters get the given port, a free one when Lumen starts the adapter itself, or none yet. */

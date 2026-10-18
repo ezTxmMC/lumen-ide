@@ -107,6 +107,8 @@ export function startLsp(
   });
   const server: LspProcess = { child, buffer: Buffer.alloc(0), id, owner };
   servers.set(key, server);
+  // A server that dies mid-write emits EPIPE on stdin; the 'close' handler below reports it.
+  child.stdin?.on('error', () => {});
 
   child.stdout?.on('data', (chunk: Buffer) => {
     server.buffer = Buffer.concat([server.buffer, chunk]);
